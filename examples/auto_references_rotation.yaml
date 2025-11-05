@@ -1,0 +1,79 @@
+# Auto-References Example: Rotation with Auto-Axes
+#
+# Demonstrates using auto-generated axis references for rotation.
+#
+# Auto-references used:
+# - base.axis_x - X-axis through base center
+# - base.axis_y - Y-axis through base center
+# - base.axis_z - Z-axis through base center
+# - base.center - Center point of base
+
+parts:
+  # Central base cube
+  base:
+    primitive: box
+    parameters:
+      width: 30
+      height: 30
+      depth: 30
+
+  # Arm extending along X-axis
+  arm_x:
+    primitive: box
+    parameters:
+      width: 60
+      height: 8
+      depth: 8
+    translate:
+      to: base.center
+
+  # Arm rotated 90° around Z-axis (along Y-axis)
+  arm_y:
+    primitive: box
+    parameters:
+      width: 60
+      height: 8
+      depth: 8
+    translate:
+      to: base.center
+    rotate:
+      axis: base.axis_z  # Auto-reference to base's Z-axis
+      angle: 90
+      origin: base.center
+
+  # Arm rotated 90° around Y-axis (along Z-axis)
+  arm_z:
+    primitive: box
+    parameters:
+      width: 60
+      height: 8
+      depth: 8
+    translate:
+      to: base.center
+    rotate:
+      axis: base.axis_y  # Auto-reference to base's Y-axis
+      angle: 90
+      origin: base.center
+
+  # Diagonal arm (rotated around two axes)
+  arm_diagonal:
+    primitive: box
+    parameters:
+      width: 50
+      height: 6
+      depth: 6
+    translate:
+      to: base.center
+    rotate:
+      axis: base.axis_z
+      angle: 45
+      origin: base.center
+
+# Export the assembly
+export:
+  - filename: auto_references_rotation.step
+    parts: [base, arm_x, arm_y, arm_z, arm_diagonal]
+
+# Result: A 3D cross with arms extending in different directions
+# - Auto-axes make rotation intuitive without manual axis calculation
+# - All rotations are relative to the base's coordinate system

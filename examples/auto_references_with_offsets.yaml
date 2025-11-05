@@ -1,0 +1,77 @@
+# Auto-References Example: Using Offsets
+#
+# Demonstrates combining auto-references with offsets to create
+# spacing between parts.
+#
+# Shows how to use the `from` and `offset` syntax with auto-references.
+
+parts:
+  # Platform base
+  platform:
+    primitive: box
+    parameters:
+      width: 100
+      height: 5
+      depth: 100
+
+  # Four corner posts - positioned with offsets from center
+  post_1:
+    primitive: cylinder
+    parameters:
+      radius: 3
+      height: 40
+    translate:
+      to:
+        from: platform.face_top
+        offset: [-35, -35, 0]  # Front-left corner
+
+  post_2:
+    primitive: cylinder
+    parameters:
+      radius: 3
+      height: 40
+    translate:
+      to:
+        from: platform.face_top
+        offset: [35, -35, 0]  # Front-right corner
+
+  post_3:
+    primitive: cylinder
+    parameters:
+      radius: 3
+      height: 40
+    translate:
+      to:
+        from: platform.face_top
+        offset: [-35, 35, 0]  # Back-left corner
+
+  post_4:
+    primitive: cylinder
+    parameters:
+      radius: 3
+      height: 40
+    translate:
+      to:
+        from: platform.face_top
+        offset: [35, 35, 0]  # Back-right corner
+
+  # Top platform - positioned above posts with gap
+  top_platform:
+    primitive: box
+    parameters:
+      width: 80
+      height: 5
+      depth: 80
+    translate:
+      to:
+        from: post_1.face_top
+        offset: [0, 0, 5]  # 5 units above the post tops
+
+# Export the assembly
+export:
+  - filename: auto_references_with_offsets.step
+    parts: [platform, post_1, post_2, post_3, post_4, top_platform]
+
+# Result: A platform with four corner posts and a top platform
+# - Offsets allow precise positioning relative to auto-references
+# - Easy to adjust spacing by changing offset values

@@ -30,20 +30,20 @@ def registry():
     # Create a box at origin with size 20x20x20
     # MockBackend automatically centers boxes at (0,0,0)
     box_geom = backend.create_box(20, 20, 20)
-    box = Part(name='box', geometry=box_geom, current_position=(0, 0, 0))
+    box = Part(name='box', geometry=box_geom, current_position=(0, 0, 0), backend=backend)
     reg.add(box)
 
     # Create a cylinder with radius=10, height=40
     # MockBackend centers cylinders in X/Y, puts base at Z=0
     # So bounds are: x:[-10,10], y:[-10,10], z:[-20,20] (centered)
     cyl_geom = backend.create_cylinder(radius=10, height=40)
-    cylinder = Part(name='cylinder', geometry=cyl_geom, current_position=(30, 0, 0))
+    cylinder = Part(name='cylinder', geometry=cyl_geom, current_position=(30, 0, 0), backend=backend)
     reg.add(cylinder)
 
     # Create a sphere with radius=15
     # MockBackend centers spheres at (0,0,0)
     sphere_geom = backend.create_sphere(radius=15)
-    sphere = Part(name='sphere', geometry=sphere_geom, current_position=(0, 30, 0))
+    sphere = Part(name='sphere', geometry=sphere_geom, current_position=(0, 30, 0), backend=backend)
     reg.add(sphere)
 
     # Note: MockBackend doesn't have create_cone() yet,

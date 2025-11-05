@@ -370,13 +370,14 @@ class SpatialResolver:
             SpatialResolverError: If reference name not recognized
         """
         if ref_name == 'center':
-            # Bounding box center
-            bbox = part.geometry.val().BoundingBox()
-            pos = np.array([
-                (bbox.xmin + bbox.xmax) / 2,
-                (bbox.ymin + bbox.ymax) / 2,
-                (bbox.zmin + bbox.zmax) / 2
-            ])
+            # Bounding box center - use backend abstraction
+            if part.backend is None:
+                raise SpatialResolverError(
+                    f"Part '{part.name}' has no backend - cannot get bounding box. "
+                    "Parts must have a backend for spatial reference resolution."
+                )
+            bbox = part.backend.get_bounding_box(part.geometry)
+            pos = np.array(bbox['center'])
             return SpatialRef(position=pos, ref_type='point')
 
         elif ref_name == 'origin':

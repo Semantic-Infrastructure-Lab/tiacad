@@ -280,6 +280,22 @@ class TestPartLocalReferences:
 
         self.mock_part.geometry = mock_geometry
 
+        # Mock backend that returns proper bounding box format
+        mock_backend = Mock()
+        mock_backend.get_bounding_box.return_value = {
+            'min': (0, 0, 0),
+            'max': (100, 60, 10),
+            'center': (50, 30, 5)
+        }
+        # Mock face selection for face reference tests
+        mock_face = Mock()
+        mock_face.center = (50, 30, 10)
+        mock_backend.select_faces.return_value = [mock_face]
+        mock_backend.get_face_center.return_value = (50, 30, 10)
+        mock_backend.get_face_normal.return_value = (0, 0, 1)
+
+        self.mock_part.backend = mock_backend
+
         # Register the mock part
         self.registry.add(self.mock_part)
         self.resolver = SpatialResolver(self.registry, references={})

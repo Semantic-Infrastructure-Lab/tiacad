@@ -296,13 +296,13 @@ class MockBackend(GeometryBackend):
         # For testing purposes, return mock faces based on selector
         # Parse selector to determine which face (e.g., ">Z" = top face)
 
-        if geom.shape_type == 'box':
-            # Get bounding box
-            bbox = geom.bounds
-            xmin, ymin, zmin = bbox['min']
-            xmax, ymax, zmax = bbox['max']
-            cx, cy, cz = bbox['center']
+        # Get bounding box for all shape types
+        bbox = geom.bounds
+        xmin, ymin, zmin = bbox['min']
+        xmax, ymax, zmax = bbox['max']
+        cx, cy, cz = bbox['center']
 
+        if geom.shape_type == 'box':
             # Define standard box faces based on selector
             if selector == '>Z':  # Top face
                 return [MockFace(
@@ -338,6 +338,36 @@ class MockBackend(GeometryBackend):
                 return [MockFace(
                     center=(cx, ymin, cz),
                     normal=(0, -1, 0),
+                    name=f"MockFace-{selector}"
+                )]
+
+        elif geom.shape_type == 'cylinder':
+            # Cylinder has top and bottom circular faces
+            if selector == '>Z':  # Top face
+                return [MockFace(
+                    center=(cx, cy, zmax),
+                    normal=(0, 0, 1),
+                    name=f"MockFace-{selector}"
+                )]
+            elif selector == '<Z':  # Bottom face
+                return [MockFace(
+                    center=(cx, cy, zmin),
+                    normal=(0, 0, -1),
+                    name=f"MockFace-{selector}"
+                )]
+
+        elif geom.shape_type == 'sphere':
+            # Sphere has top and bottom points
+            if selector == '>Z':  # Top point
+                return [MockFace(
+                    center=(cx, cy, zmax),
+                    normal=(0, 0, 1),
+                    name=f"MockFace-{selector}"
+                )]
+            elif selector == '<Z':  # Bottom point
+                return [MockFace(
+                    center=(cx, cy, zmin),
+                    normal=(0, 0, -1),
                     name=f"MockFace-{selector}"
                 )]
 
