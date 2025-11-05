@@ -270,7 +270,7 @@ class TiaCADParser:
         """
         try:
             yaml_data, line_tracker = parse_yaml_with_lines(yaml_string)
-        except yaml.YAMLError as e:
+        except (yaml.YAMLError, ValueError) as e:
             raise TiaCADParserError(f"Invalid YAML: {str(e)}")
 
         return TiaCADParser.parse_dict(

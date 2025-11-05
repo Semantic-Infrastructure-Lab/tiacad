@@ -199,9 +199,7 @@ class TestValidatorIntegration:
         """Test validation on working color demo file"""
         validator = AssemblyValidator()
 
-        doc = TiaCADParser.parse_file(
-            '/home/scottsen/src/tia/projects/tiacad/examples/color_demo.yaml'
-        )
+        doc = TiaCADParser.parse_file('examples/color_demo.yaml')
 
         report = validator.validate_document(doc)
 
@@ -212,9 +210,7 @@ class TestValidatorIntegration:
         """Test validation on working multi-material demo"""
         validator = AssemblyValidator()
 
-        doc = TiaCADParser.parse_file(
-            '/home/scottsen/src/tia/projects/tiacad/examples/multi_material_demo.yaml'
-        )
+        doc = TiaCADParser.parse_file('examples/multi_material_demo.yaml')
 
         report = validator.validate_document(doc)
 
@@ -225,9 +221,7 @@ class TestValidatorIntegration:
         """Test validation catches issues in broken guitar hanger"""
         validator = AssemblyValidator()
 
-        doc = TiaCADParser.parse_file(
-            '/home/scottsen/src/tia/projects/tiacad/examples/guitar_hanger_with_holes.yaml'
-        )
+        doc = TiaCADParser.parse_file('examples/guitar_hanger_with_holes.yaml')
 
         report = validator.validate_document(doc)
 
@@ -243,9 +237,7 @@ class TestValidatorIntegration:
         """Test validation on fixed guitar hanger"""
         validator = AssemblyValidator()
 
-        doc = TiaCADParser.parse_file(
-            '/home/scottsen/src/tia/sessions/howling-avalanche-1025/guitar_hanger_v4.yaml'
-        )
+        doc = TiaCADParser.parse_file('examples/guitar_hanger_named_points.yaml')
 
         report = validator.validate_document(doc)
 
