@@ -1,0 +1,276 @@
+metadata:
+  name: TiaCAD Color System Showcase
+  description: Demonstrates all color features - palettes, materials, PBR
+  version: 1.0
+  author: TIA
+  created: 2025-10-25
+  phase: 3
+
+# =============================================================================
+# COLOR PALETTE - Define reusable colors
+# =============================================================================
+
+colors:
+  # Simple named colors
+  brand-blue: "#0066CC"
+  brand-orange: "#CC6600"
+  accent: "#CC0066"
+
+  # Detailed color with PBR properties
+  custom-anodized:
+    value: "#3366CC"
+    description: "Custom blue anodized aluminum"
+    metalness: 0.9
+    roughness: 0.25
+
+# =============================================================================
+# CUSTOM MATERIALS - Extend built-ins or create new
+# =============================================================================
+
+materials:
+  # Extend built-in aluminum
+  blue-aluminum:
+    base: aluminum
+    color: "#6699CC"
+    finish: anodized
+
+  # Create custom material from scratch
+  matte-black:
+    color: [0.05, 0.05, 0.05]
+    finish: matte
+    metalness: 0.0
+    roughness: 0.8
+
+  # Multi-color printing material
+  red-pla:
+    base: pla-red
+    print_material: "Hatchbox PLA - True Red"
+
+# =============================================================================
+# PARAMETERS
+# =============================================================================
+
+parameters:
+  # Base dimensions
+  base_size: 100
+  base_thickness: 10
+
+  # Component dimensions
+  post_radius: 8
+  post_height: 40
+
+  # Spacing
+  post_spacing: 60
+
+# =============================================================================
+# PARTS - Demonstrating different color approaches
+# =============================================================================
+
+parts:
+  # ----------------------------------------------------------------------------
+  # METHOD 1: Simple named colors
+  # ----------------------------------------------------------------------------
+
+  red_box:
+    primitive: box
+    size: [20, 20, 20]
+    origin: center
+    color: red                    # Simple named color
+
+  blue_cylinder:
+    primitive: cylinder
+    radius: 10
+    height: 30
+    origin: center
+    color: "#0066CC"              # Hex color
+
+  green_sphere:
+    primitive: sphere
+    radius: 12
+    origin: center
+    color: [0.0, 0.8, 0.0]       # RGB array
+
+  # ----------------------------------------------------------------------------
+  # METHOD 2: Palette references
+  # ----------------------------------------------------------------------------
+
+  base_plate:
+    primitive: box
+    size: ['${base_size}', '${base_size}', '${base_thickness}']
+    origin: center
+    color: brand-blue             # Reference to colors: section
+
+  accent_detail:
+    primitive: box
+    size: [30, 30, 5]
+    origin: center
+    color: accent                 # Another palette reference
+
+  # ----------------------------------------------------------------------------
+  # METHOD 3: Built-in material presets
+  # ----------------------------------------------------------------------------
+
+  aluminum_bracket:
+    primitive: box
+    size: [80, 40, 6]
+    origin: center
+    material: aluminum            # Built-in material
+
+  steel_post_1:
+    primitive: cylinder
+    radius: '${post_radius}'
+    height: '${post_height}'
+    origin: center
+    material: steel               # Built-in material
+
+  steel_post_2:
+    primitive: cylinder
+    radius: '${post_radius}'
+    height: '${post_height}'
+    origin: center
+    material: steel
+
+  brass_connector:
+    primitive: cylinder
+    radius: 6
+    height: 15
+    origin: center
+    material: brass               # Built-in brass
+
+  # ----------------------------------------------------------------------------
+  # METHOD 4: Custom materials
+  # ----------------------------------------------------------------------------
+
+  custom_cover:
+    primitive: box
+    size: [90, 90, 3]
+    origin: center
+    material: blue-aluminum       # Custom material from materials: section
+
+  black_detail:
+    primitive: box
+    size: [20, 20, 8]
+    origin: center
+    material: matte-black         # Another custom material
+
+  # ----------------------------------------------------------------------------
+  # METHOD 5: Advanced appearance (full PBR control)
+  # ----------------------------------------------------------------------------
+
+  glossy_handle:
+    primitive: cylinder
+    radius: 12
+    height: 60
+    origin: center
+    appearance:
+      color: [0.8, 0.2, 0.2]      # Red
+      finish: glossy
+      metalness: 0.0
+      roughness: 0.1              # Very smooth/shiny
+
+  brushed_plate:
+    primitive: box
+    size: [70, 70, 4]
+    origin: center
+    appearance:
+      color: [0.7, 0.7, 0.7]
+      finish: brushed
+      metalness: 0.95
+      roughness: 0.4
+
+  # ----------------------------------------------------------------------------
+  # METHOD 6: Transparent parts
+  # ----------------------------------------------------------------------------
+
+  window:
+    primitive: box
+    size: [60, 60, 3]
+    origin: center
+    appearance:
+      color: [0.8, 0.9, 1.0]      # Light blue
+      opacity: 0.3                # 30% opaque (70% transparent)
+      finish: glossy
+
+  # ----------------------------------------------------------------------------
+  # METHOD 7: Multi-material 3D printing
+  # ----------------------------------------------------------------------------
+
+  print_structure:
+    primitive: box
+    size: [50, 50, 20]
+    origin: center
+    material: red-pla             # Custom print material
+
+  print_support:
+    primitive: box
+    size: [50, 50, 2]
+    origin: center
+    material: pla-natural         # Built-in print material
+
+# =============================================================================
+# OPERATIONS - Colors carry through operations
+# =============================================================================
+
+operations:
+  # Position steel posts
+  post_1_positioned:
+    type: transform
+    input: steel_post_1
+    transforms:
+      - translate: ['${-post_spacing/2}', 0, '${post_height/2 + base_thickness/2}']
+    # Inherits steel color
+
+  post_2_positioned:
+    type: transform
+    input: steel_post_2
+    transforms:
+      - translate: ['${post_spacing/2}', 0, '${post_height/2 + base_thickness/2}']
+    # Inherits steel color
+
+  # Combine with union - result inherits base color
+  assembly_base:
+    type: boolean
+    operation: union
+    inputs:
+      - base_plate
+      - post_1_positioned
+      - post_2_positioned
+    # Result has brand-blue color from base_plate
+
+  # Pattern operation - all copies same color
+  detail_pattern:
+    type: pattern
+    pattern: grid
+    input: black_detail
+    count_x: 3
+    count_y: 3
+    spacing_x: 25
+    spacing_y: 25
+    # All pattern instances have matte-black material
+
+  # Operation with color override
+  colored_cover:
+    type: transform
+    input: custom_cover
+    transforms:
+      - translate: [0, 0, 30]
+    color: brand-orange           # Override color
+    # Changes from blue-aluminum to brand-orange
+
+# =============================================================================
+# EXPORT - Multiple formats with color
+# =============================================================================
+
+export:
+  default_part: assembly_base
+
+  # Export to multiple formats
+  formats:
+    - stl         # Geometry only (no color) - universal compatibility
+    - step        # CAD with colors - professional software
+    - obj         # 3D with materials - rendering/Blender
+    - 3mf         # Multi-color printing - modern slicers
+
+  # Export options
+  color_mode: realistic           # realistic, schematic, print, custom
+  default_color: [0.7, 0.7, 0.7] # For parts without color

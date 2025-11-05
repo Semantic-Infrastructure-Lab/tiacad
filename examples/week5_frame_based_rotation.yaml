@@ -1,0 +1,76 @@
+# Week 5 Feature Demo: Frame-Based Rotation
+# Demonstrates rotating around spatial references (faces, edges, axes)
+
+name: frame_rotation_demo
+description: Demonstrates frame-based rotation using the 'around' parameter
+
+parts:
+  base:
+    primitive: box
+    size: [50, 50, 10]
+    center: false
+    color: [0.9, 0.9, 0.9]  # Light gray
+
+  gear:
+    primitive: cylinder
+    radius: 15
+    height: 5
+    center: true
+    color: [0.8, 0.3, 0.3]  # Red
+
+# Named references
+references:
+  rotation_axis:
+    type: axis
+    from: [25, 25, 10]  # Center of base top face
+    to: [25, 25, 30]    # Vertical axis (Z-direction)
+
+  hinge_edge:
+    type: edge
+    part: base
+    selector: ">X and >Z"  # Top-right edge
+
+operations:
+  # Example 1: Rotate around a face normal
+  gear_face_rotation:
+    type: transform
+    input: gear
+    transforms:
+      - translate:
+          offset: [25, 25, 15]  # Position above base center
+      - rotate:
+          angle: 30
+          around: base.face_top  # Rotate around face normal (Z-axis)
+
+  # Example 2: Rotate around a named axis reference
+  gear_axis_rotation:
+    type: transform
+    input: gear
+    transforms:
+      - translate:
+          offset: [25, 25, 20]
+      - rotate:
+          angle: 60
+          around: rotation_axis  # Rotate around custom axis
+
+  # Example 3: Multiple rotations around different references
+  gear_multi_rotation:
+    type: transform
+    input: gear
+    transforms:
+      - translate:
+          offset: [25, 25, 25]
+      - rotate:
+          angle: 45
+          around: base.face_top  # First rotation
+      - rotate:
+          angle: 90
+          around:
+            type: axis
+            from: [0, 0, 0]
+            to: [1, 0, 0]  # Inline axis definition (X-axis)
+
+# Expected result: Three gears positioned above base with different rotations
+# - gear_face_rotation: rotated 30° around base's top face normal
+# - gear_axis_rotation: rotated 60° around custom vertical axis
+# - gear_multi_rotation: compound rotation (45° around Z, then 90° around X)

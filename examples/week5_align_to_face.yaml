@@ -1,0 +1,64 @@
+# Week 5 Feature Demo: align_to_face Operation
+# Demonstrates aligning parts to face references with orientation matching
+
+name: align_to_face_demo
+description: Demonstrates the new align_to_face transform operation
+
+parts:
+  base_plate:
+    primitive: box
+    size: [100, 100, 10]
+    center: false
+    color: [0.8, 0.8, 0.8]  # Gray
+
+  bracket:
+    primitive: box
+    size: [30, 10, 20]
+    center: true
+    color: [0.2, 0.6, 0.8]  # Blue
+
+# Named references for clarity
+references:
+  mount_surface:
+    type: face
+    part: base_plate
+    selector: ">Z"  # Top face
+
+operations:
+  # Example 1: Basic alignment - bracket aligns flush with top face
+  bracket_flush:
+    type: transform
+    input: bracket
+    transforms:
+      - align_to_face:
+          face: mount_surface
+          orientation: normal  # Align bracket's -Z to face normal
+          offset: 0  # Flush with surface
+
+  # Example 2: Alignment with offset - bracket elevated above face
+  bracket_offset:
+    type: transform
+    input: bracket
+    transforms:
+      - align_to_face:
+          face: base_plate.face_top  # Using auto-generated reference
+          orientation: normal
+          offset: 15  # 15mm above surface
+
+  # Example 3: Align then rotate around the mount point
+  bracket_rotated:
+    type: transform
+    input: bracket
+    transforms:
+      - align_to_face:
+          face: mount_surface
+          orientation: normal
+          offset: 5
+      - rotate:
+          angle: 45
+          around: mount_surface  # Rotate around face normal
+
+# Expected result: Three brackets positioned on top of base plate
+# - bracket_flush: sits flush on surface
+# - bracket_offset: elevated 15mm above surface
+# - bracket_rotated: elevated 5mm and rotated 45° around normal

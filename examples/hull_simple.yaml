@@ -1,0 +1,51 @@
+schema_version: "2.0"
+
+metadata:
+  name: Simple Hull Example
+  description: Basic hull operation around three spheres
+  version: 1.0
+  author: TIA
+  created: 2025-10-31
+  phase: 4A
+
+parameters:
+  sphere_radius: 8
+  spacing: 30
+
+parts:
+  # Three spheres in a triangle
+  sphere_a:
+    primitive: sphere
+    radius: ${sphere_radius}
+    origin:
+      - 0
+      - 0
+      - 0
+
+  sphere_b:
+    primitive: sphere
+    radius: ${sphere_radius}
+    origin:
+      - ${spacing}
+      - 0
+      - 0
+
+  sphere_c:
+    primitive: sphere
+    radius: ${sphere_radius}
+    origin:  # Equilateral triangle
+      - ${spacing / 2}
+      - ${spacing * 0.866}
+      - 0
+
+operations:
+  # Create convex hull around the three spheres
+  smooth_hull:
+    type: hull
+    inputs:
+      - sphere_a
+      - sphere_b
+      - sphere_c
+
+export:
+  default_part: smooth_hull

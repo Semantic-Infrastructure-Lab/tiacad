@@ -1,0 +1,63 @@
+# Text Primitive vs Sketch Comparison
+#
+# This example demonstrates both approaches to creating 3D text in TiaCAD.
+#
+# APPROACH 1: Text as Primitive (NEW in Phase 2!)
+# - Simpler syntax - just define text as a primitive part
+# - Quick 3D text creation without sketch ceremony
+# - Consistent with other primitives (box, cylinder, etc.)
+# - Best for: Standalone text, labels, signs
+#
+# APPROACH 2: Text in Sketch (from Phase 1)
+# - More flexible - can position text within a sketch
+# - Can set text position explicitly
+# - Best for: Positioned text on sketch planes
+#
+# Usage:
+#   python -m tiacad_core examples/text_primitive_vs_sketch.yaml
+#
+# Author: TIA
+# Version: 0.1.0-alpha (Phase 2)
+# Date: 2025-10-31
+
+# APPROACH 1: Text as Primitive (Phase 2)
+parts:
+  primitive_example:
+    primitive: text
+    text: "PRIMITIVE"
+    size: 15
+    height: 3
+    halign: center
+    valign: center
+    font: "Liberation Sans"
+    style: bold
+    color: blue
+
+# APPROACH 2: Text in Sketch (Phase 1)
+sketches:
+  sketch_example:
+    plane: XY
+    origin: [0, -25, 0]  # Position below primitive example
+    shapes:
+      - type: text
+        text: "SKETCH"
+        size: 15
+        halign: center
+        valign: center
+        operation: add
+
+operations:
+  sketch_extruded:
+    type: extrude
+    sketch: sketch_example
+    distance: 3
+
+# Export both for comparison
+export:
+  formats:
+    - type: stl
+      part: primitive_example
+      path: text_primitive_approach.stl
+    - type: stl
+      part: sketch_extruded
+      path: text_sketch_approach.stl

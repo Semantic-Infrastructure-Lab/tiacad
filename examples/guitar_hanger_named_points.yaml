@@ -1,0 +1,159 @@
+metadata:
+  name: Guitar Hanger with Named Points
+  description: Wall-mounted guitar hanger demonstrating named points feature
+  version: 2.0
+  author: TIA
+  created: 2025-11-02
+
+parameters:
+  # Mounting plate dimensions
+  plate_width: 100
+  plate_depth: 10
+  plate_height: 75
+
+  # Beam dimensions
+  beam_width: 75
+  beam_depth: 10
+  beam_height: 10
+
+  # Arm dimensions
+  arm_len: 70
+  arm_width: 30
+  arm_depth: 10
+  arm_tilt_deg: 10
+  arm_spacing: 72
+
+  # Screw hole specifications
+  screw_hole_diameter: 4.5  # For #8 screws
+  screw_spacing: 60
+  screw_hole_depth: 12  # Slightly deeper than plate
+  screw_offset_from_top: 15
+
+parts:
+  # Mounting plate (back plate that attaches to wall)
+  plate:
+    primitive: box
+    size: ['${plate_width}', '${plate_depth}', '${plate_height}']
+    origin: center
+
+  # Horizontal beam
+  beam:
+    primitive: box
+    size: ['${beam_width}', '${beam_depth}', '${beam_height}']
+    origin: center
+
+  # Guitar arm (will be duplicated for left/right)
+  arm:
+    primitive: box
+    size: ['${arm_width}', '${arm_len}', '${arm_depth}']
+    origin: center
+
+  # Screw hole template
+  screw_hole:
+    primitive: cylinder
+    radius: '${screw_hole_diameter / 2}'
+    height: '${screw_hole_depth}'
+    origin: center
+
+# Spatial references - clean v3.0 format! ✨
+references:
+  # Face reference - extracts position and normal from geometry
+  beam_front_center:
+    type: face
+    part: beam
+    selector: ">Y"
+    at: center
+
+  # Derived point references with offset
+  left_arm_attach:
+    type: point
+    from: beam_front_center
+    offset: ['${-arm_spacing / 2}', 0, 0]
+
+  right_arm_attach:
+    type: point
+    from: beam_front_center
+    offset: ['${arm_spacing / 2}', 0, 0]
+
+  # Absolute point references
+  left_screw_pos:
+    - '${-screw_spacing / 2}'
+    - 0
+    - '${plate_height/2 - screw_offset_from_top}'
+
+  right_screw_pos:
+    - '${screw_spacing / 2}'
+    - 0
+    - '${plate_height/2 - screw_offset_from_top}'
+
+  # Arm positioning (offset from beam)
+  left_arm_start:
+    type: point
+    from: left_arm_attach
+    offset: [0, '${arm_len / 2}', 0]
+
+  right_arm_start:
+    type: point
+    from: right_arm_attach
+    offset: [0, '${arm_len / 2}', 0]
+
+operations:
+  # Position left arm using named points - so much cleaner!
+  left_arm:
+    type: transform
+    input: arm
+    transforms:
+      - translate:
+          to: left_arm_start  # ✨ Named point reference!
+      - rotate:
+          angle: '${arm_tilt_deg}'
+          axis: X
+          origin: left_arm_attach  # ✨ Named point reference!
+
+  # Position right arm using named points
+  right_arm:
+    type: transform
+    input: arm
+    transforms:
+      - translate:
+          to: right_arm_start  # ✨ Named point reference!
+      - rotate:
+          angle: '${arm_tilt_deg}'
+          axis: X
+          origin: right_arm_attach  # ✨ Named point reference!
+
+  # Position left screw hole
+  left_screw_hole:
+    type: transform
+    input: screw_hole
+    transforms:
+      - translate: left_screw_pos  # ✨ Named point reference!
+
+  # Position right screw hole
+  right_screw_hole:
+    type: transform
+    input: screw_hole
+    transforms:
+      - translate: right_screw_pos  # ✨ Named point reference!
+
+  # Subtract screw holes from mounting plate
+  plate_with_holes:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract:
+      - left_screw_hole
+      - right_screw_hole
+
+# Export specification
+export:
+  default_part: plate_with_holes
+  parts:
+    - name: plate_with_holes
+      description: Mounting plate with screw holes
+    - name: beam
+      description: Horizontal support beam
+    - name: left_arm
+      description: Left guitar support arm
+    - name: right_arm
+      description: Right guitar support arm

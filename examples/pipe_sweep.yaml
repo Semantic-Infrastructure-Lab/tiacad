@@ -1,0 +1,51 @@
+schema_version: "2.0"
+
+metadata:
+  name: Curved Pipe (Sweep Operation)
+  description: Demonstrates sweep operation along a curved path
+  version: 1.0
+  author: TIA
+  created: 2025-10-26
+  phase: 3
+
+parameters:
+  pipe_outer_radius: 5
+  pipe_inner_radius: 4
+
+sketches:
+  pipe_profile:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      # Outer circle
+      - type: circle
+        radius: ${pipe_outer_radius}
+        center:
+          - 0
+          - 0
+
+      # Inner circle (creates hollow pipe)
+      - type: circle
+        radius: ${pipe_inner_radius}
+        center:
+          - 0
+          - 0
+        operation: subtract
+
+parts:
+  _placeholder:
+    primitive: box
+    size: [1, 1, 1]
+    origin: center
+
+operations:
+  curved_pipe:
+    type: sweep
+    profile: pipe_profile
+    path:
+      - [0, 0, 0]
+      - [10, 0, 0]
+      - [10, 10, 0]
+
+export:
+  default_part: curved_pipe

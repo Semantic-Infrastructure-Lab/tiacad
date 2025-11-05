@@ -1,0 +1,56 @@
+schema_version: "2.0"
+
+metadata:
+  name: Square to Circle Transition (Loft Operation)
+  description: Demonstrates loft operation blending between different profiles
+  version: 1.0
+  author: TIA
+  created: 2025-10-26
+  phase: 3
+
+parameters:
+  bottom_size: 20
+  top_radius: 10
+  height: 15
+
+sketches:
+  square_base:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      - type: rectangle
+        width: ${bottom_size}
+        height: ${bottom_size}
+        center:
+          - 0
+          - 0
+
+  circle_top:
+    plane: XY
+    origin:
+      - 0
+      - 0
+      - ${height}
+    shapes:
+      - type: circle
+        radius: ${top_radius}
+        center:
+          - 0
+          - 0
+
+parts:
+  _placeholder:
+    primitive: box
+    size: [1, 1, 1]
+    origin: center
+
+operations:
+  transition:
+    type: loft
+    profiles:
+      - square_base
+      - circle_top
+    ruled: false  # Smooth transition
+
+export:
+  default_part: transition

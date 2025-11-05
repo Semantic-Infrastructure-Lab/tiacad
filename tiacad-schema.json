@@ -1,0 +1,643 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tiacad.org/schemas/v2.0/tiacad.json",
+  "title": "TiaCAD YAML Schema",
+  "description": "JSON Schema for TiaCAD v2.0 parametric CAD YAML files",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "description": "TiaCAD schema version",
+      "oneOf": [
+        { "type": "string", "enum": ["2.0"] },
+        { "type": "number", "enum": [2.0] }
+      ],
+      "default": "2.0"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata about the design",
+      "additionalProperties": true
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Parametric design variables",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "number" },
+          { "type": "string" },
+          { "type": "boolean" },
+          { "type": "array" }
+        ]
+      }
+    },
+    "colors": {
+      "type": "object",
+      "description": "Color palette definitions",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "array", "items": { "type": "number" } }
+        ]
+      }
+    },
+    "materials": {
+      "type": "object",
+      "description": "Custom material definitions",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "color": { "type": "string" },
+          "metallic": { "type": "number", "minimum": 0, "maximum": 1 },
+          "roughness": { "type": "number", "minimum": 0, "maximum": 1 },
+          "density": { "type": "number" }
+        }
+      }
+    },
+    "sketches": {
+      "type": "object",
+      "description": "2D sketch profiles for extrude/revolve/loft/sweep operations",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "plane": {
+            "type": "string",
+            "enum": ["XY", "XZ", "YZ"],
+            "description": "Coordinate plane for sketch"
+          },
+          "origin": {
+            "type": "array",
+            "items": { "type": ["number", "string"] },
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "3D origin point [x, y, z]"
+          },
+          "shapes": {
+            "type": "array",
+            "items": { "type": "object" },
+            "minItems": 1,
+            "description": "List of 2D shapes (circle, rectangle, polygon, spline, etc.)"
+          }
+        },
+        "required": ["plane", "shapes"],
+        "additionalProperties": false
+      }
+    },
+    "parts": {
+      "type": "object",
+      "description": "Part definitions (required)",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "primitive": {
+            "type": "string",
+            "description": "Primitive type",
+            "enum": [
+              "box",
+              "cylinder",
+              "sphere",
+              "cone",
+              "torus",
+              "text"
+            ]
+          },
+          "size": {
+            "description": "Box dimensions [width, height, depth]",
+            "oneOf": [
+              { "type": "array", "items": { "type": ["number", "string"] }, "minItems": 3, "maxItems": 3 },
+              { "type": "string" }
+            ]
+          },
+          "radius": {
+            "description": "Cylinder/sphere radius",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "height": {
+            "description": "Cylinder/cone height",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "radius1": {
+            "description": "Cone base radius",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "radius2": {
+            "description": "Cone top radius",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "major_radius": {
+            "description": "Torus major radius",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "minor_radius": {
+            "description": "Torus minor radius",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "origin": {
+            "description": "Origin position",
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["center", "corner", "base"],
+                "description": "Primitive anchor point"
+              },
+              {
+                "type": "array",
+                "items": { "type": ["number", "string"] },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Absolute position [x, y, z]"
+              }
+            ]
+          },
+          "color": {
+            "description": "Part color",
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 4 }
+            ]
+          },
+          "material": {
+            "type": "string",
+            "description": "Material name"
+          },
+          "text": {
+            "type": "string",
+            "description": "Text string to render (for text primitive)",
+            "minLength": 1
+          },
+          "font": {
+            "type": "string",
+            "description": "Font family name (for text primitive)",
+            "default": "Liberation Sans"
+          },
+          "style": {
+            "type": "string",
+            "description": "Font style (for text primitive)",
+            "enum": ["regular", "bold", "italic", "bold-italic"],
+            "default": "regular"
+          },
+          "halign": {
+            "type": "string",
+            "description": "Horizontal text alignment (for text primitive)",
+            "enum": ["left", "center", "right"],
+            "default": "center"
+          },
+          "valign": {
+            "type": "string",
+            "description": "Vertical text alignment (for text primitive)",
+            "enum": ["top", "center", "baseline", "bottom"],
+            "default": "center"
+          },
+          "font_path": {
+            "type": "string",
+            "description": "Path to custom font file (for text primitive)"
+          },
+          "spacing": {
+            "oneOf": [
+              { "type": "number", "minimum": 0.1 },
+              { "type": "string" }
+            ],
+            "description": "Character spacing multiplier (for text primitive)",
+            "default": 1.0
+          }
+        },
+        "required": ["primitive"]
+      },
+      "minProperties": 1
+    },
+    "operations": {
+      "type": "object",
+      "description": "Operations (transforms, boolean, patterns)",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Operation type",
+            "enum": [
+              "transform",
+              "attach",
+              "boolean",
+              "pattern",
+              "mirror",
+              "finishing",
+              "text",
+              "extrude",
+              "revolve",
+              "loft",
+              "sweep",
+              "hull"
+            ]
+          },
+          "input": {
+            "description": "Input part name(s)",
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "transforms": {
+            "type": "array",
+            "description": "List of transformations",
+            "items": {
+              "type": "object",
+              "properties": {
+                "translate": {
+                  "description": "Translation specification",
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": { "type": ["number", "string"] },
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "description": "Relative translation [dx, dy, dz]"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "description": "Target position",
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": { "type": ["number", "string"] },
+                              "minItems": 3,
+                              "maxItems": 3
+                            },
+                            {
+                              "type": "string",
+                              "description": "Named position reference (e.g., 'part:box:center')"
+                            }
+                          ]
+                        },
+                        "offset": {
+                          "type": "array",
+                          "items": { "type": ["number", "string"] },
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "description": "Optional offset from target"
+                        }
+                      },
+                      "required": ["to"],
+                      "additionalProperties": false,
+                      "description": "Absolute translation to target position"
+                    }
+                  ]
+                },
+                "rotate": {
+                  "type": "object",
+                  "properties": {
+                    "axis": {
+                      "type": "string",
+                      "enum": ["X", "Y", "Z", "+X", "-X", "+Y", "-Y", "+Z", "-Z"],
+                      "description": "Rotation axis"
+                    },
+                    "angle": {
+                      "oneOf": [
+                        { "type": "number" },
+                        { "type": "string" }
+                      ],
+                      "description": "Rotation angle in degrees"
+                    },
+                    "origin": {
+                      "type": "array",
+                      "items": { "type": ["number", "string"] },
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "description": "Optional rotation origin point (default: part origin)"
+                    }
+                  },
+                  "required": ["axis", "angle"],
+                  "additionalProperties": false,
+                  "description": "Rotation specification"
+                },
+                "scale": {
+                  "description": "Scale factor(s)",
+                  "oneOf": [
+                    { "type": "number" },
+                    { "type": "array", "items": { "type": "number" } },
+                    { "type": "object" }
+                  ]
+                },
+                "mirror": {
+                  "description": "Mirror plane",
+                  "type": "string",
+                  "enum": ["XY", "XZ", "YZ", "X", "Y", "Z"]
+                }
+              }
+            }
+          },
+          "operation": {
+            "type": "string",
+            "description": "Boolean operation type",
+            "enum": ["union", "difference", "intersection"]
+          },
+          "base": {
+            "description": "Base part for boolean operation",
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "union": {
+            "description": "Parts to union",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "subtract": {
+            "description": "Parts to subtract",
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "intersect": {
+            "description": "Parts to intersect",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Pattern type",
+            "enum": ["linear", "circular", "grid"]
+          },
+          "count": {
+            "description": "Pattern count",
+            "oneOf": [
+              { "type": "number", "minimum": 1 },
+              { "type": "string" }
+            ]
+          },
+          "spacing": {
+            "description": "Pattern spacing",
+            "oneOf": [
+              { "type": "number" },
+              { "type": "string" },
+              { "type": "array" }
+            ]
+          },
+          "axis": {
+            "description": "Pattern axis",
+            "oneOf": [
+              { "type": "string", "enum": ["X", "Y", "Z"] },
+              { "type": "array", "items": { "type": "number" } }
+            ]
+          },
+          "center": {
+            "description": "Pattern center point",
+            "oneOf": [
+              { "type": "array", "items": { "type": "number" } },
+              { "type": "string" }
+            ]
+          },
+          "finish": {
+            "type": "string",
+            "description": "Finishing operation",
+            "enum": ["fillet", "chamfer", "shell", "draft"]
+          },
+          "radius": {
+            "description": "Fillet/chamfer radius",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "distance": {
+            "description": "Chamfer distance",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "thickness": {
+            "description": "Shell wall thickness",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "edges": {
+            "description": "Edge selection for finishing",
+            "type": "object",
+            "properties": {
+              "direction": {
+                "type": "string",
+                "enum": ["X", "Y", "Z"]
+              },
+              "selector": {
+                "type": "string"
+              }
+            }
+          },
+          "plane": {
+            "description": "Mirror plane",
+            "oneOf": [
+              { "type": "string", "enum": ["XY", "XZ", "YZ"] },
+              { "type": "object" }
+            ]
+          },
+          "text": {
+            "type": "string",
+            "description": "Text content (for text operation)"
+          },
+          "face": {
+            "type": "string",
+            "description": "Face selector (for text operation, e.g., '>Z', '|X')"
+          },
+          "position": {
+            "type": "array",
+            "description": "2D position on face (for text operation, [x, y])",
+            "items": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string" }
+              ]
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "size": {
+            "description": "Font size in mm (for text operation)",
+            "oneOf": [
+              { "type": "number", "minimum": 0.1 },
+              { "type": "string" }
+            ]
+          },
+          "depth": {
+            "description": "Extrusion depth (for text operation, positive=emboss, negative=engrave)",
+            "oneOf": [
+              { "type": "number" },
+              { "type": "string" }
+            ]
+          },
+          "font": {
+            "type": "string",
+            "description": "Font family (for text operation)",
+            "default": "Liberation Sans"
+          },
+          "style": {
+            "type": "string",
+            "description": "Font style (for text operation)",
+            "enum": ["regular", "bold", "italic", "bold-italic"],
+            "default": "regular"
+          },
+          "halign": {
+            "type": "string",
+            "description": "Horizontal alignment (for text operation)",
+            "enum": ["left", "center", "right"],
+            "default": "left"
+          },
+          "valign": {
+            "type": "string",
+            "description": "Vertical alignment (for text operation)",
+            "enum": ["top", "center", "baseline", "bottom"],
+            "default": "baseline"
+          },
+          "font_path": {
+            "type": "string",
+            "description": "Custom font file path (for text operation)"
+          }
+        },
+        "required": ["type"]
+      }
+    },
+    "finishing": {
+      "type": "array",
+      "description": "Global finishing operations",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["fillet", "chamfer", "shell", "draft"]
+          },
+          "input": {
+            "type": "string",
+            "description": "Part to finish"
+          },
+          "radius": {
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "distance": {
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "thickness": {
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "edges": {
+            "type": "object"
+          }
+        },
+        "required": ["type", "input"]
+      }
+    },
+    "export": {
+      "type": "object",
+      "description": "Export configuration",
+      "properties": {
+        "default_part": {
+          "type": "string",
+          "description": "Part to export by default"
+        },
+        "formats": {
+          "type": "array",
+          "description": "Export formats",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["stl", "step", "obj", "3mf"]
+              },
+              "path": {
+                "type": "string",
+                "description": "Output file path"
+              },
+              "part": {
+                "type": "string",
+                "description": "Specific part to export"
+              }
+            },
+            "required": ["type"]
+          }
+        }
+      }
+    },
+    "variants": {
+      "type": "object",
+      "description": "Design variants",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "array",
+      "description": "Validation rules",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "clearance_check",
+              "bounds_check",
+              "thickness_check",
+              "intersection_check"
+            ]
+          },
+          "parts": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "min_clearance": {
+            "type": "number"
+          },
+          "min_thickness": {
+            "type": "number"
+          },
+          "bounds": {
+            "type": "object"
+          }
+        },
+        "required": ["type"]
+      }
+    }
+  },
+  "required": ["parts"],
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+schema_version: 2.0
+
+# Simple text embossing example
+# Demonstrates basic text operation for creating raised text on a surface
+
+metadata:
+  title: "Simple Text Embossing"
+  description: "Product label with embossed text"
+  author: "TIA"
+
+parameters:
+  plate_width: 60
+  plate_height: 40
+  plate_depth: 5
+
+parts:
+  base_plate:
+    primitive: box
+    size: ['${plate_width}', '${plate_height}', '${plate_depth}']
+    color: silver
+
+operations:
+  product_label:
+    type: text
+    input: base_plate
+    text: "WIDGET PRO"
+    face: ">Z"  # Top face
+    position: [0, 0]
+    size: 8
+    depth: 1.5  # Positive = emboss (raised text)
+    style: bold
+    halign: center
+    valign: center

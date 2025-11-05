@@ -1,0 +1,330 @@
+metadata:
+  name: Multi-Material Electronics Enclosure
+  description: Showcase for multi-color 3D printing with different filaments
+  version: 1.0
+  author: TIA
+  created: 2025-10-25
+  phase: 3
+  use_case: multi-material-printing
+
+# =============================================================================
+# MATERIALS - Define actual print materials
+# =============================================================================
+
+materials:
+  # Main structure - black PLA
+  structure-material:
+    base: pla-black
+    print_material: "Hatchbox PLA - True Black"
+    color: "#000000"
+
+  # Transparent window - clear PETG
+  window-material:
+    base: petg-clear
+    print_material: "eSUN PETG - Clear Natural"
+    color: [1.0, 1.0, 1.0]
+    opacity: 0.2                  # Very transparent
+
+  # Flexible gasket - red TPU
+  gasket-material:
+    base: tpu-flexible
+    print_material: "NinjaFlex TPU - Fire Red"
+    color: "#CC0000"
+
+  # Support material - PVA (water soluble)
+  support-material:
+    color: [0.5, 0.5, 0.5]
+    finish: matte
+    print_material: "PVA Soluble Support"
+    opacity: 0.8
+
+# =============================================================================
+# PARAMETERS
+# =============================================================================
+
+parameters:
+  # Enclosure dimensions
+  enclosure_width: 100
+  enclosure_depth: 80
+  enclosure_height: 60
+  wall_thickness: 3
+
+  # Window
+  window_width: 60
+  window_height: 40
+  window_thickness: 2
+
+  # Gasket
+  gasket_width: 90
+  gasket_depth: 70
+  gasket_thickness: 2
+
+  # Cable holes
+  cable_hole_diameter: 8
+  cable_hole_spacing: 25
+
+  # Mounting
+  mount_post_radius: 3
+  mount_post_height: 10
+  mount_hole_diameter: 2.5  # M2.5 screw
+
+# =============================================================================
+# PARTS
+# =============================================================================
+
+parts:
+  # Main enclosure body (Black PLA)
+  enclosure_outer:
+    primitive: box
+    size: ['${enclosure_width}', '${enclosure_depth}', '${enclosure_height}']
+    origin: corner
+    material: structure-material
+
+  enclosure_inner:
+    primitive: box
+    size: ['${enclosure_width - wall_thickness*2}',
+           '${enclosure_depth - wall_thickness*2}',
+           '${enclosure_height}']
+    origin: corner
+    material: structure-material
+
+  # Transparent window (Clear PETG)
+  front_window:
+    primitive: box
+    size: ['${window_width}', '${window_thickness}', '${window_height}']
+    origin: center
+    material: window-material
+
+  # Flexible gasket (Red TPU)
+  lid_gasket:
+    primitive: box
+    size: ['${gasket_width}', '${gasket_depth}', '${gasket_thickness}']
+    origin: center
+    material: gasket-material
+
+  # Cable hole template
+  cable_hole:
+    primitive: cylinder
+    radius: '${cable_hole_diameter / 2}'
+    height: '${wall_thickness + 2}'
+    origin: center
+    material: structure-material  # Same as body (will be subtracted)
+
+  # Mounting posts (Black PLA)
+  mount_post:
+    primitive: cylinder
+    radius: '${mount_post_radius}'
+    height: '${mount_post_height}'
+    origin: center
+    material: structure-material
+
+  mount_screw_hole:
+    primitive: cylinder
+    radius: '${mount_hole_diameter / 2}'
+    height: '${mount_post_height + 2}'
+    origin: center
+    material: structure-material
+
+# =============================================================================
+# OPERATIONS
+# =============================================================================
+
+operations:
+  # Create hollow enclosure
+  enclosure_inner_positioned:
+    type: transform
+    input: enclosure_inner
+    transforms:
+      - translate: ['${wall_thickness}', '${wall_thickness}', 0]
+
+  enclosure_hollow:
+    type: boolean
+    operation: difference
+    base: enclosure_outer
+    subtract: [enclosure_inner_positioned]
+
+  # Position window in front face
+  window_positioned:
+    type: transform
+    input: front_window
+    transforms:
+      - translate: ['${enclosure_width/2}',
+                    0,
+                    '${enclosure_height/2}']
+
+  # Create cable holes pattern (3 holes on back)
+  cable_holes_pattern:
+    type: pattern
+    pattern: linear
+    input: cable_hole
+    count: 3
+    spacing: '${cable_hole_spacing}'
+    direction: X
+
+  # Position cable holes on back wall
+  cable_hole_0_positioned:
+    type: transform
+    input: cable_holes_pattern_0
+    transforms:
+      - translate: ['${enclosure_width/2 - cable_hole_spacing}',
+                    '${enclosure_depth}',
+                    '${enclosure_height/2}']
+      - rotate:
+          axis: X
+          angle: 90
+          origin: ['${enclosure_width/2 - cable_hole_spacing}',
+                   '${enclosure_depth}',
+                   '${enclosure_height/2}']
+
+  cable_hole_1_positioned:
+    type: transform
+    input: cable_holes_pattern_1
+    transforms:
+      - translate: ['${enclosure_width/2}',
+                    '${enclosure_depth}',
+                    '${enclosure_height/2}']
+      - rotate:
+          axis: X
+          angle: 90
+          origin: ['${enclosure_width/2}',
+                   '${enclosure_depth}',
+                   '${enclosure_height/2}']
+
+  cable_hole_2_positioned:
+    type: transform
+    input: cable_holes_pattern_2
+    transforms:
+      - translate: ['${enclosure_width/2 + cable_hole_spacing}',
+                    '${enclosure_depth}',
+                    '${enclosure_height/2}']
+      - rotate:
+          axis: X
+          angle: 90
+          origin: ['${enclosure_width/2 + cable_hole_spacing}',
+                   '${enclosure_depth}',
+                   '${enclosure_height/2}']
+
+  # Create mounting posts in corners
+  mount_post_pattern:
+    type: pattern
+    pattern: grid
+    input: mount_post
+    count_x: 2
+    count_y: 2
+    spacing_x: '${enclosure_width - wall_thickness*4}'
+    spacing_y: '${enclosure_depth - wall_thickness*4}'
+
+  # Position posts on floor
+  posts_positioned:
+    type: transform
+    input: mount_post_pattern_0_0  # Will do all 4 manually
+    transforms:
+      - translate: ['${wall_thickness*2}',
+                    '${wall_thickness*2}',
+                    '${wall_thickness}']
+
+  # Screw holes in posts
+  screw_hole_pattern:
+    type: pattern
+    pattern: grid
+    input: mount_screw_hole
+    count_x: 2
+    count_y: 2
+    spacing_x: '${enclosure_width - wall_thickness*4}'
+    spacing_y: '${enclosure_depth - wall_thickness*4}'
+
+  # Combine everything
+  enclosure_with_window:
+    type: boolean
+    operation: union
+    inputs:
+      - enclosure_hollow
+      - window_positioned
+
+  enclosure_with_holes:
+    type: boolean
+    operation: difference
+    base: enclosure_with_window
+    subtract:
+      - cable_hole_0_positioned
+      - cable_hole_1_positioned
+      - cable_hole_2_positioned
+
+  # Add mounting posts
+  enclosure_with_posts:
+    type: boolean
+    operation: union
+    inputs:
+      - enclosure_with_holes
+      - mount_post_pattern_0_0
+      - mount_post_pattern_0_1
+      - mount_post_pattern_1_0
+      - mount_post_pattern_1_1
+
+  # Subtract screw holes from posts
+  final_enclosure:
+    type: boolean
+    operation: difference
+    base: enclosure_with_posts
+    subtract:
+      - screw_hole_pattern_0_0
+      - screw_hole_pattern_0_1
+      - screw_hole_pattern_1_0
+      - screw_hole_pattern_1_1
+
+  # Position gasket on top
+  gasket_positioned:
+    type: transform
+    input: lid_gasket
+    transforms:
+      - translate: ['${enclosure_width/2}',
+                    '${enclosure_depth/2}',
+                    '${enclosure_height}']
+
+# =============================================================================
+# EXPORT - Optimized for multi-material printing
+# =============================================================================
+
+export:
+  default_part: final_enclosure
+
+  # 3MF is best for multi-material
+  formats: [3mf, step, obj]
+
+  # Print mode maps materials to actual filaments
+  color_mode: print
+
+  # Print settings
+  print_settings:
+    # Material assignments for slicer
+    materials:
+      structure-material:
+        extruder: 1
+        temperature: 210
+        bed_temperature: 60
+
+      window-material:
+        extruder: 2
+        temperature: 235
+        bed_temperature: 80
+
+      gasket-material:
+        extruder: 3
+        temperature: 220
+        bed_temperature: 50
+        print_speed_multiplier: 0.5  # TPU prints slower
+
+      support-material:
+        extruder: 4
+        temperature: 200
+        bed_temperature: 60
+
+    # Print quality
+    layer_height: 0.2
+    infill: 20
+    walls: 3
+    top_bottom_layers: 5
+
+    # Multi-material specific
+    purge_volume: 150  # mm³ when switching materials
+    wipe_tower: true

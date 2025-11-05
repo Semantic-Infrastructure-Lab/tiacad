@@ -1,0 +1,106 @@
+# Product Label Example - Text Combined with Shapes
+#
+# Demonstrates combining text with other sketch shapes to create
+# a complete product label with border and background.
+#
+# Shows:
+# - Multiple text shapes in one sketch
+# - Combining text with rectangles
+# - Creating layered 3D labels
+# - Using additive and subtractive shapes
+#
+# Usage:
+#   tiacad build examples/text_label.yaml
+
+parameters:
+  company: "TIA Systems"
+  product: "Advanced Widget"
+  model: "AW-2025"
+
+sketches:
+  # Border frame
+  label_frame:
+    plane: XY
+    shapes:
+      # Outer border
+      - type: rectangle
+        width: 80
+        height: 30
+        center: [0, 0]
+        operation: add
+
+      # Inner cutout (creates border effect)
+      - type: rectangle
+        width: 76
+        height: 26
+        center: [0, 0]
+        operation: subtract
+
+  # Text content
+  label_text:
+    plane: XY
+    shapes:
+      # Company name
+      - type: text
+        text: "${company}"
+        size: 6
+        font: "Liberation Sans"
+        style: bold
+        halign: center
+        position: [0, 8]
+
+      # Product name
+      - type: text
+        text: "${product}"
+        size: 10
+        font: "Liberation Sans"
+        style: bold
+        halign: center
+        position: [0, -2]
+
+      # Model number
+      - type: text
+        text: "Model ${model}"
+        size: 5
+        font: "Liberation Mono"
+        style: regular
+        halign: center
+        position: [0, -12]
+
+# Base plate
+parts:
+  base_plate:
+    primitive: box
+    width: 90
+    depth: 40
+    height: 2
+    origin: center
+
+operations:
+  # Extrude the frame border
+  frame_3d:
+    type: extrude
+    sketch: label_frame
+    distance: 1.5
+    direction: Z
+
+  # Extrude the text
+  text_3d:
+    type: extrude
+    sketch: label_text
+    distance: 2.5  # Text stands taller than frame
+    direction: Z
+
+  # Combine frame with base
+  base_with_frame:
+    type: union
+    inputs: [base_plate, frame_3d]
+
+  # Add text on top
+  final_label:
+    type: union
+    inputs: [base_with_frame, text_3d]
+
+exports:
+  - operation: final_label
+    filename: text_label.stl

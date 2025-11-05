@@ -1,0 +1,104 @@
+# Engraved Text Example - Text Carved into Surface
+#
+# Demonstrates creating engraved (carved) text on a surface using
+# parametric text and difference operations for 2.5D carving.
+#
+# This shows how to:
+# - Use parameters in text strings
+# - Create a base workpiece
+# - Carve text into the surface using difference operation
+#
+# Usage:
+#   tiacad build examples/text_engraved.yaml
+
+parameters:
+  product_name: "TiaCAD"
+  version: "1.0"
+  serial_number: "SN-2025-001"
+
+# Base sign/plate to engrave on
+parts:
+  sign_base:
+    primitive: box
+    width: 100
+    depth: 60
+    height: 5
+    origin: center
+
+# Text to be carved
+sketches:
+  product_text:
+    plane: XY
+    origin: [0, 0, 2.5]  # Position on top of base
+    shapes:
+      - type: text
+        text: "${product_name}"
+        size: 15
+        font: "Liberation Sans"
+        style: bold
+        halign: center
+        position: [0, 10]
+
+  version_text:
+    plane: XY
+    origin: [0, 0, 2.5]
+    shapes:
+      - type: text
+        text: "v${version}"
+        size: 8
+        font: "Liberation Sans"
+        style: regular
+        halign: center
+        position: [0, -5]
+
+  serial_text:
+    plane: XY
+    origin: [0, 0, 2.5]
+    shapes:
+      - type: text
+        text: "${serial_number}"
+        size: 5
+        font: "Liberation Mono"
+        style: regular
+        halign: center
+        position: [0, -18]
+
+operations:
+  # Extrude text shapes into carving tools
+  product_carving:
+    type: extrude
+    sketch: product_text
+    distance: 1.5  # Carve 1.5mm deep
+    direction: Z
+
+  version_carving:
+    type: extrude
+    sketch: version_text
+    distance: 1.0
+    direction: Z
+
+  serial_carving:
+    type: extrude
+    sketch: serial_text
+    distance: 0.8
+    direction: Z
+
+  # Carve the text into the base (2.5D carving!)
+  sign_with_product:
+    type: difference
+    base: sign_base
+    subtract: product_carving
+
+  sign_with_version:
+    type: difference
+    base: sign_with_product
+    subtract: version_carving
+
+  final_sign:
+    type: difference
+    base: sign_with_version
+    subtract: serial_carving
+
+exports:
+  - operation: final_sign
+    filename: text_engraved.stl

@@ -1,0 +1,69 @@
+metadata:
+  name: Mounting Plate with Bolt Circle Pattern
+  description: Demonstrates circular pattern for bolt holes
+  version: 1.0
+  author: TIA
+  created: 2025-10-25
+
+parameters:
+  # Plate dimensions
+  plate_width: 150
+  plate_height: 150
+  plate_thickness: 8
+
+  # Bolt circle specs
+  bolt_count: 6
+  bolt_circle_diameter: 100
+  bolt_hole_diameter: 6.5  # For M6 bolts
+
+  # Center hole
+  center_hole_diameter: 40
+
+parts:
+  # Main mounting plate
+  plate:
+    primitive: box
+    size: ['${plate_width}', '${plate_height}', '${plate_thickness}']
+    origin: center
+
+  # Bolt hole template (will be patterned)
+  bolt_hole:
+    primitive: cylinder
+    radius: '${bolt_hole_diameter / 2}'
+    height: '${plate_thickness + 2}'  # Slightly taller for clean cut
+    origin: center
+
+  # Center hole
+  center_hole:
+    primitive: cylinder
+    radius: '${center_hole_diameter / 2}'
+    height: '${plate_thickness + 2}'
+    origin: center
+
+operations:
+  # Create bolt circle pattern
+  bolt_circle:
+    type: pattern
+    pattern: circular
+    input: bolt_hole
+    count: '${bolt_count}'
+    axis: Z
+    center: [0, 0, 0]
+    radius: '${bolt_circle_diameter / 2}'
+
+  # Subtract all holes from plate
+  final_plate:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract:
+      - center_hole
+      - bolt_circle_0
+      - bolt_circle_1
+      - bolt_circle_2
+      - bolt_circle_3
+      - bolt_circle_4
+      - bolt_circle_5
+
+export:
+  default_part: final_plate

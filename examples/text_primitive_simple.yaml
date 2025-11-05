@@ -1,0 +1,29 @@
+# Simple Text Primitive Example
+#
+# Demonstrates using text as a primitive for quick 3D text creation.
+# This is much simpler than the sketch-based approach when you just need text.
+#
+# Usage:
+#   python -m tiacad_core examples/text_primitive_simple.yaml
+#
+# Author: TIA
+# Version: 0.1.0-alpha (Phase 2)
+# Date: 2025-10-31
+
+parts:
+  hello_text:
+    primitive: text
+    text: "HELLO"
+    size: 20          # Font size in mm
+    height: 5         # Extrusion height in mm
+    font: "Liberation Sans"
+    style: bold
+    halign: center    # left, center, right
+    valign: center    # top, center, baseline, bottom
+
+# Export to STL
+export:
+  default_part: hello_text
+  formats:
+    - type: stl
+      path: text_primitive_simple.stl

@@ -1,0 +1,338 @@
+"""
+Tests for SelectorResolver class
+
+Tests selector resolution logic including:
+1. Simple selectors (">Z", "|X")
+2. Combinator parsing (and/or/not)
+3. Set operations
+4. Error handling
+"""
+
+import pytest
+import sys
+from pathlib import Path
+from unittest.mock import Mock, MagicMock
+
+# Mock CadQuery using pytest fixture to avoid global pollution
+@pytest.fixture(autouse=True, scope="module")
+def mock_cadquery_module():
+    """Temporarily mock cadquery for this module only"""
+    original = sys.modules.get('cadquery')
+    sys.modules['cadquery'] = MagicMock()
+    yield
+    # Cleanup
+    if original is not None:
+        sys.modules['cadquery'] = original
+    else:
+        sys.modules.pop('cadquery', None)
+
+from tiacad_core.selector_resolver import SelectorResolver, FeatureType, parse_selector
+
+
+class MockFeature:
+    """Mock for CadQuery Face/Edge"""
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, other):
+        return isinstance(other, MockFeature) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __repr__(self):
+        return f"MockFeature({self.name})"
+
+
+class MockGeometry:
+    """Mock for CadQuery Workplane"""
+    def __init__(self):
+        # Define mock features
+        self._all_faces = [
+            MockFeature("top"),     # >Z
+            MockFeature("bottom"),  # <Z
+            MockFeature("right"),   # >X
+            MockFeature("left"),    # <X
+            MockFeature("front"),   # >Y
+            MockFeature("back"),    # <Y
+        ]
+
+        self._all_edges = [
+            MockFeature("top_right_edge"),      # >Z and >X
+            MockFeature("top_left_edge"),       # >Z and <X
+            MockFeature("vertical_right_edge"), # |Z and >X
+            MockFeature("vertical_left_edge"),  # |Z and <X
+        ]
+
+    def faces(self, selector=None):
+        """Mock faces() method"""
+        result = Mock()
+
+        if selector is None:
+            result.vals = Mock(return_value=self._all_faces)
+            return result
+
+        # Simple selector mappings
+        selector_map = {
+            ">Z": [MockFeature("top")],
+            "<Z": [MockFeature("bottom")],
+            ">X": [MockFeature("right")],
+            "<X": [MockFeature("left")],
+            ">Y": [MockFeature("front")],
+            "<Y": [MockFeature("back")],
+        }
+
+        features = selector_map.get(selector, [])
+        result.vals = Mock(return_value=features)
+        return result
+
+    def edges(self, selector=None):
+        """Mock edges() method"""
+        result = Mock()
+
+        if selector is None:
+            result.vals = Mock(return_value=self._all_edges)
+            return result
+
+        # Simple selector mappings for edges
+        selector_map = {
+            ">Z": [MockFeature("top_right_edge"), MockFeature("top_left_edge")],
+            "|Z": [MockFeature("vertical_right_edge"), MockFeature("vertical_left_edge")],
+            ">X": [MockFeature("top_right_edge"), MockFeature("vertical_right_edge")],
+            "<X": [MockFeature("top_left_edge"), MockFeature("vertical_left_edge")],
+        }
+
+        features = selector_map.get(selector, [])
+        result.vals = Mock(return_value=features)
+        return result
+
+
+class TestParseSelectorHelper:
+    """Test the parse_selector helper function (no geometry needed)"""
+
+    def test_parse_simple_selector(self):
+        """Can parse simple selectors"""
+        result = parse_selector(">Z")
+        assert result['type'] == 'simple'
+        assert result['parts'] == ['>Z']
+
+    def test_parse_and_combinator(self):
+        """Can parse 'and' combinator"""
+        result = parse_selector("|Z and >X")
+        assert result['type'] == 'and'
+        assert result['parts'] == ['|Z', '>X']
+
+    def test_parse_or_combinator(self):
+        """Can parse 'or' combinator"""
+        result = parse_selector(">Z or <Z")
+        assert result['type'] == 'or'
+        assert result['parts'] == ['>Z', '<Z']
+
+    def test_parse_not_combinator(self):
+        """Can parse 'not' combinator"""
+        result = parse_selector("not <Z")
+        assert result['type'] == 'not'
+        assert result['parts'] == ['<Z']
+
+    def test_parse_with_extra_whitespace(self):
+        """Handles extra whitespace"""
+        result = parse_selector("  |Z  and  >X  ")
+        assert result['type'] == 'and'
+        assert result['parts'] == ['|Z', '>X']
+
+
+class TestSimpleSelectors:
+    """Test simple selector resolution"""
+
+    def test_simple_face_selector(self):
+        """Can resolve simple face selector"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        result = resolver.resolve(">Z", FeatureType.FACE)
+        assert len(result) == 1
+        assert result[0].name == "top"
+
+    def test_different_face_selectors(self):
+        """Can resolve different face directions"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        assert resolver.resolve(">Z", FeatureType.FACE)[0].name == "top"
+        assert resolver.resolve("<Z", FeatureType.FACE)[0].name == "bottom"
+        assert resolver.resolve(">X", FeatureType.FACE)[0].name == "right"
+        assert resolver.resolve("<X", FeatureType.FACE)[0].name == "left"
+
+    def test_simple_edge_selector(self):
+        """Can resolve simple edge selector"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        result = resolver.resolve("|Z", FeatureType.EDGE)
+        assert len(result) == 2  # Two vertical edges
+        names = [f.name for f in result]
+        assert "vertical_right_edge" in names
+        assert "vertical_left_edge" in names
+
+    def test_invalid_simple_selector(self):
+        """Raises error for invalid selector"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        with pytest.raises(ValueError, match="Invalid simple selector"):
+            resolver.resolve("invalid", FeatureType.FACE)
+
+
+class TestAndCombinator:
+    """Test 'and' combinator (intersection)"""
+
+    def test_and_combinator_edges(self):
+        """|Z and >X should give right vertical edges"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        result = resolver.resolve("|Z and >X", FeatureType.EDGE)
+
+        # |Z gives [vertical_right_edge, vertical_left_edge]
+        # >X gives [top_right_edge, vertical_right_edge]
+        # Intersection: [vertical_right_edge]
+
+        assert len(result) == 1
+        assert result[0].name == "vertical_right_edge"
+
+    def test_and_no_intersection(self):
+        """'and' with no overlap returns empty list"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        # >Z (top face) and <Z (bottom face) have no intersection
+        result = resolver.resolve(">Z and <Z", FeatureType.FACE)
+        assert len(result) == 0
+
+    def test_and_requires_two_parts(self):
+        """'and' requires exactly two parts"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        with pytest.raises(ValueError, match="Expected exactly one 'and'"):
+            resolver.resolve(">Z and <Z and >X", FeatureType.FACE)
+
+
+class TestOrCombinator:
+    """Test 'or' combinator (union)"""
+
+    def test_or_combinator_faces(self):
+        """>Z or <Z should give top and bottom faces"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        result = resolver.resolve(">Z or <Z", FeatureType.FACE)
+
+        # Should get both top and bottom
+        assert len(result) == 2
+        names = [f.name for f in result]
+        assert "top" in names
+        assert "bottom" in names
+
+    def test_or_with_overlap(self):
+        """'or' handles overlapping results correctly"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        # >Z or >Z should still give just one result (set behavior)
+        result = resolver.resolve(">Z or >Z", FeatureType.FACE)
+        assert len(result) == 1
+
+    def test_or_requires_two_parts(self):
+        """'or' requires exactly two parts"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        with pytest.raises(ValueError, match="Expected exactly one 'or'"):
+            resolver.resolve(">Z or <Z or >X", FeatureType.FACE)
+
+
+class TestNotCombinator:
+    """Test 'not' combinator (complement)"""
+
+    def test_not_combinator(self):
+        """'not <Z' should give all faces except bottom"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        result = resolver.resolve("not <Z", FeatureType.FACE)
+
+        # Should get all faces except bottom (5 faces)
+        assert len(result) == 5
+        names = [f.name for f in result]
+        assert "bottom" not in names
+        assert "top" in names
+        assert "right" in names
+
+    def test_not_simple_selector(self):
+        """'not' works with simple selectors"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        # not >Z should give all except top
+        result = resolver.resolve("not >Z", FeatureType.FACE)
+        assert len(result) == 5
+        names = [f.name for f in result]
+        assert "top" not in names
+
+    @pytest.mark.skip(reason="Double negation not yet supported - needs recursive parsing")
+    def test_not_double_negation(self):
+        """Double 'not' currently not supported (would need recursive parsing)"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        # This will fail with current implementation
+        # (we'd need to enhance parser for nested operations)
+        result = resolver.resolve("not not >Z", FeatureType.FACE)
+        # Would expect this to equal just ">Z" if supported
+        assert len(result) == 1
+
+
+class TestWhitespaceHandling:
+    """Test whitespace normalization"""
+
+    def test_extra_whitespace_in_and(self):
+        """Handles extra whitespace around 'and'"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        result = resolver.resolve("|Z   and   >X", FeatureType.EDGE)
+        assert len(result) == 1
+
+    def test_leading_trailing_whitespace(self):
+        """Handles leading/trailing whitespace"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        result = resolver.resolve("  >Z  ", FeatureType.FACE)
+        assert len(result) == 1
+        assert result[0].name == "top"
+
+
+class TestResolverInit:
+    """Test resolver initialization"""
+
+    def test_create_resolver(self):
+        """Can create resolver with geometry"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        assert resolver.geometry is geom
+
+    def test_resolver_stores_geometry(self):
+        """Resolver stores reference to geometry"""
+        geom = MockGeometry()
+        resolver = SelectorResolver(geom)
+
+        # Should be able to use geometry methods
+        faces = resolver.geometry.faces()
+        assert faces is not None
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])

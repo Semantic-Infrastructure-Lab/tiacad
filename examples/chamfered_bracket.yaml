@@ -1,0 +1,136 @@
+metadata:
+  name: L-Bracket with Chamfered Edges
+  description: Demonstrates chamfer finishing operation on a structural bracket
+  version: 1.0
+  author: TIA
+  created: 2025-10-25
+  phase: 2
+
+parameters:
+  # Base plate dimensions
+  base_width: 80
+  base_depth: 80
+  base_thickness: 6
+
+  # Vertical plate dimensions
+  vertical_height: 60
+  vertical_thickness: 6
+
+  # Mounting holes
+  hole_diameter: 6.5  # For M6 bolts
+  hole_spacing: 40
+
+  # Finishing
+  chamfer_size: 1.5  # Bevel edges for strength and aesthetics
+
+parts:
+  # Base plate (horizontal)
+  base_plate:
+    primitive: box
+    size: ['${base_width}', '${base_depth}', '${base_thickness}']
+    origin: corner
+
+  # Vertical plate (stands up from base)
+  vertical_plate:
+    primitive: box
+    size: ['${base_width}', '${vertical_thickness}', '${vertical_height}']
+    origin: corner
+
+  # Mounting holes in base
+  base_hole_1:
+    primitive: cylinder
+    radius: '${hole_diameter / 2}'
+    height: '${base_thickness + 2}'
+    origin: center
+
+  base_hole_2:
+    primitive: cylinder
+    radius: '${hole_diameter / 2}'
+    height: '${base_thickness + 2}'
+    origin: center
+
+  # Mounting holes in vertical plate
+  vertical_hole_1:
+    primitive: cylinder
+    radius: '${hole_diameter / 2}'
+    height: '${vertical_thickness + 2}'
+    origin: center
+
+  vertical_hole_2:
+    primitive: cylinder
+    radius: '${hole_diameter / 2}'
+    height: '${vertical_thickness + 2}'
+    origin: center
+
+operations:
+  # Position vertical plate at back edge of base
+  vertical_positioned:
+    type: transform
+    input: vertical_plate
+    transforms:
+      - translate: [0, '${base_depth}', '${base_thickness}']
+
+  # Combine base and vertical plates
+  bracket_body:
+    type: boolean
+    operation: union
+    inputs:
+      - base_plate
+      - vertical_positioned
+
+  # Position base holes
+  base_hole_1_positioned:
+    type: transform
+    input: base_hole_1
+    transforms:
+      - translate: ['${base_width / 2 - hole_spacing / 2}', '${base_depth / 2}', 0]
+
+  base_hole_2_positioned:
+    type: transform
+    input: base_hole_2
+    transforms:
+      - translate: ['${base_width / 2 + hole_spacing / 2}', '${base_depth / 2}', 0]
+
+  # Position vertical holes
+  vertical_hole_1_positioned:
+    type: transform
+    input: vertical_hole_1
+    transforms:
+      - translate: ['${base_width / 2 - hole_spacing / 2}', '${base_depth}', '${base_thickness + vertical_height / 2}']
+      - rotate:
+          angle: 90
+          axis: X
+          origin: ['${base_width / 2 - hole_spacing / 2}', '${base_depth}', '${base_thickness + vertical_height / 2}']
+
+  vertical_hole_2_positioned:
+    type: transform
+    input: vertical_hole_2
+    transforms:
+      - translate: ['${base_width / 2 + hole_spacing / 2}', '${base_depth}', '${base_thickness + vertical_height / 2}']
+      - rotate:
+          angle: 90
+          axis: X
+          origin: ['${base_width / 2 + hole_spacing / 2}', '${base_depth}', '${base_thickness + vertical_height / 2}']
+
+  # Subtract holes from bracket body
+  bracket_with_holes:
+    type: boolean
+    operation: difference
+    base: bracket_body
+    subtract:
+      - base_hole_1_positioned
+      - base_hole_2_positioned
+      - vertical_hole_1_positioned
+      - vertical_hole_2_positioned
+
+  # Chamfer top edges for strength and professional appearance
+  finished_bracket:
+    type: finishing
+    finish: chamfer
+    input: bracket_with_holes
+    length: '${chamfer_size}'
+    edges:
+      direction: Z  # Chamfer only vertical edges
+
+export:
+  default_part: bracket_with_holes  # Finishing modifies part in-place

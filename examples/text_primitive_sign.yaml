@@ -1,0 +1,46 @@
+# Text Primitive Warning Sign Example
+#
+# Demonstrates creating a warning sign with text primitive and base plate.
+# Shows how text primitives work with other primitives and parametric design.
+#
+# Usage:
+#   python -m tiacad_core examples/text_primitive_sign.yaml
+#
+# Author: TIA
+# Version: 0.1.0-alpha (Phase 2)
+# Date: 2025-10-31
+
+parameters:
+  warning_text: "⚠ DANGER ⚠"
+  text_size: 18
+  text_height: 3
+
+parts:
+  # Base plate
+  base_plate:
+    primitive: box
+    size: [120, 60, 5]
+    origin: center
+    color: yellow
+
+  # Warning text
+  warning:
+    primitive: text
+    text: "${warning_text}"
+    size: "${text_size}"
+    height: "${text_height}"
+    font: "Liberation Sans"
+    style: bold
+    halign: center
+    valign: center
+    color: black
+
+# Export to STL
+export:
+  formats:
+    - type: stl
+      part: base_plate
+      path: text_primitive_sign_base.stl
+    - type: stl
+      part: warning
+      path: text_primitive_sign_text.stl

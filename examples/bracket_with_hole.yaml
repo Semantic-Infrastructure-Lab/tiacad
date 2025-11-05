@@ -1,0 +1,53 @@
+schema_version: "2.0"
+
+metadata:
+  name: Bracket with Hole (Extrude with Subtract)
+  description: Demonstrates extrude with subtract operation in sketch (Phase 3)
+  version: 1.0
+  author: TIA
+  created: 2025-10-26
+  phase: 3
+
+parameters:
+  bracket_width: 50
+  bracket_height: 20
+  bracket_depth: 10
+  hole_radius: 5
+  hole_offset_x: 15
+
+sketches:
+  bracket_profile:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      # Main bracket body
+      - type: rectangle
+        width: ${bracket_width}
+        height: ${bracket_height}
+        center:
+          - 0
+          - 0
+
+      # Mounting hole
+      - type: circle
+        radius: ${hole_radius}
+        center:
+          - ${hole_offset_x}
+          - 0
+        operation: subtract
+
+parts:
+  _placeholder:
+    primitive: box
+    size: [1, 1, 1]
+    origin: center
+
+operations:
+  bracket:
+    type: extrude
+    sketch: bracket_profile
+    distance: ${bracket_depth}
+    direction: Z
+
+export:
+  default_part: bracket

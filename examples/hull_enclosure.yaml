@@ -1,0 +1,78 @@
+schema_version: "2.0"
+
+metadata:
+  name: Hull Enclosure (Organic Fairing)
+  description: Demonstrates hull operation to create smooth enclosure around mounting posts
+  version: 1.0
+  author: TIA
+  created: 2025-10-31
+  phase: 4A
+
+parameters:
+  post_spacing: 40
+  post_radius: 4
+  post_height: 15
+  corner_height: 20
+
+# Create four corner mounting posts
+parts:
+  # Bottom-left corner post
+  post_bl:
+    primitive: cylinder
+    radius: ${post_radius}
+    height: ${post_height}
+    origin: [0, 0, 0]
+
+  # Bottom-right corner post
+  post_br:
+    primitive: cylinder
+    radius: ${post_radius}
+    height: ${post_height}
+    origin:
+      - ${post_spacing}
+      - 0
+      - 0
+
+  # Top-left corner post
+  post_tl:
+    primitive: cylinder
+    radius: ${post_radius}
+    height: ${post_height}
+    origin:
+      - 0
+      - ${post_spacing}
+      - 0
+
+  # Top-right corner post (taller)
+  post_tr:
+    primitive: cylinder
+    radius: ${post_radius}
+    height: ${corner_height}
+    origin:
+      - ${post_spacing}
+      - ${post_spacing}
+      - 0
+
+  # Center elevated post
+  post_center:
+    primitive: cylinder
+    radius: ${post_radius}
+    height: ${corner_height}
+    origin:
+      - ${post_spacing / 2}
+      - ${post_spacing / 2}
+      - 0
+
+operations:
+  # Create organic hull enclosure around all posts
+  hull_enclosure:
+    type: hull
+    inputs:
+      - post_bl
+      - post_br
+      - post_tl
+      - post_tr
+      - post_center
+
+export:
+  default_part: hull_enclosure

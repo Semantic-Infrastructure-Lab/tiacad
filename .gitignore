@@ -1,0 +1,79 @@
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.prof
+
+# Bot testing logs
+logs/bot_results_*.json
+
+# Profiling data
+profile_before.prof
+profile_after.prof
+*.prof
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# --- Python / Build artifacts ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+build/
+dist/
+pip-wheel-metadata/
+
+# --- Environments ---
+.env
+.venv/
+venv/
+env/
+.venv.bak/
+
+# --- Logs & profiling ---
+*.log
+*.prof
+logs/
+coverage.json
+htmlcov/
+.test_results/
+bot_results_*.json
+
+# --- Coverage / Reports ---
+.coverage
+coverage.xml
+htmlcov/
+pytest.ini
+
+# --- Temporary data ---
+data/highscores.json
+data/entities/
+data/balance/
+*.tmp
+*.bak
+
+# --- IDEs / tools ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- AI / session artifacts ---
+session_summary*.md
+SESSION_SUMMARY_*.md
+*.har
+*.session
+*.debug
+

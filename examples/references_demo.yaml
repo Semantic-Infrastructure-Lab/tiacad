@@ -1,0 +1,55 @@
+metadata:
+  name: TiaCAD v3.0 References Demo
+  description: Demonstrates the new references system with spatial queries
+  version: 3.0
+  author: TIA
+  created: 2025-11-03
+
+parameters:
+  base_size: 50
+  offset_distance: 10
+
+parts:
+  base:
+    primitive: box
+    size: ['${base_size}', '${base_size}', 10]
+    origin: center
+
+  bracket:
+    primitive: box
+    size: [20, 20, 5]
+    origin: center
+
+# New references section - replaces named_points
+references:
+  # Absolute point reference
+  origin_point: [0, 0, 0]
+
+  # Face reference - extracts position and normal from geometry
+  top_face:
+    type: face
+    part: base
+    selector: ">Z"
+    at: center
+
+  # Derived reference with offset in local frame
+  mounting_point:
+    type: point
+    from: top_face
+    offset: ['${offset_distance}', 0, 0]
+
+  # Auto-generated part-local references are also available:
+  # - base.center
+  # - base.face_top, base.face_bottom, etc.
+  # - base.axis_x, base.axis_y, base.axis_z
+
+operations:
+  # Position bracket at mounting point
+  positioned_bracket:
+    type: transform
+    input: bracket
+    transforms:
+      - translate: mounting_point
+
+export:
+  default_part: positioned_bracket

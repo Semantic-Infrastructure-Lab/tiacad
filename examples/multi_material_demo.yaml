@@ -1,0 +1,63 @@
+schema_version: "2.0"
+
+metadata:
+  name: "Multi-Material 3D Printing Demo"
+  description: "Showcases TiaCAD's 3MF export with multiple materials and colors"
+  version: "1.0"
+  author: "TIA"
+
+# Define color palette for the project
+colors:
+  brand-blue: "#0066CC"
+  brand-orange: "#FF6600"
+  accent-green: "#00CC66"
+
+parts:
+  # Base plate - Aluminum material from library
+  base_plate:
+    primitive: box
+    size: [120, 100, 5]
+    material: aluminum
+
+  # Main body - Brand color
+  main_body:
+    primitive: box
+    size: [100, 80, 30]
+    color: brand-blue
+
+  # Accent strip - Different brand color
+  accent_strip:
+    primitive: box
+    size: [100, 10, 32]
+    color: brand-orange
+
+  # Handle - TPU flexible material
+  handle:
+    primitive: cylinder
+    radius: 8
+    height: 60
+    material: tpu-flexible
+
+  # Window - Transparent with RGBA
+  window:
+    primitive: box
+    size: [40, 30, 2]
+    color: [0.0, 0.5, 1.0, 0.3]  # Blue, 30% opaque
+
+  # Logo - Simple red
+  logo:
+    primitive: cylinder
+    radius: 5
+    height: 2
+    color: red
+
+  # Custom part with full PBR appearance
+  custom_knob:
+    primitive: sphere
+    radius: 12
+    appearance:
+      color: [0.9, 0.1, 0.1]
+      finish: glossy
+      metalness: 0.8
+      roughness: 0.2
+      opacity: 1.0

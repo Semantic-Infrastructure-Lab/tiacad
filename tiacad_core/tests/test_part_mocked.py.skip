@@ -1,0 +1,353 @@
+"""
+Tests for Part representation class (using mocks, no CadQuery required)
+
+These tests validate the Part class logic without requiring CadQuery installation.
+
+NOTE: This file uses pytest's monkeypatch to temporarily mock cadquery,
+ensuring no pollution of sys.modules for other tests.
+"""
+
+import pytest
+import sys
+from unittest.mock import Mock, MagicMock
+
+
+# Mock CadQuery for testing
+class MockBoundingBox:
+    def __init__(self, xmin=-5, xmax=5, ymin=-5, ymax=5, zmin=-5, zmax=5):
+        self.xmin = xmin
+        self.xmax = xmax
+        self.ymin = ymin
+        self.ymax = ymax
+        self.zmin = zmin
+        self.zmax = zmax
+
+
+class MockWorkplane:
+    def __init__(self, bbox=None):
+        self._bbox = bbox or MockBoundingBox()
+
+    def val(self):
+        mock_val = Mock()
+        mock_val.BoundingBox = Mock(return_value=self._bbox)
+        return mock_val
+
+
+# Use pytest autouse fixture to mock cadquery ONLY for this module
+@pytest.fixture(autouse=True, scope="module")
+def mock_cadquery():
+    """Mock cadquery for this test module only, with proper cleanup"""
+    original_cadquery = sys.modules.get('cadquery')
+    sys.modules['cadquery'] = MagicMock()
+
+    yield
+
+    # Cleanup: restore original or remove mock
+    if original_cadquery is not None:
+        sys.modules['cadquery'] = original_cadquery
+    else:
+        sys.modules.pop('cadquery', None)
+
+
+# Import after fixture is defined (will be mocked when tests run)
+from tiacad_core.part import Part, PartRegistry
+
+
+class TestPartBasics:
+    """Test basic Part creation and properties"""
+
+    def test_create_simple_part(self):
+        """Can create a part with minimal info"""
+        geom = MockWorkplane()
+        part = Part(name="test_box", geometry=geom)
+
+        assert part.name == "test_box"
+        assert part.geometry is not None
+        assert part.metadata == {}
+        assert part.transform_history == []
+
+    def test_part_with_metadata(self):
+        """Can store metadata"""
+        geom = MockWorkplane()
+        part = Part(
+            name="box",
+            geometry=geom,
+            metadata={
+                'material': 'PLA',
+                'color': 'red',
+                'infill': 0.2
+            }
+        )
+
+        assert part.metadata['material'] == 'PLA'
+        assert part.metadata['color'] == 'red'
+        assert part.metadata['infill'] == 0.2
+
+
+class TestPartPositionTracking:
+    """Test position tracking functionality"""
+
+    def test_update_position(self):
+        """Can update tracked position"""
+        geom = MockWorkplane()
+        part = Part(name="box", geometry=geom)
+
+        part.update_position((50, 25, 10))
+        assert part.current_position == (50, 25, 10)
+
+    def test_get_bounds(self):
+        """Can get bounding box"""
+        # Custom bounding box: 10x20x30
+        bbox = MockBoundingBox(
+            xmin=-5, xmax=5,   # 10 wide
+            ymin=-10, ymax=10,  # 20 deep
+            zmin=-15, zmax=15   # 30 tall
+        )
+        geom = MockWorkplane(bbox)
+        part = Part(name="box", geometry=geom)
+
+        bounds = part.get_bounds()
+        assert 'min' in bounds
+        assert 'max' in bounds
+
+        min_x, min_y, min_z = bounds['min']
+        max_x, max_y, max_z = bounds['max']
+
+        assert min_x == -5
+        assert max_x == 5
+        assert min_y == -10
+        assert max_y == 10
+        assert min_z == -15
+        assert max_z == 15
+
+    def test_get_center(self):
+        """Can calculate center from bounds"""
+        # Box from (-5,-10,-15) to (5,10,15)
+        # Center should be (0, 0, 0)
+        bbox = MockBoundingBox(
+            xmin=-5, xmax=5,
+            ymin=-10, ymax=10,
+            zmin=-15, zmax=15
+        )
+        geom = MockWorkplane(bbox)
+        part = Part(name="box", geometry=geom)
+
+        center = part.get_center()
+        assert center == (0.0, 0.0, 0.0)
+
+    def test_get_center_offset(self):
+        """Center calculation works for offset geometry"""
+        # Box from (10,20,30) to (30,40,50)
+        # Center should be (20, 30, 40)
+        bbox = MockBoundingBox(
+            xmin=10, xmax=30,
+            ymin=20, ymax=40,
+            zmin=30, zmax=50
+        )
+        geom = MockWorkplane(bbox)
+        part = Part(name="box", geometry=geom)
+
+        center = part.get_center()
+        assert center == (20.0, 30.0, 40.0)
+
+
+class TestTransformHistory:
+    """Test transform tracking"""
+
+    def test_add_transform(self):
+        """Can record transforms"""
+        geom = MockWorkplane()
+        part = Part(name="box", geometry=geom)
+
+        part.add_transform('translate', {'offset': [10, 0, 0]})
+
+        assert len(part.transform_history) == 1
+        assert part.transform_history[0]['type'] == 'translate'
+        assert part.transform_history[0]['params'] == {'offset': [10, 0, 0]}
+
+    def test_multiple_transforms(self):
+        """Can track multiple transforms"""
+        geom = MockWorkplane()
+        part = Part(name="box", geometry=geom)
+
+        part.add_transform('translate', {'to': [10, 0, 0]})
+        part.update_position((10, 0, 0))
+        part.add_transform('rotate', {'angle': 45, 'axis': 'Z'})
+
+        assert len(part.transform_history) == 2
+        assert part.transform_history[0]['type'] == 'translate'
+        assert part.transform_history[1]['type'] == 'rotate'
+
+        # Check position was tracked
+        assert part.transform_history[1]['position_before'] == (10, 0, 0)
+
+    def test_transform_history_includes_position(self):
+        """Transform history records position before transform"""
+        geom = MockWorkplane()
+        part = Part(name="box", geometry=geom)
+
+        initial_pos = part.current_position
+        part.add_transform('rotate', {'angle': 90, 'axis': 'Z'})
+
+        assert part.transform_history[0]['position_before'] == initial_pos
+
+
+class TestPartCloning:
+    """Test part cloning functionality"""
+
+    def test_clone_part(self):
+        """Can clone a part"""
+        geom = MockWorkplane()
+        part1 = Part(name="original", geometry=geom, metadata={'color': 'red'})
+        part1.add_transform('translate', {'to': [10, 0, 0]})
+
+        part2 = part1.clone('copy')
+
+        assert part2.name == 'copy'
+        assert part2.name != part1.name
+        assert part2.metadata == part1.metadata
+        assert part2.current_position == part1.current_position
+        assert len(part2.transform_history) == len(part1.transform_history)
+
+    def test_clone_independence(self):
+        """Cloned parts are independent"""
+        geom = MockWorkplane()
+        part1 = Part(name="original", geometry=geom)
+        part2 = part1.clone('copy')
+
+        # Modify clone
+        part2.metadata['modified'] = True
+        part2.add_transform('rotate', {'angle': 45})
+
+        # Original should be unchanged
+        assert 'modified' not in part1.metadata
+        assert len(part1.transform_history) == 0
+
+
+class TestPartRegistry:
+    """Test PartRegistry functionality"""
+
+    def test_create_registry(self):
+        """Can create empty registry"""
+        registry = PartRegistry()
+        assert len(registry) == 0
+
+    def test_add_part(self):
+        """Can add parts to registry"""
+        registry = PartRegistry()
+        geom = MockWorkplane()
+        part = Part(name="box", geometry=geom)
+
+        registry.add(part)
+        assert len(registry) == 1
+        assert 'box' in registry
+
+    def test_get_part(self):
+        """Can retrieve parts by name"""
+        registry = PartRegistry()
+        geom = MockWorkplane()
+        part = Part(name="box", geometry=geom)
+        registry.add(part)
+
+        retrieved = registry.get('box')
+        assert retrieved.name == 'box'
+        assert retrieved is part
+
+    def test_duplicate_name_error(self):
+        """Raises error on duplicate name"""
+        registry = PartRegistry()
+        geom1 = MockWorkplane()
+        geom2 = MockWorkplane()
+
+        part1 = Part(name="box", geometry=geom1)
+        part2 = Part(name="box", geometry=geom2)
+
+        registry.add(part1)
+
+        with pytest.raises(ValueError, match="already exists"):
+            registry.add(part2)
+
+    def test_get_nonexistent_part(self):
+        """Raises helpful error for missing part"""
+        registry = PartRegistry()
+
+        with pytest.raises(KeyError, match="not found"):
+            registry.get('nonexistent')
+
+    def test_helpful_error_message(self):
+        """Error message lists available parts"""
+        registry = PartRegistry()
+        geom = MockWorkplane()
+        registry.add(Part(name="box", geometry=geom))
+        registry.add(Part(name="cylinder", geometry=geom))
+
+        with pytest.raises(KeyError, match="box, cylinder"):
+            registry.get('nonexistent')
+
+    def test_list_parts(self):
+        """Can list all part names"""
+        registry = PartRegistry()
+        geom = MockWorkplane()
+
+        registry.add(Part(name="box", geometry=geom))
+        registry.add(Part(name="cylinder", geometry=geom))
+
+        parts = registry.list_parts()
+        assert len(parts) == 2
+        assert 'box' in parts
+        assert 'cylinder' in parts
+
+    def test_exists(self):
+        """Can check if part exists"""
+        registry = PartRegistry()
+        geom = MockWorkplane()
+        registry.add(Part(name="box", geometry=geom))
+
+        assert registry.exists('box')
+        assert not registry.exists('cylinder')
+
+    def test_clear(self):
+        """Can clear registry"""
+        registry = PartRegistry()
+        geom = MockWorkplane()
+        registry.add(Part(name="box", geometry=geom))
+
+        assert len(registry) == 1
+        registry.clear()
+        assert len(registry) == 0
+
+    def test_in_operator(self):
+        """Registry supports 'in' operator"""
+        registry = PartRegistry()
+        geom = MockWorkplane()
+        registry.add(Part(name="box", geometry=geom))
+
+        assert 'box' in registry
+        assert 'cylinder' not in registry
+
+
+class TestPartRepresentation:
+    """Test string representation"""
+
+    def test_repr(self):
+        """Part has useful string representation"""
+        geom = MockWorkplane()
+        part = Part(name="test_box", geometry=geom)
+
+        repr_str = repr(part)
+        assert 'test_box' in repr_str
+        assert 'Part' in repr_str
+
+    def test_repr_includes_transform_count(self):
+        """Repr shows number of transforms"""
+        geom = MockWorkplane()
+        part = Part(name="box", geometry=geom)
+        part.add_transform('translate', {})
+        part.add_transform('rotate', {})
+
+        repr_str = repr(part)
+        assert 'transforms=2' in repr_str
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])

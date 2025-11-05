@@ -1,0 +1,107 @@
+# Week 5 Feature Demo: Complete Assembly Example
+# Demonstrates combined use of align_to_face and frame-based rotation
+
+name: week5_assembly
+description: Build a simple mechanism using orientation-aware transforms
+
+parameters:
+  bracket_height: 25
+  gear_spacing: 10
+
+parts:
+  # Base platform
+  platform:
+    primitive: box
+    size: [120, 80, 15]
+    center: false
+    color: [0.7, 0.7, 0.7]  # Gray
+
+  # Motor mount bracket
+  motor_bracket:
+    primitive: box
+    size: [40, 30, ${bracket_height}]
+    center: true
+    color: [0.3, 0.6, 0.9]  # Blue
+
+  # Gear
+  drive_gear:
+    primitive: cylinder
+    radius: 12
+    height: 8
+    center: true
+    color: [0.9, 0.5, 0.2]  # Orange
+
+  # Shaft
+  shaft:
+    primitive: cylinder
+    radius: 3
+    height: ${bracket_height}
+    center: true
+    color: [0.5, 0.5, 0.5]  # Dark gray
+
+references:
+  # Mount point on platform
+  mount_point:
+    type: face
+    part: platform
+    selector: ">Z"  # Top face of platform
+
+  # Shaft axis for gear rotation
+  shaft_axis:
+    type: axis
+    from: [60, 40, 15]
+    to: [60, 40, 50]  # Vertical shaft axis
+
+operations:
+  # Step 1: Mount bracket to platform
+  mounted_bracket:
+    type: transform
+    input: motor_bracket
+    transforms:
+      - align_to_face:
+          face: mount_point
+          orientation: normal
+          offset: 12.5  # Half bracket height (sits on platform)
+      - translate:
+          offset: [60, 40, 0]  # Position at mount location
+
+  # Step 2: Position shaft vertically through bracket
+  positioned_shaft:
+    type: transform
+    input: shaft
+    transforms:
+      - translate:
+          offset: [60, 40, 15]  # Base of shaft on platform top
+      - translate:
+          offset: [0, 0, 12.5]  # Raise by half shaft height
+
+  # Step 3: Mount gear on shaft top
+  mounted_gear:
+    type: transform
+    input: drive_gear
+    transforms:
+      - translate:
+          offset: [60, 40, 40]  # Position at shaft top
+      - rotate:
+          angle: 0  # Initial position
+          around: shaft_axis
+
+  # Step 4: Rotate gear 45 degrees (simulating motion)
+  rotated_gear:
+    type: transform
+    input: mounted_gear
+    transforms:
+      - rotate:
+          angle: 45
+          around: shaft_axis  # Rotate around shaft axis
+
+# Expected result: A simple assembly with:
+# - Platform base
+# - Bracket mounted on platform top, standing upright
+# - Vertical shaft through bracket center
+# - Gear mounted on shaft top, rotated 45°
+
+# This demonstrates:
+# 1. align_to_face: Orienting bracket to stand on platform
+# 2. around parameter: Rotating gear around shaft axis
+# 3. Named references: Clean, readable transform specifications

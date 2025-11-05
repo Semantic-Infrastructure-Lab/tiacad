@@ -1,0 +1,41 @@
+schema_version: "2.0"
+
+metadata:
+  name: Simple Extrude Test
+  description: Basic test of sketch extrude functionality (Phase 3)
+  version: 1.0
+  author: TIA
+  created: 2025-10-26
+  phase: 3
+
+parameters:
+  width: 20
+  height: 10
+  depth: 5
+
+sketches:
+  simple_profile:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      - type: rectangle
+        width: ${width}
+        height: ${height}
+        center: [0, 0]
+
+# Note: parts section still required (can be empty or contain primitives)
+parts:
+  _placeholder:
+    primitive: box
+    size: [1, 1, 1]
+    origin: center
+
+operations:
+  extruded_part:
+    type: extrude
+    sketch: simple_profile
+    distance: ${depth}
+    direction: Z
+
+export:
+  default_part: extruded_part

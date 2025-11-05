@@ -1,0 +1,53 @@
+schema_version: "2.0"
+
+metadata:
+  name: Bottle (Revolve Operation)
+  description: Demonstrates revolve operation to create rotationally symmetric shape
+  version: 1.0
+  author: TIA
+  created: 2025-10-26
+  phase: 3
+
+parameters:
+  bottle_height: 30
+  bottle_radius: 10
+  neck_radius: 3
+  neck_height: 8
+
+sketches:
+  bottle_profile:
+    plane: XZ  # Profile in XZ plane, revolve around Z axis
+    origin: [0, 0, 0]
+    shapes:
+      # Bottom of bottle
+      - type: polygon
+        points:
+          - - 0
+            - 0
+          - - ${bottle_radius}
+            - 0
+          - - ${bottle_radius}
+            - ${bottle_height - neck_height}
+          - - ${neck_radius}
+            - ${bottle_height - neck_height}
+          - - ${neck_radius}
+            - ${bottle_height}
+          - - 0
+            - ${bottle_height}
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    size: [1, 1, 1]
+    origin: center
+
+operations:
+  bottle:
+    type: revolve
+    sketch: bottle_profile
+    axis: Z
+    angle: 360
+
+export:
+  default_part: bottle

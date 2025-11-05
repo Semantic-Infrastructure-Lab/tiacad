@@ -1,0 +1,45 @@
+schema_version: 2.0
+
+# Parametric product label example
+# Demonstrates text operations with parameters and multiple text elements
+
+metadata:
+  title: "Parametric Product Label"
+  description: "Device back plate with model and serial number"
+
+parameters:
+  model_name: "PRO-X1000"
+  serial_number: "SN2024-12345"
+  plate_width: 80
+  plate_height: 50
+
+parts:
+  back_plate:
+    primitive: box
+    size:
+      - ${plate_width}
+      - ${plate_height}
+      - 3
+    color: black
+
+operations:
+  model_text:
+    type: text
+    input: back_plate
+    text: "Model: ${model_name}"
+    face: ">Z"
+    position: [0, 15]
+    size: 5
+    depth: 0.8
+    style: bold
+    halign: center
+
+  serial_text:
+    type: text
+    input: model_text
+    text: "S/N: ${serial_number}"
+    face: ">Z"
+    position: [0, -15]
+    size: 4
+    depth: 0.6
+    halign: center

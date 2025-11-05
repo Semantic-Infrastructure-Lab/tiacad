@@ -1,0 +1,22 @@
+metadata:
+  name: Error Demo
+  author: TIA
+
+parameters:
+  width: 100
+
+parts:
+  plate:
+    primitive: box
+    size: [10, 20, 30]
+
+  hole:
+    primitive: cylinder
+    radius: 5
+
+operations:
+  bad_operation:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract: [nonexistent_part]  # This will cause an error!

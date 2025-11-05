@@ -1,0 +1,27 @@
+# TiaCAD Requirements
+
+# Core CAD engine
+cadquery>=2.6.0
+
+# YAML parsing
+pyyaml>=6.0.0
+simpleeval>=0.9.13
+
+# Scientific computing (for hull operations)
+scipy>=1.9.0
+numpy>=1.21.0
+trimesh>=4.0.0
+
+# 3MF Export (multi-material 3D printing)
+lib3mf>=2.3.0
+
+# Visualization (3D rendering to PNG)
+pyvista>=0.43.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Development
+black>=23.0.0
+mypy>=1.0.0

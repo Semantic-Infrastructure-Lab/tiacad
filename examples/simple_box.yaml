@@ -1,0 +1,17 @@
+# Simple Box Example
+# Demonstrates basic TiaCAD features
+
+metadata:
+  name: Simple Box
+  description: A basic box with parameters
+  version: "1.0"
+
+parameters:
+  width: 50
+  height: 30
+  depth: 20
+
+parts:
+  box:
+    primitive: box
+    size: ['${width}', '${depth}', '${height}']

@@ -1,0 +1,48 @@
+schema_version: 2.0
+
+# Multi-face text example
+# Demonstrates text on multiple faces of a cube
+
+metadata:
+  title: "Text on Multiple Faces"
+  description: "Cube with labels on different faces"
+
+parts:
+  cube:
+    primitive: box
+    size: [30, 30, 30]
+    color: blue
+
+operations:
+  top_label:
+    type: text
+    input: cube
+    text: "TOP"
+    face: ">Z"  # Top face
+    position: [0, 0]
+    size: 6
+    depth: 1.0
+    halign: center
+    valign: center
+
+  front_label:
+    type: text
+    input: top_label
+    text: "FRONT"
+    face: ">Y"  # Front face
+    position: [0, 0]
+    size: 6
+    depth: 1.0
+    halign: center
+    valign: center
+
+  right_label:
+    type: text
+    input: front_label
+    text: "RIGHT"
+    face: ">X"  # Right face
+    position: [0, 0]
+    size: 6
+    depth: 1.0
+    halign: center
+    valign: center

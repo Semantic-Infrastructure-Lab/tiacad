@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""
+TiaCAD CLI entry point
+
+Makes it easy to run: ./tiacad build examples/plate.yaml
+Or install with: pip install -e . (then just 'tiacad')
+"""
+
+import sys
+import os
+
+# Add tiacad_core to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from tiacad_core.cli import main
+
+if __name__ == '__main__':
+    sys.exit(main())

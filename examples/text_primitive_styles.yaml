@@ -1,0 +1,59 @@
+# Text Primitive Styles Example
+#
+# Demonstrates different font styles and alignments with text primitives.
+# Shows the versatility of the text primitive feature.
+#
+# Usage:
+#   python -m tiacad_core examples/text_primitive_styles.yaml
+#
+# Author: TIA
+# Version: 0.1.0-alpha (Phase 2)
+# Date: 2025-10-31
+
+parts:
+  # Regular style
+  regular_text:
+    primitive: text
+    text: "REGULAR"
+    size: 10
+    height: 3
+    style: regular
+    halign: center
+    color: blue
+
+  # Bold style
+  bold_text:
+    primitive: text
+    text: "BOLD"
+    size: 10
+    height: 3
+    style: bold
+    halign: center
+    color: red
+
+  # Italic style
+  italic_text:
+    primitive: text
+    text: "ITALIC"
+    size: 10
+    height: 3
+    style: italic
+    halign: center
+    color: green
+
+  # Different font
+  mono_text:
+    primitive: text
+    text: "MONOSPACE"
+    size: 8
+    height: 3
+    font: "Liberation Mono"
+    halign: center
+    color: gray
+
+# Export examples
+export:
+  formats:
+    - type: stl
+      part: bold_text
+      path: text_styles_bold.stl

@@ -1,0 +1,73 @@
+# Simplified Guitar Hanger
+# Demonstrates transforms and multi-part assembly
+
+metadata:
+  name: Simple Guitar Hanger
+  description: Wall-mounted guitar holder (simplified for Phase 1)
+  version: "1.0"
+  author: TIA
+
+parameters:
+  # Dimensions
+  plate_w: 100
+  plate_h: 80
+  plate_t: 12
+
+  beam_w: 32
+  beam_h: 24
+  beam_len: 75
+
+  arm_w: 22
+  arm_h: 16
+  arm_len: 70
+  arm_spacing: 72
+  arm_tilt_deg: 10
+
+parts:
+  # Wall plate
+  plate:
+    primitive: box
+    size: ['${plate_w}', '${plate_t}', '${plate_h}']
+
+  # Support beam
+  beam:
+    primitive: box
+    size: ['${beam_w}', '${beam_len}', '${beam_h}']
+
+  # Cradle arm (template)
+  arm:
+    primitive: box
+    size: ['${arm_w}', '${arm_len}', '${arm_h}']
+
+operations:
+  # Position and tilt left arm
+  left_arm:
+    type: transform
+    input: arm
+    transforms:
+      - translate:
+          to: [0, 37.5, 0]  # beam front center
+          offset:
+            - ${-arm_spacing / 2}
+            - ${arm_len / 2}
+            - 0
+      - rotate:
+          angle: '${arm_tilt_deg}'
+          axis: X
+          origin: [0, 37.5, 0]
+
+  # Position and tilt right arm
+  right_arm:
+    type: transform
+    input: arm
+    transforms:
+      - translate:
+          to: [0, 37.5, 0]
+          offset:
+            - ${arm_spacing / 2}
+            - ${arm_len / 2}
+            - 0
+      - rotate:
+          angle: '${arm_tilt_deg}'
+          axis: X
+          origin: [0, 37.5, 0]

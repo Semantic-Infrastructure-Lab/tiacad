@@ -1,0 +1,31 @@
+# Simple Text Example - Basic 3D Text
+#
+# Demonstrates creating basic 3D text using TiaCAD's text sketch shape.
+# The text is defined in a sketch and then extruded into 3D geometry.
+#
+# Usage:
+#   tiacad build examples/text_simple.yaml
+
+sketches:
+  hello_text:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      - type: text
+        text: "HELLO"
+        size: 20
+        font: "Liberation Sans"
+        style: bold
+        halign: center
+        valign: center
+
+operations:
+  text_3d:
+    type: extrude
+    sketch: hello_text
+    distance: 5
+    direction: Z
+
+exports:
+  - operation: text_3d
+    filename: text_simple.stl
