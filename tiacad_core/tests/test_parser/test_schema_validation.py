@@ -64,7 +64,7 @@ class TestSchemaValidator:
         """Complete valid YAML passes validation"""
         validator = SchemaValidator()
         data = {
-            "schema_version": "2.0",
+            "schema_version": "3.0",
             "metadata": {
                 "name": "Test Design",
                 "author": "Test Author"

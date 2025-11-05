@@ -1,17 +1,17 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://tiacad.org/schemas/v2.0/tiacad.json",
+  "$id": "https://tiacad.org/schemas/v3.0/tiacad.json",
   "title": "TiaCAD YAML Schema",
-  "description": "JSON Schema for TiaCAD v2.0 parametric CAD YAML files",
+  "description": "JSON Schema for TiaCAD v3.0 parametric CAD YAML files with unified spatial references. v3.0 introduces auto-generated part-local references (e.g., {part}.center, {part}.face_top, {part}.axis_z) that are available without explicit definition. Breaking change: 'named_points' section removed, replaced by 'references' section.",
   "type": "object",
   "properties": {
     "schema_version": {
       "description": "TiaCAD schema version",
       "oneOf": [
-        { "type": "string", "enum": ["2.0"] },
-        { "type": "number", "enum": [2.0] }
+        { "type": "string", "enum": ["3.0"] },
+        { "type": "number", "enum": [3.0] }
       ],
-      "default": "2.0"
+      "default": "3.0"
     },
     "metadata": {
       "type": "object",
@@ -51,6 +51,102 @@
           "roughness": { "type": "number", "minimum": 0, "maximum": 1 },
           "density": { "type": "number" }
         }
+      }
+    },
+    "references": {
+      "type": "object",
+      "description": "Unified spatial reference system (v3.0) - replaces named_points",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "array",
+            "description": "Simple point reference as [x, y, z] coordinates",
+            "items": { "type": ["number", "string"] },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          {
+            "type": "object",
+            "description": "Explicit point reference",
+            "properties": {
+              "type": { "type": "string", "enum": ["point"] },
+              "value": {
+                "type": "array",
+                "items": { "type": ["number", "string"] },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": ["type", "value"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Face reference with position and normal",
+            "properties": {
+              "type": { "type": "string", "enum": ["face"] },
+              "part": { "type": "string", "description": "Part name" },
+              "selector": { "type": "string", "description": "Face selector (e.g., '>Z', '<X')" },
+              "at": {
+                "type": "string",
+                "enum": ["center", "midpoint"],
+                "default": "center",
+                "description": "Point on face"
+              }
+            },
+            "required": ["type", "part", "selector"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Edge reference with position and tangent",
+            "properties": {
+              "type": { "type": "string", "enum": ["edge"] },
+              "part": { "type": "string", "description": "Part name" },
+              "selector": { "type": "string", "description": "Edge selector (e.g., '>Z and >Y')" },
+              "at": {
+                "type": "string",
+                "enum": ["midpoint", "start", "end"],
+                "default": "midpoint",
+                "description": "Point on edge"
+              }
+            },
+            "required": ["type", "part", "selector"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Axis reference through part",
+            "properties": {
+              "type": { "type": "string", "enum": ["axis"] },
+              "part": { "type": "string", "description": "Part name" },
+              "direction": {
+                "type": "string",
+                "enum": ["X", "Y", "Z"],
+                "description": "Axis direction"
+              }
+            },
+            "required": ["type", "part", "direction"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Derived reference with offset from another reference",
+            "properties": {
+              "type": { "type": "string", "enum": ["point"] },
+              "from": { "type": "string", "description": "Base reference name or auto-reference (e.g., 'base.face_top')" },
+              "offset": {
+                "type": "array",
+                "items": { "type": ["number", "string"] },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Offset in local frame of base reference"
+              }
+            },
+            "required": ["type", "from", "offset"],
+            "additionalProperties": false
+          }
+        ]
       }
     },
     "sketches": {
@@ -98,6 +194,67 @@
               "cone",
               "torus",
               "text"
+            ]
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Primitive-specific parameters (size, radius, height, etc.)",
+            "additionalProperties": true
+          },
+          "translate": {
+            "description": "Part-level translation (v3.0) using references or coordinates",
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Reference name or auto-reference (e.g., 'base.face_top')"
+              },
+              {
+                "type": "array",
+                "items": { "type": ["number", "string"] },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Direct coordinate [x, y, z]"
+              },
+              {
+                "type": "object",
+                "description": "Translate with 'to' target",
+                "properties": {
+                  "to": {
+                    "oneOf": [
+                      { "type": "string", "description": "Reference name or auto-reference" },
+                      {
+                        "type": "array",
+                        "items": { "type": ["number", "string"] },
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      {
+                        "type": "object",
+                        "description": "Inline reference definition",
+                        "properties": {
+                          "type": { "type": "string", "enum": ["point"] },
+                          "from": { "type": "string" },
+                          "offset": {
+                            "type": "array",
+                            "items": { "type": ["number", "string"] },
+                            "minItems": 3,
+                            "maxItems": 3
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "offset": {
+                    "type": "array",
+                    "items": { "type": ["number", "string"] },
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "description": "Optional offset from target"
+                  }
+                },
+                "required": ["to"],
+                "additionalProperties": false
+              }
             ]
           },
           "size": {
@@ -260,14 +417,18 @@
               "type": "object",
               "properties": {
                 "translate": {
-                  "description": "Translation specification",
+                  "description": "Translation specification (v3.0: supports references, arrays, or inline definitions)",
                   "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "Reference name or auto-reference (e.g., 'mounting_point', 'base.face_top')"
+                    },
                     {
                       "type": "array",
                       "items": { "type": ["number", "string"] },
                       "minItems": 3,
                       "maxItems": 3,
-                      "description": "Relative translation [dx, dy, dz]"
+                      "description": "Direct translation [dx, dy, dz]"
                     },
                     {
                       "type": "object",
@@ -276,14 +437,29 @@
                           "description": "Target position",
                           "oneOf": [
                             {
+                              "type": "string",
+                              "description": "Reference name or auto-reference (e.g., 'base.face_top')"
+                            },
+                            {
                               "type": "array",
                               "items": { "type": ["number", "string"] },
                               "minItems": 3,
                               "maxItems": 3
                             },
                             {
-                              "type": "string",
-                              "description": "Named position reference (e.g., 'part:box:center')"
+                              "type": "object",
+                              "description": "Inline reference with offset",
+                              "properties": {
+                                "type": { "type": "string", "enum": ["point"] },
+                                "from": { "type": "string" },
+                                "offset": {
+                                  "type": "array",
+                                  "items": { "type": ["number", "string"] },
+                                  "minItems": 3,
+                                  "maxItems": 3
+                                }
+                              },
+                              "required": ["from", "offset"]
                             }
                           ]
                         },
@@ -558,36 +734,69 @@
       }
     },
     "export": {
-      "type": "object",
-      "description": "Export configuration",
-      "properties": {
-        "default_part": {
-          "type": "string",
-          "description": "Part to export by default"
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Export configuration (v2.0 style)",
+          "properties": {
+            "default_part": {
+              "type": "string",
+              "description": "Part to export by default"
+            },
+            "formats": {
+              "type": "array",
+              "description": "Export formats",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["stl", "step", "obj", "3mf"]
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "Output file path"
+                  },
+                  "part": {
+                    "type": "string",
+                    "description": "Specific part to export"
+                  }
+                },
+                "required": ["type"]
+              }
+            }
+          }
         },
-        "formats": {
+        {
           "type": "array",
-          "description": "Export formats",
+          "description": "Simple export list (v3.0 style)",
           "items": {
             "type": "object",
             "properties": {
-              "type": {
+              "filename": {
                 "type": "string",
-                "enum": ["stl", "step", "obj", "3mf"]
+                "description": "Output filename"
               },
-              "path": {
-                "type": "string",
-                "description": "Output file path"
+              "parts": {
+                "oneOf": [
+                  { "type": "string", "description": "Single part name" },
+                  {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "List of part names"
+                  }
+                ]
               },
-              "part": {
+              "format": {
                 "type": "string",
-                "description": "Specific part to export"
+                "enum": ["stl", "step", "obj", "3mf"],
+                "description": "Export format (auto-detected from filename if not specified)"
               }
             },
-            "required": ["type"]
+            "required": ["filename"]
           }
         }
-      }
+      ]
     },
     "variants": {
       "type": "object",
