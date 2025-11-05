@@ -2,7 +2,7 @@
 OperationsBuilder - Build and execute operations from YAML specifications
 
 Handles transformation and boolean operations on Part objects using the existing
-TransformTracker, PointResolver, and BooleanBuilder components.
+TransformTracker, SpatialResolver, and BooleanBuilder components.
 
 Phase 1 Implementation:
 - Transform operations (translate, rotate)
@@ -14,8 +14,13 @@ Phase 2 Implementation:
 - Pattern operations (linear, circular, grid)
 - Finishing operations (fillet, chamfer)
 
+Phase 3 Implementation (v3.0):
+- Unified spatial references with SpatialResolver
+- Orientation-aware transforms
+- Reference-based positioning
+
 Author: TIA
-Version: 0.2.0-alpha (Phase 2)
+Version: 3.0.0-dev (Phase 2 - Parser Integration)
 """
 
 import logging

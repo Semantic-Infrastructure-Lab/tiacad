@@ -19,7 +19,6 @@ import cadquery as cq
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
-from ..point_resolver import PointResolver
 from ..selector_resolver import SelectorResolver
 
 logger = logging.getLogger(__name__)
@@ -70,7 +69,6 @@ class GussetBuilder:
         """
         self.registry = part_registry
         self.resolver = parameter_resolver
-        self.point_resolver = PointResolver(part_registry)
         self.selector_resolver = SelectorResolver(part_registry)
 
     def execute_gusset_operation(self, name: str, spec: Dict[str, Any]):
