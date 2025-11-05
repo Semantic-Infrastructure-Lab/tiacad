@@ -1,0 +1,54 @@
+# Auto-References Example: Cylinder Assembly
+#
+# Demonstrates using auto-references with cylinders to create
+# a shaft with caps on both ends.
+#
+# Auto-references used:
+# - shaft.face_top - Top circular face of cylinder
+# - shaft.face_bottom - Bottom circular face of cylinder
+# - shaft.axis_z - Vertical axis through shaft center
+
+parts:
+  # Main shaft
+  shaft:
+    primitive: cylinder
+    parameters:
+      radius: 5
+      height: 50
+
+  # Top cap - larger diameter, sits on top of shaft
+  top_cap:
+    primitive: cylinder
+    parameters:
+      radius: 8
+      height: 3
+    translate:
+      to: shaft.face_top  # Auto-reference to shaft's top face
+
+  # Bottom cap - larger diameter, sits on bottom of shaft
+  bottom_cap:
+    primitive: cylinder
+    parameters:
+      radius: 8
+      height: 3
+    translate:
+      to: shaft.face_bottom  # Auto-reference to shaft's bottom face
+
+  # Decorative sphere on top
+  sphere_top:
+    primitive: sphere
+    parameters:
+      radius: 6
+    translate:
+      to:
+        from: top_cap.face_top
+        offset: [0, 0, 0]  # Sits right on the cap
+
+# Export the assembly
+export:
+  - filename: auto_references_cylinder_assembly.step
+    parts: [shaft, top_cap, bottom_cap, sphere_top]
+
+# Result: A cylinder with caps on both ends and a sphere on top
+# - All parts perfectly aligned without manual coordinate calculation
+# - If shaft height changes, caps and sphere automatically adjust

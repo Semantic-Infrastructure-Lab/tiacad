@@ -1,0 +1,47 @@
+# Auto-References Example: Stacking Boxes
+#
+# Demonstrates using auto-generated face references to stack boxes
+# without manually calculating positions.
+#
+# Auto-references used:
+# - base.face_top - Top face of base box
+# - middle.face_top - Top face of middle box
+
+parts:
+  # Base layer - positioned at origin
+  base:
+    primitive: box
+    parameters:
+      width: 100
+      height: 20
+      depth: 50
+
+  # Middle layer - automatically positioned on top of base
+  middle:
+    primitive: box
+    parameters:
+      width: 80
+      height: 15
+      depth: 40
+    translate:
+      to: base.face_top  # Auto-reference to base's top face
+
+  # Top layer - automatically positioned on top of middle
+  top:
+    primitive: box
+    parameters:
+      width: 60
+      height: 10
+      depth: 30
+    translate:
+      to: middle.face_top  # Auto-reference to middle's top face
+
+# Export the stacked boxes
+export:
+  - filename: auto_references_box_stack.step
+    parts: [base, middle, top]
+
+# Result: Three boxes perfectly stacked without manual coordinate calculation
+# - base: centered at origin
+# - middle: sits perfectly on base.face_top
+# - top: sits perfectly on middle.face_top
