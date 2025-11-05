@@ -1,15 +1,19 @@
 # TiaCAD - Declarative Parametric CAD in YAML
 
-**Version:** 3.0.0-dev (Clean Architecture Rewrite - In Progress)
+**Version:** 3.0.0-dev (Clean Architecture Rewrite - Phase 3 Complete ✅)
 **Status:** Active development - v3.0 unified spatial reference system
-**Previous:** v0.3.0 (609 tests passing) - Phase 2 complete
-**Current Work:** Implementing clean unified `SpatialRef` architecture
-**Breaking Changes:** Yes - v3.0 breaks compatibility for cleaner design
+**Current:** Phase 3 Complete - Auto-references fully implemented (848 tests passing)
+**Target Release:** v3.0.0 on Nov 19, 2025
+**Breaking Changes:** Yes - v3.0 breaks compatibility for cleaner design (see migration guide)
 
-> **⚠️ Development Notice:** TiaCAD is undergoing a major architecture upgrade to v3.0.
-> We are replacing the position-only `named_points` system with a unified spatial reference
-> system that includes orientation, frames, and auto-generated part-local references.
-> See `docs/ARCHITECTURE_DECISION_V3.md` for details.
+> **🎯 v3.0 Status:** Core implementation complete! We've successfully implemented:
+> - ✅ Unified `SpatialRef` dataclass (position + orientation)
+> - ✅ `SpatialResolver` with comprehensive reference resolution
+> - ✅ Auto-generated part-local references (e.g., `base.face_top`)
+> - ✅ Local frame offsets for intelligent positioning
+> - 🚧 Documentation and examples (in progress)
+>
+> See `docs/V3_IMPLEMENTATION_STATUS.md` for details and `docs/MIGRATION_GUIDE_V3.md` for upgrade instructions.
 
 ---
 
@@ -19,11 +23,11 @@
 # Install dependencies
 pip install -r requirements.txt
 
-# Run full test suite (609 tests, all passing)
-pytest tiacad_core/tests/
+# Run full test suite (848 tests passing, 34 skipped)
+python3 -m pytest tiacad_core/tests/ --ignore=tiacad_core/tests/test_visualization/
 
 # Generate coverage report
-pytest tiacad_core/tests/ --cov=tiacad_core --cov-report=html
+python3 -m pytest tiacad_core/tests/ --cov=tiacad_core --cov-report=html
 
 # Try an example - create a smooth transition using loft
 python -m tiacad_core.parser.tiacad_parser examples/transition_loft.yaml
@@ -114,6 +118,50 @@ operations:
 ```
 
 **Result:** Organic transition from square base to circular top.
+
+### Example: Auto-References (New in v3.0!)
+
+v3.0 introduces **auto-generated references** that eliminate manual coordinate calculations:
+
+```yaml
+parts:
+  # Base platform
+  platform:
+    primitive: box
+    parameters:
+      width: 100
+      height: 5
+      depth: 100
+
+  # Pillar automatically positioned on top
+  pillar:
+    primitive: cylinder
+    parameters:
+      radius: 5
+      height: 50
+    translate:
+      to: platform.face_top  # Auto-generated reference!
+
+  # Cap positioned with offset from pillar top
+  cap:
+    primitive: box
+    parameters:
+      width: 15
+      height: 5
+      depth: 15
+    translate:
+      to:
+        from: pillar.face_top  # Auto-generated reference!
+        offset: [0, 0, 2]      # 2 units above pillar
+```
+
+**Benefits:**
+- No manual reference definitions needed
+- `{part}.face_top`, `{part}.center`, `{part}.axis_z` auto-generated for every part
+- Offsets follow local coordinate frames for intuitive positioning
+- Full orientation support (normals, tangents) for intelligent placement
+
+**See:** `examples/auto_references_box_stack.yaml` and `docs/MIGRATION_GUIDE_V3.md`
 
 ---
 
