@@ -1,3 +1,19 @@
+---
+project: tiacad
+type: software
+status: active
+beth_topics:
+- tiacad
+- software
+tags:
+- cad
+- yaml
+- parametric-design
+- 3d-modeling
+- development
+- code
+---
+
 # TiaCAD - Declarative Parametric CAD in YAML
 
 **Version:** 3.0.0-dev (Clean Architecture Rewrite - Phase 3 Complete ✅)
