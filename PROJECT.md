@@ -52,11 +52,12 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 **Test Suite:**
 - 896 tests collected
-- 893 passing (99.7%)
+- 894 passing (99.8%)
 - 2 skipped
-- 1 failing (minor encoding issue)
+- 0 failing
 
 **Components Complete:**
+- ✅ Named parameter syntax (width/height/depth for all primitives)
 - ✅ Spatial reference system (SpatialRef, Frame, SpatialResolver)
 - ✅ GeometryBackend abstraction (20 methods)
 - ✅ Complete YAML parser
@@ -202,16 +203,17 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 ## Contact & Sessions
 
 **Active Development Sessions:**
+- astral-gravity-1110 - v3.0 finalization: fix tests, commit, tag release
+- quantum-blackhole-1110 - Documentation cleanup & syntax migration
 - fafecoha-1103 - Assembly validator refactoring
 - magical-altar-1103 - Week 5 orientation transforms
 - pulsing-gravity-1102 - v3.0 week 2 completion
-- quantum-blackhole-1110 - Documentation cleanup & v3.0 finalization
 
 **Session Archive:** `/home/scottsen/src/tia/sessions/`
 
 ---
 
-**Project Status:** ✅ v3.0 Production Ready
-**Current Focus:** v3.0 Release & v3.1 Planning
+**Project Status:** ✅ v3.0 Production Ready (v3.0.0 tag created)
+**Current Focus:** v3.0 Release (2025-11-19) & v3.1 Planning
 **Last Updated:** 2025-11-10
-**Test Suite:** 896 tests (99.7% passing)
+**Test Suite:** 896 tests (894 passing, 99.8%)

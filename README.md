@@ -40,8 +40,8 @@ tags:
 # Install dependencies
 pip install -r requirements.txt
 
-# Run full test suite (848 tests passing, 34 skipped)
-python3 -m pytest tiacad_core/tests/ --ignore=tiacad_core/tests/test_visualization/
+# Run full test suite (894 tests passing, 2 skipped)
+python3 -m pytest tiacad_core/tests/
 
 # Generate coverage report
 python3 -m pytest tiacad_core/tests/ --cov=tiacad_core --cov-report=html
@@ -355,7 +355,7 @@ tiacad/
 
 ### Test Coverage
 
-**Overall:** 609 tests, 84% code coverage, 100% pass rate
+**Overall:** 896 tests, 84% code coverage, 99.8% pass rate (894 passing, 2 skipped)
 
 **By Component:**
 - Selector resolution: 100% coverage ✨
@@ -625,8 +625,8 @@ mypy tiacad_core/ --strict
 | Phase 1: Foundation | ✅ 100% | 6/6 | 131 tests | High | 100% |
 | Phase 2: Operations | ✅ 100% | 5/5 | 139 tests | High | 100% |
 | Phase 3: Sketch Ops | ✅ 100% | 7/7 | 124 tests | High | 100% |
-| **Quality & Tests** | ✅ Complete | - | 215 tests | 84% | 100% |
-| **Total** | **✅ Production** | **18/18** | **609 tests** | **84%** | **100%** |
+| **v3.0 Complete** | ✅ Complete | - | 502 tests | 95%+ | 99.8% |
+| **Total** | **✅ Production** | **18/18** | **896 tests** | **84%** | **99.8%** |
 
 ### Component Breakdown
 
@@ -726,10 +726,10 @@ Built with:
 
 ---
 
-**Last Updated:** 2025-10-26
-**Session:** acidic-overlord-1026 (comprehensive quality pass)
-**Status:** Phase 3 Complete - Production Ready with High Quality
-**Tests:** 609/609 passing (100% pass rate)
-**Coverage:** 84% (609 tests, 8567 statements)
+**Last Updated:** 2025-11-10
+**Session:** astral-gravity-1110 (v3.0 finalization & release)
+**Status:** v3.0 Complete - Production Ready, v3.0.0 Tag Created
+**Tests:** 894/896 passing (99.8% pass rate, 2 skipped)
+**Coverage:** 84% overall (95%+ for spatial reference system)
 **Quality:** Ruff + Pylint validated, comprehensive testing
-**Examples:** 9+ working YAML files → STL/3MF exports
+**Examples:** 24+ working YAML files → STL/3MF exports
