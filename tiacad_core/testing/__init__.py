@@ -35,10 +35,19 @@ from .orientation import (
     parts_aligned,
 )
 
+from .dimensions import (
+    get_dimensions,
+    get_volume,
+    get_surface_area,
+)
+
 __all__ = [
     'measure_distance',
     'get_bounding_box_dimensions',
     'get_orientation_angles',
     'get_normal_vector',
     'parts_aligned',
+    'get_dimensions',
+    'get_volume',
+    'get_surface_area',
 ]
