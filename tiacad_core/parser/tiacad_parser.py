@@ -454,3 +454,44 @@ def parse(file_path: str) -> TiaCADDocument:
         doc.export_stl("output.stl")
     """
     return TiaCADParser.parse_file(file_path)
+
+
+# CLI invocation detection and deprecation warning
+if __name__ == '__main__':
+    import sys
+    print("\n" + "=" * 70, file=sys.stderr)
+    print("⚠️  WARNING: Direct parser module invocation is DEPRECATED", file=sys.stderr)
+    print("=" * 70, file=sys.stderr)
+    print(file=sys.stderr)
+    print("You are using:", file=sys.stderr)
+    print("  python -m tiacad_core.parser.tiacad_parser file.yaml", file=sys.stderr)
+    print(file=sys.stderr)
+    print("Please use the modern CLI instead:", file=sys.stderr)
+    print("  tiacad build file.yaml", file=sys.stderr)
+    print(file=sys.stderr)
+    print("Benefits of the new CLI:", file=sys.stderr)
+    print("  ✅ Defaults to modern 3MF format (not legacy STL)", file=sys.stderr)
+    print("  ✅ Progress indicators and colored output", file=sys.stderr)
+    print("  ✅ Better error messages with context", file=sys.stderr)
+    print("  ✅ Multiple output formats: 3MF, STEP, STL", file=sys.stderr)
+    print("  ✅ Validation and info subcommands", file=sys.stderr)
+    print(file=sys.stderr)
+    print("=" * 70, file=sys.stderr)
+    print("\nContinuing with legacy STL output...\n", file=sys.stderr)
+
+    # Legacy behavior: parse and export to STL
+    if len(sys.argv) < 2:
+        print("Usage: python -m tiacad_core.parser.tiacad_parser <file.yaml>", file=sys.stderr)
+        sys.exit(1)
+
+    file_path = sys.argv[1]
+    try:
+        from pathlib import Path
+        doc = TiaCADParser.parse_file(file_path)
+        output_path = Path(file_path).stem + ".stl"
+        doc.export_stl(output_path)
+        print(f"✓ Exported to {output_path} (legacy STL format)", file=sys.stderr)
+        print(f"\nTIP: Use 'tiacad build {file_path}' for modern 3MF output\n", file=sys.stderr)
+    except Exception as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        sys.exit(1)

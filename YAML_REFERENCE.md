@@ -804,7 +804,7 @@ edges:
 
 ## Export
 
-Specify what to export as STL.
+Specify which part to export. The output format is determined by the CLI command.
 
 ### Simple Export
 
@@ -813,15 +813,31 @@ export:
   default_part: final_part   # Name of part to export
 ```
 
-### Export Settings (Future)
+### Supported Output Formats
 
-```yaml
-export:
-  default_part: assembly
-  format: stl                # Currently only STL
-  tolerance: 0.01            # (Future) Mesh quality
-  output_path: output/       # (Future) Custom path
+TiaCAD supports three output formats via the CLI:
+
+| Format | Extension | Use Case | Quality |
+|--------|-----------|----------|---------|
+| **3MF** | `.3mf` | 3D printing (multi-material, modern slicers) | ⭐⭐⭐⭐⭐ Recommended |
+| **STEP** | `.step` | CAD exchange, engineering, precise geometry | ⭐⭐⭐⭐ |
+| **STL** | `.stl` | Legacy 3D printing only | ⭐ (binary mesh) |
+
+### CLI Usage
+
+```bash
+# Default: outputs modern 3MF format
+tiacad build examples/bracket.yaml              # → bracket.3mf (recommended)
+
+# Specify output format with extension
+tiacad build examples/bracket.yaml -o bracket.step   # → STEP for CAD
+tiacad build examples/bracket.yaml -o bracket.stl    # → STL for legacy
+
+# Multi-material designs (3MF only)
+tiacad build examples/multi_material_demo.yaml  # → preserves colors/materials
 ```
+
+**Note:** The `format:` field in YAML is not used. Output format is determined by the file extension in the CLI command.
 
 ---
 

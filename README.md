@@ -47,10 +47,10 @@ python3 -m pytest tiacad_core/tests/
 python3 -m pytest tiacad_core/tests/ --cov=tiacad_core --cov-report=html
 
 # Try an example - create a smooth transition using loft
-python -m tiacad_core.parser.tiacad_parser examples/transition_loft.yaml
+tiacad build examples/transition_loft.yaml
 
-# See the generated STL in output/
-ls -lh output/
+# See the generated 3MF file (modern format)
+ls -lh *.3mf
 ```
 
 **What You Get:**
@@ -62,7 +62,7 @@ ls -lh output/
 - Pattern operations (linear, circular, grid)
 - Finishing operations (fillet, chamfer)
 - Schema validation with helpful error messages
-- Automatic STL and 3MF export
+- Automatic 3MF export (modern format) + STEP and STL support
 
 ---
 

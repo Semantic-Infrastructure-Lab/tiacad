@@ -1,0 +1,89 @@
+# ============================================================================
+# OUTPUT FORMAT DEMONSTRATION
+# ============================================================================
+#
+# This example demonstrates TiaCAD's three output formats.
+#
+# USAGE:
+#   # Default: Modern 3MF format (recommended for 3D printing)
+#   tiacad build examples/formats_demo.yaml
+#   → Creates: formats_demo.3mf
+#
+#   # STEP format (for CAD software, engineering)
+#   tiacad build examples/formats_demo.yaml -o formats_demo.step
+#   → Creates: formats_demo.step
+#
+#   # STL format (legacy 3D printing only)
+#   tiacad build examples/formats_demo.yaml -o formats_demo.stl
+#   → Creates: formats_demo.stl
+#
+# FORMAT COMPARISON:
+#
+#   3MF (Recommended):
+#     ✅ Multi-material/color support
+#     ✅ Compact file size
+#     ✅ Modern slicer support (PrusaSlicer, BambuStudio, Cura)
+#     ✅ Preserves assembly structure
+#     ✅ Industry standard for 3D printing
+#
+#   STEP (CAD Exchange):
+#     ✅ Precise parametric geometry
+#     ✅ CAD software compatibility (SolidWorks, Fusion 360, etc.)
+#     ✅ Engineering documentation
+#     ✅ No mesh approximation
+#
+#   STL (Legacy Only):
+#     ⚠️  Mesh approximation only
+#     ⚠️  No color/material support
+#     ⚠️  Large file sizes
+#     ⚠️  Use only for legacy compatibility
+#
+# ============================================================================
+
+metadata:
+  name: Output Format Demo
+  description: Simple part demonstrating all three output formats
+  version: 1.0
+  author: TIA
+
+parameters:
+  size: 50
+  height: 20
+  corner_radius: 5
+
+parts:
+  # Simple rounded box to demonstrate formats
+  demo_box:
+    primitive: box
+    size: ['${size}', '${size}', '${height}']
+    origin: center
+
+operations:
+  # Add rounded corners for visual interest
+  rounded:
+    type: finishing
+    finish: fillet
+    input: demo_box
+    radius: '${corner_radius}'
+    edges: all
+
+export:
+  default_part: rounded
+
+# ============================================================================
+# TRY IT YOURSELF:
+#
+# 1. Generate 3MF (default):
+#    tiacad build examples/formats_demo.yaml
+#
+# 2. Generate STEP for CAD:
+#    tiacad build examples/formats_demo.yaml -o demo.step
+#
+# 3. Generate STL for legacy printers:
+#    tiacad build examples/formats_demo.yaml -o demo.stl
+#
+# 4. Compare file sizes:
+#    ls -lh formats_demo.* demo.*
+#
+# You'll notice 3MF is typically smaller than STL while preserving more data!
+# ============================================================================

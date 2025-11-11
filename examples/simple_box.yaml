@@ -1,23 +1,48 @@
-# Simple Box Example
-# Demonstrates basic TiaCAD features
+# ============================================================================
+# SIMPLE BOX EXAMPLE
+# LEARNING OBJECTIVE: Learn the absolute basics of TiaCAD
+# DIFFICULTY: Beginner ⭐
+# ============================================================================
+#
+# WHAT THIS CREATES:
+# A simple rectangular box (50 x 30 x 20 mm) demonstrating the minimal
+# YAML structure needed for any TiaCAD model.
+#
+# KEY CONCEPTS:
+# - metadata: Optional documentation
+# - parameters: Reusable values
+# - parts: Define geometry (primitives or sketches)
+# - export: Specify what to output
+#
+# TRY IT:
+#   tiacad build examples/simple_box.yaml
+#
+# OUTPUT:
+#   simple_box.3mf (modern 3D printing format)
+#
+# EXPERIMENT:
+# - Change width to 100 (makes a wider box)
+# - Change height to 50 (makes a taller box)
+# - Change depth to 10 (makes a shallower box)
+# ============================================================================
 
 metadata:
   name: Simple Box
-  description: A basic box with parameters
+  description: Basic box primitive demonstrating TiaCAD fundamentals
   version: "1.0"
 
+# Parameters make your design configurable
 parameters:
-  width: 50
-  height: 30
-  depth: 20
+  width: 50   # X dimension
+  height: 30  # Y dimension
+  depth: 20   # Z dimension (vertical)
 
 parts:
   box:
     primitive: box
-    parameters:
+    # Simple size syntax: [X, Y, Z]
+    size: ['${width}', '${height}', '${depth}']
+    origin: center  # Center the box at (0, 0, 0)
 
-      width: '${width}'
-
-      height: '${depth}'
-
-      depth: '${height}'
+export:
+  default_part: box
