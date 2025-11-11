@@ -29,7 +29,16 @@ from .measurements import (
     get_bounding_box_dimensions,
 )
 
+from .orientation import (
+    get_orientation_angles,
+    get_normal_vector,
+    parts_aligned,
+)
+
 __all__ = [
     'measure_distance',
     'get_bounding_box_dimensions',
+    'get_orientation_angles',
+    'get_normal_vector',
+    'parts_aligned',
 ]
