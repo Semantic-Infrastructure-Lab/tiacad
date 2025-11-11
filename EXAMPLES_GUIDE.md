@@ -64,7 +64,7 @@ export:
 ### Run It
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/simple_box.yaml
+tiacad build examples/simple_box.yaml
 ```
 
 ### Output
@@ -160,7 +160,7 @@ operations:
 ### Run It
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/simple_guitar_hanger.yaml
+tiacad build examples/simple_guitar_hanger.yaml
 ```
 
 ### Output
@@ -279,7 +279,7 @@ operations:
 ### Run It
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/guitar_hanger_with_holes.yaml
+tiacad build examples/guitar_hanger_with_holes.yaml
 ```
 
 ### Output
@@ -422,7 +422,7 @@ operations:
 ### Run It
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/mounting_plate_with_bolt_circle.yaml
+tiacad build examples/mounting_plate_with_bolt_circle.yaml
 ```
 
 ### Output
@@ -533,7 +533,7 @@ Other options:
 ### Run It
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/rounded_mounting_plate.yaml
+tiacad build examples/rounded_mounting_plate.yaml
 ```
 
 ### Output
@@ -716,7 +716,7 @@ Moves vertical plate to stand up from back edge.
 ### Run It
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/chamfered_bracket.yaml
+tiacad build examples/chamfered_bracket.yaml
 ```
 
 ### Output

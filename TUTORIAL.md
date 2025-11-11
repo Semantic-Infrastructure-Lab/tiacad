@@ -76,14 +76,14 @@ export:
 ### Step 2: Generate the Model
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/my_first_box.yaml
+tiacad build examples/my_first_box.yaml
 ```
 
 ### Step 3: Check the Output
 
 ```bash
-ls -lh output/
-# You should see: my_first_box.stl
+ls -lh
+# You should see: my_first_box.3mf (modern 3D printing format)
 ```
 
 **Congratulations!** You just created your first 3D model in YAML! 🎉
@@ -92,7 +92,8 @@ ls -lh output/
 
 - **metadata**: Documentation (optional but helpful)
 - **parts**: Define a box 100x100x10mm centered at origin
-- **export**: Tell TiaCAD what to save as STL
+- **export**: Tell TiaCAD what part to export
+- **CLI**: `tiacad build` defaults to 3MF (modern format for 3D printing)
 
 ---
 
@@ -127,7 +128,7 @@ export:
 ### Step 2: Test It
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/my_first_box.yaml
+tiacad build examples/my_first_box.yaml
 ```
 
 Same result, but now you can change all three dimensions by editing one place!
@@ -222,7 +223,7 @@ export:
 ### Step 3: Generate and View
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/my_first_box.yaml
+tiacad build examples/my_first_box.yaml
 ```
 
 You now have a box with a hole in the center!
@@ -302,7 +303,7 @@ export:
 ### Step 2: Generate
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/my_mounting_plate.yaml
+tiacad build examples/my_mounting_plate.yaml
 ```
 
 ### Understanding Patterns
@@ -422,7 +423,7 @@ export:
 ### Step 2: Generate
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/my_mounting_plate.yaml
+tiacad build examples/my_mounting_plate.yaml
 ```
 
 The top edges are now beautifully rounded!
@@ -694,7 +695,7 @@ export:  # Output
 ### Enable Verbose Output
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/my_file.yaml --verbose
+tiacad build examples/my_file.yaml --verbose
 ```
 
 ### Check Individual Parts
@@ -742,19 +743,19 @@ This tells you:
 
 ```bash
 # Simple box
-python -m tiacad_core.parser.tiacad_parser examples/simple_box.yaml
+tiacad build examples/simple_box.yaml
 
 # Guitar hanger (transforms)
-python -m tiacad_core.parser.tiacad_parser examples/simple_guitar_hanger.yaml
+tiacad build examples/simple_guitar_hanger.yaml
 
 # Mounting plate (patterns)
-python -m tiacad_core.parser.tiacad_parser examples/mounting_plate_with_bolt_circle.yaml
+tiacad build examples/mounting_plate_with_bolt_circle.yaml
 
 # Rounded plate (finishing)
-python -m tiacad_core.parser.tiacad_parser examples/rounded_mounting_plate.yaml
+tiacad build examples/rounded_mounting_plate.yaml
 
 # L-bracket (chamfer)
-python -m tiacad_core.parser.tiacad_parser examples/chamfered_bracket.yaml
+tiacad build examples/chamfered_bracket.yaml
 ```
 
 ### Build Real Projects

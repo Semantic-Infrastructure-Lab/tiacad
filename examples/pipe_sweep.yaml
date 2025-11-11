@@ -32,15 +32,17 @@ sketches:
           - 0
         operation: subtract
 
+# ============================================================================
+# NOTE: The parts section is currently required even for sketch-only designs.
+# We use a minimal placeholder part that will be ignored during export.
+# The actual geometry comes from the sweep operation below.
+# ============================================================================
 parts:
   _placeholder:
     primitive: box
     parameters:
-
       width: 1
-
       height: 1
-
       depth: 1
     origin: center
 
