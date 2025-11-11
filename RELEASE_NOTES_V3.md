@@ -349,7 +349,7 @@ v3.0 maintains performance parity with v0.3.0:
 - Reference resolution: ~same (caching added)
 - Memory usage: ~same
 - Parse time: ~same
-- Test execution: ~same (848 tests in <10s)
+- Test execution: ~same (896 tests in ~75s)
 
 **Optimizations:**
 - Reference caching in SpatialResolver
@@ -503,7 +503,7 @@ TiaCAD v3.0 represents a major step forward in clean, intuitive CAD design:
 ✅ **Unified System** - One reference system for points, faces, edges, axes
 ✅ **Local Frames** - Intuitive positioning with local offsets
 ✅ **Better Architecture** - Clean separation of concerns
-✅ **Full Tests** - 848 tests, 95%+ coverage
+✅ **Full Tests** - 896 tests, 95%+ coverage
 ✅ **Great Docs** - Comprehensive guides and examples
 
 **Upgrade today to experience the future of declarative CAD!**
