@@ -975,3 +975,121 @@ def test_missing_pattern_field(builder):
         builder.execute_pattern_operation('no_pattern', spec)
 
     assert "missing 'pattern' field" in str(exc_info.value)
+
+
+# ============================================================================
+# Grid Pattern Backward Compatibility Tests (6 tests)
+# ============================================================================
+
+def test_grid_legacy_count_api(builder, registry):
+    """Test grid pattern with legacy count_x/count_y API."""
+    spec = {
+        'pattern': 'grid',
+        'input': 'hole',
+        'count_x': 3,  # Legacy API
+        'count_y': 4,
+        'spacing': [25, 20, 0]  # Modern API can mix
+    }
+
+    # Should emit deprecation warning but still work
+    parts = builder.execute_pattern_operation('legacy_grid', spec)
+
+    # Verify it works the same as modern API
+    assert len(parts) == 12  # 3 * 4
+
+    # Verify positions
+    part_0_0 = registry.get('legacy_grid_0_0')
+    part_1_2 = registry.get('legacy_grid_1_2')
+
+    assert part_0_0.current_position == (0, 0, 0)
+    assert part_1_2.current_position == (25, 40, 0)  # 1*25, 2*20
+
+
+def test_grid_legacy_spacing_api(builder, registry):
+    """Test grid pattern with legacy spacing_x/y/z API."""
+    spec = {
+        'pattern': 'grid',
+        'input': 'hole',
+        'count': [2, 2],  # Modern API
+        'spacing_x': 10,  # Legacy API
+        'spacing_y': 15,
+        'spacing_z': 5
+    }
+
+    parts = builder.execute_pattern_operation('legacy_spacing', spec)
+
+    assert len(parts) == 4
+    part_1_1 = registry.get('legacy_spacing_1_1')
+    assert part_1_1.current_position == (10, 15, 5)
+
+
+def test_grid_legacy_spacing_without_z(builder, registry):
+    """Test grid pattern with legacy spacing_x/y API (spacing_z optional)."""
+    spec = {
+        'pattern': 'grid',
+        'input': 'hole',
+        'count': [2, 2],
+        'spacing_x': 10,
+        'spacing_y': 15
+        # spacing_z omitted, should default to 0
+    }
+
+    parts = builder.execute_pattern_operation('legacy_no_z', spec)
+
+    assert len(parts) == 4
+    part_1_1 = registry.get('legacy_no_z_1_1')
+    assert part_1_1.current_position == (10, 15, 0)  # Z defaults to 0
+
+
+def test_grid_fully_legacy_api(builder, registry):
+    """Test grid pattern with fully legacy API (both count and spacing)."""
+    spec = {
+        'pattern': 'grid',
+        'input': 'marker',
+        'count_x': 2,
+        'count_y': 3,
+        'spacing_x': 20,
+        'spacing_y': 25,
+        'spacing_z': 10
+    }
+
+    parts = builder.execute_pattern_operation('fully_legacy', spec)
+
+    assert len(parts) == 6  # 2 * 3
+    part_1_2 = registry.get('fully_legacy_1_2')
+    assert part_1_2.current_position == (20, 50, 10)  # 1*20, 2*25, 10
+
+
+def test_grid_helpful_error_for_missing_count(builder):
+    """Test that error message mentions both modern and legacy APIs."""
+    spec = {
+        'pattern': 'grid',
+        'input': 'hole',
+        # Missing count entirely
+        'spacing': [10, 10, 0]
+    }
+
+    with pytest.raises(PatternBuilderError) as exc:
+        builder.execute_pattern_operation('bad', spec)
+
+    error_msg = str(exc.value)
+    assert "count: [rows, cols]" in error_msg
+    assert "count_x" in error_msg  # Mentions legacy option
+    assert "count_y" in error_msg
+
+
+def test_grid_helpful_error_for_missing_spacing(builder):
+    """Test that error message mentions both modern and legacy APIs."""
+    spec = {
+        'pattern': 'grid',
+        'input': 'hole',
+        'count': [2, 2]
+        # Missing spacing entirely
+    }
+
+    with pytest.raises(PatternBuilderError) as exc:
+        builder.execute_pattern_operation('bad', spec)
+
+    error_msg = str(exc.value)
+    assert "spacing: [dx, dy, dz]" in error_msg
+    assert "spacing_x/y/z" in error_msg  # Mentions legacy option

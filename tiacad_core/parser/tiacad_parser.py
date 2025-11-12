@@ -55,6 +55,7 @@ class TiaCADDocument:
                  parts: PartRegistry,
                  operations: Optional[Dict[str, Any]] = None,
                  references: Optional[Dict[str, Any]] = None,
+                 export_config: Optional[Dict[str, Any]] = None,
                  line_tracker: Optional[LineTracker] = None,
                  yaml_string: Optional[str] = None,
                  file_path: Optional[str] = None):
@@ -67,6 +68,7 @@ class TiaCADDocument:
             parts: Registry with all parts (primitives + operations)
             operations: Optional operations spec for reference
             references: Optional spatial references dictionary (name -> spec)
+            export_config: Optional export configuration (default_part, formats, etc.)
             line_tracker: Optional YAML line tracker for error reporting
             yaml_string: Optional original YAML string for error context
             file_path: Optional file path for error messages
@@ -76,6 +78,7 @@ class TiaCADDocument:
         self.parts = parts
         self.operations = operations or {}
         self.references = references or {}
+        self.export_config = export_config or {}
         self.line_tracker = line_tracker
         self.yaml_string = yaml_string
         self.file_path = file_path
@@ -101,19 +104,23 @@ class TiaCADDocument:
 
         Args:
             output_path: Path to output STL file
-            part_name: Part to export (if None, exports the last operation result)
+            part_name: Part to export (if None, uses export config or last operation)
 
         Raises:
             TiaCADParserError: If export fails
         """
         # Determine which part to export
         if part_name is None:
-            # Get last part from operations (convention: final result)
-            if self.operations:
-                part_name = list(self.operations.keys())[-1]
-            else:
-                # No operations, export first part
-                part_name = self.parts.list_parts()[0]
+            # PRIORITY 1: Check export config (explicit user intent)
+            part_name = self.export_config.get('default_part')
+
+            if part_name is None:
+                # PRIORITY 2: Get last part from operations (convention: final result)
+                if self.operations:
+                    part_name = list(self.operations.keys())[-1]
+                else:
+                    # PRIORITY 3: No operations, export first part
+                    part_name = self.parts.list_parts()[0]
 
         try:
             part = self.parts.get(part_name)
@@ -130,16 +137,22 @@ class TiaCADDocument:
 
         Args:
             output_path: Path to output STEP file
-            part_name: Part to export (if None, exports the last operation result)
+            part_name: Part to export (if None, uses export config or last operation)
 
         Raises:
             TiaCADParserError: If export fails
         """
         if part_name is None:
-            if self.operations:
-                part_name = list(self.operations.keys())[-1]
-            else:
-                part_name = self.parts.list_parts()[0]
+            # PRIORITY 1: Check export config (explicit user intent)
+            part_name = self.export_config.get('default_part')
+
+            if part_name is None:
+                # PRIORITY 2: Get last part from operations (convention: final result)
+                if self.operations:
+                    part_name = list(self.operations.keys())[-1]
+                else:
+                    # PRIORITY 3: No operations, export first part
+                    part_name = self.parts.list_parts()[0]
 
         try:
             part = self.parts.get(part_name)
@@ -340,6 +353,7 @@ class TiaCADParser:
             parts_spec = yaml_data.get('parts', {})
             sketches_spec = yaml_data.get('sketches', {})
             operations_spec = yaml_data.get('operations', {})
+            export_spec = yaml_data.get('export', {})
 
             # Validate required sections
             if not parts_spec:
@@ -399,6 +413,16 @@ class TiaCADParser:
                 registry = ops_builder.execute_operations(operations_spec)
                 logger.info(f"Executed {len(operations_spec)} operations")
 
+            # Phase 3.5: Parse export configuration (respects explicit user intent)
+            export_config = {
+                'default_part': export_spec.get('default_part'),
+                'formats': export_spec.get('formats', []),
+                'color_mode': export_spec.get('color_mode', 'realistic'),
+                'default_color': export_spec.get('default_color', [0.7, 0.7, 0.7])
+            }
+            if export_config['default_part']:
+                logger.info(f"Export config: default_part={export_config['default_part']}")
+
             # Create document
             doc = TiaCADDocument(
                 metadata=metadata,
@@ -406,6 +430,7 @@ class TiaCADParser:
                 parts=registry,
                 operations=operations_spec,
                 references=resolved_references,
+                export_config=export_config,
                 line_tracker=line_tracker,
                 yaml_string=yaml_string,
                 file_path=file_path

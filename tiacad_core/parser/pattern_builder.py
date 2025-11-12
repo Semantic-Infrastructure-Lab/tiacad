@@ -405,16 +405,45 @@ class PatternBuilder:
                 f"Grid pattern '{name}' missing 'input' field",
                 operation_name=name
             )
+
+        # Handle count field with backward compatibility for legacy API
         if 'count' not in spec:
-            raise PatternBuilderError(
-                f"Grid pattern '{name}' missing 'count' field",
-                operation_name=name
-            )
+            # Try legacy API (count_x, count_y)
+            if 'count_x' in spec and 'count_y' in spec:
+                count_x = spec['count_x']
+                count_y = spec['count_y']
+                spec['count'] = [count_x, count_y]
+                logger.warning(
+                    f"Grid pattern '{name}' uses deprecated 'count_x' and 'count_y'. "
+                    f"Please use 'count: [{count_x}, {count_y}]' instead. "
+                    f"Legacy API will be removed in v4.0."
+                )
+            else:
+                raise PatternBuilderError(
+                    f"Grid pattern '{name}' missing 'count' field. "
+                    f"Use 'count: [rows, cols]' (or legacy 'count_x' and 'count_y')",
+                    operation_name=name
+                )
+
+        # Handle spacing field with backward compatibility for legacy API
         if 'spacing' not in spec:
-            raise PatternBuilderError(
-                f"Grid pattern '{name}' missing 'spacing' field",
-                operation_name=name
-            )
+            # Try legacy API (spacing_x, spacing_y, spacing_z)
+            if 'spacing_x' in spec and 'spacing_y' in spec:
+                spacing_x = spec['spacing_x']
+                spacing_y = spec['spacing_y']
+                spacing_z = spec.get('spacing_z', 0)
+                spec['spacing'] = [spacing_x, spacing_y, spacing_z]
+                logger.warning(
+                    f"Grid pattern '{name}' uses deprecated 'spacing_x/y/z'. "
+                    f"Please use 'spacing: [{spacing_x}, {spacing_y}, {spacing_z}]' instead. "
+                    f"Legacy API will be removed in v4.0."
+                )
+            else:
+                raise PatternBuilderError(
+                    f"Grid pattern '{name}' missing 'spacing' field. "
+                    f"Use 'spacing: [dx, dy, dz]' (or legacy 'spacing_x/y/z')",
+                    operation_name=name
+                )
 
         input_name = spec['input']
         count = spec['count']
