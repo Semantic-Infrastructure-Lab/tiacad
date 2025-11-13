@@ -93,12 +93,14 @@ operations:
 
   # Combine frame with base
   base_with_frame:
-    type: union
+    type: boolean
+    operation: union
     inputs: [base_plate, frame_3d]
 
   # Add text on top
   final_label:
-    type: union
+    type: boolean
+    operation: union
     inputs: [base_with_frame, text_3d]
 
 exports:

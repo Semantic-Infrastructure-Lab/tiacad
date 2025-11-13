@@ -85,19 +85,25 @@ operations:
 
   # Carve the text into the base (2.5D carving!)
   sign_with_product:
-    type: difference
+    type: boolean
+    operation: difference
     base: sign_base
-    subtract: product_carving
+    subtract:
+      - product_carving
 
   sign_with_version:
-    type: difference
+    type: boolean
+    operation: difference
     base: sign_with_product
-    subtract: version_carving
+    subtract:
+      - version_carving
 
   final_sign:
-    type: difference
+    type: boolean
+    operation: difference
     base: sign_with_version
-    subtract: serial_carving
+    subtract:
+      - serial_carving
 
 exports:
   - operation: final_sign

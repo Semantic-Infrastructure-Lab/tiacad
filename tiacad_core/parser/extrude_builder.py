@@ -270,11 +270,19 @@ class ExtrudeBuilder:
                     base_wp = base_wp.center(sketch.origin[1], sketch.origin[2])
 
             # Build and extrude first additive shape
-            base_wp = add_shapes[0].build(base_wp)
-            if taper == 0:
-                geometry = base_wp.extrude(distance)
+            # Special case for Text2D: it creates 3D geometry directly
+            from tiacad_core.sketch import Text2D
+            if isinstance(add_shapes[0], Text2D):
+                # Text already creates 3D geometry at the specified distance
+                base_wp = add_shapes[0].build(base_wp, extrusion_distance=distance)
+                geometry = base_wp
             else:
-                geometry = base_wp.extrude(distance, taper=taper)
+                # Regular shapes create 2D wires, then extrude
+                base_wp = add_shapes[0].build(base_wp)
+                if taper == 0:
+                    geometry = base_wp.extrude(distance)
+                else:
+                    geometry = base_wp.extrude(distance, taper=taper)
 
             # Union remaining additive shapes
             for shape in add_shapes[1:]:
@@ -286,11 +294,18 @@ class ExtrudeBuilder:
                         shape_wp = shape_wp.center(sketch.origin[0], sketch.origin[2])
                     elif sketch.plane == 'YZ':
                         shape_wp = shape_wp.center(sketch.origin[1], sketch.origin[2])
-                shape_wp = shape.build(shape_wp)
-                if taper == 0:
-                    shape_solid = shape_wp.extrude(distance)
+
+                # Special case for Text2D
+                if isinstance(shape, Text2D):
+                    # Text already creates 3D geometry
+                    shape_solid = shape.build(shape_wp, extrusion_distance=distance)
                 else:
-                    shape_solid = shape_wp.extrude(distance, taper=taper)
+                    # Regular shapes create 2D wires, then extrude
+                    shape_wp = shape.build(shape_wp)
+                    if taper == 0:
+                        shape_solid = shape_wp.extrude(distance)
+                    else:
+                        shape_solid = shape_wp.extrude(distance, taper=taper)
                 geometry = geometry.union(shape_solid)
 
             # Subtract shapes (make holes that go all the way through)
@@ -303,9 +318,16 @@ class ExtrudeBuilder:
                         shape_wp = shape_wp.center(sketch.origin[0], sketch.origin[2])
                     elif sketch.plane == 'YZ':
                         shape_wp = shape_wp.center(sketch.origin[1], sketch.origin[2])
-                shape_wp = shape.build(shape_wp)
+
+                # Special case for Text2D
                 # Extrude slightly longer to ensure clean cut through
-                cut_solid = shape_wp.extrude(distance * 1.1)
+                if isinstance(shape, Text2D):
+                    # Text already creates 3D geometry
+                    cut_solid = shape.build(shape_wp, extrusion_distance=distance * 1.1)
+                else:
+                    # Regular shapes create 2D wires, then extrude
+                    shape_wp = shape.build(shape_wp)
+                    cut_solid = shape_wp.extrude(distance * 1.1)
                 geometry = geometry.cut(cut_solid)
 
             logger.debug(

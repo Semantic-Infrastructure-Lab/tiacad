@@ -352,19 +352,22 @@ class Text2D(Shape2D):
             raise SketchError(f"Text spacing must be positive, got {spacing}")
         self.spacing = spacing
 
-    def build(self, workplane: cq.Workplane) -> cq.Workplane:
+    def build(self, workplane: cq.Workplane, extrusion_distance: Optional[float] = None) -> cq.Workplane:
         """
         Build text on workplane.
 
         Note: CadQuery's text() method creates 3D geometry immediately,
-        not a 2D wire profile. This is handled specially by the extrude
-        operation which will detect pre-extruded text shapes.
+        not a 2D wire profile. When used in an extrude operation, the
+        extrusion_distance parameter should be provided to create text
+        at the final height directly.
 
         Args:
             workplane: CadQuery workplane to build on
+            extrusion_distance: Optional final extrusion distance (for extrude operations)
+                              If None, uses 0.1mm placeholder
 
         Returns:
-            Workplane with text shape
+            Workplane with text shape (3D geometry)
         """
         wp = workplane.workplane(offset=0)
 
@@ -379,14 +382,18 @@ class Text2D(Shape2D):
         if self.style == 'bold-italic':
             cq_kind = 'bold'  # CadQuery doesn't have bold-italic directly
 
-        # Build text - creates 3D geometry
-        # Use a minimal extrusion distance (0.1mm) as a placeholder
-        # The actual extrusion will be handled by the extrude operation
+        # Determine distance to use
+        # If extrusion_distance is provided (from extrude operation), use it
+        # Otherwise, use minimal placeholder (0.1mm) for standalone text
+        distance = extrusion_distance if extrusion_distance is not None else 0.1
+
+        # Build text - creates 3D geometry directly
+        # CadQuery text() method always requires a distance parameter
         try:
             wp = wp.text(
                 self.text,
                 fontsize=self.size,
-                distance=0.1,  # Minimal placeholder extrusion
+                distance=distance,
                 font=self.font,
                 fontPath=self.font_path,
                 kind=cq_kind,
@@ -396,7 +403,8 @@ class Text2D(Shape2D):
 
             logger.debug(
                 f"Built text '{self.text}' size={self.size} at {self.position}, "
-                f"font={self.font}, style={self.style}, operation={self.operation}"
+                f"distance={distance}, font={self.font}, style={self.style}, "
+                f"operation={self.operation}"
             )
         except Exception as e:
             # Provide helpful error for font issues
