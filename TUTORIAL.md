@@ -236,6 +236,90 @@ You now have a box with a hole in the center!
 
 ---
 
+## Positioning Parts with Anchors
+
+One of TiaCAD's most powerful features is **automatic anchors** - predefined attachment points on every part.
+
+### What are anchors?
+
+Think of anchors as marked spots on a workbench where things can be attached. Instead of calculating coordinates manually, you say "put this on top of that".
+
+### Example: Stacking Boxes
+
+```yaml
+parameters:
+  base_width: 100
+  base_height: 20
+  tower_width: 30
+  tower_height: 60
+
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: '${base_width}'
+      height: '${base_height}'
+      depth: 50
+    origin: center
+
+  tower:
+    primitive: box
+    parameters:
+      width: '${tower_width}'
+      height: '${tower_height}'
+      depth: 30
+    origin: center
+    translate:
+      to: base.face_top  # Anchor at top of base!
+```
+
+**What just happened?**
+- `base.face_top` is an **automatic anchor** at the center of the base's top face
+- `translate: to: base.face_top` positions the tower at that anchor
+- No manual coordinate calculation needed!
+
+### Common Auto-Generated Anchors
+
+Every part automatically provides these anchors:
+
+| Anchor | Description |
+|--------|-------------|
+| `{part}.center` | Center of the part |
+| `{part}.face_top` | Top face center |
+| `{part}.face_bottom` | Bottom face center |
+| `{part}.face_left` | Left face center |
+| `{part}.face_right` | Right face center |
+| `{part}.face_front` | Front face center |
+| `{part}.face_back` | Back face center |
+
+### Using Anchors with Offsets
+
+You can add offsets to anchors:
+
+```yaml
+cap:
+  primitive: cylinder
+  parameters:
+    radius: 5
+    height: 3
+  translate:
+    from: tower.face_top
+    offset: [0, 0, 5]  # 5 units above tower's top
+```
+
+**Think of it as**: "Start at the tower's top face anchor, then go 5 units up"
+
+### Benefits of Anchors
+
+1. **No coordinate math**: `to: base.face_top` instead of `[50, 50, 20]`
+2. **Self-updating**: If you change `base_width`, anchors update automatically
+3. **Readable**: Code clearly shows intent ("on top of base")
+4. **Less error-prone**: No manual calculation mistakes
+
+**See also**: [AUTO_REFERENCES_GUIDE.md](AUTO_REFERENCES_GUIDE.md) for complete anchor documentation
+
+---
+
 ## Making a Bolt Circle
 
 Now let's create a mounting plate with 6 bolt holes in a circle.

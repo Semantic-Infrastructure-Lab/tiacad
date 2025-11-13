@@ -2,7 +2,19 @@
 
 ## Overview
 
-TiaCAD automatically generates spatial references for every part, making it easy to position and attach parts without manually calculating coordinates. These auto-references are available for all primitive types.
+TiaCAD automatically generates **spatial references** (we call them **anchors**) for every part, making it easy to position and attach parts without manually calculating coordinates.
+
+**Think of anchors as**: Marked spots on a workbench where things can be attached - like "top of the base plate" or "center of the cylinder". Every part automatically provides these attachment points.
+
+**Why "anchors"?** Just like a ship's anchor marks a specific location, spatial anchors mark positions and orientations in 3D space where parts can be positioned.
+
+**Key benefits**:
+- **No manual coordinate math**: Instead of `translate: [50, 25, 10]`, use `translate: base.face_top`
+- **Self-updating**: If the base changes size, anchors update automatically
+- **Orientation-aware**: Anchors include direction information (surface normals) for intelligent positioning
+- **Every part gets them**: All primitives (box, cylinder, sphere, cone) automatically provide standard anchors
+
+These auto-generated anchors are available for all primitive types.
 
 ## Canonical References by Primitive Type
 

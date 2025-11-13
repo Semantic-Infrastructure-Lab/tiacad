@@ -76,6 +76,44 @@ TiaCAD is a **declarative parametric CAD system** that lets you design 3D models
 - **Verifiability**: Comprehensive test coverage ensures correctness
 - **Quality**: Professional code quality with extensive validation
 
+### TiaCAD's Design Philosophy: Reference-Based Composition
+
+**How is TiaCAD different?** Unlike traditional CAD (SolidWorks, Fusion 360) which uses hierarchical parent-child assemblies, TiaCAD uses a **reference-based composition model**:
+
+**🎯 Key Concepts:**
+- **Independent parts**: Parts aren't nested in assembly hierarchies - they're all peers
+- **Spatial anchors**: Position parts using reference points (we call them "anchors")
+- **Auto-generated references**: Every part automatically provides attachment points (`.face_top`, `.center`, etc.)
+- **Declarative**: Describe what you want ("put this on top of that"), not step-by-step instructions
+- **No parent-child relationships**: Parts reference *positions*, not other parts
+
+**Think of it as marking spots on a workbench** where things go, rather than building nested folders of sub-assemblies.
+
+**vs Traditional CAD:**
+
+| Traditional CAD (SolidWorks) | TiaCAD (Reference-Based) |
+|------------------------------|--------------------------|
+| Hierarchical assemblies | Flat parts with anchors |
+| Parent-child relationships | Independent parts |
+| Mate constraints | Spatial references |
+| Assembly → Sub-assembly → Part | Part → Part → Part (peers) |
+| "Connect this to that" | "Position this at that anchor" |
+
+**vs Procedural Tools (OpenSCAD):**
+
+| OpenSCAD (Procedural) | TiaCAD (Declarative) |
+|-----------------------|----------------------|
+| Step-by-step instructions | Describe desired result |
+| Execution order matters | Declaration order flexible |
+| `translate([0,0,10]) cylinder(...)` | `translate: to: base.face_top` |
+| Manual coordinate calculation | Auto-generated anchors |
+
+**Why this matters:** Once you understand the reference-based model, positioning becomes intuitive: "place the cap on the pillar's top face" rather than calculating coordinates manually.
+
+**See also:** [GLOSSARY.md](GLOSSARY.md) for term definitions, [AUTO_REFERENCES_GUIDE.md](AUTO_REFERENCES_GUIDE.md) for anchor details.
+
+---
+
 ### Example: Parametric Bottle (Revolve Operation)
 
 ```yaml
@@ -579,24 +617,40 @@ Every component has comprehensive tests:
 
 ## Documentation
 
-Comprehensive documentation in `/home/scottsen/src/tia/docs/projects/tiacad/`:
+### User Documentation
 
-- **Design/**
-  - Schema definition
-  - Transform composition rules
-  - Origin and constraint system
-  - Compound constraints
+**Getting Started:**
+- [TUTORIAL.md](TUTORIAL.md) - Step-by-step introduction
+- [GLOSSARY.md](GLOSSARY.md) - Terminology and concepts
+- [EXAMPLES_GUIDE.md](EXAMPLES_GUIDE.md) - Detailed example walkthroughs
 
-- **Implementation/**
-  - Core class specifications
-  - Testing strategy
-  - Integration validation
-  - CadQuery interaction patterns
+**Reference:**
+- [YAML_REFERENCE.md](YAML_REFERENCE.md) - Complete syntax reference
+- [AUTO_REFERENCES_GUIDE.md](AUTO_REFERENCES_GUIDE.md) - Spatial anchors guide
+- [docs/CLI.md](docs/CLI.md) - Command-line interface
 
-- **Reference/**
-  - Complete API documentation
-  - YAML schema reference
-  - Error message guide
+**Migration:**
+- [MIGRATION_GUIDE_V3.md](MIGRATION_GUIDE_V3.md) - Upgrading from v0.3.0
+- [RELEASE_NOTES_V3.md](RELEASE_NOTES_V3.md) - What's new in v3.0
+
+### Technical Documentation
+
+**Architecture & Design:**
+- [docs/ARCHITECTURE_DECISION_V3.md](docs/ARCHITECTURE_DECISION_V3.md) - v3.0 design rationale
+- [docs/MENTAL_MODELS_AND_LANGUAGE.md](docs/MENTAL_MODELS_AND_LANGUAGE.md) - Language design exploration
+- [docs/SKETCH_ABSTRACTION_DESIGN.md](docs/SKETCH_ABSTRACTION_DESIGN.md) - Sketch system design
+- [docs/CLEAN_ARCHITECTURE_PROPOSAL.md](docs/CLEAN_ARCHITECTURE_PROPOSAL.md) - Architecture principles
+
+**Testing:**
+- [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) - Testing strategies
+- [docs/TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md) - Test coverage plans
+- [docs/TESTING_QUICK_REFERENCE.md](docs/TESTING_QUICK_REFERENCE.md) - Quick test commands
+
+**Project Planning:**
+- [docs/TIACAD_EVOLUTION_ROADMAP.md](docs/TIACAD_EVOLUTION_ROADMAP.md) - Overall project roadmap
+- [docs/LANGUAGE_IMPROVEMENTS_STATUS.md](docs/LANGUAGE_IMPROVEMENTS_STATUS.md) - Documentation improvement tracking
+- [docs/V3_IMPLEMENTATION_STATUS.md](docs/V3_IMPLEMENTATION_STATUS.md) - Feature implementation status
+- [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) - Project health snapshot
 
 ---
 

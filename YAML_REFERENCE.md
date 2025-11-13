@@ -132,9 +132,13 @@ parts:
 
 ---
 
-## References (v3.0)
+## References (Spatial Anchors) - v3.0
 
-**New in v3.0:** TiaCAD introduces a unified spatial reference system that replaces the old `named_points:` section. This system supports not just points, but also faces, edges, and axes with full orientation information.
+**What are references?** Spatial references (we call them **anchors**) are marked positions in 3D space where parts can be positioned or attached - like marking spots on a workbench. Think of `base.face_top` as "the anchor at the top of the base".
+
+**New in v3.0:** TiaCAD introduces a unified spatial reference system that replaces the old `named_points:` section. This system supports not just points, but also faces, edges, and axes with full orientation information (position + direction).
+
+**Key concept**: Instead of calculating coordinates manually, you position parts using anchors: `translate: to: base.face_top` instead of `translate: [50, 25, 10]`.
 
 ### Auto-Generated References
 
@@ -195,9 +199,9 @@ parts:
         offset: [0, 0, 2]      # 2 units above pillar
 ```
 
-### Named References
+### Named References (Custom Anchors)
 
-You can still define custom references when auto-generated ones don't suffice:
+You can define custom anchors in the `references:` section when auto-generated ones don't suffice. Think of this as marking additional attachment points beyond the automatic ones.
 
 ```yaml
 references:
@@ -455,11 +459,26 @@ parts:
 
 ---
 
-## Operations
+## Operations: Understanding the Four Types
 
-Operations modify or combine parts.
+Operations in TiaCAD fall into four categories, each with different purposes:
 
-### Transform Operations
+### Operation Categories
+
+| Category | What It Does | Operations | Think Of It As |
+|----------|--------------|------------|----------------|
+| **1. Positioning** | Change position/orientation (not geometry) | `translate`, `rotate`, `align_to_face` | Moving pieces on a workbench |
+| **2. Modifications** | Change geometry itself | `fillet`, `chamfer`, `extrude`, `revolve`, `sweep`, `loft` | Shaping material |
+| **3. Combining** | Create relationships between parts | `union`, `difference`, `intersection` | Joining or cutting |
+| **4. Replication** | Create multiple copies | `linear_pattern`, `circular_pattern`, `grid_pattern` | Stamping copies |
+
+**Key Insight**: Positioning operations affect WHERE parts are, modification operations affect WHAT they look like, combining operations create NEW geometry, and replication creates COPIES.
+
+---
+
+## 1. Positioning Operations (Transforms)
+
+**Purpose**: Move, rotate, or scale parts WITHOUT modifying their geometry.
 
 Move, rotate, or scale parts.
 
@@ -587,7 +606,11 @@ Traditional rotation (axis + origin) still works:
 
 ---
 
-### Boolean Operations
+---
+
+## 3. Combining Operations (Booleans)
+
+**Purpose**: Create relationships between parts - merge them, subtract one from another, or find their overlap.
 
 Combine parts using set operations.
 
@@ -631,7 +654,9 @@ operations:
 
 ---
 
-### Pattern Operations
+## 4. Replication Operations (Patterns)
+
+**Purpose**: Create multiple copies of a part arranged in a pattern.
 
 Create arrays of parts.
 
@@ -716,7 +741,9 @@ Example: `bolt_circle` creates `bolt_circle_0`, `bolt_circle_1`, etc.
 
 ---
 
-### Finishing Operations
+## 2. Shape Modification Operations (Features)
+
+**Purpose**: Change the geometry itself - add or remove material, round edges, create 3D shapes from 2D sketches.
 
 Add professional finishing to parts.
 
