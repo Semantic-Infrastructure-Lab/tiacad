@@ -6,6 +6,16 @@
 # Usage:
 #   tiacad build examples/text_simple.yaml
 
+# Note: Dummy part required by schema (sketch-only not yet supported)
+parts:
+  _dummy:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
 sketches:
   hello_text:
     plane: XY

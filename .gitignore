@@ -77,3 +77,6 @@ SESSION_SUMMARY_*.md
 *.session
 *.debug
 
+
+# Validation results
+validation_results.txt

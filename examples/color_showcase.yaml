@@ -24,27 +24,11 @@ colors:
     roughness: 0.25
 
 # =============================================================================
-# CUSTOM MATERIALS - Extend built-ins or create new
+# CUSTOM MATERIALS - Temporarily disabled (not yet supported)
 # =============================================================================
 
-materials:
-  # Extend built-in aluminum
-  blue-aluminum:
-    base: aluminum
-    color: "#6699CC"
-    finish: anodized
-
-  # Create custom material from scratch
-  matte-black:
-    color: [0.05, 0.05, 0.05]
-    finish: matte
-    metalness: 0.0
-    roughness: 0.8
-
-  # Multi-color printing material
-  red-pla:
-    base: pla-red
-    print_material: "Hatchbox PLA - True Red"
+# Note: Custom materials feature not yet implemented
+# Using built-in materials instead
 
 # =============================================================================
 # PARAMETERS
@@ -168,26 +152,20 @@ parts:
   custom_cover:
     primitive: box
     parameters:
-
       width: 90
-
       height: 90
-
       depth: 3
     origin: center
-    material: blue-aluminum       # Custom material from materials: section
+    material: aluminum-anodized-blue  # Changed from custom blue-aluminum
 
   black_detail:
     primitive: box
     parameters:
-
       width: 20
-
       height: 20
-
       depth: 8
     origin: center
-    material: matte-black         # Another custom material
+    material: abs-black           # Changed from custom matte-black
 
   # ----------------------------------------------------------------------------
   # METHOD 5: Advanced appearance (full PBR control)
@@ -246,14 +224,11 @@ parts:
   print_structure:
     primitive: box
     parameters:
-
       width: 50
-
       height: 50
-
       depth: 20
     origin: center
-    material: red-pla             # Custom print material
+    material: pla-red             # Changed from custom red-pla
 
   print_support:
     primitive: box

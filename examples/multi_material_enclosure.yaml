@@ -73,52 +73,44 @@ parameters:
 # =============================================================================
 
 parts:
-  # Main enclosure body (Black PLA)
+  # Main enclosure body (Black ABS)
   enclosure_outer:
     primitive: box
     parameters:
-
       width: '${enclosure_width}'
-
       height: '${enclosure_depth}'
-
       depth: '${enclosure_height}'
     origin: corner
-    material: structure-material
+    material: abs-black  # Changed from structure-material (pla-black doesn't exist)
 
   enclosure_inner:
     primitive: box
-    size: ['${enclosure_width - wall_thickness*2}',
-           '${enclosure_depth - wall_thickness*2}',
-           '${enclosure_height}']
+    parameters:
+      width: '${enclosure_width - wall_thickness*2}'
+      height: '${enclosure_depth - wall_thickness*2}'
+      depth: '${enclosure_height}'
     origin: corner
-    material: structure-material
+    material: abs-black  # Changed from structure-material
 
   # Transparent window (Clear PETG)
   front_window:
     primitive: box
     parameters:
-
       width: '${window_width}'
-
       height: '${window_thickness}'
-
       depth: '${window_height}'
     origin: center
-    material: window-material
+    material: petg-clear  # Changed from window-material
 
   # Flexible gasket (Red TPU)
   lid_gasket:
     primitive: box
     parameters:
-
       width: '${gasket_width}'
-
       height: '${gasket_depth}'
-
       depth: '${gasket_thickness}'
     origin: center
-    material: gasket-material
+    material: tpu-flexible  # Changed from gasket-material
 
   # Cable hole template
   cable_hole:
@@ -126,22 +118,22 @@ parts:
     radius: '${cable_hole_diameter / 2}'
     height: '${wall_thickness + 2}'
     origin: center
-    material: structure-material  # Same as body (will be subtracted)
+    material: abs-black  # Changed from structure-material
 
-  # Mounting posts (Black PLA)
+  # Mounting posts (Black ABS)
   mount_post:
     primitive: cylinder
     radius: '${mount_post_radius}'
     height: '${mount_post_height}'
     origin: center
-    material: structure-material
+    material: abs-black  # Changed from structure-material
 
   mount_screw_hole:
     primitive: cylinder
     radius: '${mount_hole_diameter / 2}'
     height: '${mount_post_height + 2}'
     origin: center
-    material: structure-material
+    material: abs-black  # Changed from structure-material
 
 # =============================================================================
 # OPERATIONS
