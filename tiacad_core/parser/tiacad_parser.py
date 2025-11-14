@@ -304,6 +304,35 @@ class TiaCADParser:
         )
 
     @staticmethod
+    def _normalize_yaml_aliases(yaml_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize YAML aliases to canonical field names.
+
+        Supports user-friendly aliases:
+        - 'anchors:' -> 'references:' (v3.2+)
+
+        Args:
+            yaml_data: Parsed YAML data
+
+        Returns:
+            Normalized YAML data with canonical field names
+
+        Raises:
+            TiaCADParserError: If both alias and canonical names are present
+        """
+        # Alias: anchors -> references (v3.2+)
+        if 'anchors' in yaml_data:
+            if 'references' in yaml_data:
+                raise TiaCADParserError(
+                    "Cannot use both 'anchors:' and 'references:' sections. "
+                    "Use 'anchors:' (user-friendly) or 'references:' (canonical), not both."
+                )
+            yaml_data['references'] = yaml_data.pop('anchors')
+            logger.debug("Normalized 'anchors:' to 'references:' (alias support)")
+
+        return yaml_data
+
+    @staticmethod
     def parse_dict(
         yaml_data: Dict[str, Any],
         file_path: Optional[str] = None,
@@ -328,6 +357,9 @@ class TiaCADParser:
             TiaCADParserError: If parsing or validation fails
         """
         try:
+            # Normalize YAML aliases (anchors -> references, etc.)
+            yaml_data = TiaCADParser._normalize_yaml_aliases(yaml_data)
+
             # Schema validation (if requested)
             if validate_schema:
                 validator = SchemaValidator()

@@ -14,6 +14,8 @@ TiaCAD automatically generates **spatial references** (we call them **anchors**)
 - **Orientation-aware**: Anchors include direction information (surface normals) for intelligent positioning
 - **Every part gets them**: All primitives (box, cylinder, sphere, cone) automatically provide standard anchors
 
+**Visual Guide:** See [Auto-Reference Visualization](docs/diagrams/auto-reference-visualization.md) for a complete visual reference of all auto-generated anchors.
+
 These auto-generated anchors are available for all primitive types.
 
 ## Canonical References by Primitive Type

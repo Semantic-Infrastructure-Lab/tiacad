@@ -1,0 +1,87 @@
+# TiaCAD Example: Using 'anchors:' Syntax (v3.2+)
+#
+# This example demonstrates the new user-friendly 'anchors:' syntax,
+# which is an alias for 'references:'. Both work identically!
+#
+# Why 'anchors'? It's more intuitive - think of marking spots on a
+# workbench where things go, like a ship's anchor marks a location.
+
+metadata:
+  name: Anchors Syntax Demo
+  description: "Demonstrates the anchors: syntax (alias for references:)"
+  version: "1.0"
+
+parameters:
+  platform_size: 100
+  pillar_height: 50
+  pillar_radius: 5
+
+parts:
+  # Base platform
+  platform:
+    primitive: box
+    parameters:
+      width: ${platform_size}
+      height: 10
+      depth: ${platform_size}
+
+  # Left pillar - positioned using auto-generated anchor
+  left_pillar:
+    primitive: cylinder
+    parameters:
+      radius: ${pillar_radius}
+      height: ${pillar_height}
+    translate:
+      to:
+        from: platform.face_top  # Auto-generated anchor!
+        offset: [-30, 0, 0]
+
+  # Right pillar - positioned using auto-generated anchor
+  right_pillar:
+    primitive: cylinder
+    parameters:
+      radius: ${pillar_radius}
+      height: ${pillar_height}
+    translate:
+      to:
+        from: platform.face_top  # Auto-generated anchor!
+        offset: [30, 0, 0]
+
+  # Crossbar connecting the pillars
+  crossbar:
+    primitive: box
+    parameters:
+      width: 70
+      height: 5
+      depth: 10
+    translate:
+      to: assembly_top  # Use our custom anchor defined below!
+
+# Custom anchors (v3.2+ syntax - user-friendly!)
+anchors:
+  # Custom anchor: midpoint between pillar tops
+  assembly_top:
+    type: point
+    from: left_pillar.face_top
+    offset: [30, 0, 0]  # Halfway to right pillar
+
+  # Custom anchor: mounting point on platform
+  mounting_center:
+    type: point
+    from: platform.face_top
+
+  # Custom anchor: left attachment point
+  left_attachment:
+    type: face
+    part: left_pillar
+    selector: ">Z"  # Top face
+    at: center
+
+# Note: You can still use 'references:' if you prefer (backward compatible)
+# Both work identically - choose whichever feels more natural!
+
+export:
+  default_part: crossbar
+  formats:
+    - stl
+    - 3mf

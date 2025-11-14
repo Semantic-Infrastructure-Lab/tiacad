@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Phase 2 Improvements (2025-11-14)
+
+#### Visual Diagrams (Phase 2.1)
+- **docs/diagrams/reference-based-vs-hierarchical.md** - Visual comparison of TiaCAD vs traditional CAD
+  - Side-by-side Mermaid diagrams showing assembly structure differences
+  - Comparison table of key aspects
+  - Mental model explanation
+- **docs/diagrams/auto-reference-visualization.md** - Complete visual guide to auto-generated anchors
+  - Shows all anchor types (center, origin, faces, axes)
+  - Organized by category with color coding
+  - Usage examples and 3D visualization concept
+- **docs/diagrams/local-frame-offsets.md** - How offsets work in local coordinate frames
+  - World coordinates vs local frames comparison
+  - Visual examples with tilted surfaces
+  - Code comparison showing benefits
+- **docs/diagrams/reference-chain-dependencies.md** - How parts reference each other
+  - Simple and complex reference chains
+  - Dependency resolution order
+  - Invalid patterns (circular, forward references)
+  - Best practices
+- **docs/diagrams/operation-categories.md** - The four operation types explained
+  - Visual breakdown of each category (positioning, modification, combining, replication)
+  - Decision tree for choosing operation types
+  - Detailed examples and use cases
+  - Best practices and anti-patterns
+- Integrated diagram links into README.md, YAML_REFERENCE.md, AUTO_REFERENCES_GUIDE.md, GLOSSARY.md
+
+#### YAML Alias Support (Phase 2.2)
+- **`anchors:` as alias for `references:`** - User-friendly alternative (v3.2+)
+  - Added `TiaCADParser._normalize_yaml_aliases()` method
+  - Validates that both sections aren't used simultaneously
+  - Fully backward compatible - `references:` still works
+  - Updated YAML_REFERENCE.md to show both syntaxes
+  - Added 3 new tests in test_tiacad_parser.py
+  - Created examples/anchors_demo.yaml demonstrating new syntax
+
+#### Enhanced Metadata Fields (Phase 2.3)
+- **Optional `type` and `composition` metadata fields** (v3.2+)
+  - `type`: Declares document purpose (part, assembly, model, mechanism, fixture)
+  - `composition`: Makes mental model explicit (reference-based)
+  - Fully optional - backward compatible with existing files
+  - Updated YAML_REFERENCE.md with detailed field documentation
+  - Created examples/enhanced_metadata_demo.yaml demonstrating usage
+  - Helps readers immediately understand document purpose and design approach
+
 ### Added - Documentation Improvements (2025-11-13)
 
 #### Mental Model & Language Clarity

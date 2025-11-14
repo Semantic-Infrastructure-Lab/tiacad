@@ -1,0 +1,68 @@
+# TiaCAD Example: Enhanced Metadata (v3.2+)
+#
+# This example demonstrates the new optional metadata fields added in v3.2:
+# - type: Declares the document purpose (assembly, part, model, mechanism, fixture)
+# - composition: Makes the mental model explicit (reference-based)
+
+metadata:
+  name: Guitar Hanger Assembly
+  version: "2.0"
+  author: TIA
+  description: Wall-mounted guitar hanger with reference-based composition
+
+  # NEW in v3.2: Optional type field
+  type: assembly              # Options: assembly, part, model, mechanism, fixture
+
+  # NEW in v3.2: Optional composition field
+  composition: reference-based # Makes TiaCAD's mental model explicit
+
+# Valid type values:
+# - part:      Single part design
+# - assembly:  Multiple parts combined (this example)
+# - model:     Complete model/design
+# - mechanism: Moving parts assembly
+# - fixture:   Jig or mounting fixture
+
+parameters:
+  wall_thickness: 5
+  hook_depth: 50
+  hook_width: 80
+
+parts:
+  # Wall mount base
+  wall_mount:
+    primitive: box
+    parameters:
+      width: ${hook_width}
+      height: ${wall_thickness}
+      depth: 20
+
+  # Hook arm
+  hook_arm:
+    primitive: box
+    parameters:
+      width: ${wall_thickness}
+      height: 15
+      depth: ${hook_depth}
+    translate:
+      to:
+        from: wall_mount.face_front
+        offset: [0, 5, 0]
+
+  # Hook tip
+  hook_tip:
+    primitive: box
+    parameters:
+      width: 15
+      height: 15
+      depth: ${wall_thickness}
+    translate:
+      to:
+        from: hook_arm.face_front
+        offset: [0, 0, 0]
+
+export:
+  default_part: wall_mount
+  formats:
+    - stl
+    - 3mf
