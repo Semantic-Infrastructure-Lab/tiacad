@@ -143,7 +143,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - `README.md` - Project overview and quick start
 - `YAML_REFERENCE.md` - Complete YAML syntax guide
 - `RELEASE_NOTES_V3.md` - v3.0 release notes
-- `AUTO_REFERENCES_GUIDE.md` - Auto-reference system guide
+- `AUTO_REFERENCES_GUIDE.md` - auto-generated anchor system guide
 - `TUTORIAL.md` - User tutorial
 - `EXAMPLES_GUIDE.md` - Example gallery
 

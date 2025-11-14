@@ -176,7 +176,7 @@ operations:
 
 **Result:** Organic transition from square base to circular top.
 
-### Example: Auto-References (New in v3.0!)
+### Example: auto-generated anchors (New in v3.0!)
 
 v3.0 introduces **auto-generated references** that eliminate manual coordinate calculations:
 

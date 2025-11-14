@@ -18,12 +18,12 @@
 | Phase | Status | Items | Completion |
 |-------|--------|-------|------------|
 | **Phase 1: Quick Wins** | ✅ Complete | 4/4 | 100% |
-| **Phase 2: Medium-Term** | ✅ Complete | 3/4 | 75% |
+| **Phase 2: Medium-Term** | ✅ Complete | 4/5 | 80% |
 | **Phase 3: Long-Term (v4.0)** | ⏸️ Not Started | 0/5 | 0% |
 
 **Total Effort**:
 - Phase 1: 8 hours (COMPLETE ✅)
-- Phase 2: 14 hours (COMPLETE ✅ - 3/4 items, deferred auto-reference naming research)
+- Phase 2: 17 hours (COMPLETE ✅ - 4/5 items, deferred auto-reference naming research)
 - Phase 3: 200+ hours (estimated, breaking changes)
 
 ---
@@ -35,7 +35,8 @@
 | 2025-11-06 | PR #14 merged (MENTAL_MODELS_AND_LANGUAGE.md) | Strategic recommendations documented |
 | 2025-11-13 | Gap analysis completed (regavela-1113) | Current state assessed vs recommendations |
 | 2025-11-13 | Phase 1 implemented (regavela-1113) | Mental model explicit, anchors language added, glossary created |
-| 2025-11-14 | Phase 2 implemented (3/4 items) | Visual diagrams, YAML aliases, enhanced metadata |
+| 2025-11-14 | Phase 2.1-2.3 implemented (3/5 items) | Visual diagrams, YAML aliases, enhanced metadata |
+| 2025-11-14 | Phase 2.5 implemented (terminology) | Canonical terminology guide created, 30+ terms standardized |
 | TBD | Phase 3 (v4.0) start | Breaking changes, syntax redesign |
 
 ---
@@ -285,6 +286,78 @@ metadata:
 - [ ] Research report with findings
 - [ ] Recommendations for naming improvements
 - [ ] If changes needed: Migration plan for v4.0
+
+---
+
+### 2.5 Terminology Standardization 📖 ✅
+
+**Status**: ✅ Complete (2025-11-14)
+**Effort**: 3 hours
+**Priority**: HIGH (foundation for all documentation)
+
+**Goal**: Lock down canonical terminology for every concept, resolve all ambiguities
+
+**Problem Identified**: Mixed terminology across documentation:
+- "local frame" vs "coordinate system" vs "local coordinates"
+- "translate" documented as both "move" and "position at"
+- "reference" vs "anchor" not fully standardized in all contexts
+- Operation categories using both friendly and technical terms inconsistently
+
+**Solution Created**: `docs/TERMINOLOGY_GUIDE.md` (official terminology reference)
+
+**Decisions Made** (30+ terms standardized):
+
+**Spatial Terms**:
+- ✅ "Local frame" (not "coordinate system")
+- ✅ "World space" (not "global coordinates")
+- ✅ "Offset" (not "displacement" or "shift")
+
+**Geometry Terms**:
+- ✅ "Face" (not "surface" in CAD contexts)
+- ✅ "Normal" for vectors, "orientation" for frames
+- ✅ "Edge" (not "line" or "curve")
+
+**Positioning Terms**:
+- ✅ "Position" (noun, not "location")
+- ✅ "translate" in YAML (document as "position at anchor")
+
+**Anchor Terms**:
+- ✅ "Anchor" in all user-facing docs (not "reference")
+- ✅ "Auto-generated anchors" (not "auto-references" or "built-in")
+- ✅ Both `anchors:` and `references:` valid in YAML (v3.x)
+
+**Operation Terms**:
+- ✅ "Positioning (Transforms)", "Shape Modification (Features)", etc.
+- ✅ Context-specific recipients: `input:`, `base:`, `targets:`
+
+**Structure Terms**:
+- ✅ "Part" (v3.x), "Shape" (v4.0)
+- ✅ "Assembly" for multi-part models
+- ✅ "Model" for 3D output
+- ✅ "Design" for YAML file/intent
+
+**Documentation Voice**:
+- ✅ "You" in tutorials
+- ✅ "Users" or passive voice in reference docs
+
+**Deliverables**:
+- [x] `docs/TERMINOLOGY_GUIDE.md` created (315 lines)
+- [x] Quick reference table
+- [x] Rationale for each decision
+- [x] v4.0 evolution notes
+- [ ] Terminology audit script (pending)
+- [ ] Fix inconsistencies in existing docs (pending)
+
+**Impact**:
+- Clear authority on which terms to use
+- Reduces documentation ambiguity
+- Faster doc writing (no need to decide each time)
+- Easier PR reviews (terminology consistency)
+
+**Next Steps**:
+- Create audit script to find terminology inconsistencies
+- Update key docs (README, GLOSSARY, YAML_REFERENCE) to fix major issues
+- Add terminology checks to PR review process
 
 ---
 

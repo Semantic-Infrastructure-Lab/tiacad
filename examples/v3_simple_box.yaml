@@ -1,6 +1,6 @@
 metadata:
   name: Simple Box Example (v3.0)
-  description: Demonstrates v3.0 auto-references and unified spatial reference system
+  description: Demonstrates v3.0 auto-generated anchors and unified spatial reference system
   version: 3.0
   author: TiaCAD Team
   created: 2025-11-07
@@ -21,7 +21,7 @@ parts:
       depth: '${base_size}'
     origin: center
 
-  # Top box positioned using auto-reference (no manual reference definition!)
+  # Top box positioned using auto-generated anchor (no manual reference definition!)
   top:
     primitive: box
     parameters:
@@ -30,9 +30,9 @@ parts:
       depth: '${top_size}'
     origin: center
     translate:
-      to: base.face_top  # ✨ Auto-reference! No explicit definition needed
+      to: base.face_top  # ✨ auto-generated anchor! No explicit definition needed
 
-# No references section needed - auto-references handle everything!
+# No references section needed - auto-generated anchors handle everything!
 
 export:
   default_part: top
@@ -40,4 +40,4 @@ export:
     - name: base
       description: Base platform
     - name: top
-      description: Top box positioned using auto-reference
+      description: Top box positioned using auto-generated anchor

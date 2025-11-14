@@ -1,8 +1,8 @@
-# Auto-References Example: Rotation with Auto-Axes
+# auto-generated anchors Example: Rotation with Auto-Axes
 #
 # Demonstrates using auto-generated axis references for rotation.
 #
-# Auto-references used:
+# auto-generated anchors used:
 # - base.axis_x - X-axis through base center
 # - base.axis_y - Y-axis through base center
 # - base.axis_z - Z-axis through base center
@@ -37,7 +37,7 @@ parts:
     translate:
       to: base.center
     rotate:
-      axis: base.axis_z  # Auto-reference to base's Z-axis
+      axis: base.axis_z  # auto-generated anchor to base's Z-axis
       angle: 90
       origin: base.center
 
@@ -51,7 +51,7 @@ parts:
     translate:
       to: base.center
     rotate:
-      axis: base.axis_y  # Auto-reference to base's Y-axis
+      axis: base.axis_y  # auto-generated anchor to base's Y-axis
       angle: 90
       origin: base.center
 

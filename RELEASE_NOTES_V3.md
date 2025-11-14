@@ -484,7 +484,7 @@ One system for all spatial references (points, faces, edges, axes):
 - Full orientation support (normals, tangents)
 
 **📐 Local Frame Offsets**
-Offsets now follow the reference's local coordinate system:
+Offsets now follow the reference's local local frame:
 - Intuitive positioning relative to faces
 - X/Y offsets along face tangents
 - Z offset perpendicular to face
@@ -549,7 +549,7 @@ parts:
       depth: 20
 ```
 
-#### 3. Use Auto-References (Recommended)
+#### 3. Use auto-generated anchors (Recommended)
 
 **Before (v0.3.0):**
 ```yaml
@@ -572,7 +572,7 @@ parts:
 parts:
   pillar:
     translate:
-      to: base.face_top  # Auto-reference!
+      to: base.face_top  # auto-generated anchor!
 ```
 
 ### API Changes (Python)
@@ -597,7 +597,7 @@ parts:
     primitive: box
     parameters: {width: 100, height: 10, depth: 100}
 
-  # Use auto-references - no definition needed!
+  # Use auto-generated anchors - no definition needed!
   pillar:
     translate:
       to: base.face_top  # ✨ Auto-generated!
@@ -607,14 +607,14 @@ parts:
       to: pillar.face_top  # ✨ Auto-generated!
 ```
 
-**Available auto-references:**
+**Available auto-generated anchors:**
 - Points: `.center`, `.origin`
 - Faces: `.face_top`, `.face_bottom`, `.face_left`, `.face_right`, `.face_front`, `.face_back`
 - Axes: `.axis_x`, `.axis_y`, `.axis_z`
 
 ### 2. Local Frame Offsets
 
-Offsets now follow the reference's local coordinate system:
+Offsets now follow the reference's local local frame:
 
 ```yaml
 parts:
@@ -630,7 +630,7 @@ parts:
 
 **Benefits:**
 - Intuitive positioning relative to faces
-- No need to calculate world coordinates
+- No need to calculate world space
 - Robust to part transformations
 
 ### 3. Unified Reference Types
@@ -757,7 +757,7 @@ See [MIGRATION_GUIDE_V3.md](docs/MIGRATION_GUIDE_V3.md) for detailed migration i
 - [ ] Add `type:` field to all reference definitions
 - [ ] Change `size:` to `parameters:` in part definitions
 - [ ] Update `face:` to `selector:` in face references
-- [ ] Consider using auto-references to simplify definitions
+- [ ] Consider using auto-generated anchors to simplify definitions
 - [ ] Test with v3.0 schema validation
 - [ ] Update any custom Python code using `PointResolver`
 
@@ -779,7 +779,7 @@ tiacad migrate my_design.yaml --from v0.3.0 --to v3.0
 
 ### New Documentation
 
-- [AUTO_REFERENCES_GUIDE.md](docs/AUTO_REFERENCES_GUIDE.md) - Comprehensive guide to auto-references
+- [AUTO_REFERENCES_GUIDE.md](docs/AUTO_REFERENCES_GUIDE.md) - Comprehensive guide to auto-generated anchors
 - [MIGRATION_GUIDE_V3.md](docs/MIGRATION_GUIDE_V3.md) - Step-by-step migration instructions
 - [V3_IMPLEMENTATION_STATUS.md](docs/V3_IMPLEMENTATION_STATUS.md) - Implementation details
 
@@ -850,7 +850,7 @@ v3.0 is designed to be forward-compatible with future versions:
    - `named_points:` → `references:`
    - `size:` → `parameters:`
    - Add `type:` to references
-   - Consider using auto-references
+   - Consider using auto-generated anchors
 
 4. **Validate:**
    ```bash
@@ -896,14 +896,14 @@ v3.0 is designed to be forward-compatible with future versions:
 ## Known Issues
 
 ### Resolved Before Release
-- ✅ Auto-references for transformed parts (uses bounding box)
+- ✅ auto-generated anchors for transformed parts (uses bounding box)
 - ✅ Schema validation for v3.0 syntax
 - ✅ Migration guide for all common patterns
 
 ### Future Enhancements
 - 🔄 Automated migration tool (v3.1)
-- 🔄 Auto-references for operation results (v3.1)
-- 🔄 Custom auto-reference definitions (v3.2)
+- 🔄 auto-generated anchors for operation results (v3.1)
+- 🔄 Custom auto-generated anchor definitions (v3.2)
 
 ---
 
@@ -925,7 +925,7 @@ v3.0 is designed to be forward-compatible with future versions:
 
 ### v3.1 (Planned)
 - Automated migration tool
-- Enhanced auto-references
+- Enhanced auto-generated anchors
 - Performance optimizations
 
 ### v4.0 (Roadmap)
@@ -941,7 +941,7 @@ v3.0 is designed to be forward-compatible with future versions:
 **Documentation:**
 - [README.md](README.md) - Project overview
 - [YAML_REFERENCE.md](YAML_REFERENCE.md) - Complete syntax reference
-- [AUTO_REFERENCES_GUIDE.md](docs/AUTO_REFERENCES_GUIDE.md) - Auto-references guide
+- [AUTO_REFERENCES_GUIDE.md](docs/AUTO_REFERENCES_GUIDE.md) - auto-generated anchors guide
 - [MIGRATION_GUIDE_V3.md](docs/MIGRATION_GUIDE_V3.md) - Migration instructions
 
 **Examples:**
@@ -958,7 +958,7 @@ v3.0 is designed to be forward-compatible with future versions:
 
 TiaCAD v3.0 represents a major step forward in clean, intuitive CAD design:
 
-✅ **Cleaner YAML** - Auto-references eliminate boilerplate
+✅ **Cleaner YAML** - auto-generated anchors eliminate boilerplate
 ✅ **Unified System** - One reference system for points, faces, edges, axes
 ✅ **Local Frames** - Intuitive positioning with local offsets
 ✅ **Better Architecture** - Clean separation of concerns

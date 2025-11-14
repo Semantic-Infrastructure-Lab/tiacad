@@ -159,7 +159,7 @@ parts:
 **Key concept**: Instead of calculating coordinates manually, you position parts using anchors: `translate: to: base.face_top` instead of `translate: [50, 25, 10]`.
 
 **Visual Guides:**
-- [Auto-Reference Visualization](docs/diagrams/auto-reference-visualization.md) - See all auto-generated anchors
+- [auto-generated anchor Visualization](docs/diagrams/auto-generated anchor-visualization.md) - See all auto-generated anchors
 - [Local Frame Offsets](docs/diagrams/local-frame-offsets.md) - Understand how offsets work
 - [Reference Chain Dependencies](docs/diagrams/reference-chain-dependencies.md) - Learn how parts reference each other
 
@@ -167,7 +167,7 @@ parts:
 
 Every part automatically provides these references **without explicit definition**:
 
-#### Universal Auto-References (All Primitives)
+#### Universal auto-generated anchors (All Primitives)
 
 Available for all parts (box, cylinder, sphere, cone):
 
@@ -208,7 +208,7 @@ parts:
       radius: 5
       height: 50
     translate:
-      to: platform.face_top  # Auto-reference - no definition needed!
+      to: platform.face_top  # auto-generated anchor - no definition needed!
 
   cap:
     primitive: box
@@ -218,7 +218,7 @@ parts:
       depth: 15
     translate:
       to:
-        from: pillar.face_top  # Auto-reference with offset
+        from: pillar.face_top  # auto-generated anchor with offset
         offset: [0, 0, 2]      # 2 units above pillar
 ```
 
@@ -381,7 +381,7 @@ operations:
 
 #### Local Frame Offsets
 
-Offsets follow the reference's local coordinate system:
+Offsets follow the reference's local local frame:
 
 ```yaml
 parts:
@@ -396,7 +396,7 @@ parts:
 - Face: Normal as Z-axis, tangent as X/Y
 - Edge: Tangent as X-axis, normal as Z
 - Axis: Direction as Z-axis
-- Point: World coordinate system
+- Point: World local frame
 
 ---
 
@@ -479,7 +479,7 @@ parts:
 
 **v3.0 Transform Enhancements:**
 
-You can also use auto-references and spatial references in transforms:
+You can also use auto-generated anchors and spatial references in transforms:
 
 ```yaml
 parts:
@@ -487,7 +487,7 @@ parts:
     primitive: box
     parameters: {width: 20, height: 5, depth: 30}
     translate:
-      to: base.face_top  # Auto-reference
+      to: base.face_top  # auto-generated anchor
 
   aligned_gear:
     primitive: cylinder

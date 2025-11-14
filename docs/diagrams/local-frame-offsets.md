@@ -1,6 +1,6 @@
 # Local Frame Offsets
 
-This diagram illustrates how offsets work in local coordinate frames vs world coordinates.
+This diagram illustrates how offsets work in local coordinate frames vs world space.
 
 ## World Coordinates vs Local Frames
 
@@ -56,7 +56,7 @@ parts:
         offset: [10, 0, 5]  # ❌ Always in world X,Y,Z
 ```
 
-**Result:** Offset is `[10, 0, 5]` in world coordinates, regardless of base orientation.
+**Result:** Offset is `[10, 0, 5]` in world space, regardless of base orientation.
 
 ### With Local Frames (TiaCAD v3.0+)
 
@@ -132,7 +132,7 @@ parts:
 ## Technical Details
 
 Each anchor (e.g., `base.face_top`) provides:
-1. **Position** - (x, y, z) point in world coordinates
+1. **Position** - (x, y, z) point in world space
 2. **Normal** - Direction perpendicular to surface (local Z)
 3. **Tangent** - Direction along surface (local X)
 4. **Bitangent** - Second direction along surface (local Y)
@@ -165,4 +165,4 @@ translate:
   offset: [15, -10, 3]  # Offset in plate's local frame
 ```
 
-**Key Insight:** You describe position relative to the surface, not in absolute world coordinates.
+**Key Insight:** You describe position relative to the surface, not in absolute world space.

@@ -2,7 +2,7 @@ metadata:
   name: Bracket Mount Assembly (v3.0)
   description: |
     Practical assembly demonstrating v3.0 features:
-    - Auto-references for intuitive positioning
+    - auto-generated anchors for intuitive positioning
     - Local frame offsets for precise placement
     - Boolean operations for mounting holes
     - Parametric design for easy customization
@@ -53,7 +53,7 @@ parts:
       depth: '${bracket_height}'
     origin: center
     translate:
-      to: base_plate.face_back  # ✨ Auto-reference positioning
+      to: base_plate.face_back  # ✨ auto-generated anchor positioning
 
   # 3. Left support arm
   left_arm:
@@ -65,7 +65,7 @@ parts:
     origin: center
     translate:
       to:
-        from: bracket.face_front  # ✨ Auto-reference with offset
+        from: bracket.face_front  # ✨ auto-generated anchor with offset
         offset: ['${-arm_offset_from_edge}', 0, 0]  # Local frame offset!
 
   # 4. Right support arm
@@ -78,7 +78,7 @@ parts:
     origin: center
     translate:
       to:
-        from: bracket.face_front  # ✨ Auto-reference with offset
+        from: bracket.face_front  # ✨ auto-generated anchor with offset
         offset: ['${arm_offset_from_edge}', 0, 0]  # Local frame offset!
 
   # 5. Left mounting hole template
@@ -136,7 +136,7 @@ operations:
 
 # v3.0 Features Demonstrated:
 # ========================
-# 1. Auto-references (no explicit reference definitions!)
+# 1. auto-generated anchors (no explicit reference definitions!)
 #    - base_plate.face_back
 #    - base_plate.face_top
 #    - bracket.face_front

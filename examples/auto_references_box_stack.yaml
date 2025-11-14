@@ -1,9 +1,9 @@
-# Auto-References Example: Stacking Boxes
+# auto-generated anchors Example: Stacking Boxes
 #
 # Demonstrates using auto-generated face references to stack boxes
 # without manually calculating positions.
 #
-# Auto-references used:
+# auto-generated anchors used:
 # - base.face_top - Top face of base box
 # - middle.face_top - Top face of middle box
 
@@ -24,7 +24,7 @@ parts:
       height: 15
       depth: 40
     translate:
-      to: base.face_top  # Auto-reference to base's top face
+      to: base.face_top  # auto-generated anchor to base's top face
 
   # Top layer - automatically positioned on top of middle
   top:
@@ -34,7 +34,7 @@ parts:
       height: 10
       depth: 30
     translate:
-      to: middle.face_top  # Auto-reference to middle's top face
+      to: middle.face_top  # auto-generated anchor to middle's top face
 
 # Export the stacked boxes
 export:

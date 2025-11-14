@@ -2,13 +2,13 @@ metadata:
   name: Awesome Guitar Hanger v3.1
   description: |
     Professional wall-mounted guitar hanger with structural reinforcements.
-    Demonstrates TiaCAD v3.0 auto-references and complete assembly workflow.
+    Demonstrates TiaCAD v3.0 auto-generated anchors and complete assembly workflow.
     Ready to 3D print as a single unified part!
   version: 3.1
   author: TIA
   created: 2025-11-11
   features:
-    - Auto-references (beam.face_front, plate.face_top, etc.)
+    - auto-generated anchors (beam.face_front, plate.face_top, etc.)
     - Boolean unions for complete assembly
     - Structural reinforcement brackets
     - Screw holes with countersink
@@ -123,21 +123,21 @@ parts:
     origin: center
 
 # ═══════════════════════════════════════════════════════
-# SPATIAL REFERENCES - Using auto-references as foundation!
+# SPATIAL REFERENCES - Using auto-generated anchors as foundation!
 # ═══════════════════════════════════════════════════════
-# These reference points are derived from auto-references
+# These reference points are derived from auto-generated anchors
 
 references:
   # Beam attachment point (front of plate)
   beam_attach_point:
     type: point
-    from: mounting_plate.face_front  # 🎯 Auto-reference!
+    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
     offset: [0, 0, 0]
 
   # Front of beam (where arms attach)
   beam_front_center:
     type: point
-    from: mounting_plate.face_front  # 🎯 Auto-reference!
+    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
     offset: [0, '${beam_thickness}', 0]
 
   # Left arm attachment point
@@ -167,34 +167,34 @@ references:
   # Bracket positions
   left_bracket_pos:
     type: point
-    from: mounting_plate.face_front  # 🎯 Auto-reference!
+    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
     offset: ['${-beam_width / 3}', '${bracket_height / 2}', 0]
 
   right_bracket_pos:
     type: point
-    from: mounting_plate.face_front  # 🎯 Auto-reference!
+    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
     offset: ['${beam_width / 3}', '${bracket_height / 2}', 0]
 
   # Screw hole positions
   left_screw_pos:
     type: point
-    from: mounting_plate.center  # 🎯 Auto-reference!
+    from: mounting_plate.center  # 🎯 auto-generated anchor!
     offset: ['${-screw_spacing / 2}', 0, '${plate_height/2 - screw_offset_from_top}']
 
   right_screw_pos:
     type: point
-    from: mounting_plate.center  # 🎯 Auto-reference!
+    from: mounting_plate.center  # 🎯 auto-generated anchor!
     offset: ['${screw_spacing / 2}', 0, '${plate_height/2 - screw_offset_from_top}']
 
   # Countersink positions (front face)
   left_countersink_pos:
     type: point
-    from: mounting_plate.face_front  # 🎯 Auto-reference!
+    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
     offset: ['${-screw_spacing / 2}', '${-countersink_depth / 2}', '${plate_height/2 - screw_offset_from_top}']
 
   right_countersink_pos:
     type: point
-    from: mounting_plate.face_front  # 🎯 Auto-reference!
+    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
     offset: ['${screw_spacing / 2}', '${-countersink_depth / 2}', '${plate_height/2 - screw_offset_from_top}']
 
 operations:
@@ -207,7 +207,7 @@ operations:
     input: support_beam
     transforms:
       - translate:
-          to: beam_attach_point  # Named reference from auto-reference!
+          to: beam_attach_point  # Named reference from auto-generated anchor!
 
   # ═══════════════════════════════════════════════════════
   # STEP 2: POSITION THE CRADLE ARMS

@@ -443,7 +443,7 @@ def resolve(spec) -> SpatialReference:
         position=(x, y, z),
         normal=(nx, ny, nz),      # For faces
         direction=(dx, dy, dz),   # For edges/axes
-        frame=Frame(...)          # Local coordinate system
+        frame=Frame(...)          # Local local frame
     )
 ```
 

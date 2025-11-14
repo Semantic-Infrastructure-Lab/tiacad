@@ -58,7 +58,7 @@ references:
 - `{part}.face_bottom` - Bottom face center
 - `{part}.origin` - Part's origin point (0,0,0)
 
-**Visual Guide**: See [Auto-Reference Visualization](docs/diagrams/auto-reference-visualization.md) for a complete visual reference.
+**Visual Guide**: See [auto-generated anchor Visualization](docs/diagrams/auto-generated anchor-visualization.md) for a complete visual reference.
 
 **Think of it as**: Marking spots on a workbench with tape - "this is where the bracket goes"
 
@@ -354,11 +354,11 @@ pillar:
 
 ---
 
-### Local Frame (Coordinate System)
+### Local Frame
 
-**What it means**: Each anchor has its own coordinate system (X, Y, Z axes) oriented relative to the geometry.
+**What it means**: Each anchor has its own local frame (X, Y, Z axes) oriented relative to the geometry.
 
-**Why it matters**: Offsets are applied in the local frame, not world coordinates.
+**Why it matters**: Offsets are applied in the local frame, not world space.
 
 **Example**:
 ```yaml
@@ -368,7 +368,7 @@ hook:
     offset: [0, 10, 0]         # 10 units in local Y (away from wall)
 ```
 
-**Without local frames**: You'd need to calculate world coordinates manually.
+**Without local frames**: You'd need to calculate world space manually.
 
 **Think of it as**: Each surface has its own "up", "forward", and "sideways" directions.
 
@@ -376,7 +376,7 @@ hook:
 
 ### Offset
 
-**What it means**: A displacement from an anchor position, specified in the anchor's local coordinate system.
+**What it means**: An offset from an anchor position, specified in the anchor's local local frame.
 
 **Format**: `[x, y, z]` where:
 - x: left/right
@@ -634,13 +634,13 @@ parts:
 
 ---
 
-### Auto-References vs Named References
+### auto-generated anchors vs Named References
 
 **Question**: When do I use which?
 
 **Answer**:
 
-**Auto-references** (use when):
+**auto-generated anchors** (use when):
 - Simple positioning (put this on top of that)
 - Common attachment points (face centers, part center)
 - Don't need custom offsets
@@ -648,7 +648,7 @@ parts:
 ```yaml
 tower:
   translate:
-    to: base.face_top  # Auto-reference
+    to: base.face_top  # auto-generated anchor
 ```
 
 **Named references** (use when):
@@ -681,8 +681,8 @@ tower_b:
 | Sub-assembly | Named reference | `references:` |
 | Mate / Constraint | Translate to anchor | `translate: to:` |
 | Attachment point | Anchor / Reference | `references:` |
-| Face center | Auto-reference | `.face_top` |
-| Part center | Auto-reference | `.center` |
+| Face center | auto-generated anchor | `.face_top` |
+| Part center | auto-generated anchor | `.center` |
 | Combine parts | Boolean union | `operations:` |
 | Cut hole | Boolean difference | `operations:` |
 | Round edge | Fillet | `operations:` |

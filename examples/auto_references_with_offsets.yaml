@@ -1,9 +1,9 @@
-# Auto-References Example: Using Offsets
+# auto-generated anchors Example: Using Offsets
 #
-# Demonstrates combining auto-references with offsets to create
+# Demonstrates combining auto-generated anchors with offsets to create
 # spacing between parts.
 #
-# Shows how to use the `from` and `offset` syntax with auto-references.
+# Shows how to use the `from` and `offset` syntax with auto-generated anchors.
 
 parts:
   # Platform base
@@ -73,5 +73,5 @@ export:
     parts: [platform, post_1, post_2, post_3, post_4, top_platform]
 
 # Result: A platform with four corner posts and a top platform
-# - Offsets allow precise positioning relative to auto-references
+# - Offsets allow precise positioning relative to auto-generated anchors
 # - Easy to adjust spacing by changing offset values

@@ -1,9 +1,9 @@
-# Auto-References Example: Cylinder Assembly
+# auto-generated anchors Example: Cylinder Assembly
 #
-# Demonstrates using auto-references with cylinders to create
+# Demonstrates using auto-generated anchors with cylinders to create
 # a shaft with caps on both ends.
 #
-# Auto-references used:
+# auto-generated anchors used:
 # - shaft.face_top - Top circular face of cylinder
 # - shaft.face_bottom - Bottom circular face of cylinder
 # - shaft.axis_z - Vertical axis through shaft center
@@ -23,7 +23,7 @@ parts:
       radius: 8
       height: 3
     translate:
-      to: shaft.face_top  # Auto-reference to shaft's top face
+      to: shaft.face_top  # auto-generated anchor to shaft's top face
 
   # Bottom cap - larger diameter, sits on bottom of shaft
   bottom_cap:
@@ -32,7 +32,7 @@ parts:
       radius: 8
       height: 3
     translate:
-      to: shaft.face_bottom  # Auto-reference to shaft's bottom face
+      to: shaft.face_bottom  # auto-generated anchor to shaft's bottom face
 
   # Decorative sphere on top
   sphere_top:

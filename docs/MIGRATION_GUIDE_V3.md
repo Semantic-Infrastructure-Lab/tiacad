@@ -129,7 +129,7 @@ references:
     at: midpoint
 ```
 
-### Step 3: Use Auto-References (New in v3.0)
+### Step 3: Use auto-generated anchors (New in v3.0)
 
 Instead of manually defining common references, use auto-generated ones:
 
@@ -152,7 +152,7 @@ parts:
       to: base_top
 ```
 
-**After (v3.0) - Using Auto-References:**
+**After (v3.0) - Using auto-generated anchors:**
 ```yaml
 # No need to define references - use auto-generated ones!
 
@@ -186,7 +186,7 @@ translate:
   to:
     type: point
     from: base.face_top
-    offset: [5, 0, 2]  # Offset in face's local coordinate system
+    offset: [5, 0, 2]  # Offset in face's local local frame
 ```
 
 ---
@@ -195,7 +195,7 @@ translate:
 
 v3.0 automatically provides these references for every part:
 
-### Universal Auto-References
+### Universal auto-generated anchors
 
 Available for all primitives (box, cylinder, sphere, cone):
 
@@ -225,7 +225,7 @@ parts:
     primitive: cylinder
     parameters: {radius: 5, height: 50}
     translate:
-      to: base.face_top  # Auto-reference - no definition needed!
+      to: base.face_top  # auto-generated anchor - no definition needed!
 
   cap:
     primitive: box
@@ -297,7 +297,7 @@ parameters:
   platform_size: 100
   post_height: 40
 
-# No references section needed - using auto-references!
+# No references section needed - using auto-generated anchors!
 
 parts:
   platform:
@@ -315,7 +315,7 @@ parts:
     translate:
       to:
         type: point
-        from: platform.face_top  # Auto-reference!
+        from: platform.face_top  # auto-generated anchor!
         offset: [-30, -30, 0]
 
   top_platform:
@@ -327,7 +327,7 @@ parts:
     translate:
       to:
         type: point
-        from: post_1.face_top  # Auto-reference!
+        from: post_1.face_top  # auto-generated anchor!
         offset: [0, 0, 5]
 
 export:
@@ -380,7 +380,7 @@ parts:
     translate:
       to: attach_point
 
-# v3.0 - Using auto-references
+# v3.0 - Using auto-generated anchors
 parts:
   arm:
     translate:
@@ -464,7 +464,7 @@ After migrating your YAML files:
 
 v3.0's unified spatial reference system provides:
 
-✅ **Simpler YAML** - Auto-references eliminate boilerplate
+✅ **Simpler YAML** - auto-generated anchors eliminate boilerplate
 ✅ **More Expressive** - Face, edge, and axis references
 ✅ **Intelligent Positioning** - Local frame offsets
 ✅ **Better Errors** - Clear validation messages

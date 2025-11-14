@@ -1,6 +1,6 @@
 metadata:
   name: Guitar Hanger with Named Points (v3.0)
-  description: Wall-mounted guitar hanger demonstrating v3.0 spatial references and auto-references
+  description: Wall-mounted guitar hanger demonstrating v3.0 spatial references and auto-generated anchors
   version: 3.0
   author: TIA
   created: 2025-11-02
@@ -67,7 +67,7 @@ parts:
     origin: center
 
 # Spatial references - v3.0 unified format! ✨
-# Note: v3.0 provides auto-references (e.g., beam.face_front) for common cases,
+# Note: v3.0 provides auto-generated anchors (e.g., beam.face_front) for common cases,
 # but explicit references are shown here for demonstration and fine-grained control
 references:
   # Face reference - extracts position and normal from geometry

@@ -1,4 +1,4 @@
-# Auto-References Guide
+# auto-generated anchors Guide
 
 ## Overview
 
@@ -14,7 +14,7 @@ TiaCAD automatically generates **spatial references** (we call them **anchors**)
 - **Orientation-aware**: Anchors include direction information (surface normals) for intelligent positioning
 - **Every part gets them**: All primitives (box, cylinder, sphere, cone) automatically provide standard anchors
 
-**Visual Guide:** See [Auto-Reference Visualization](docs/diagrams/auto-reference-visualization.md) for a complete visual reference of all auto-generated anchors.
+**Visual Guide:** See [auto-generated anchor Visualization](docs/diagrams/auto-generated anchor-visualization.md) for a complete visual reference of all auto-generated anchors.
 
 These auto-generated anchors are available for all primitive types.
 
@@ -103,7 +103,7 @@ parts:
       to: ball.face_bottom  # Place stand under ball
 ```
 
-## Using Auto-References
+## Using auto-generated anchors
 
 ### Basic Translation
 
@@ -124,7 +124,7 @@ parts:
 
 ### With Offsets
 
-Add an offset to an auto-reference:
+Add an offset to an auto-generated anchor:
 
 ```yaml
 parts:
@@ -165,13 +165,13 @@ parts:
 1. **No Manual Calculation**: Don't need to calculate face positions or centers
 2. **Maintainable**: If base dimensions change, references update automatically
 3. **Readable**: `base.face_top` is clearer than `[50, 50, 20]`
-4. **Type-Safe**: Auto-references are validated at parse time
+4. **Type-Safe**: auto-generated anchors are validated at parse time
 
 ## Implementation Details
 
 ### Backend Abstraction
 
-Auto-references use the geometry backend abstraction:
+auto-generated anchors use the geometry backend abstraction:
 - `GeometryBackend.get_bounding_box()` - Returns min, max, and center
 - `GeometryBackend.select_faces()` - Selects faces by direction
 - `GeometryBackend.get_face_center()` - Gets face center point
@@ -184,10 +184,10 @@ This abstraction enables:
 
 ### Caching
 
-Auto-references are cached by the `SpatialResolver` for performance. The cache is automatically invalidated when parts are modified.
+auto-generated anchors are cached by the `SpatialResolver` for performance. The cache is automatically invalidated when parts are modified.
 
 ## See Also
 
 - [NAMED_POINTS_GUIDE.md](NAMED_POINTS_GUIDE.md) - For custom reference points
 - [YAML_REFERENCE.md](YAML_REFERENCE.md) - Complete YAML syntax reference
-- [examples/](examples/) - Example YAML files demonstrating auto-references
+- [examples/](examples/) - Example YAML files demonstrating auto-generated anchors

@@ -24,7 +24,7 @@ class SpatialRef:
     # Orientation (optional - None for simple points)
     orientation: Optional[np.ndarray] = None  # (3,) normal/direction vector
 
-    # Tangent (optional - for edges, defines local coordinate system)
+    # Tangent (optional - for edges, defines local local frame)
     tangent: Optional[np.ndarray] = None  # (3,) tangent vector
 
     # Type hint for debugging/validation
@@ -47,7 +47,7 @@ class SpatialRef:
 
 @dataclass
 class Frame:
-    """Local coordinate system - generated FROM SpatialRef, not separate"""
+    """Local local frame - generated FROM SpatialRef, not separate"""
 
     origin: np.ndarray    # (3,)
     x_axis: np.ndarray    # (3,) normalized

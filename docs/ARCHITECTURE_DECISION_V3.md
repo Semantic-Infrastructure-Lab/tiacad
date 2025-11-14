@@ -33,7 +33,7 @@ This means:
 - ✅ **Single reference system** - Just `references:`, one `SpatialRef` type
 - ✅ **Unified resolver** - One `SpatialResolver` for all reference types
 - ✅ **Auto-generated references** - Part-local references (e.g., `box.face_top`)
-- ✅ **Local frame offsets** - Offsets in reference's coordinate system
+- ✅ **Local frame offsets** - Offsets in reference's local frame
 - ✅ **Faster timeline** - 6 weeks vs 12-16 weeks
 
 ---
@@ -192,7 +192,7 @@ If the face is tilted, the offset automatically follows the tilt!
 - [ ] Remove old `PointResolver`
 - [ ] Write 30+ integration tests
 
-### Phase 3: Auto-References (1 week)
+### Phase 3: auto-generated anchors (1 week)
 **Week 5:**
 - [ ] Implement part-local reference generation
 - [ ] Document canonical references per primitive type
@@ -293,7 +293,7 @@ operations:
 
 - **2025-11-15** (Week 2): Core classes complete, 70+ tests passing
 - **2025-11-29** (Week 4): Integration complete, old PointResolver removed
-- **2025-12-06** (Week 5): Auto-references working
+- **2025-12-06** (Week 5): auto-generated anchors working
 - **2025-12-13** (Week 6): Documentation complete, v3.0.0 released
 
 ---
