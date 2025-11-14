@@ -52,6 +52,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created examples/enhanced_metadata_demo.yaml demonstrating usage
   - Helps readers immediately understand document purpose and design approach
 
+#### Terminology Standardization (Phase 2.5)
+- **docs/TERMINOLOGY_GUIDE.md** - Canonical terminology reference (622 lines)
+  - Established official terminology for 30+ concepts with rationale
+  - Spatial terms: "local frame" (not "coordinate system"), "world space" (not "global coordinates")
+  - Anchor terms: "auto-generated anchors" (not "auto-references"), "anchor" in user docs (not "reference")
+  - Geometry terms: "face" (not "surface"), "normal" for vectors, "orientation" for frames
+  - Operation categories: "Positioning (Transforms)", "Shape Modification (Features)", etc.
+  - Documentation voice: "you" in tutorials, "users" in reference docs
+  - Quick reference table for all terminology decisions
+  - Version evolution notes for v4.0 planned changes
+- **Applied standardization across 20 files**:
+  - 9 documentation files (README, GLOSSARY, guides, specs)
+  - 8 example YAML files
+  - All technical documentation updated for consistency
+- **scripts/audit_terminology.py** - Tool for finding terminology inconsistencies
+- **Impact**: Clear authority on terminology, reduced ambiguity, faster doc writing, easier PR reviews
+- **Changes**: 22 files changed (+1,052 insertions, -110 deletions)
+
 ### Added - Documentation Improvements (2025-11-13)
 
 #### Mental Model & Language Clarity
