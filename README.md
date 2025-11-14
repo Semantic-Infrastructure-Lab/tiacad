@@ -110,6 +110,8 @@ TiaCAD is a **declarative parametric CAD system** that lets you design 3D models
 
 **Why this matters:** Once you understand the reference-based model, positioning becomes intuitive: "place the cap on the pillar's top face" rather than calculating coordinates manually.
 
+**Visual Guide:** See [Reference-Based vs Hierarchical](docs/diagrams/reference-based-vs-hierarchical.md) for a detailed visual comparison.
+
 **See also:** [GLOSSARY.md](GLOSSARY.md) for term definitions, [AUTO_REFERENCES_GUIDE.md](AUTO_REFERENCES_GUIDE.md) for anchor details.
 
 ---

@@ -79,9 +79,27 @@ metadata:
   author: "Your Name"            # Who created it
   created: "2025-10-25"          # Creation date
   phase: 2                       # TiaCAD phase used
+
+  # NEW in v3.2: Optional type and composition fields
+  type: assembly                 # Document purpose (see below)
+  composition: reference-based   # Makes mental model explicit
 ```
 
 All fields are optional and for documentation only.
+
+### Enhanced Metadata Fields (v3.2+)
+
+**type** - Declares the document purpose:
+- `part` - Single part design
+- `assembly` - Multiple parts combined
+- `model` - Complete model/design
+- `mechanism` - Moving parts assembly
+- `fixture` - Jig or mounting fixture
+
+**composition** - Makes the mental model explicit:
+- `reference-based` - TiaCAD's composition model (recommended)
+
+These fields help readers immediately understand the document's purpose and design approach.
 
 ---
 
@@ -139,6 +157,11 @@ parts:
 **New in v3.0:** TiaCAD introduces a unified spatial reference system that replaces the old `named_points:` section. This system supports not just points, but also faces, edges, and axes with full orientation information (position + direction).
 
 **Key concept**: Instead of calculating coordinates manually, you position parts using anchors: `translate: to: base.face_top` instead of `translate: [50, 25, 10]`.
+
+**Visual Guides:**
+- [Auto-Reference Visualization](docs/diagrams/auto-reference-visualization.md) - See all auto-generated anchors
+- [Local Frame Offsets](docs/diagrams/local-frame-offsets.md) - Understand how offsets work
+- [Reference Chain Dependencies](docs/diagrams/reference-chain-dependencies.md) - Learn how parts reference each other
 
 ### Auto-Generated References
 
@@ -203,7 +226,10 @@ parts:
 
 You can define custom anchors in the `references:` section when auto-generated ones don't suffice. Think of this as marking additional attachment points beyond the automatic ones.
 
+**New in v3.2:** You can use `anchors:` as a user-friendly alias for `references:`. Both work identically!
+
 ```yaml
+# Option 1: Using 'references:' (canonical, all versions)
 references:
   mount_surface:
     type: face
@@ -219,7 +245,26 @@ references:
   corner_point:
     type: point
     value: [50, 50, 0]
+
+# Option 2: Using 'anchors:' (v3.2+, more intuitive)
+anchors:
+  mount_surface:
+    type: face
+    part: base
+    selector: ">Z and <X"
+    at: center
+
+  hinge_axis:
+    type: axis
+    from: [0, 0, 0]
+    to: [0, 0, 100]
+
+  corner_point:
+    type: point
+    value: [50, 50, 0]
 ```
+
+**Note:** Use either `references:` or `anchors:`, not both. They're aliases for the same thing!
 
 ### Reference Types
 
@@ -473,6 +518,8 @@ Operations in TiaCAD fall into four categories, each with different purposes:
 | **4. Replication** | Create multiple copies | `linear_pattern`, `circular_pattern`, `grid_pattern` | Stamping copies |
 
 **Key Insight**: Positioning operations affect WHERE parts are, modification operations affect WHAT they look like, combining operations create NEW geometry, and replication creates COPIES.
+
+**Visual Guide:** See [Operation Categories](docs/diagrams/operation-categories.md) for detailed examples and decision tree.
 
 ---
 

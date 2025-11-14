@@ -479,3 +479,80 @@ parts:
             assert doc.get_part('box') is not None
         finally:
             os.unlink(temp_path)
+
+
+class TestYAMLAliasSupport:
+    """Test YAML field alias support (v3.2+)"""
+
+    def test_anchors_alias_for_references(self):
+        """Test using 'anchors:' as alias for 'references:' (v3.2+)"""
+        yaml_content = """
+parts:
+  base:
+    primitive: box
+    parameters: {width: 100, height: 10, depth: 100}
+
+  pillar:
+    primitive: cylinder
+    parameters: {radius: 5, height: 50}
+    translate:
+      to: base.face_top
+
+anchors:
+  custom_point:
+    type: point
+    value: [50, 50, 30]
+"""
+        doc = TiaCADParser.parse_string(yaml_content)
+
+        # Should successfully parse with 'anchors:' section
+        assert doc is not None
+        assert doc.get_part('base') is not None
+        assert doc.get_part('pillar') is not None
+
+        # The 'anchors:' section should be normalized to 'references:'
+        assert 'custom_point' in doc.references
+
+    def test_anchors_and_references_conflict(self):
+        """Test error when both 'anchors:' and 'references:' are present"""
+        yaml_content = """
+parts:
+  box:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+
+anchors:
+  point1:
+    type: point
+    value: [0, 0, 0]
+
+references:
+  point2:
+    type: point
+    value: [10, 10, 10]
+"""
+        with pytest.raises(TiaCADParserError) as exc_info:
+            TiaCADParser.parse_string(yaml_content)
+
+        error_msg = str(exc_info.value).lower()
+        assert 'anchors' in error_msg and 'references' in error_msg
+        assert 'both' in error_msg
+
+    def test_references_still_works(self):
+        """Test that canonical 'references:' still works (backward compatible)"""
+        yaml_content = """
+parts:
+  base:
+    primitive: box
+    parameters: {width: 100, height: 10, depth: 100}
+
+references:
+  mounting_point:
+    type: point
+    value: [50, 50, 10]
+"""
+        doc = TiaCADParser.parse_string(yaml_content)
+
+        # Should work with canonical 'references:' section
+        assert doc is not None
+        assert 'mounting_point' in doc.references
