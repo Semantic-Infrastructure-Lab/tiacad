@@ -533,7 +533,67 @@ tiacad/
 
 ---
 
-## Future Roadmap
+## Known Limitations & Future Roadmap
+
+### Current Limitations
+
+TiaCAD v3.1 is production-ready with comprehensive testing, but has some architectural limitations that are planned for future phases:
+
+**1. Position-Only References (High Priority)**
+- Current `PointResolver` only returns position `(x, y, z)`
+- No orientation data (normals, directions, frames)
+- **Impact**: Cannot do `align_to_face` or `mate_axes` operations
+- **Workaround**: Manual rotation calculations
+- **Planned Fix**: Phase 3 (12-16 weeks) - `SpatialResolver` with full orientation support
+
+**2. No Dependency Graph (High Priority)**
+- Sequential execution only - must rebuild entire model on parameter changes
+- **Impact**: Slow iteration on complex models
+- **Workaround**: Keep models under 200 lines, use parameters
+- **Planned Fix**: Phase 4a (6-8 weeks) - DAG with incremental rebuilds (10x faster)
+
+**3. No Constraint System (High Priority)**
+- No sketch constraints or assembly constraints
+- **Impact**: Manual positioning required for assemblies
+- **Workaround**: Use reference-based positioning with named anchors
+- **Planned Fix**: Phase 4b (4-6 weeks) - Explicit constraints, Phase 5 (12-16 weeks) - Constraint solver
+
+**4. CadQuery Coupling (Medium Priority)**
+- 90% of code directly calls CadQuery (backend abstraction exists but not enforced)
+- **Impact**: Cannot easily swap geometry kernels
+- **Decision**: Continue with CadQuery, enforce abstraction in new code only
+
+**See**: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for complete details, workarounds, and roadmap.
+
+---
+
+### Future Roadmap
+
+**Total Timeline to Constraint-Based CAD**: ~40-50 weeks (10-12 months)
+
+**Phase 3: Named Geometry & Orientation** (12-16 weeks) - Next Major Milestone
+- `SpatialResolver` with face/edge/axis support
+- Frame-based transforms
+- `align_to_face` operation
+- Intent-based modeling ("align to face" vs raw coordinates)
+
+**Phase 4a: Dependency Graph (DAG)** (6-8 weeks)
+- Incremental rebuilds (10x faster for parameter changes)
+- `--watch` mode for auto-rebuild
+- Circular dependency detection
+
+**Phase 4b: Explicit Constraints** (4-6 weeks)
+- Declarative constraints (flush, coaxial, offset)
+- Constraint validation and conflict detection
+- Manual specification (user sets positions)
+
+**Phase 5: Constraint Solver** (12-16 weeks) - Post-1.0
+- Automatic constraint satisfaction
+- Symbolic solver (SymPy) for simple cases
+- Numeric solver (scipy.optimize) for assemblies
+- Full constraint-based CAD (like SolidWorks/Fusion360)
+
+**See**: [docs/TIACAD_EVOLUTION_ROADMAP.md](docs/TIACAD_EVOLUTION_ROADMAP.md) for complete strategic plan.
 
 ### Advanced Features (v4.0+)
 
@@ -650,6 +710,7 @@ Every component has comprehensive tests:
 
 **Project Planning:**
 - [docs/TIACAD_EVOLUTION_ROADMAP.md](docs/TIACAD_EVOLUTION_ROADMAP.md) - Overall project roadmap
+- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) - Known limitations and improvement plans
 - [docs/LANGUAGE_IMPROVEMENTS_STATUS.md](docs/LANGUAGE_IMPROVEMENTS_STATUS.md) - Documentation improvement tracking
 - [docs/V3_IMPLEMENTATION_STATUS.md](docs/V3_IMPLEMENTATION_STATUS.md) - Feature implementation status
 - [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) - Project health snapshot

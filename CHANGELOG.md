@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Software Issues Documentation (2025-11-14)
+
+#### Known Limitations & Improvement Plans
+- **docs/KNOWN_ISSUES.md** - Comprehensive documentation of technical limitations (NEW)
+  - Current limitations: CadQuery coupling, PointResolver limitations, no DAG, no constraints
+  - Workarounds & best practices for each limitation
+  - Complete improvement roadmap (Phases 3-5, 40-50 weeks total)
+  - Explicitly rejected approaches (persistent JSON, units system, multiple backends)
+  - Minor technical debt tracking
+  - Clear timeline to constraint-based CAD
+- **README.md updates**:
+  - Added "Known Limitations & Future Roadmap" section
+  - Clear summary of 4 current limitations with workarounds and fixes
+  - Linked to docs/KNOWN_ISSUES.md for detailed information
+  - Added KNOWN_ISSUES.md to Project Planning documentation section
+- **Purpose**: Transparent communication of architectural constraints and strategic plans
+- **Impact**: Users understand current capabilities, workarounds, and future direction
+
 ### Added - Phase 2 Improvements (2025-11-14)
 
 #### Visual Diagrams (Phase 2.1)
@@ -187,11 +205,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-### v3.2 - Planned
-- Visual documentation diagrams
-- YAML alias support (`anchors:` for `references:`)
-- Enhanced metadata section
-- User feedback integration from v3.1
+### v3.1 Phase 2 - Visual Regression Testing (Q2 2026)
+**Status**: Phase 1 Complete (testing utilities + 131+ tests)
+
+**Features**:
+- Visual regression framework using trimesh + matplotlib
+- Reference images for 40+ examples
+- 50+ visual regression tests
+- Automated visual diff reporting in CI
+- Contact detection utilities
+- Hole and feature detection
+
+**Duration**: 8-10 weeks
+
+### v3.2 - Dependency Graph (DAG) (Q3 2026)
+**Status**: Planned (follows v3.1 Phase 2)
+
+**Features**:
+- ModelGraph using NetworkX for dependency tracking
+- Incremental rebuild (10x faster for parameter changes)
+- `--watch` mode for auto-rebuild on YAML changes
+- `--show-deps` command for graph visualization
+- Circular dependency detection
+
+**Duration**: 6-8 weeks
+
+### v3.3 - Explicit Constraints (Q4 2026)
+**Status**: Planned (requires v3.2 DAG)
+
+**Features**:
+- Constraint YAML schema (flush, coaxial, offset)
+- Manual constraint specification (user sets positions)
+- Constraint validation and conflict detection
+- Integration with ModelGraph
+- 3+ assembly examples
+
+**Duration**: 4-6 weeks
 
 ### v4.0 - Future (Breaking Changes)
 - Rename core concepts (`parts:` → `shapes:`, `references:` → `anchors:`)
