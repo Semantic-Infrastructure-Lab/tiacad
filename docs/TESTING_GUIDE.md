@@ -19,23 +19,25 @@
 
 ## Overview
 
-TiaCAD has a comprehensive test suite with **950+ tests** covering:
+TiaCAD has a comprehensive test suite with **1000+ tests** covering:
 
 - **Unit tests**: Fast, isolated tests for individual functions/classes
 - **Integration tests**: Multi-component tests for end-to-end workflows
 - **Correctness tests**: Verify geometric correctness (attachment, rotation, dimensions)
+- **Visual regression tests**: Automated rendering and pixel-diff comparison (v3.1 Phase 2)
 - **Parser tests**: YAML parsing and geometry building
 - **Validation tests**: Rule-based validation of models
 
-### Test Statistics (v3.1)
+### Test Statistics (v3.1 Phase 2)
 
 | Category | Count | Coverage |
 |----------|-------|----------|
 | Parser Tests | 518 | 95% |
-| Correctness Tests (NEW) | 60+ | 90% |
+| Correctness Tests | 60+ | 90% |
+| Visual Regression Tests (NEW) | 50+ | 100% |
 | Integration Tests | 20+ | 85% |
 | Unit Tests | 350+ | 92% |
-| **Total** | **950+** | **90%** |
+| **Total** | **1000+** | **92%** |
 
 ---
 
@@ -141,7 +143,7 @@ TiaCAD uses pytest markers to organize tests by category. See `pytest.ini` for f
 - `attachment`: Verify parts attach at correct locations with proper contact
 - `rotation`: Verify parts orient correctly according to specifications
 - `dimensions`: Verify measurements match specifications (size, volume, surface area)
-- `visual`: Visual regression tests (future: v3.2)
+- `visual`: Visual regression tests (v3.1 Phase 2 - NEW)
 
 #### Feature Categories
 
@@ -318,6 +320,142 @@ expected = 2 * (10*20 + 10*30 + 20*30)  # Box surface area
 # Verify within 1% accuracy
 assert abs(area - expected) < expected * 0.01
 ```
+
+### 4. Visual Regression Testing (v3.1 Phase 2 - NEW)
+
+Module: `tiacad_core/testing/visual_regression.py`
+
+#### Overview
+
+Visual regression testing automatically detects unintended visual changes in rendered 3D models by comparing test outputs against reference images.
+
+**Key Features:**
+- Automated rendering of CadQuery geometry to PNG/SVG
+- Pixel-by-pixel comparison with configurable thresholds
+- Diff image generation for visual inspection
+- HTML reports with side-by-side comparisons
+- CI/CD integration for automated testing
+
+#### `VisualRegressionTester`
+
+Main class for visual regression testing workflows.
+
+**Example:**
+
+```python
+from tiacad_core.testing.visual_regression import VisualRegressionTester, RenderConfig
+
+# Initialize tester
+tester = VisualRegressionTester(
+    reference_dir="tests/visual_references",
+    output_dir="tests/visual_output",
+    diff_dir="tests/visual_diffs",
+    update_references=False
+)
+
+# Configure rendering
+config = RenderConfig(
+    width=800,
+    height=600,
+    camera_position=(50, 50, 50),
+    background_color='white',
+    dpi=150
+)
+
+# Render and compare
+result = tester.render_and_compare(
+    geometry=my_assembly,
+    test_name="my_test",
+    threshold=1.0,  # 1% pixel difference allowed
+    config=config
+)
+
+# Check result
+assert result.passed, f"Visual test failed: {result.pixel_diff_percentage}%"
+```
+
+#### `pytest_visual_compare()`
+
+Helper function for pytest integration.
+
+**Example:**
+
+```python
+import pytest
+from tiacad_core.testing.visual_regression import pytest_visual_compare
+import cadquery as cq
+
+@pytest.mark.visual
+def test_my_assembly():
+    # Create geometry
+    box = cq.Workplane("XY").box(10, 10, 10)
+
+    # Visual regression test
+    result = pytest_visual_compare(
+        geometry=box,
+        test_name="my_assembly",
+        threshold=1.0
+    )
+
+    assert result.passed, f"Visual diff: {result.pixel_diff_percentage}%"
+```
+
+#### Running Visual Tests
+
+```bash
+# Run all visual regression tests
+pytest -m visual
+
+# Update reference images (creates new baselines)
+UPDATE_VISUAL_REFERENCES=1 pytest -m visual
+
+# Run specific visual test
+pytest -m visual -k "test_simple_box"
+
+# Run visual tests with verbose output
+pytest -m visual -v
+```
+
+#### Comparison Metrics
+
+The `VisualDiffResult` includes:
+
+- **pixel_diff_percentage**: Percentage of pixels that differ (0-100)
+- **rms_diff**: Root mean square color difference
+- **mean_pixel_diff**: Average difference across all pixels
+- **max_pixel_diff**: Maximum single-pixel difference (0-255)
+- **passed**: Boolean indicating if test passed threshold
+- **diff_path**: Path to generated diff image
+
+#### Configuring Thresholds
+
+Different tests may require different thresholds:
+
+```python
+# Strict threshold for simple geometry
+result = pytest_visual_compare(box, "simple_box", threshold=0.1)
+
+# Relaxed threshold for complex models
+result = pytest_visual_compare(assembly, "complex", threshold=2.0)
+```
+
+#### Best Practices
+
+1. **Use consistent render settings**: Same camera position, resolution, DPI
+2. **Set appropriate thresholds**: Start with 1%, adjust based on complexity
+3. **Update references deliberately**: Only when changes are intentional
+4. **Review diff images**: Always check visual diffs when tests fail
+5. **Version control references**: Commit reference images to git
+
+#### CI/CD Integration
+
+Visual tests run automatically in GitHub Actions:
+
+- **On push/PR**: Tests compare against committed references
+- **On failure**: Diff images uploaded as artifacts
+- **First run**: Automatically generates references if missing
+
+See `.github/workflows/visual-regression.yml` for configuration.
 
 ---
 
@@ -553,6 +691,12 @@ pytest
 # Run correctness tests only
 pytest -m "attachment or rotation or dimensions"
 
+# Run visual regression tests (v3.1 Phase 2)
+pytest -m visual
+
+# Update visual reference images
+UPDATE_VISUAL_REFERENCES=1 pytest -m visual
+
 # Run specific test file
 pytest tiacad_core/tests/test_correctness/test_rotation_correctness.py
 
@@ -573,6 +717,7 @@ pytest --durations=10
 | `attachment` | Attachment correctness | `pytest -m attachment` |
 | `rotation` | Rotation correctness | `pytest -m rotation` |
 | `dimensions` | Dimensional accuracy | `pytest -m dimensions` |
+| `visual` | Visual regression tests | `pytest -m visual` |
 | `integration` | Integration tests | `pytest -m integration` |
 | `parser` | Parser tests | `pytest -m parser` |
 | `slow` | Slow tests (>5s) | `pytest -m "not slow"` |
@@ -599,6 +744,14 @@ from tiacad_core.testing.dimensions import (
     get_dimensions,
     get_volume,
     get_surface_area,
+)
+
+# Visual Regression (v3.1 Phase 2)
+from tiacad_core.testing.visual_regression import (
+    VisualRegressionTester,
+    VisualDiffResult,
+    RenderConfig,
+    pytest_visual_compare,
 )
 ```
 

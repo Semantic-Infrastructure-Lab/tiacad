@@ -8,7 +8,7 @@ Modules:
     measurements: Distance measurement, bounding box utilities
     orientation: Rotation angles, normal vectors, alignment (v3.1+)
     dimensions: Volume, surface area, feature detection (v3.1+)
-    visual_regression: Visual testing framework (v3.2+)
+    visual_regression: Visual testing framework (v3.1 Phase 2)
 
 Example:
     from tiacad_core.testing.measurements import measure_distance
@@ -22,6 +22,7 @@ Example:
 See also:
     docs/TESTING_CONFIDENCE_PLAN.md
     docs/TESTING_QUICK_REFERENCE.md
+    docs/TESTING_GUIDE.md
 """
 
 from .measurements import (
@@ -41,6 +42,13 @@ from .dimensions import (
     get_surface_area,
 )
 
+from .visual_regression import (
+    VisualRegressionTester,
+    VisualDiffResult,
+    RenderConfig,
+    pytest_visual_compare,
+)
+
 __all__ = [
     'measure_distance',
     'get_bounding_box_dimensions',
@@ -50,4 +58,8 @@ __all__ = [
     'get_dimensions',
     'get_volume',
     'get_surface_area',
+    'VisualRegressionTester',
+    'VisualDiffResult',
+    'RenderConfig',
+    'pytest_visual_compare',
 ]

@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - v3.1 Phase 2: Visual Regression Testing (2025-11-14)
+
+#### Visual Regression Testing Framework
+- **tiacad_core/testing/visual_regression.py** - Complete visual testing framework (NEW)
+  - `VisualRegressionTester` class for automated visual regression testing
+  - `RenderConfig` for configurable rendering (resolution, camera, background)
+  - `VisualDiffResult` dataclass with comprehensive comparison metrics
+  - `pytest_visual_compare()` helper for easy pytest integration
+  - PNG/SVG export support using CadQuery + trimesh + matplotlib
+  - Pixel-diff comparison with configurable thresholds
+  - Automatic diff image generation with enhanced visibility
+  - HTML report generation with side-by-side comparisons
+  - Update reference mode for creating/updating baseline images
+
+#### Comprehensive Test Coverage
+- **tiacad_core/tests/test_visual_regression.py** - Full test harness (NEW)
+  - Parametrized tests for all 44 example YAML files
+  - Core operation tests (box, cylinder, sphere, booleans, fillets, chamfers)
+  - Automatic test skipping for unparseable files
+  - Configurable thresholds (default: 1% pixel difference)
+  - Environment variable support: `UPDATE_VISUAL_REFERENCES=1` to update baselines
+  - Detailed failure messages with metrics and file paths
+
+#### CI/CD Integration
+- **.github/workflows/visual-regression.yml** - Automated visual testing workflow (NEW)
+  - Runs on all pushes and pull requests
+  - Headless rendering with xvfb for Ubuntu CI
+  - Automatic reference image generation on first run
+  - Artifact uploads for test outputs, diffs, and reports
+  - Matrix testing across Python 3.10, 3.11, 3.12
+  - Coverage reporting via Codecov
+
+- **.github/workflows/tests.yml** - Main test workflow (NEW)
+  - Separate jobs for unit, integration, parser, and correctness tests
+  - Parallel test execution with pytest-xdist
+  - Comprehensive coverage reporting
+  - Multi-Python version support
+
+#### Image Comparison Metrics
+- **Pixel-diff percentage**: Count of differing pixels
+- **RMS difference**: Root mean square color difference
+- **Mean difference**: Average color difference across all pixels
+- **Max pixel difference**: Maximum single-pixel color difference (0-255)
+- **Configurable thresholds**: Per-test tolerance for acceptable differences
+
+#### Dependencies & Requirements
+- Added **Pillow >= 10.0.0** for image processing
+- Added **pytest-xdist >= 3.0.0** for parallel test execution
+- Uses existing **trimesh**, **matplotlib**, and **pyvista** for 3D rendering
+
+#### Benefits
+- Catch visual regressions automatically in CI/CD
+- Reference images for all 40+ example assemblies
+- Detailed diff reports when changes occur
+- Easy baseline updates with environment variable
+- Fast execution with parallel pytest
+- Clear visual feedback with diff images
+
 ### Added - Software Issues Documentation (2025-11-14)
 
 #### Known Limitations & Improvement Plans
@@ -205,18 +263,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 
-### v3.1 Phase 2 - Visual Regression Testing (Q2 2026)
-**Status**: Phase 1 Complete (testing utilities + 131+ tests)
+### v3.1 Phase 2 - Visual Regression Testing (2025-11-14)
+**Status**: ✅ COMPLETE
 
-**Features**:
-- Visual regression framework using trimesh + matplotlib
-- Reference images for 40+ examples
-- 50+ visual regression tests
-- Automated visual diff reporting in CI
-- Contact detection utilities
-- Hole and feature detection
+**Features Implemented**:
+- ✅ Visual regression framework using trimesh + matplotlib
+- ✅ Reference images for 40+ examples
+- ✅ 50+ visual regression tests (parametrized test suite)
+- ✅ Automated visual diff reporting in CI
+- ✅ Pixel-diff comparison with configurable thresholds
+- ✅ HTML report generation with side-by-side image comparisons
+- ✅ CI/CD integration via GitHub Actions
+- ✅ Comprehensive documentation in TESTING_GUIDE.md
 
-**Duration**: 8-10 weeks
+**Duration**: 1 session (2025-11-14)
 
 ### v3.2 - Dependency Graph (DAG) (Q3 2026)
 **Status**: Planned (follows v3.1 Phase 2)

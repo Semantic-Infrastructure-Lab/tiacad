@@ -80,3 +80,8 @@ SESSION_SUMMARY_*.md
 
 # Validation results
 validation_results.txt
+
+# Visual regression test outputs (v3.1 Phase 2)
+tiacad_core/visual_output/
+tiacad_core/visual_diffs/
+visual_regression_report.html

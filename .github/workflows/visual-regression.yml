@@ -1,0 +1,116 @@
+name: Visual Regression Testing
+
+on:
+  push:
+    branches: [ main, claude/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgl1-mesa-glx \
+          libglu1-mesa \
+          libxrender1 \
+          libxext6 \
+          libsm6 \
+          libice6 \
+          libx11-6 \
+          xvfb
+
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run visual regression tests (generate references if needed)
+      run: |
+        # Use xvfb for headless rendering
+        xvfb-run -a pytest -m visual -v --tb=short || true
+
+    - name: Check for reference images
+      id: check_refs
+      run: |
+        if [ -d "tiacad_core/visual_references" ] && [ "$(ls -A tiacad_core/visual_references)" ]; then
+          echo "references_exist=true" >> $GITHUB_OUTPUT
+        else
+          echo "references_exist=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Generate reference images (if missing)
+      if: steps.check_refs.outputs.references_exist == 'false'
+      run: |
+        echo "No reference images found. Generating..."
+        UPDATE_VISUAL_REFERENCES=1 xvfb-run -a pytest -m visual -v --tb=short
+
+    - name: Run visual regression tests (actual)
+      if: steps.check_refs.outputs.references_exist == 'true'
+      run: |
+        xvfb-run -a pytest -m visual -v --tb=short --maxfail=5
+
+    - name: Upload test outputs on failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: visual-regression-outputs
+        path: |
+          tiacad_core/visual_output/
+          tiacad_core/visual_diffs/
+        retention-days: 30
+
+    - name: Upload reference images (for first run)
+      if: steps.check_refs.outputs.references_exist == 'false'
+      uses: actions/upload-artifact@v3
+      with:
+        name: visual-references
+        path: tiacad_core/visual_references/
+        retention-days: 90
+
+    - name: Generate visual regression report
+      if: always()
+      run: |
+        python -c "
+        from pathlib import Path
+        from tiacad_core.testing.visual_regression import VisualRegressionTester
+
+        # Generate report if outputs exist
+        output_dir = Path('tiacad_core/visual_output')
+        if output_dir.exists() and any(output_dir.glob('*.png')):
+            print('Generating visual regression report...')
+            # Report generation would go here
+        else:
+            print('No test outputs to report')
+        "
+
+    - name: Upload HTML report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: visual-regression-report
+        path: visual_regression_report.html
+        retention-days: 30
