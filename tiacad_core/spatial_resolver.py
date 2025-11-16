@@ -382,9 +382,9 @@ class SpatialResolver:
 
         elif ref_name == 'origin':
             # Part's current position (origin)
-            # Note: Part.current_position may not exist yet - use placeholder for now
-            # TODO: Implement part.current_position tracking
-            return SpatialRef(position=np.array([0.0, 0.0, 0.0]), ref_type='point')
+            # Use the part's tracked current_position
+            pos = np.array(part.current_position) if part.current_position else np.array([0.0, 0.0, 0.0])
+            return SpatialRef(position=pos, ref_type='point')
 
         elif ref_name.startswith('face_'):
             # Auto-generated face references

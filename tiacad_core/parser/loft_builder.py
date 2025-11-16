@@ -198,10 +198,9 @@ class LoftBuilder:
         """
         try:
             # CadQuery's loft requires all profiles to be built on the same workplane
-            # using .workplane(offset=...) to position them at different Z heights
+            # using .workplane(offset=...) to position them along the plane's normal
 
-            # Start with base workplane (assume all on XY plane for now)
-            # TODO: Support other base planes
+            # Start with base workplane and validate all profiles use same plane
             base_plane = profiles[0].plane
             if any(p.plane != base_plane for p in profiles):
                 raise LoftBuilderError(
@@ -210,6 +209,25 @@ class LoftBuilder:
                 )
 
             result_wp = cq.Workplane(base_plane)
+
+            # Determine offset direction and in-plane coordinates based on base plane
+            # XY plane: offset in Z direction, in-plane is X,Y
+            # XZ plane: offset in Y direction, in-plane is X,Z
+            # YZ plane: offset in X direction, in-plane is Y,Z
+            if base_plane == 'XY':
+                offset_idx = 2  # Z
+                in_plane_idx = (0, 1)  # X, Y
+            elif base_plane == 'XZ':
+                offset_idx = 1  # Y
+                in_plane_idx = (0, 2)  # X, Z
+            elif base_plane == 'YZ':
+                offset_idx = 0  # X
+                in_plane_idx = (1, 2)  # Y, Z
+            else:
+                raise LoftBuilderError(
+                    f"Unsupported plane '{base_plane}'. Must be XY, XZ, or YZ",
+                    operation_name=context
+                )
 
             # Build each profile on the combined workplane
             for i, profile in enumerate(profiles):
@@ -230,27 +248,24 @@ class LoftBuilder:
                     )
 
                 # For first profile, use base workplane
-                # For subsequent profiles, create offset workplane based on Z position
+                # For subsequent profiles, create offset workplane
                 if i == 0:
                     # First profile - position at its origin
                     profile_wp = result_wp
                     if profile.origin != (0, 0, 0):
-                        if profile.plane == 'XY':
-                            profile_wp = profile_wp.center(profile.origin[0], profile.origin[1])
-                        elif profile.plane == 'XZ':
-                            profile_wp = profile_wp.center(profile.origin[0], profile.origin[2])
-                        elif profile.plane == 'YZ':
-                            profile_wp = profile_wp.center(profile.origin[1], profile.origin[2])
-                    base_z = profile.origin[2]  # Store base Z for subsequent profiles
+                        in_plane_pos = (profile.origin[in_plane_idx[0]], profile.origin[in_plane_idx[1]])
+                        if in_plane_pos != (0, 0):
+                            profile_wp = profile_wp.center(in_plane_pos[0], in_plane_pos[1])
+                    base_offset = profile.origin[offset_idx]  # Store base offset for subsequent profiles
                 else:
-                    # Subsequent profiles - calculate Z offset from first profile
-                    z_offset = profile.origin[2] - base_z
-                    profile_wp = result_wp.workplane(offset=z_offset)
+                    # Subsequent profiles - calculate offset from first profile along normal direction
+                    offset = profile.origin[offset_idx] - base_offset
+                    profile_wp = result_wp.workplane(offset=offset)
 
-                    # Apply XY positioning if needed
-                    if profile.origin[0] != 0 or profile.origin[1] != 0:
-                        if profile.plane == 'XY':
-                            profile_wp = profile_wp.center(profile.origin[0], profile.origin[1])
+                    # Apply in-plane positioning if needed
+                    in_plane_pos = (profile.origin[in_plane_idx[0]], profile.origin[in_plane_idx[1]])
+                    if in_plane_pos != (0, 0):
+                        profile_wp = profile_wp.center(in_plane_pos[0], in_plane_pos[1])
 
                 # Build the first shape on this workplane
                 profile_wp = add_shapes[0].build(profile_wp)

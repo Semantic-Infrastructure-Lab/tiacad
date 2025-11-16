@@ -40,6 +40,26 @@ class CadQueryBackend(GeometryBackend):
         """Create a sphere using CadQuery"""
         return cq.Workplane("XY").sphere(radius)
 
+    def create_cone(self, radius1: float, radius2: float, height: float) -> cq.Workplane:
+        """Create a cone/frustum using CadQuery"""
+        # CadQuery doesn't have a direct cone primitive, use loft between circles
+        if radius2 == 0:
+            # True cone (pointed top)
+            cone = (cq.Workplane("XY")
+                    .circle(radius1)
+                    .workplane(offset=height)
+                    .circle(0.001)  # Very small circle at top (CadQuery doesn't like 0)
+                    .loft())
+        else:
+            # Frustum (truncated cone)
+            cone = (cq.Workplane("XY")
+                    .circle(radius1)
+                    .workplane(offset=height)
+                    .circle(radius2)
+                    .loft())
+        # Center the cone vertically
+        return cone.translate((0, 0, -height/2))
+
     # ========================================================================
     # Boolean Operations
     # ========================================================================

@@ -78,6 +78,25 @@ class GeometryBackend(ABC):
         """
         pass
 
+    @abstractmethod
+    def create_cone(self, radius1: float, radius2: float, height: float) -> Any:
+        """
+        Create a cone/frustum primitive.
+
+        Args:
+            radius1: Base radius (bottom)
+            radius2: Top radius (top)
+            height: Cone height
+
+        Returns:
+            Geometry object
+
+        Examples:
+            >>> cone = backend.create_cone(10, 5, 20)  # Frustum
+            >>> pointed_cone = backend.create_cone(10, 0, 20)  # True cone
+        """
+        pass
+
     # ========================================================================
     # Boolean Operations
     # ========================================================================

@@ -87,6 +87,17 @@ class MockGeometry:
                 'center': self.center
             }
 
+        elif self.shape_type == 'cone':
+            r1 = self.parameters.get('radius1', 5)  # Base radius
+            r2 = self.parameters.get('radius2', 2)  # Top radius
+            h = self.parameters.get('height', 20)
+            max_r = max(r1, r2)
+            return {
+                'min': (-max_r, -max_r, -h/2),
+                'max': (max_r, max_r, h/2),
+                'center': self.center
+            }
+
         else:
             # Default: unit box
             return {
@@ -185,6 +196,14 @@ class MockBackend(GeometryBackend):
         return MockGeometry(
             shape_type='sphere',
             parameters={'radius': radius}
+        )
+
+    def create_cone(self, radius1: float, radius2: float, height: float) -> MockGeometry:
+        """Create mock cone/frustum"""
+        self.operations_count += 1
+        return MockGeometry(
+            shape_type='cone',
+            parameters={'radius1': radius1, 'radius2': radius2, 'height': height}
         )
 
     # ========================================================================
@@ -365,6 +384,21 @@ class MockBackend(GeometryBackend):
                     name=f"MockFace-{selector}"
                 )]
             elif selector == '<Z':  # Bottom point
+                return [MockFace(
+                    center=(cx, cy, zmin),
+                    normal=(0, 0, -1),
+                    name=f"MockFace-{selector}"
+                )]
+
+        elif geom.shape_type == 'cone':
+            # Cone has top and bottom circular faces
+            if selector == '>Z':  # Top face
+                return [MockFace(
+                    center=(cx, cy, zmax),
+                    normal=(0, 0, 1),
+                    name=f"MockFace-{selector}"
+                )]
+            elif selector == '<Z':  # Bottom face
                 return [MockFace(
                     center=(cx, cy, zmin),
                     normal=(0, 0, -1),

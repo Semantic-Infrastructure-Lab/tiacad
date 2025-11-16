@@ -1,12 +1,42 @@
 # TiaCAD Current Status
 
-**Last Updated:** 2025-11-11
-**Current Version:** v3.1.0 (Testing Confidence - Phase 1 Complete)
-**Branch:** claude/recent-completion-summary-011CV2cv5x8jFFVCFp4qoHXh
+**Last Updated:** 2025-11-16
+**Current Version:** v3.1.1 (Code Feature Improvements)
+**Branch:** claude/investigate-c-features-01Ck2nFkLRYrA53n8G9SswEX
 
 ---
 
-## Recently Completed (v3.1 Phase 1)
+## Recently Completed (v3.1.1 - Code Improvements)
+
+### ✅ v3.1.1 Code Feature Improvements (Nov 16, 2025)
+**Status:** ✅ COMPLETE
+**Focus:** Backend completion, spatial reference fixes, loft enhancements
+
+#### Backend Enhancements ✅
+- **GeometryBackend Interface:** Added `create_cone()` abstract method
+- **MockBackend:** Implemented complete cone support with bounds calculation and face selection
+- **CadQueryBackend:** Implemented cone creation using loft technique
+- **Impact:** Complete cone primitive support across all backends, enabling full primitive testing
+
+#### Spatial Reference Fixes ✅
+- **SpatialResolver:** Fixed part position tracking to use `part.current_position`
+- **Previous Issue:** Origin references always returned [0,0,0] instead of actual part position
+- **Impact:** Accurate origin tracking after transforms, proper dynamic part positioning
+
+#### Loft Operation Enhancements ✅
+- **LoftBuilder:** Added full support for XZ and YZ base planes
+- **Previous Limitation:** Only XY plane lofts were supported
+- **New Capability:** All three orthogonal planes (XY, XZ, YZ) with automatic offset direction calculation
+- **Impact:** Enables vertical and side-facing loft operations for complex geometries
+
+#### Test Coverage ✅
+- **Auto-Reference Tests:** Added 6 comprehensive cone tests
+- **Coverage:** cone.center, cone.origin, cone.face_top/bottom, cone.axis_x/z
+- **Impact:** Completes auto-reference testing for all primitive types
+
+---
+
+## Previously Completed (v3.1 Phase 1-2)
 
 ### ✅ v3.0 Release (Nov 2025)
 **Status:** Production-ready, released Nov 19, 2025

@@ -46,8 +46,12 @@ def registry():
     sphere = Part(name='sphere', geometry=sphere_geom, current_position=(0, 30, 0), backend=backend)
     reg.add(sphere)
 
-    # Note: MockBackend doesn't have create_cone() yet,
-    # so we only test box, cylinder, and sphere
+    # Create a cone with radius1=10, radius2=5, height=30
+    # MockBackend centers cones at (0,0,0)
+    # Bounds: z from -15 to 15, x/y from -10 to 10
+    cone_geom = backend.create_cone(radius1=10, radius2=5, height=30)
+    cone = Part(name='cone', geometry=cone_geom, current_position=(30, 30, 0), backend=backend)
+    reg.add(cone)
 
     return reg
 
@@ -265,10 +269,69 @@ def test_sphere_axis_z(resolver):
 
 
 # ============================================================================
-# Cone Auto-References (6 tests) - SKIPPED: MockBackend doesn't have create_cone yet
+# Cone Auto-References (6 tests)
 # ============================================================================
 
-# TODO: Add cone tests when MockBackend supports create_cone()
+def test_cone_center(resolver):
+    """Test cone.center returns bounding box center."""
+    ref = resolver.resolve('cone.center')
+
+    assert ref.ref_type == 'point'
+    # Cone is centered at (0,0,0) in geometry, bounds z: -15 to 15
+    np.testing.assert_array_almost_equal(ref.position, [0.0, 0.0, 0.0])
+
+
+def test_cone_origin(resolver):
+    """Test cone.origin returns part origin."""
+    ref = resolver.resolve('cone.origin')
+
+    assert ref.ref_type == 'point'
+    # Origin tracks current position (30, 30, 0)
+    np.testing.assert_array_almost_equal(ref.position, [30.0, 30.0, 0.0])
+
+
+def test_cone_face_top(resolver):
+    """Test cone.face_top returns top face reference."""
+    ref = resolver.resolve('cone.face_top')
+
+    assert ref.ref_type == 'face'
+    # Top face at z=15 (height/2)
+    assert ref.position[2] == pytest.approx(15.0)
+    # Normal points up
+    np.testing.assert_array_almost_equal(ref.orientation, [0.0, 0.0, 1.0])
+
+
+def test_cone_face_bottom(resolver):
+    """Test cone.face_bottom returns bottom face reference."""
+    ref = resolver.resolve('cone.face_bottom')
+
+    assert ref.ref_type == 'face'
+    # Bottom face at z=-15 (height/2)
+    assert ref.position[2] == pytest.approx(-15.0)
+    # Normal points down
+    np.testing.assert_array_almost_equal(ref.orientation, [0.0, 0.0, -1.0])
+
+
+def test_cone_axis_x(resolver):
+    """Test cone.axis_x returns X axis through center."""
+    ref = resolver.resolve('cone.axis_x')
+
+    assert ref.ref_type == 'axis'
+    # Axis goes through geometric center
+    np.testing.assert_array_almost_equal(ref.position, [0.0, 0.0, 0.0])
+    # Direction is +X
+    np.testing.assert_array_almost_equal(ref.orientation, [1.0, 0.0, 0.0])
+
+
+def test_cone_axis_z(resolver):
+    """Test cone.axis_z returns Z axis through center."""
+    ref = resolver.resolve('cone.axis_z')
+
+    assert ref.ref_type == 'axis'
+    # Axis goes through geometric center
+    np.testing.assert_array_almost_equal(ref.position, [0.0, 0.0, 0.0])
+    # Direction is +Z
+    np.testing.assert_array_almost_equal(ref.orientation, [0.0, 0.0, 1.0])
 
 
 # ============================================================================

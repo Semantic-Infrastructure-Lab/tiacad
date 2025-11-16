@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Code Feature Improvements (2025-11-16)
+
+#### Backend Enhancements
+- **tiacad_core/geometry/base.py** - Added `create_cone()` abstract method to GeometryBackend interface
+  - Standardized cone/frustum creation across backends
+  - Support for both true cones (radius2=0) and frustums
+  - Parameters: radius1 (base), radius2 (top), height
+
+- **tiacad_core/geometry/mock_backend.py** - Implemented `create_cone()` for MockBackend
+  - Fast mock cone creation for unit testing
+  - Automatic bounds calculation for cone geometry
+  - Face selection support (top/bottom faces with normals)
+  - Enables testing of cone-based designs without CadQuery overhead
+
+- **tiacad_core/geometry/cadquery_backend.py** - Implemented `create_cone()` for CadQueryBackend
+  - Uses loft between two circles for cone geometry
+  - Handles true cones (pointed top) and frustums (truncated)
+  - Automatically centers cone vertically for consistent origin
+
+#### Spatial Reference Improvements
+- **tiacad_core/spatial_resolver.py** - Fixed part position tracking for origin references
+  - Now uses `part.current_position` instead of hardcoded [0,0,0]
+  - Enables accurate origin tracking after transforms
+  - Supports dynamic part positioning in assemblies
+
+#### Loft Operation Enhancements
+- **tiacad_core/parser/loft_builder.py** - Added full support for XZ and YZ base planes
+  - Previously only supported XY plane lofts
+  - Now supports all three orthogonal planes (XY, XZ, YZ)
+  - Automatic offset direction calculation based on plane normal
+  - Proper in-plane coordinate mapping for each orientation
+  - Enables vertical and side-facing loft operations
+
+#### Test Coverage
+- **tiacad_core/tests/test_auto_references.py** - Added comprehensive cone auto-reference tests
+  - 6 new test cases for cone primitives
+  - Tests for cone.center, cone.origin, cone.face_top, cone.face_bottom
+  - Tests for cone.axis_x, cone.axis_z references
+  - Validates normal vectors and positioning
+  - Completes auto-reference testing for all primitive types
+
+#### Benefits
+- Complete cone primitive support across all backends
+- More accurate part positioning with origin tracking
+- Expanded loft capabilities for complex geometries
+- Full test coverage for all primitive auto-references
+- Foundation for Phase 3 spatial enhancements
+
 ### Added - v3.1 Phase 2: Visual Regression Testing (2025-11-14)
 
 #### Visual Regression Testing Framework
