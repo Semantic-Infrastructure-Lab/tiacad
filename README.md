@@ -16,19 +16,27 @@ tags:
 
 # TiaCAD - Declarative Parametric CAD in YAML
 
-**Version:** 3.1.0 (Testing Confidence - Phase 1 Complete ✅)
-**Status:** v3.1 Phase 1 Complete - Testing utilities and correctness tests
-**Current:** Testing Confidence Plan Phase 1 - 131+ new tests added
-**Released:** v3.0.0 on Nov 19, 2025 | v3.1.0 Phase 1 on Nov 11, 2025
-**Breaking Changes:** None in v3.1 (backward compatible)
+**Version:** 3.1.1 (Code Feature Improvements Complete ✅)
+**Status:** v3.1 Phase 2 Complete - Visual Regression Testing + Code Improvements
+**Current:** v3.1.1 features: Backend enhancements, spatial fixes, loft improvements, visual testing
+**Released:** v3.0.0 on Nov 19, 2025 | v3.1.0 Phase 1 on Nov 11, 2025 | v3.1.1 on Nov 16, 2025
+**Breaking Changes:** None in v3.1.x (backward compatible)
 
-> **🎉 v3.0 Status: READY FOR RELEASE!** All phases complete:
+> **🎉 v3.1.1 Status: PRODUCTION READY!** All features complete:
+>
+> **v3.0 Foundation:**
 > - ✅ Unified `SpatialRef` dataclass (position + orientation)
 > - ✅ `SpatialResolver` with comprehensive reference resolution
 > - ✅ Auto-generated part-local references (e.g., `base.face_top`)
 > - ✅ Local frame offsets for intelligent positioning
-> - ✅ Comprehensive documentation and examples
-> - ✅ Migration guide and release notes
+>
+> **v3.1 Enhancements:**
+> - ✅ Visual regression testing framework (50+ tests)
+> - ✅ Complete cone primitive support across all backends
+> - ✅ Accurate origin tracking after transforms
+> - ✅ Full XZ/YZ plane support for loft operations
+> - ✅ Comprehensive testing utilities (1080+ total tests, 92% coverage)
+> - ✅ Terminology standardization and visual documentation
 >
 > See `RELEASE_NOTES_V3.md` for complete details and `docs/MIGRATION_GUIDE_V3.md` for upgrade instructions.
 
@@ -40,7 +48,7 @@ tags:
 # Install dependencies
 pip install -r requirements.txt
 
-# Run full test suite (1027+ tests passing, 100%)
+# Run full test suite (1080+ tests passing, 100%)
 python3 -m pytest tiacad_core/tests/
 
 # Generate coverage report

@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added - Code Feature Improvements (2025-11-16)
+---
+
+## [3.1.1] - 2025-11-16
+
+### Added - Code Feature Improvements
 
 #### Backend Enhancements
 - **tiacad_core/geometry/base.py** - Added `create_cone()` abstract method to GeometryBackend interface
