@@ -42,6 +42,24 @@ tags:
 
 ---
 
+## Part of the Semantic Infrastructure Lab
+
+**TiaCAD** is a production component of the [Semantic Infrastructure Lab (SIL)](https://github.com/semantic-infrastructure-lab/sil) — building the semantic substrate for intelligent systems.
+
+**Role in the Semantic OS:**
+- **Layer 2:** Domain Module (CAD/geometric reasoning)
+
+**SIL Principles Applied:**
+- ✅ **Clarity** — Explicit YAML syntax, no hidden magic
+- ✅ **Simplicity** — Minimal essential complexity, declarative over imperative
+- ✅ **Composability** — Reference-based composition, parts as peers
+- ✅ **Correctness** — 1027 tests (92% coverage), comprehensive validation
+- ✅ **Verifiability** — Schema validation, deterministic geometry
+
+**Quick Links:** [SIL Manifesto](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/canonical/MANIFESTO.md) • [Unified Architecture](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/architecture/UNIFIED_ARCHITECTURE_GUIDE.md) • [Project Index](https://github.com/semantic-infrastructure-lab/sil/blob/main/projects/PROJECT_INDEX.md)
+
+---
+
 ## Quick Start
 
 ```bash
