@@ -295,6 +295,8 @@ class TestPartLocalReferences:
         mock_backend.get_face_normal.return_value = (0, 0, 1)
 
         self.mock_part.backend = mock_backend
+        # Mock current_position for origin reference test
+        self.mock_part.current_position = [0.0, 0.0, 0.0]
 
         # Register the mock part
         self.registry.add(self.mock_part)
