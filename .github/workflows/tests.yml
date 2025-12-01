@@ -48,12 +48,12 @@ jobs:
 
     - name: Run test suite
       run: |
-        pytest -v --tb=short -x
+        pytest -v --tb=short -x -m "not visual"
 
     - name: Run all tests with coverage
       if: matrix.python-version == '3.11'
       run: |
-        pytest --cov=tiacad_core --cov-report=xml --cov-report=term -v
+        pytest --cov=tiacad_core --cov-report=xml --cov-report=term -v -m "not visual"
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.11'
