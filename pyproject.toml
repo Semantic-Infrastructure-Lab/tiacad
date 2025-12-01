@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tiacad"
+version = "3.1.1"
+description = "Declarative parametric CAD in YAML - Build 3D models with readable, explicit syntax"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Semantic Infrastructure Lab Contributors"}
+]
+keywords = ["cad", "yaml", "parametric-design", "3d-modeling", "cadquery"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: Computer Aided Design (CAD)",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "cadquery>=2.6.0",
+    "pyyaml>=6.0.0",
+    "simpleeval>=0.9.13",
+    "scipy>=1.9.0",
+    "numpy>=1.21.0",
+    "trimesh>=4.0.0",
+    "lib3mf>=2.3.0",
+    "pyvista>=0.43.0",
+    "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/scottsen/tiacad"
+Documentation = "https://github.com/scottsen/tiacad"
+Repository = "https://github.com/scottsen/tiacad"
+"Bug Tracker" = "https://github.com/scottsen/tiacad/issues"
+
+[project.scripts]
+tiacad = "tiacad_core.cli:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311", "py312"]
+
+[tool.pytest.ini_options]
+testpaths = ["tiacad_core/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["tiacad_core"]
+omit = [
+    "*/tests/*",
+    "*/examples/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+precision = 2
+show_missing = true

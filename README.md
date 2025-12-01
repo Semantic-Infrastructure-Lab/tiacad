@@ -903,7 +903,9 @@ This is an active development project with stable core components and production
 
 ## License
 
-TBD
+Apache 2.0 - see [LICENSE](LICENSE) for details
+
+Copyright 2025 Semantic Infrastructure Lab Contributors
 
 ---
 
