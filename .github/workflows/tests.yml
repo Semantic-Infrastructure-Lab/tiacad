@@ -46,21 +46,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run unit tests
+    - name: Run test suite
       run: |
-        pytest -m "unit and not slow" -v --tb=short
-
-    - name: Run integration tests
-      run: |
-        pytest -m integration -v --tb=short
-
-    - name: Run parser tests
-      run: |
-        pytest -m parser -v --tb=short --maxfail=10
-
-    - name: Run correctness tests
-      run: |
-        pytest -m "attachment or rotation or dimensions" -v --tb=short
+        pytest -v --tb=short -x
 
     - name: Run all tests with coverage
       if: matrix.python-version == '3.11'
