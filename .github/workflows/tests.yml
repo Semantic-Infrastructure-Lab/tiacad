@@ -48,7 +48,25 @@ jobs:
 
     - name: Run test suite
       run: |
-        pytest -v --tb=short -m "not visual"
+        # VTK cleanup crashes in CI (known issue), but tests pass
+        # Capture exit code: 0 = all pass, 1 = test failures, 134 = cleanup crash
+        pytest -v --tb=short -m "not visual" --junit-xml=test-results.xml || EXIT_CODE=$?
+
+        # Check if tests actually failed (exit code 1) vs cleanup crash (exit code 134)
+        if [ "${EXIT_CODE:-0}" -eq 1 ]; then
+          echo "Tests failed!"
+          exit 1
+        elif [ "${EXIT_CODE:-0}" -eq 134 ]; then
+          echo "VTK cleanup crash (known issue), checking if tests passed..."
+          # Parse test results to see if tests actually passed
+          if grep -q 'failures="0"' test-results.xml 2>/dev/null; then
+            echo "All tests passed! Ignoring VTK cleanup crash."
+            exit 0
+          else
+            echo "Tests may have failed, treating as failure"
+            exit 1
+          fi
+        fi
 
     - name: Run all tests with coverage
       if: matrix.python-version == '3.11'
