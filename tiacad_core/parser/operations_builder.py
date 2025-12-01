@@ -20,7 +20,7 @@ Phase 3 Implementation (v3.0):
 - Reference-based positioning
 
 Author: TIA
-Version: 3.0.0-dev (Phase 2 - Parser Integration)
+Version: 3.1.1
 """
 
 import logging

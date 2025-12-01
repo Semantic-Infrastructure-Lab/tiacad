@@ -7,11 +7,11 @@ This package contains the core implementation classes for TiaCAD:
 - TransformTracker: Tracks positions through transform sequences
 - SpatialResolver: Resolves spatial references (position + orientation)
 
-Version: 3.0.0-dev
-Status: Phase 2 - Parser Integration
+Version: 3.1.1
+Status: Production - Visual Regression Testing Complete
 """
 
-__version__ = "3.0.0-dev"
+__version__ = "3.1.1"
 
 from .part import Part, PartRegistry
 from .selector_resolver import SelectorResolver

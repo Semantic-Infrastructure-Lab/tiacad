@@ -1,8 +1,8 @@
 # TiaCAD YAML Reference Guide
 
-**Version:** 3.0.0
-**Last Updated:** 2025-11-07
-**Status:** v3.0 - Unified Spatial References
+**Version:** 3.1.1
+**Last Updated:** 2025-12-01
+**Status:** v3.1 - Visual Regression Testing Complete
 
 ---
 
@@ -1378,6 +1378,6 @@ If you have existing v0.3.0 YAML files, see [MIGRATION_GUIDE_V3.md](docs/MIGRATI
 
 ---
 
-**Version:** 3.0.0
-**Last Updated:** 2025-11-07
-**Status:** v3.0 Release - Unified Spatial References
+**Version:** 3.1.1
+**Last Updated:** 2025-12-01
+**Status:** v3.1 Release - Visual Regression Testing Complete

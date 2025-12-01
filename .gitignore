@@ -125,3 +125,27 @@ validation_results.txt
 tiacad_core/visual_output/
 tiacad_core/visual_diffs/
 visual_regression_report.html
+
+# ============================================================
+# Generated Output Files
+# ============================================================
+
+# Output directory for generated models
+output/
+
+# Generated STL/3MF files in root (examples/ is OK)
+/*.stl
+/*.3mf
+/*.step
+/*.obj
+
+# Root-level test files (should be in tests/)
+/test_*.py
+/test_*.3mf
+
+# Development/utility scripts output
+benchmark_*.json
+render_output_*.png
+
+# Cleanup artifacts
+CLEANUP_PLAN.md

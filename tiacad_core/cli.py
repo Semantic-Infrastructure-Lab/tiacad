@@ -9,7 +9,7 @@ Usage:
     tiacad info examples/bracket.yaml
 
 Author: TIA
-Version: 0.1.0 (QW4 Enhanced CLI)
+Version: 3.1.1
 """
 
 import argparse
@@ -458,11 +458,11 @@ Examples:
 Note: 3MF is the recommended format for 3D printing (multi-material, compact, modern).
       STL is supported for legacy compatibility.
 
-For more information: https://github.com/yourusername/tiacad
+For more information: https://github.com/scottsen/tiacad
         """
     )
 
-    parser.add_argument('--version', action='version', version='TiaCAD 0.1.0')
+    parser.add_argument('--version', action='version', version='TiaCAD 3.1.1')
     parser.add_argument('--no-color', action='store_true', help='Disable colored output')
 
     subparsers = parser.add_subparsers(dest='command', help='Available commands')

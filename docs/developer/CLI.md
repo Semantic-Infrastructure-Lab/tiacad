@@ -1,6 +1,6 @@
 # TiaCAD Command-Line Interface
 
-**Version:** 0.1.0 (QW4 Enhanced CLI)
+**Version:** 3.1.1
 
 The TiaCAD CLI provides a professional command-line interface for building, validating, and inspecting TiaCAD YAML files.
 
