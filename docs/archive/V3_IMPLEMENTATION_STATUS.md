@@ -1,5 +1,9 @@
 # TiaCAD v3.0 Implementation Status
 
+> ⚠️ **ARCHIVED DOCUMENT - V3.0 RELEASED** (Completed: 2025-11-10)
+> v3.0 has been successfully released. For current status, see:
+> - **Current Version:** [Main README](../../README.md) - v3.1.1
+
 **Status:** ✅ **COMPLETE - v3.0.0 TAG CREATED**
 **Last Updated:** 2025-11-10 (Final test fixes, commits, and v3.0.0 tag)
 **Target Release:** 2025-11-19

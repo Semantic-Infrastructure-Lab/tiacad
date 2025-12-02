@@ -53,7 +53,7 @@ tags:
 - ✅ **Clarity** — Explicit YAML syntax, no hidden magic
 - ✅ **Simplicity** — Minimal essential complexity, declarative over imperative
 - ✅ **Composability** — Reference-based composition, parts as peers
-- ✅ **Correctness** — 1027 tests (92% coverage), comprehensive validation
+- ✅ **Correctness** — 1025 tests (92% coverage), comprehensive validation
 - ✅ **Verifiability** — Schema validation, deterministic geometry
 
 **Quick Links:** [SIL Manifesto](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/canonical/MANIFESTO.md) • [Unified Architecture](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/architecture/UNIFIED_ARCHITECTURE_GUIDE.md) • [Project Index](https://github.com/semantic-infrastructure-lab/sil/blob/main/projects/PROJECT_INDEX.md)
@@ -435,7 +435,7 @@ tiacad/
 
 ### Test Coverage
 
-**Overall:** 1027+ tests, 87% code coverage, 100% pass rate (all passing, 0 skipped)
+**Overall:** 1025+ tests, 87% code coverage, 100% pass rate (all passing, 0 skipped)
 
 **New in v3.1:** 131+ testing confidence tests
 - Testing utility tests: 71 tests (measurement, orientation, dimension utilities)
@@ -814,7 +814,7 @@ mypy tiacad_core/ --strict
 | Phase 3: Sketch Ops | ✅ 100% | 7/7 | 124 tests | High | 100% |
 | **v3.0 Complete** | ✅ Complete | - | 502 tests | 95%+ | 100% |
 | **v3.1 Phase 1** | ✅ Complete | 3/3 | 131 tests | High | 100% |
-| **Total** | **✅ Production** | **21/21** | **1027+ tests** | **87%** | **100%** |
+| **Total** | **✅ Production** | **21/21** | **1025+ tests** | **87%** | **100%** |
 
 ### Component Breakdown
 
@@ -919,10 +919,10 @@ Built with:
 
 ---
 
-**Last Updated:** 2025-11-11
+**Last Updated:** 2025-12-01
 **Session:** claude/recent-completion-summary-011CV2cv5x8jFFVCFp4qoHXh
 **Status:** v3.1 Phase 1 Complete - Testing Confidence Foundation
-**Tests:** 1027+/1027+ passing (100% pass rate, 0 skipped)
+**Tests:** 1025+/1025+ passing (100% pass rate, 0 skipped)
 **Coverage:** 87% overall (target: 90% for v3.1 final)
 **Quality:** Ruff + Pylint validated, comprehensive testing + correctness verification
 **Examples:** 24+ working YAML files → STL/3MF exports

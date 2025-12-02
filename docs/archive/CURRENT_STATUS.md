@@ -1,5 +1,11 @@
 # TiaCAD Current Status
 
+> ⚠️ **ARCHIVED DOCUMENT** (Last Updated: 2025-11-16)
+> This is a historical status snapshot. For current information, see:
+> - **Current Status:** [Main README](../../README.md)
+> - **Testing:** [TESTING_GUIDE](../developer/TESTING_GUIDE.md)
+> - **Known Issues:** See README section "Known Limitations"
+
 **Last Updated:** 2025-11-16
 **Current Version:** v3.1.1 (Code Feature Improvements Complete)
 **Branch:** claude/update-changelog-docs-016VSnStZrwaNpXnS8czvLqD

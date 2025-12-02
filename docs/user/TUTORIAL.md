@@ -45,7 +45,7 @@ pip install -r requirements.txt
 # Verify installation by running tests
 pytest tiacad_core/tests/ -v
 
-# You should see: 196 tests passed ✅
+# You should see: 1025+ tests passed ✅
 ```
 
 ---

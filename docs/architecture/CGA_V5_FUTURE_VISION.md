@@ -1,10 +1,15 @@
-# TiaCAD v5.0 Architecture Specification: Full CGA Integration
+# TiaCAD v5.0 Future Vision: Full CGA Integration
 
-**Document Type:** Architecture Specification
+> 🔮 **FUTURE VISION DOCUMENT**
+> This is an **aspirational architecture** for a future version of TiaCAD (v5.0+).
+> **Current version is v3.1.1** - see [main README](../../README.md) for current features and capabilities.
+> This document represents long-term research direction and is not under active development.
+
+**Document Type:** Future Architecture Vision
 **Version:** 5.0 Draft
 **Date:** 2025-12-01
 **Source:** ChatGPT architectural design conversation
-**Status:** Planning / Design Phase
+**Status:** Research / Aspirational
 
 ---
 

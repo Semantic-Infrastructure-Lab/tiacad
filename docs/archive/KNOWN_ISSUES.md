@@ -1,5 +1,9 @@
 # Known Issues & Technical Limitations
 
+> ⚠️ **ARCHIVED DOCUMENT** (Last Updated: 2025-11-14)
+> This is a detailed historical analysis. For current known limitations, see:
+> - **Known Limitations:** [Main README - Known Limitations Section](../../README.md#known-limitations--future-roadmap)
+
 **Version:** 1.0
 **Last Updated:** 2025-11-14
 **Status:** Active tracking of software limitations and improvement plans

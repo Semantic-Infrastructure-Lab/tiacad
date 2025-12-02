@@ -1,5 +1,10 @@
 # TiaCAD Testing Confidence Plan
 
+> ⚠️ **ARCHIVED DOCUMENT - PLAN COMPLETED** (Created: 2025-11-10)
+> This plan has been successfully executed. For current testing information, see:
+> - **Testing Guide:** [TESTING_GUIDE](../developer/TESTING_GUIDE.md)
+> - **Test Status:** [Main README](../../README.md) - 1025+ tests passing
+
 **Version:** 1.1
 **Created:** 2025-11-10
 **Updated:** 2025-11-11
