@@ -1,0 +1,373 @@
+# ============================================================================
+# PARAMETRIC LEGO BRICK - 3x1 (3 Studs)
+# LEARNING OBJECTIVE: Advanced parametric design with patterns
+# DIFFICULTY: Intermediate ⭐⭐
+# ============================================================================
+#
+# WHAT THIS CREATES:
+# A parametric LEGO-compatible brick with 3 studs, featuring:
+# - Adjustable dimensions based on LEGO standards
+# - Configurable stud pitch and geometry
+# - Hollow underside with support posts (authentic LEGO design)
+# - Chamfered stud tops for realistic appearance
+#
+# KEY CONCEPTS:
+# - Parametric design with ratios and standards
+# - Linear patterns for stud arrays
+# - Boolean operations for complex geometry
+# - Transform chains for positioning
+#
+# TRY IT:
+#   tiacad build examples/lego_brick_3x1.yaml
+#
+# EXPERIMENT:
+# - Change unit_size to scale the entire brick
+# - Adjust stud_height_ratio for different stud profiles
+# - Modify wall_thickness for strength vs material usage
+# - Change chamfer_height for sharper/softer stud tops
+# ============================================================================
+
+metadata:
+  name: Parametric LEGO Brick 3x1
+  description: Authentic LEGO-compatible brick with 3 studs - fully parametric
+  version: "1.0"
+  author: TIA
+  created: 2025-12-07
+  tags:
+    - lego
+    - parametric
+    - toy
+    - brick
+
+# =============================================================================
+# PARAMETERS - All dimensions in millimeters
+# =============================================================================
+
+parameters:
+  # Core LEGO unit standard (8mm = 1 LEGO unit)
+  unit_size: 8.0                    # Base LEGO grid unit
+
+  # Brick dimensions
+  stud_count: 3                     # Number of studs in length
+  brick_length: '${stud_count * unit_size}'     # Total length (24mm)
+  brick_width: '${unit_size}'                   # Width (1 unit = 8mm)
+  brick_height: 9.6                 # Standard LEGO brick height
+
+  # Stud geometry
+  stud_radius: 2.4                  # Radius of cylindrical studs
+  stud_height: 1.7                  # Height above brick surface
+  stud_pitch: '${unit_size}'        # Distance between stud centers
+  stud_chamfer_height: 0.3          # Chamfer on top of studs
+  stud_chamfer_radius: '${stud_radius - 0.2}'   # Chamfer inner radius
+
+  # Hollow underside structure
+  wall_thickness: 1.5               # Wall thickness for hollow bottom
+  bottom_thickness: 1.0             # Floor thickness
+  inner_post_radius: 3.25           # Support posts under studs
+  inner_post_height: '${brick_height - bottom_thickness - 0.1}'
+
+  # Connection geometry (underside)
+  connection_tube_outer_radius: 3.25    # Tubes that grip onto other studs
+  connection_tube_inner_radius: 2.45    # Inner hole for stud insertion
+  connection_tube_height: '${brick_height - bottom_thickness}'
+
+# =============================================================================
+# PARTS
+# =============================================================================
+
+parts:
+  # Main brick body (solid block)
+  brick_body:
+    primitive: box
+    parameters:
+      width: '${brick_length}'
+      height: '${brick_width}'
+      depth: '${brick_height}'
+    origin: corner
+
+  # Hollow cavity (to be subtracted)
+  brick_cavity:
+    primitive: box
+    parameters:
+      width: '${brick_length - wall_thickness * 2}'
+      height: '${brick_width - wall_thickness * 2}'
+      depth: '${brick_height - bottom_thickness}'
+    origin: corner
+
+  # Single stud template (will be patterned)
+  stud:
+    primitive: cylinder
+    radius: '${stud_radius}'
+    height: '${stud_height}'
+    origin: center
+
+  # Chamfer for stud top (cone shape)
+  stud_chamfer:
+    primitive: cone
+    radius_bottom: '${stud_radius}'
+    radius_top: '${stud_chamfer_radius}'
+    height: '${stud_chamfer_height}'
+    origin: center
+
+  # Support post template (hollow tubes under studs)
+  support_post_outer:
+    primitive: cylinder
+    radius: '${connection_tube_outer_radius}'
+    height: '${connection_tube_height}'
+    origin: center
+
+  support_post_inner:
+    primitive: cylinder
+    radius: '${connection_tube_inner_radius}'
+    height: '${connection_tube_height + 0.2}'  # Slightly taller for clean cut
+    origin: center
+
+# =============================================================================
+# OPERATIONS
+# =============================================================================
+
+operations:
+  # Step 1: Create hollow brick body
+  # ------------------------------
+
+  # Position cavity inside brick
+  cavity_positioned:
+    type: transform
+    input: brick_cavity
+    transforms:
+      - translate: ['${wall_thickness}', '${wall_thickness}', '${bottom_thickness}']
+
+  # Subtract cavity from brick body
+  brick_hollow:
+    type: boolean
+    operation: difference
+    base: brick_body
+    subtract: [cavity_positioned]
+
+  # Step 2: Create stud array
+  # -------------------------
+
+  # Create linear pattern of studs
+  stud_array:
+    type: pattern
+    pattern: linear
+    input: stud
+    count: '${stud_count}'
+    spacing: '${stud_pitch}'
+    direction: X
+
+  # Position first stud
+  stud_0_positioned:
+    type: transform
+    input: stud_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${brick_height}']
+
+  # Position second stud
+  stud_1_positioned:
+    type: transform
+    input: stud_array_1
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch}',
+                    '${brick_width / 2}',
+                    '${brick_height}']
+
+  # Position third stud
+  stud_2_positioned:
+    type: transform
+    input: stud_array_2
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+                    '${brick_width / 2}',
+                    '${brick_height}']
+
+  # Step 3: Add chamfers to studs
+  # -----------------------------
+
+  # Create chamfer array
+  chamfer_array:
+    type: pattern
+    pattern: linear
+    input: stud_chamfer
+    count: '${stud_count}'
+    spacing: '${stud_pitch}'
+    direction: X
+
+  # Position first chamfer
+  chamfer_0_positioned:
+    type: transform
+    input: chamfer_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${brick_height + stud_height - stud_chamfer_height}']
+
+  # Position second chamfer
+  chamfer_1_positioned:
+    type: transform
+    input: chamfer_array_1
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch}',
+                    '${brick_width / 2}',
+                    '${brick_height + stud_height - stud_chamfer_height}']
+
+  # Position third chamfer
+  chamfer_2_positioned:
+    type: transform
+    input: chamfer_array_2
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+                    '${brick_width / 2}',
+                    '${brick_height + stud_height - stud_chamfer_height}']
+
+  # Combine studs with chamfers
+  stud_0_chamfered:
+    type: boolean
+    operation: union
+    inputs:
+      - stud_0_positioned
+      - chamfer_0_positioned
+
+  stud_1_chamfered:
+    type: boolean
+    operation: union
+    inputs:
+      - stud_1_positioned
+      - chamfer_1_positioned
+
+  stud_2_chamfered:
+    type: boolean
+    operation: union
+    inputs:
+      - stud_2_positioned
+      - chamfer_2_positioned
+
+  # Step 4: Create support posts (hollow tubes)
+  # ------------------------------------------
+
+  # Create post array
+  post_outer_array:
+    type: pattern
+    pattern: linear
+    input: support_post_outer
+    count: '${stud_count}'
+    spacing: '${stud_pitch}'
+    direction: X
+
+  post_inner_array:
+    type: pattern
+    pattern: linear
+    input: support_post_inner
+    count: '${stud_count}'
+    spacing: '${stud_pitch}'
+    direction: X
+
+  # Position first post
+  post_outer_0_positioned:
+    type: transform
+    input: post_outer_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness}']
+
+  post_inner_0_positioned:
+    type: transform
+    input: post_inner_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness}']
+
+  # Position second post
+  post_outer_1_positioned:
+    type: transform
+    input: post_outer_array_1
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness}']
+
+  post_inner_1_positioned:
+    type: transform
+    input: post_inner_array_1
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness}']
+
+  # Position third post
+  post_outer_2_positioned:
+    type: transform
+    input: post_outer_array_2
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness}']
+
+  post_inner_2_positioned:
+    type: transform
+    input: post_inner_array_2
+    transforms:
+      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness}']
+
+  # Create hollow posts
+  post_0_hollow:
+    type: boolean
+    operation: difference
+    base: post_outer_0_positioned
+    subtract: [post_inner_0_positioned]
+
+  post_1_hollow:
+    type: boolean
+    operation: difference
+    base: post_outer_1_positioned
+    subtract: [post_inner_1_positioned]
+
+  post_2_hollow:
+    type: boolean
+    operation: difference
+    base: post_outer_2_positioned
+    subtract: [post_inner_2_positioned]
+
+  # Step 5: Final assembly
+  # ---------------------
+
+  # Add studs to brick
+  brick_with_studs:
+    type: boolean
+    operation: union
+    inputs:
+      - brick_hollow
+      - stud_0_chamfered
+      - stud_1_chamfered
+      - stud_2_chamfered
+
+  # Add support posts
+  final_brick:
+    type: boolean
+    operation: union
+    inputs:
+      - brick_with_studs
+      - post_0_hollow
+      - post_1_hollow
+      - post_2_hollow
+
+# =============================================================================
+# EXPORT
+# =============================================================================
+
+export:
+  default_part: final_brick
+  formats: [3mf, stl, step]
+
+  # Optimal settings for 3D printing
+  print_settings:
+    layer_height: 0.1           # Fine detail for studs
+    infill: 100                 # Solid for strength
+    supports: false             # No supports needed
+    brim: true                  # Brim helps with adhesion
