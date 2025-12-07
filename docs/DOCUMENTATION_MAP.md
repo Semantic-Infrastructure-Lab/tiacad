@@ -49,11 +49,19 @@
 | [CLI](developer/CLI.md) | Command-line interface reference | When using tiacad CLI |
 | [SCHEMA_VALIDATION](developer/SCHEMA_VALIDATION.md) | Schema validation system | When working with validation |
 
+**Code Quality & Technical Debt:**
+
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| [SKIPPED_TESTS_AUDIT](../SKIPPED_TESTS_AUDIT.md) | Analysis of 69 skipped tests | Understanding test coverage gaps |
+| [CODE_QUALITY_SUMMARY](../CODE_QUALITY_SUMMARY.md) | Code quality assessment (reveal --check) | Understanding code health |
+
 **Quick Tips:**
 - **Running tests?** → [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md)
 - **Writing docs?** → [TERMINOLOGY_GUIDE](developer/TERMINOLOGY_GUIDE.md)
 - **Contributing code?** → [TESTING_GUIDE](developer/TESTING_GUIDE.md)
 - **Upgrading YAML?** → [MIGRATION_GUIDE_V3](developer/MIGRATION_GUIDE_V3.md)
+- **Understanding technical debt?** → [SKIPPED_TESTS_AUDIT](../SKIPPED_TESTS_AUDIT.md)
 
 ---
 
@@ -63,6 +71,7 @@
 
 | Document | Purpose | Level |
 |----------|---------|-------|
+| [SIL_INTEGRATION](SIL_INTEGRATION.md) | ⭐ How TiaCAD embodies SIL principles | Beginner |
 | [ARCHITECTURE_DECISION_V3](architecture/ARCHITECTURE_DECISION_V3.md) | v3.0 design rationale and decisions | Intermediate |
 | [CLEAN_ARCHITECTURE_PROPOSAL](architecture/CLEAN_ARCHITECTURE_PROPOSAL.md) | Architecture principles and patterns | Advanced |
 | [MENTAL_MODELS_AND_LANGUAGE](architecture/MENTAL_MODELS_AND_LANGUAGE.md) | Language design philosophy | Intermediate |
@@ -76,6 +85,7 @@
 - [Auto-Reference Visualization](architecture/diagrams/auto-reference-visualization.md)
 
 **Quick Tips:**
+- **Understanding SIL principles?** → [SIL_INTEGRATION](SIL_INTEGRATION.md) ⭐ Start here!
 - **Understanding v3.0 design?** → [ARCHITECTURE_DECISION_V3](architecture/ARCHITECTURE_DECISION_V3.md)
 - **Future vision?** → [CGA_V5_FUTURE_VISION](architecture/CGA_V5_FUTURE_VISION.md) ⚠️ Aspirational
 - **Design philosophy?** → [MENTAL_MODELS_AND_LANGUAGE](architecture/MENTAL_MODELS_AND_LANGUAGE.md)
@@ -117,9 +127,10 @@ See [Archive Summary](archive/ARCHIVE_SUMMARY.md) for:
 3. See [ARCHITECTURE_DECISION_V3](architecture/ARCHITECTURE_DECISION_V3.md) for context
 
 **Understand design decisions:**
-1. Start with [ARCHITECTURE_DECISION_V3](architecture/ARCHITECTURE_DECISION_V3.md)
-2. Read [MENTAL_MODELS_AND_LANGUAGE](architecture/MENTAL_MODELS_AND_LANGUAGE.md)
-3. Deep dive: [CLEAN_ARCHITECTURE_PROPOSAL](architecture/CLEAN_ARCHITECTURE_PROPOSAL.md)
+1. Start with [SIL_INTEGRATION](SIL_INTEGRATION.md) for high-level principles
+2. Then [ARCHITECTURE_DECISION_V3](architecture/ARCHITECTURE_DECISION_V3.md) for v3.0 specifics
+3. Read [MENTAL_MODELS_AND_LANGUAGE](architecture/MENTAL_MODELS_AND_LANGUAGE.md)
+4. Deep dive: [CLEAN_ARCHITECTURE_PROPOSAL](architecture/CLEAN_ARCHITECTURE_PROPOSAL.md)
 
 **Run tests:**
 1. Quick commands: [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md)
@@ -132,17 +143,18 @@ See [Archive Summary](archive/ARCHIVE_SUMMARY.md) for:
 
 ## 📈 Documentation Statistics
 
-- **Total Documents:** 28 markdown files (~13,500 lines)
+- **Total Documents:** 31 markdown files (~14,300 lines)
 - **User Docs:** 6 files (5,001 lines)
-- **Developer Docs:** 7 files (3,812 lines)
-- **Architecture:** 7 files (3,499 lines)
+- **Developer Docs:** 9 files (4,152 lines) - includes quality audits
+- **Architecture:** 8 files (3,949 lines) - includes SIL integration
 - **Archive:** 8 files (5,256 lines)
 
 **Most Important Documents (by usage):**
 1. [Main README](../README.md) - Start here
-2. [TUTORIAL](user/TUTORIAL.md) - Learn by doing
-3. [YAML_REFERENCE](user/YAML_REFERENCE.md) - Syntax lookup
-4. [TESTING_GUIDE](developer/TESTING_GUIDE.md) - For contributors
+2. [SIL_INTEGRATION](SIL_INTEGRATION.md) - ⭐ NEW: Understanding SIL principles
+3. [TUTORIAL](user/TUTORIAL.md) - Learn by doing
+4. [YAML_REFERENCE](user/YAML_REFERENCE.md) - Syntax lookup
+5. [TESTING_GUIDE](developer/TESTING_GUIDE.md) - For contributors
 
 ---
 
@@ -163,5 +175,6 @@ See [Archive Summary](archive/ARCHIVE_SUMMARY.md) for:
 
 ---
 
-**Last Updated:** 2025-12-01
+**Last Updated:** 2025-12-07
 **TiaCAD Version:** 3.1.2
+**Recent Additions:** SIL_INTEGRATION.md, SKIPPED_TESTS_AUDIT.md, CODE_QUALITY_SUMMARY.md

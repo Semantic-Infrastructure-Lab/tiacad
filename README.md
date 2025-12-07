@@ -46,17 +46,125 @@ tags:
 
 **TiaCAD** is a production component of the [Semantic Infrastructure Lab (SIL)](https://github.com/semantic-infrastructure-lab/sil) — building the semantic substrate for intelligent systems.
 
-**Role in the Semantic OS:**
-- **Layer 2:** Domain Module (CAD/geometric reasoning)
+### Role in the Semantic OS
 
-**SIL Principles Applied:**
-- ✅ **Clarity** — Explicit YAML syntax, no hidden magic
-- ✅ **Simplicity** — Minimal essential complexity, declarative over imperative
-- ✅ **Composability** — Reference-based composition, parts as peers
-- ✅ **Correctness** — 1025 tests (92% coverage), comprehensive validation
-- ✅ **Verifiability** — Schema validation, deterministic geometry
+```
+Semantic OS Architecture
+├── Layer 1: Kernel (TIA orchestration, Beth knowledge, Gemma provenance)
+├── Layer 2: Domain Modules
+│   └── TiaCAD ← Geometric/CAD reasoning
+├── Layer 3: Tools (reveal, Scout)
+└── Layer 4: Interfaces
+```
 
-**Quick Links:** [SIL Manifesto](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/canonical/MANIFESTO.md) • [Unified Architecture](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/architecture/UNIFIED_ARCHITECTURE_GUIDE.md) • [Project Index](https://github.com/semantic-infrastructure-lab/sil/blob/main/projects/PROJECT_INDEX.md)
+**TiaCAD provides:**
+- **Geometric Reasoning** - Declarative 3D solid modeling
+- **Parametric Design** - Mathematical relationships in physical space
+- **Spatial Composition** - Reference-based assembly without hierarchies
+- **Verifiable CAD** - Deterministic, testable geometry (1025 tests, 92% coverage)
+
+### What Makes TiaCAD Unique in SIL
+
+**CAD for the Semantic Age** - TiaCAD is not just another CAD tool. It's the first CAD system designed from the ground up as a **semantic artifact**.
+
+**Key Innovation: Reference-Based Composition**
+
+Traditional CAD uses hierarchical parent-child assemblies. TiaCAD uses **peer parts with spatial anchors**:
+
+```yaml
+# Parts are PEERS, not nested
+parts:
+  base:
+    primitive: box
+    parameters: {width: 100, height: 5, depth: 100}
+
+  pillar:
+    primitive: cylinder
+    parameters: {radius: 5, height: 50}
+
+operations:
+  # Composition via SPATIAL REFERENCES (not parent-child)
+  pillar_positioned:
+    type: transform
+    input: pillar
+    transforms:
+      - translate:
+          to: base.face_top  # Semantic anchor, auto-generated!
+```
+
+**Why this matters:**
+- ✅ Parts are independently testable (no coupling)
+- ✅ Explicit dependencies (no hidden hierarchies)
+- ✅ Composable like functions (orchestrated by TIA, not embedded)
+- ✅ Semantic, not just geometric
+
+### SIL Principles in Action
+
+TiaCAD exemplifies all core SIL principles through concrete implementations:
+
+#### 1. Progressive Disclosure
+
+**Orient → Navigate → Focus** at multiple levels:
+
+```bash
+# LEVEL 1: ORIENT - What designs exist?
+ls examples/                    # See all available designs
+
+# LEVEL 2: NAVIGATE - What's in this design?
+reveal guitar_hanger.yaml       # Structure: metadata, parameters, parts, operations
+
+# LEVEL 3: FOCUS - Show specific part
+reveal guitar_hanger.yaml --range 45-75  # Just the hook definition
+```
+
+**Future** (v3.1 DAG): Progressive disclosure for *dependencies*:
+```bash
+tiacad build widget.yaml --deps-summary    # LEVEL 1: "23 parts, 45 ops"
+tiacad build widget.yaml --show-deps       # LEVEL 2: Dependency graph
+tiacad build widget.yaml --watch --param w # LEVEL 3: Live tracking
+```
+
+#### 2. Composability
+
+Parts compose via references, not nesting:
+- TiaCAD generates geometry
+- `reveal` explores structure
+- `tia beth` finds similar patterns
+- `scout` reviews quality (future)
+
+**All tools work together, not bundled in a monolith.**
+
+#### 3. Clarity + Simplicity
+
+Explicit YAML (not implicit magic) + Declarative (not procedural):
+```yaml
+# Explicit origins, parameters, references
+box:
+  primitive: box        # Explicit type
+  parameters:
+    width: 10          # Named dimensions
+    height: 10         # (not [10,10,10])
+    depth: 10
+  origin: center       # Explicit origin
+```
+
+#### 4. Verifiability
+
+1025 tests ensure correctness:
+- Deterministic: Same YAML → Same geometry (always)
+- Testable: Parameters, operations, dimensions verified
+- Reproducible: Version-controlled designs
+
+### Learn More
+
+📖 **[Complete SIL Integration Guide](docs/SIL_INTEGRATION.md)** - Deep dive into:
+- How TiaCAD embodies each SIL principle (with examples)
+- Integration patterns (TiaCAD + reveal, TiaCAD + Beth, etc.)
+- Future vision (semantic constraints, Pantheon integration)
+- Why reference-based composition matters for AI systems
+
+**Quick Links:**
+[SIL Manifesto](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/canonical/MANIFESTO.md) • [Design Principles](https://github.com/semantic-infrastructure-lab/sil/blob/main/docs/canonical/SIL_DESIGN_PRINCIPLES.md) • [Project Index](https://github.com/semantic-infrastructure-lab/sil/blob/main/projects/PROJECT_INDEX.md)
 
 ---
 
