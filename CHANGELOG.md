@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Infrastructure - 2026-02-15
+
+#### Development Environment Verification
+- **Dependencies validated** - CadQuery 2.7.0, pytest, all core dependencies installed
+- **Test suite verified** - 1125 total tests (1062 passing, 45 skipped, 17 failing, 1 xfailed)
+- **Test count updated** - Documentation now reflects actual 1125 tests vs outdated 896/1080 counts
+- **Geometry validation confirmed** - Nov 2025 work successfully integrated (test_geometry_validation.py with 8 tests)
+
+#### Known Issues Identified
+- **Hull builder tests** (11 failures) - CadQuery 2.7.0 STL import compatibility issue in `cq.importers.importShape()`
+  - Impact: Convex hull operations fail with "Unsupported import type: 'STL'"
+  - Workaround needed: Alternative STL import method or CadQuery version adjustment
+- **Visual regression tests** (6 failures) - Missing reference images in `visual_references/` directory
+  - Impact: Visual regression tests cannot run without baseline images
+  - Fix: Generate reference images with `update_references=True` flag
+  - Note: Empty directory exists, needs one-time population
+
+#### Documentation Updates
+- **PROJECT.md** - Updated from v3.0 (896 tests) to v3.1.2 (1125 tests)
+- **README.md** - Updated test count from 1080+ to accurate 1125
+- **Version consistency** - All documentation now references v3.1.2 as current version
+
 ---
 
 ## [3.1.2] - 2025-12-02

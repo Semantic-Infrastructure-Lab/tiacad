@@ -35,7 +35,7 @@ tags:
 > - ✅ Complete cone primitive support across all backends
 > - ✅ Accurate origin tracking after transforms
 > - ✅ Full XZ/YZ plane support for loft operations
-> - ✅ Comprehensive testing utilities (1080+ total tests, 92% coverage)
+> - ✅ Comprehensive testing utilities (1125 total tests, 92% coverage)
 > - ✅ Terminology standardization and visual documentation
 >
 > See `RELEASE_NOTES_V3.md` for complete details and `docs/MIGRATION_GUIDE_V3.md` for upgrade instructions.

@@ -46,15 +46,14 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 ## Current Status
 
-**Version:** v3.0 (Production Ready)
-**Phase:** v3.0 Complete ✅
-**Release Date:** 2025-11-19 (planned)
+**Version:** v3.1.2 (Production Ready)
+**Phase:** v3.1.2 Complete ✅
+**Release Date:** 2025-12-02
 
 **Test Suite:**
-- 896 tests collected
-- 896 passing (100%)
-- 0 skipped
-- 0 failing
+- 1125 tests collected
+- Test status verified February 2026
+- Comprehensive coverage: unit, integration, correctness, visual regression
 
 **Components Complete:**
 - ✅ Named parameter syntax (width/height/depth for all primitives)
@@ -71,7 +70,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - ✅ Rule-based assembly validator (8 validation rules)
 - ✅ Auto-generated references (box.face_top, cylinder.axis_z, etc.)
 
-**Next Milestone:** v3.1 - Dependency Graph (DAG) System
+**Next Milestone:** v3.2+ - Dependency Graph (DAG) System (under consideration)
 
 ## Project Evolution
 
