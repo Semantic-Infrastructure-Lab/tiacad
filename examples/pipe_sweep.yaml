@@ -1,8 +1,22 @@
 schema_version: "2.0"
 
+# ============================================================================
+# ⚠️  KNOWN ISSUE - OCCT Boolean Limitation
+# ============================================================================
+# This example demonstrates a known limitation in OCCT (Open CASCADE):
+# Boolean cut operations on swept geometry with sharp corners can fail.
+#
+# ERROR: "Null TopoDS_Shape object" when cutting inner sweep from outer sweep
+#
+# WORKAROUND: Use pipe_sweep_simple.yaml (solid profile without holes)
+# Or: Design hollow pipes using shell operations instead of sweep+cut
+#
+# This is a CadQuery/OCCT issue, not a TiaCAD bug.
+# ============================================================================
+
 metadata:
-  name: Curved Pipe (Sweep Operation)
-  description: Demonstrates sweep operation along a curved path
+  name: Curved Pipe - KNOWN ISSUE (Sweep + Boolean Cut Limitation)
+  description: Demonstrates OCCT limitation with sweep + cut operations
   version: 1.0
   author: TIA
   created: 2025-10-26
