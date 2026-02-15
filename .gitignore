@@ -149,3 +149,4 @@ render_output_*.png
 
 # Cleanup artifacts
 CLEANUP_PLAN.md
+*.3mf
