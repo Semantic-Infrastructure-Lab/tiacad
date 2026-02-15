@@ -42,8 +42,7 @@ operations:
     type: transform
     input: gear
     transforms:
-      - translate:
-          offset: [25, 25, 15]  # Position above base center
+      - translate: [25, 25, 15]  # Position above base center
       - rotate:
           angle: 30
           around: base.face_top  # Rotate around face normal (Z-axis)
@@ -53,8 +52,7 @@ operations:
     type: transform
     input: gear
     transforms:
-      - translate:
-          offset: [25, 25, 20]
+      - translate: [25, 25, 20]
       - rotate:
           angle: 60
           around: rotation_axis  # Rotate around custom axis
@@ -64,8 +62,7 @@ operations:
     type: transform
     input: gear
     transforms:
-      - translate:
-          offset: [25, 25, 25]
+      - translate: [25, 25, 25]
       - rotate:
           angle: 45
           around: base.face_top  # First rotation

@@ -74,26 +74,22 @@ operations:
           face: mount_point
           orientation: normal
           offset: 12.5  # Half bracket height (sits on platform)
-      - translate:
-          offset: [60, 40, 0]  # Position at mount location
+      - translate: [60, 40, 0]  # Position at mount location
 
   # Step 2: Position shaft vertically through bracket
   positioned_shaft:
     type: transform
     input: shaft
     transforms:
-      - translate:
-          offset: [60, 40, 15]  # Base of shaft on platform top
-      - translate:
-          offset: [0, 0, 12.5]  # Raise by half shaft height
+      - translate: [60, 40, 15]  # Base of shaft on platform top
+      - translate: [0, 0, 12.5]  # Raise by half shaft height
 
   # Step 3: Mount gear on shaft top
   mounted_gear:
     type: transform
     input: drive_gear
     transforms:
-      - translate:
-          offset: [60, 40, 40]  # Position at shaft top
+      - translate: [60, 40, 40]  # Position at shaft top
       - rotate:
           angle: 0  # Initial position
           around: shaft_axis
