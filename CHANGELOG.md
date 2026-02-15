@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Result**: Examples now at 95.7% pass rate (44/46), up from 50% (23/46)
 
+**Known limitations documented**:
+- pipe_sweep.yaml - OCCT boolean limitation (sweep + cut operations on sharp corners)
+  - Not a TiaCAD bug - fundamental OCCT constraint
+  - Workaround documented: Use pipe_sweep_simple.yaml or shell operations
+
 ---
 
 ### Infrastructure - 2026-02-15
