@@ -1,8 +1,18 @@
-# TiaCAD Evolution Roadmap
+# ⚠️ ARCHIVED - Historical Document
 
-> ⚠️ **ARCHIVED DOCUMENT** (Date: 2025-11-02)
-> This is a historical strategic planning document. For current roadmap, see:
-> - **What's Next:** [Main README - What's Next Section](../../README.md#whats-next)
+**Archive Date:** 2025-11-02
+**Superseded By:** ROADMAP.md (as of Feb 2026)
+
+This document is preserved for historical context only.
+**DO NOT USE** for current planning or priorities.
+
+**For Current Information:**
+- **Roadmap:** [ROADMAP.md](../../ROADMAP.md)
+- **Limitations:** [KNOWN_LIMITATIONS.md](../../KNOWN_LIMITATIONS.md)
+
+---
+
+# TiaCAD Evolution Roadmap (HISTORICAL - Nov 2025)
 
 **Document Version:** 1.0
 **Date:** 2025-11-02

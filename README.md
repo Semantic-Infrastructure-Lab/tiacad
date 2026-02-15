@@ -16,9 +16,9 @@ tags:
 
 # TiaCAD - Declarative Parametric CAD in YAML
 
-**Version:** 3.1.2 (Production Ready + CI/Docs Complete ✅)
-**Status:** Production - All tests passing, documentation complete, Apache 2.0 licensed
-**Current:** v3.1.2 features: CI fixes, comprehensive documentation, licensing & packaging ready
+**Version:** 3.1.2 (+maintenance commits)
+**Status:** Stable - 1125 tests (94.4% passing), 92% coverage, Apache 2.0 licensed
+**Current:** v3.1.2 + examples/docs updates (see CHANGELOG.md for unreleased work)
 **Released:** v3.0.0 on Nov 19, 2025 | v3.1.0 on Nov 11 | v3.1.1 on Nov 16 | v3.1.2 on Dec 2, 2025
 **Breaking Changes:** None in v3.1.x (backward compatible)
 
@@ -61,7 +61,7 @@ Semantic OS Architecture
 - **Geometric Reasoning** - Declarative 3D solid modeling
 - **Parametric Design** - Mathematical relationships in physical space
 - **Spatial Composition** - Reference-based assembly without hierarchies
-- **Verifiable CAD** - Deterministic, testable geometry (1025 tests, 92% coverage)
+- **Verifiable CAD** - Deterministic, testable geometry (1125 tests, 92% coverage)
 
 ### What Makes TiaCAD Unique in SIL
 
@@ -623,111 +623,41 @@ tiacad/
 
 ## What's Next?
 
-### v3.1 Phase 2: Visual Regression Testing 🎯
+**See [ROADMAP.md](ROADMAP.md) for detailed plans and priorities.**
 
-**Duration:** 8-10 weeks (Q2 2026)
-**Status:** Phase 1 Complete (testing utilities + 131+ tests)
+**Current Status (Feb 2026):** Maintenance mode - focus on stability and clarity
 
-**Remaining Phase 1 Tasks:**
-- Complete pytest marker CI integration
-- Push coverage to 90% target
-- Final release preparation for v3.1.0
+**Under Consideration:**
+- **Component/Module System** - Import YAML files, standard parts library (recommended)
+- **Dependency Graph (DAG)** - Incremental rebuilds, true parametric modeling
+- **Stay in Maintenance** - Let community feedback guide priorities
 
-**Phase 2 Features (Q2 2026):**
-- Visual regression framework using trimesh + matplotlib
-- Reference images for 40+ examples
-- 50+ visual regression tests
-- Automated visual diff reporting in CI
-
-### v3.2: Dependency Graph (DAG) - Future Milestone
-
-**Duration:** 6-8 weeks
-**Goal:** True parametric modeling with incremental rebuilds
-
-**Features:**
-- ModelGraph using networkx for dependency tracking
-- Incremental rebuild (10x faster for parameter changes)
-- `--watch` mode for auto-rebuild on YAML changes
-- `--show-deps` command for graph visualization
-
-**Target:** v3.2.0 release (Q3 2026)
-
-### v3.3: Explicit Constraints
-
-**Duration:** 4-6 weeks
-**Dependencies:** DAG (v3.2) complete
-
-**Features:**
-- Constraint YAML schema (flush, coaxial, offset)
-- Manual constraint specification (user sets positions)
-- Constraint validation and conflict detection
-- Integration with ModelGraph
-
-**Target:** v3.3.0 release (Q4 2026)
+**Decision Point:** Q2 2026 - Choose direction based on community needs
 
 ---
 
-## Known Limitations & Future Roadmap
+## Known Limitations & Future Plans
 
-### Current Limitations
+**TiaCAD v3.1.2 has solid mathematical foundations and comprehensive features, but some capabilities remain unimplemented.**
 
-TiaCAD v3.1 is production-ready with comprehensive testing, but has some architectural limitations that are planned for future phases:
+📋 **For detailed limitations and workarounds:** See [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)
 
-**1. Position-Only References (High Priority)**
-- Current `PointResolver` only returns position `(x, y, z)`
-- No orientation data (normals, directions, frames)
-- **Impact**: Cannot do `align_to_face` or `mate_axes` operations
-- **Workaround**: Manual rotation calculations
-- **Planned Fix**: Phase 3 (12-16 weeks) - `SpatialResolver` with full orientation support
+🗺️ **For future plans and priorities:** See [ROADMAP.md](ROADMAP.md)
 
-**2. No Dependency Graph (High Priority)**
-- Sequential execution only - must rebuild entire model on parameter changes
-- **Impact**: Slow iteration on complex models
-- **Workaround**: Keep models under 200 lines, use parameters
-- **Planned Fix**: Phase 4a (6-8 weeks) - DAG with incremental rebuilds (10x faster)
+**Quick Summary:**
 
-**3. No Constraint System (High Priority)**
-- No sketch constraints or assembly constraints
-- **Impact**: Manual positioning required for assemblies
-- **Workaround**: Use reference-based positioning with named anchors
-- **Planned Fix**: Phase 4b (4-6 weeks) - Explicit constraints, Phase 5 (12-16 weeks) - Constraint solver
+**Current Limitations:**
+- No component/module import system (cannot reuse YAML files or import standard parts)
+- No dependency graph (full rebuild on parameter changes)
+- No constraint solver (manual positioning only)
+- Limited export formats (STL/3MF/STEP only)
 
-**4. CadQuery Coupling (Medium Priority)**
-- 90% of code directly calls CadQuery (backend abstraction exists but not enforced)
-- **Impact**: Cannot easily swap geometry kernels
-- **Decision**: Continue with CadQuery, enforce abstraction in new code only
+**What's Next (Under Consideration):**
+- Component system with standard library (screws, bearings, etc.)
+- Dependency graph for incremental rebuilds
+- Constraint solver for declarative assemblies
 
-**See**: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for complete details, workarounds, and roadmap.
-
----
-
-### Future Roadmap
-
-**Total Timeline to Constraint-Based CAD**: ~40-50 weeks (10-12 months)
-
-**Phase 3: Named Geometry & Orientation** (12-16 weeks) - Next Major Milestone
-- `SpatialResolver` with face/edge/axis support
-- Frame-based transforms
-- `align_to_face` operation
-- Intent-based modeling ("align to face" vs raw coordinates)
-
-**Phase 4a: Dependency Graph (DAG)** (6-8 weeks)
-- Incremental rebuilds (10x faster for parameter changes)
-- `--watch` mode for auto-rebuild
-- Circular dependency detection
-
-**Phase 4b: Explicit Constraints** (4-6 weeks)
-- Declarative constraints (flush, coaxial, offset)
-- Constraint validation and conflict detection
-- Manual specification (user sets positions)
-
-**Phase 5: Constraint Solver** (12-16 weeks) - Post-1.0
-- Automatic constraint satisfaction
-- Symbolic solver (SymPy) for simple cases
-- Numeric solver (scipy.optimize) for assemblies
-- Full constraint-based CAD (like SolidWorks/Fusion360)
-
-**See**: [docs/TIACAD_EVOLUTION_ROADMAP.md](docs/TIACAD_EVOLUTION_ROADMAP.md) for complete strategic plan.
+**Current Focus:** Maintenance mode - stability, examples, documentation
 
 ### Advanced Features (v4.0+)
 
@@ -922,7 +852,7 @@ mypy tiacad_core/ --strict
 | Phase 3: Sketch Ops | ✅ 100% | 7/7 | 124 tests | High | 100% |
 | **v3.0 Complete** | ✅ Complete | - | 502 tests | 95%+ | 100% |
 | **v3.1 Phase 1** | ✅ Complete | 3/3 | 131 tests | High | 100% |
-| **Total** | **✅ Production** | **21/21** | **1025+ tests** | **87%** | **100%** |
+| **Total** | **✅ Stable** | **21/21** | **1125 tests** | **92%** | **94.4%** |
 
 ### Component Breakdown
 

@@ -1,10 +1,22 @@
 # TiaCAD Current Status
 
-> ⚠️ **ARCHIVED DOCUMENT** (Last Updated: 2025-11-16)
-> This is a historical status snapshot. For current information, see:
-> - **Current Status:** [Main README](../../README.md)
-> - **Testing:** [TESTING_GUIDE](../developer/TESTING_GUIDE.md)
-> - **Known Issues:** See README section "Known Limitations"
+# ⚠️ ARCHIVED - Historical Document
+
+**Archive Date:** 2025-11-16
+**Superseded By:** README.md and ROADMAP.md (as of Feb 2026)
+
+This document is preserved for historical context only.
+**DO NOT USE** for current project status.
+
+**For Current Information:**
+- **Status:** [README.md](../../README.md)
+- **What's Next:** [ROADMAP.md](../../ROADMAP.md)
+- **Limitations:** [KNOWN_LIMITATIONS.md](../../KNOWN_LIMITATIONS.md)
+- **Testing:** [TESTING_GUIDE.md](../developer/TESTING_GUIDE.md)
+
+---
+
+# TiaCAD Current Status (HISTORICAL - Nov 2025)
 
 **Last Updated:** 2025-11-16
 **Current Version:** v3.1.1 (Code Feature Improvements Complete)

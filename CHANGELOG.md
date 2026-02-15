@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [3.1.3] - 2026-02-15
+
+### Documentation - Major Consolidation
+
+**Established Single Sources of Truth:**
+- **ROADMAP.md** (NEW) - Clear, honest assessment of what's next (maintenance mode, component system vs DAG under consideration)
+- **KNOWN_LIMITATIONS.md** (NEW) - Accurate v3.1.2 limitations with workarounds (not outdated v0.3.0 state)
+- **README.md** - Updated test counts (1125), coverage (92%), pass rate (94.4%), removed outdated "Known Limitations" section
+- **PROJECT.md** - Fixed dates (2026-02-15), current focus (maintenance mode), test statistics
+
+**Fixed Documentation Contradictions:**
+- Test count consistency: All docs now agree on 1125 tests (was 806/1080/1025 across different docs)
+- Coverage consistency: 92% everywhere (was 87%/92% mixed)
+- Pass rate honesty: 94.4% with 17 known failures being fixed (was claiming 100%)
+- Version clarity: v3.1.2 + 19 maintenance commits (was ambiguous)
+
+**Archive Cleanup:**
+- Added clear disclaimers to archived docs (CURRENT_STATUS.md, TIACAD_EVOLUTION_ROADMAP.md)
+- Created DOCUMENTATION_CONSOLIDATION_PLAN.md as reference
+
+**Impact:** Users can now find accurate, current information without contradictions or outdated plans.
+
+---
+
 ### Fixed - 2026-02-15
 
 #### Examples API Compatibility (21 examples fixed, 50% → 95% pass rate)

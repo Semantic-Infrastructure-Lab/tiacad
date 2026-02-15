@@ -5,7 +5,7 @@ status: active
 phase: v3-complete
 priority: high
 started: 2024-10-18
-last_active: 2025-11-10
+last_active: 2026-02-15
 lead_sessions:
   - fafecoha-1103
   - magical-altar-1103
@@ -46,13 +46,15 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 ## Current Status
 
-**Version:** v3.1.2 (Production Ready)
-**Phase:** v3.1.2 Complete ✅
-**Release Date:** 2025-12-02
+**Version:** v3.1.2 (+19 maintenance commits)
+**Phase:** Maintenance Mode
+**Last Release:** 2025-12-02 (v3.1.2)
+**Status Updated:** 2026-02-15
 
 **Test Suite:**
-- 1125 tests collected
-- Test status verified February 2026
+- 1125 tests total
+- 1062 passing (94.4%), 45 skipped, 17 failing (being fixed), 1 xfailed
+- 92% code coverage
 - Comprehensive coverage: unit, integration, correctness, visual regression
 
 **Components Complete:**
@@ -70,7 +72,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - ✅ Rule-based assembly validator (8 validation rules)
 - ✅ Auto-generated references (box.face_top, cylinder.axis_z, etc.)
 
-**Next Milestone:** v3.2+ - Dependency Graph (DAG) System (under consideration)
+**Next Milestone:** TBD - See ROADMAP.md (component system vs DAG under consideration)
 
 ## Project Evolution
 
@@ -212,7 +214,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 ---
 
-**Project Status:** ✅ v3.0 Production Ready (v3.0.0 tag created)
-**Current Focus:** v3.0 Release (2025-11-19) & v3.1 Planning
-**Last Updated:** 2025-11-10
-**Test Suite:** 896 tests (896 passing, 100%)
+**Project Status:** ✅ v3.1.2 Stable (maintenance mode)
+**Current Focus:** Stability, examples, documentation (see ROADMAP.md)
+**Last Updated:** 2026-02-15
+**Test Suite:** 1125 tests (1062 passing, 94.4%)
