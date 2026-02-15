@@ -471,3 +471,140 @@ v3.0's unified spatial reference system provides:
 ✅ **Future-Proof** - Foundation for constraint-based design
 
 The migration effort is worthwhile for these long-term benefits!
+
+---
+
+## Addendum: v3.1.x API Updates (2026-02-15)
+
+**Minor API refinements** in v3.1.x versions. These are small changes that improve consistency but affect existing examples.
+
+### 1. Export Format Change (v3.1.x)
+
+The export section now uses a dictionary format instead of a list.
+
+**Old Format (v3.0 - v3.1.1):**
+```yaml
+export:
+  - filename: model.step
+    parts: [base, arm, cap]
+  - filename: base_only.stl
+    parts: [base]
+```
+
+**New Format (v3.1.2+):**
+```yaml
+export:
+  default_part: model  # Optional: which part to export by default
+  formats: [step, stl]  # Formats to generate
+```
+
+**Migration:** The new format is simpler for single-part exports. For multi-part assemblies, specify the assembly part name.
+
+### 2. Cone Primitive Parameter Names (v3.1.x)
+
+Cone parameters renamed for consistency with other primitives.
+
+**Old Names:**
+```yaml
+parts:
+  cone:
+    primitive: cone
+    parameters:
+      radius_bottom: 10
+      radius_top: 5
+      height: 20
+```
+
+**New Names:**
+```yaml
+parts:
+  cone:
+    primitive: cone
+    parameters:
+      radius1: 10  # Bottom radius
+      radius2: 5   # Top radius
+      height: 20
+```
+
+**Rationale:** Matches CadQuery's cone API and removes ambiguity about which is top/bottom.
+
+### 3. Pattern Spacing (v3.1.x)
+
+Pattern spacing now uses a 3D vector instead of scalar + direction.
+
+**Old Format:**
+```yaml
+operations:
+  - pattern:
+      type: linear
+      count: 3
+      spacing: 10
+      direction: X  # or Y, Z
+```
+
+**New Format:**
+```yaml
+operations:
+  - pattern:
+      type: linear
+      count: 3
+      spacing: [10, 0, 0]  # [dx, dy, dz]
+```
+
+**Benefits:**
+- More explicit about spacing direction
+- Supports diagonal patterns (e.g., `[5, 5, 0]`)
+- Consistent with other vector parameters
+
+**Migration Tool:** Use `fix_pattern_api.py` in the project root for automated migration.
+
+### 4. Transform Translate Simplification (v3.1.x)
+
+The `offset:` wrapper is no longer needed for simple translate operations.
+
+**Old Format:**
+```yaml
+parts:
+  bracket:
+    primitive: box
+    parameters: {width: 20, height: 10, depth: 5}
+    translate:
+      offset: [60, 40, 0]  # Wrapped in offset:
+```
+
+**New Format:**
+```yaml
+parts:
+  bracket:
+    primitive: box
+    parameters: {width: 20, height: 10, depth: 5}
+    translate: [60, 40, 0]  # Direct coordinate list
+```
+
+**Note:** The `offset:` key is still valid when used with the `to:` parameter for reference-based positioning:
+
+```yaml
+translate:
+  to: base.face_top
+  offset: [5, 0, 2]  # This is correct!
+```
+
+### Summary of v3.1.x Changes
+
+| Feature | Old Syntax | New Syntax | Migration Effort |
+|---------|-----------|------------|------------------|
+| Export | List of filename/parts dicts | Single dict with formats | Low - most files use simple exports |
+| Cone | `radius_bottom`/`radius_top` | `radius1`/`radius2` | Low - rename only |
+| Pattern spacing | `spacing: N, direction: X` | `spacing: [dx, dy, dz]` | Medium - use migration tool |
+| Translate | `offset: [x,y,z]` wrapper | Direct `[x,y,z]` | Low - remove one key |
+
+**Impact:** These changes affected 21 example files, which have all been updated. If you have custom YAML files from v3.0-v3.1.1, check for these patterns.
+
+### Migration Checklist for v3.1.x Updates
+
+- [ ] Update cone parameters (`radius_bottom`/`top` → `radius1`/`radius2`)
+- [ ] Update pattern spacing (scalar+direction → vector)
+- [ ] Simplify translate operations (remove `offset:` wrapper when used alone)
+- [ ] Update export format (list → dict, if using complex exports)
+- [ ] Run `tiacad validate` on all YAML files
+- [ ] Test render outputs to verify geometry unchanged
