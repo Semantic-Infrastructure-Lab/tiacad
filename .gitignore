@@ -120,6 +120,7 @@ SESSION_SUMMARY_*.md
 
 # Validation results
 validation_results.txt
+example_validation_report.json
 
 # Visual regression test outputs (v3.1 Phase 2)
 tiacad_core/visual_output/
