@@ -7,6 +7,9 @@ cadquery>=2.6.0
 pyyaml>=6.0.0
 simpleeval>=0.9.13
 
+# Dependency graph (DAG) system
+networkx>=3.0
+
 # Scientific computing (for hull operations)
 scipy>=1.9.0
 numpy>=1.21.0

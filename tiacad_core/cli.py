@@ -124,15 +124,32 @@ def cmd_build(args):
         print_info("Supported formats: .stl, .3mf, .step")
         return 1
 
+    doc = None  # Initialize doc before try block
     try:
-        # Parse YAML
+        # Parse YAML (with graph if --show-deps requested)
+        build_graph = (args.show_deps is not None)
         print_info(f"Building {Colors.CYAN}{input_file}{Colors.RESET}")
         start_time = time.time()
 
-        doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema)
+        doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema, build_graph=build_graph)
 
         parse_time = time.time() - start_time
         print_success(f"Parsed in {parse_time:.2f}s")
+
+        # Show dependency graph if requested
+        if args.show_deps and doc.graph:
+            print()
+            if args.show_deps in ('text', 'both'):
+                from .dag import GraphVisualizer
+                GraphVisualizer.show_stats(doc.graph)
+
+            if args.show_deps in ('dot', 'both'):
+                from .dag import GraphVisualizer
+                dot_path = input_file.stem + '_deps.dot'
+                GraphVisualizer.to_dot(doc.graph, str(dot_path))
+                print_success(f"Dependency graph written to: {Colors.CYAN}{dot_path}{Colors.RESET}")
+                print_info(f"Generate image: dot -Tpng {dot_path} -o graph.png")
+                print()
 
         # Export
         print_info(f"Exporting to {Colors.CYAN}{output_file}{Colors.RESET}")
@@ -474,6 +491,7 @@ For more information: https://github.com/scottsen/tiacad
     build_parser.add_argument('-p', '--part', help='Specific part to export (default: last operation)')
     build_parser.add_argument('-s', '--stats', action='store_true', help='Show build statistics')
     build_parser.add_argument('--validate-schema', action='store_true', help='Enable JSON schema validation')
+    build_parser.add_argument('--show-deps', choices=['text', 'dot', 'both'], help='Show dependency graph (text summary or Graphviz DOT)')
     build_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
     build_parser.set_defaults(func=cmd_build)
 

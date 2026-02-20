@@ -58,7 +58,8 @@ class TiaCADDocument:
                  export_config: Optional[Dict[str, Any]] = None,
                  line_tracker: Optional[LineTracker] = None,
                  yaml_string: Optional[str] = None,
-                 file_path: Optional[str] = None):
+                 file_path: Optional[str] = None,
+                 graph: Optional['ModelGraph'] = None):
         """
         Initialize TiaCAD document.
 
@@ -72,6 +73,7 @@ class TiaCADDocument:
             line_tracker: Optional YAML line tracker for error reporting
             yaml_string: Optional original YAML string for error context
             file_path: Optional file path for error messages
+            graph: Optional dependency graph (for incremental rebuilds)
         """
         self.metadata = metadata
         self.parameters = parameters
@@ -82,6 +84,7 @@ class TiaCADDocument:
         self.line_tracker = line_tracker
         self.yaml_string = yaml_string
         self.file_path = file_path
+        self.graph = graph
 
     def get_part(self, name: str):
         """
@@ -241,13 +244,14 @@ class TiaCADParser:
     SUPPORTED_SCHEMA_VERSIONS = ["2.0"]
 
     @staticmethod
-    def parse_file(file_path: str, validate_schema: bool = False) -> TiaCADDocument:
+    def parse_file(file_path: str, validate_schema: bool = False, build_graph: bool = False) -> TiaCADDocument:
         """
         Parse a TiaCAD YAML file.
 
         Args:
             file_path: Path to YAML file
             validate_schema: If True, validate against JSON schema before parsing
+            build_graph: If True, build dependency graph (for DAG features)
 
         Returns:
             TiaCADDocument ready for export
@@ -274,6 +278,7 @@ class TiaCADParser:
             yaml_data,
             file_path=file_path,
             validate_schema=validate_schema,
+            build_graph=build_graph,
             line_tracker=line_tracker,
             yaml_string=yaml_string
         )
@@ -337,6 +342,7 @@ class TiaCADParser:
         yaml_data: Dict[str, Any],
         file_path: Optional[str] = None,
         validate_schema: bool = False,
+        build_graph: bool = False,
         line_tracker: Optional[LineTracker] = None,
         yaml_string: Optional[str] = None
     ) -> TiaCADDocument:
@@ -347,6 +353,7 @@ class TiaCADParser:
             yaml_data: Parsed YAML data
             file_path: Optional file path for error messages
             validate_schema: If True, validate against JSON schema before parsing
+            build_graph: If True, build dependency graph (for DAG features)
             line_tracker: Optional YAML line tracker for error reporting
             yaml_string: Optional original YAML string for error context
 
@@ -359,6 +366,25 @@ class TiaCADParser:
         try:
             # Normalize YAML aliases (anchors -> references, etc.)
             yaml_data = TiaCADParser._normalize_yaml_aliases(yaml_data)
+
+            # Build dependency graph (optional, for incremental rebuilds)
+            graph = None
+            if build_graph:
+                try:
+                    from ..dag import GraphBuilder
+                    graph_builder = GraphBuilder()
+                    graph = graph_builder.build_graph(yaml_data)
+                    logger.info(f"Built dependency graph with {len(graph)} nodes")
+                except ImportError:
+                    logger.warning(
+                        "NetworkX not installed. Install with: pip install networkx>=3.0"
+                    )
+                except TiaCADError as e:
+                    # Re-raise TiaCAD errors (e.g., circular dependencies) with context
+                    raise TiaCADParserError(
+                        f"Dependency graph error: {str(e)}",
+                        file_path=file_path
+                    ) from e
 
             # Schema validation (if requested)
             if validate_schema:
@@ -465,7 +491,8 @@ class TiaCADParser:
                 export_config=export_config,
                 line_tracker=line_tracker,
                 yaml_string=yaml_string,
-                file_path=file_path
+                file_path=file_path,
+                graph=graph
             )
 
             logger.info(f"Successfully parsed TiaCAD document with {len(registry.list_parts())} total parts")

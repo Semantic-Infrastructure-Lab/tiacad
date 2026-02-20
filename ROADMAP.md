@@ -23,6 +23,19 @@ TiaCAD v3.1.2 is production-ready with solid mathematical foundations and compre
 
 ---
 
+## Strategic Recommendation
+
+**🎯 Recommended Path (2026):**
+
+1. **Q2 2026:** Component/Module System (3-4 weeks) - **Ecosystem foundation**
+2. **Q3 2026:** Complete DAG implementation (4-6 weeks) - **Performance infrastructure**
+3. **Q4 2026:** Constraint Solver (10-16 weeks) - **Parametric design capabilities**
+4. **2027+:** CGA v5.0 Architecture (40-80 weeks) - **Research moonshot**
+
+**Rationale:** Build ecosystem value first (components enable community growth), then complete infrastructure (DAG + constraints), then pursue revolutionary architecture (CGA) as 2.0 rewrite.
+
+---
+
 ## Near-Term Possibilities (Q2 2026)
 
 **Decision Needed:** What delivers most value to open-source modeling community?
@@ -66,7 +79,7 @@ parts:
 
 ---
 
-### Option B: Dependency Graph (DAG)
+### Option B: Dependency Graph (DAG) ⚡ **← Week 1-2 Complete!**
 
 **Vision:** True parametric modeling with incremental rebuilds
 
@@ -85,13 +98,19 @@ parameters:
 # Not the entire model
 ```
 
-**Implementation:**
-- Week 1-2: ModelGraph using NetworkX
-- Week 3-4: Dependency tracking (params → parts → ops)
-- Week 5-6: Invalidation propagation
-- Week 7-8: CLI integration (--watch, --show-deps)
+**Current Status (Feb 2026):**
+- ✅ Week 1-2: Foundation complete (53 tests passing)
+  - Core DAG module (ModelGraph, GraphBuilder, Visualizer)
+  - Cycle detection working
+  - CLI `--show-deps` flag integrated
+  - Session: `hidden-sorcerer-0215`
 
-**Effort:** 6-8 weeks (per original plan)
+**Remaining Implementation:**
+- Week 3-4: Full dependency tracking (patterns, references, sketches)
+- Week 5-6: InvalidationTracker + IncrementalBuilder
+- Week 7-8: Watch mode + performance benchmarking
+
+**Effort:** 4-6 more weeks (already 25% done)
 **Timeline:** Apr-Jun 2026 (if prioritized)
 
 ---
@@ -139,6 +158,50 @@ constraints:
 
 ---
 
+## The Moonshot: CGA v5.0 Architecture (2027+)
+
+**🔮 Research Vision:** Replace BREP with Conformal Geometric Algebra
+
+**What:** Fundamental architectural shift - exact algebraic geometry instead of approximate BREP
+- **Current:** YAML → Parser → CadQuery/OCCT → BREP (approximate, tolerances)
+- **v5.0:** YAML → Parser → CGA Kernel (exact) → BREP (only for export)
+
+**Why This Would Be World-Class:**
+- ✨ **Exact operations:** Intersections, distances, offsets are algebraic (no tolerances)
+- ✨ **Native constraints:** Geometric conditions compile to CGA equations
+- ✨ **Unified code:** All primitives are multivectors (no special cases)
+- ✨ **CAM integration:** Slicing and toolpaths use same geometric foundation
+- ✨ **Novel:** No other open-source CAD uses CGA + YAML + constraints
+
+**The Math:** Conformal Geometric Algebra (GA(4,1))
+- Points, lines, planes, circles, spheres as **multivectors**
+- Operations: `meet` (∧), `join`, `distance`, `project`, `offset`
+- Transforms: **Motors** (unified rotation+translation, no matrices)
+- Constraints: Natural algebraic equations (perpendicular = `L₁·L₂ = 0`)
+
+**Implementation Phases (40-80 weeks):**
+1. CGA Kernel MVP (8-12 weeks) - `Multivector`, semantic types, operations
+2. Geometry Integration (6-10 weeks) - Integrate into TiaCAD core
+3. Constraint System (10-16 weeks) - CGA-backed solver
+4. BREP Refactor (6-8 weeks) - `CGAToCadQueryAdapter`
+5. CAM Engine (8-12 weeks) - FDM slicing, CNC toolpaths
+6. Performance & Polish (8-12 weeks)
+
+**Reality Check:**
+- 📚 Requires deep CGA expertise (PhD-level geometric algebra)
+- 🔧 Massive refactor (entire codebase moves to CGA)
+- ⏱️ 1-2 year project (vs 3-4 weeks for component system)
+- 🎓 Genuinely publishable research contribution
+
+**When to Pursue:**
+- After component system + DAG + constraints are proven
+- When ready for 2.0 architectural rewrite
+- If pursuing CAD research/innovation
+
+**Documentation:** See `docs/architecture/CGA_V5_FUTURE_VISION.md` (1549 lines, complete specification)
+
+---
+
 ## Explicitly Deferred
 
 **These are NOT planned - documented for clarity:**
@@ -168,8 +231,9 @@ constraints:
 
 **Current Assessment (Feb 2026):**
 - **Component System** = High value + ecosystem growth + low risk = **Best ROI**
-- **DAG** = Essential foundation + medium risk = **Infrastructure play**
+- **DAG Completion** = 25% done, finish infrastructure = **Complete what we started**
 - **Constraints** = High complexity + requires DAG = **Future milestone**
+- **CGA v5** = World-class moonshot + massive scope = **Research when ready**
 
 ---
 
@@ -184,5 +248,24 @@ constraints:
 
 ---
 
-**Last Decision:** Feb 2026 - Consolidate docs, establish clarity
-**Next Decision:** Q2 2026 - Component system vs DAG vs maintenance
+**Last Decision:** Feb 2026 - Strategic recommendation: Components → DAG → Constraints → CGA v5
+**Next Decision:** Q2 2026 - Component system vs DAG completion vs maintenance
+
+---
+
+## Key Documentation
+
+**Planning & Vision:**
+- **This file (ROADMAP.md):** Current priorities and strategic direction
+- **CGA_V5_FUTURE_VISION.md:** Complete specification for revolutionary architecture (1549 lines)
+- **ARCHITECTURE_DECISION_V3.md:** v3.0 spatial reference design rationale
+- **KNOWN_LIMITATIONS.md:** Current constraints and workarounds
+
+**Implementation Reference:**
+- **CHANGELOG.md:** History of changes and completed work
+- **TESTING_GUIDE.md:** Test strategy and coverage
+- **MIGRATION_GUIDE_V3.md:** Upgrading from v0.3.0 to v3.x
+
+**Session References:**
+- **hidden-sorcerer-0215:** DAG Week 1-2 implementation (53 tests, foundation complete)
+- **charcoal-ray-0215:** DAG implementation plan (8-week roadmap)
