@@ -833,3 +833,21 @@ nested imports, error cases (missing file, missing fields, circular imports, nam
 - [Documentation](README.md#documentation)
 - [Language Improvements Status](docs/LANGUAGE_IMPROVEMENTS_STATUS.md)
 - [Evolution Roadmap](docs/TIACAD_EVOLUTION_ROADMAP.md)
+
+## [unreleased] — 2026-03-16 (awakened-shrine-0316)
+
+### Added
+- `tiacad_core/visual/trust_renderer.py` — pyvista-based 4-panel trust renderer (iso + front XZ + top XY + side YZ) with per-part colors, axis indicator, legend; filters consumed intermediate parts automatically
+- `scripts/trust_render.py` — CLI: render single file, directory, or `--gallery` (all trust scenarios + HTML gallery)
+- `examples/trust/` — 7 curated trust scenarios: box_basic, cylinder_basic, boolean_subtract, stacked_boxes, side_by_side, cylinder_on_plate, three_part_assembly
+- `trust_output/` — pre-rendered PNGs + gallery.html
+
+### Fixed
+- `docs/user/YAML_REFERENCE.md` — box axis comments were inverted (`height`↔`depth`); fixed + added ⚠️ gotcha callout
+- `ROADMAP.md` — test count 1382→1405, stdlib list corrected (m4/m5/m6 nuts added), PCB assembly example added
+- `docs/developer/TESTING_GUIDE.md` — test count 1244→1405, Option A contracts marked done, Option D trust renderer added
+
+### Key lessons
+- `position:` key in part spec is silently ignored; use `operations: { type: transform, translate: [x,y,z] }`
+- PBR rendering kills colors without HDR env; use smooth_shading + specular
+- Consumed parts (boolean base/subtract, transform input) must be filtered from renders
