@@ -11,7 +11,7 @@ Version: 0.1.0-alpha (Phase 3)
 import logging
 from typing import Dict, Any, Optional, List, Tuple, TYPE_CHECKING
 import cadquery as cq
-from cadquery import Wire
+from cadquery import Wire, Edge
 
 from ..part import Part, PartRegistry
 from ..sketch import Sketch2D
@@ -190,10 +190,23 @@ class SweepBuilder:
     def _sweep_shape_solid(
         self, shape, sketch: Sketch2D, path_wire: Wire
     ) -> cq.Workplane:
-        """Build a single shape on a workplane and sweep it along the path."""
+        """Build a single shape on a workplane and sweep it along the path.
+
+        Tries a direct polyline sweep first (preserves sharp corners).
+        Falls back to a spline approximation if OCCT can't handle the path
+        geometry (e.g. sharp 3D corners with non-planar direction changes).
+        """
         wp = self._make_sketch_workplane(sketch)
         wp = shape.build(wp)
-        return wp.sweep(path_wire, multisection=True)
+        try:
+            return wp.sweep(path_wire)
+        except Exception:
+            # Sharp 3D corners can fail in OCCT; retry with a spline path
+            pts = [v.Center() for v in path_wire.Vertices()]
+            spline_wire = Wire.assembleEdges([Edge.makeSpline(pts)])
+            wp2 = self._make_sketch_workplane(sketch)
+            wp2 = shape.build(wp2)
+            return wp2.sweep(spline_wire)
 
     def _sweep_sketch(self, profile_sketch: Sketch2D,
                       path_points: Optional[List[List[float]]],

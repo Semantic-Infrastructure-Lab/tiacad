@@ -1,0 +1,68 @@
+schema_version: "2.0"
+
+metadata:
+  name: Circular Pattern Trust
+  description: >
+    Square plate (100x100x8) with 6 bolt holes arranged in a circle (r=35)
+    plus a center hole (r=12). Trust check: top view (XY) = 6 evenly-spaced
+    circular holes arranged in a ring, 1 center hole. Front (XZ) = flat plate
+    with slot outlines where holes break through. Side = same.
+    Holes must be evenly spaced at 60° intervals.
+  version: 1.0
+  author: TIA
+
+parameters:
+  plate_size: 100
+  plate_thickness: 8
+  bolt_radius: 3.5
+  bolt_circle_r: 35
+  center_hole_radius: 12
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: ${plate_size}   # X
+      depth: ${plate_size}   # Y (floor direction)
+      height: ${plate_thickness}  # Z (thin)
+    origin: center
+    metadata:
+      color: "#64748B"  # slate
+
+  bolt_hole:
+    primitive: cylinder
+    radius: ${bolt_radius}
+    height: ${plate_thickness + 2}
+    origin: center
+
+  center_hole:
+    primitive: cylinder
+    radius: ${center_hole_radius}
+    height: ${plate_thickness + 2}
+    origin: center
+
+operations:
+  bolt_circle:
+    type: pattern
+    pattern: circular
+    input: bolt_hole
+    count: 6
+    axis: Z
+    center: [0, 0, 0]
+    radius: ${bolt_circle_r}
+
+  final_plate:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract:
+      - center_hole
+      - bolt_circle_0
+      - bolt_circle_1
+      - bolt_circle_2
+      - bolt_circle_3
+      - bolt_circle_4
+      - bolt_circle_5
+
+export:
+  default_part: final_plate

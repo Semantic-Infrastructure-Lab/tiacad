@@ -1,0 +1,56 @@
+schema_version: "2.0"
+
+metadata:
+  name: Revolve Basic Trust
+  description: >
+    Stepped cylinder profile revolved 360° around Z axis: spool/bobbin shape.
+    Wide flanges (r=25, h=8) at top and bottom, narrow barrel (r=10, h=20) in middle.
+    Trust check: front (XZ) = symmetric I-beam / H silhouette (wide-narrow-wide).
+    Top (XY) = circle (r=25). Side (YZ) = same I-beam.
+    Isometric = recognizable spool shape.
+  version: 1.0
+  author: TIA
+
+sketches:
+  spool_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - - 0
+            - 0
+          - - 25
+            - 0
+          - - 25
+            - 8
+          - - 10
+            - 8
+          - - 10
+            - 28
+          - - 25
+            - 28
+          - - 25
+            - 36
+          - - 0
+            - 36
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  spool:
+    type: revolve
+    sketch: spool_profile
+    axis: Z
+    angle: 360
+
+export:
+  default_part: spool

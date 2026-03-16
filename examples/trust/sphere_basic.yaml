@@ -1,0 +1,22 @@
+schema_version: "2.0"
+
+metadata:
+  name: Sphere Basic Trust
+  description: >
+    Single sphere. Trust check: all 4 views should show a circle/ellipse.
+    No flat edges, no corners. Isometric = sphere silhouette.
+    Front (XZ) = circle. Top (XY) = circle. Side (YZ) = circle.
+  version: 1.0
+  author: TIA
+
+parts:
+  sphere:
+    primitive: sphere
+    parameters:
+      radius: 20
+    origin: center
+    metadata:
+      color: "#3B82F6"  # blue
+
+export:
+  default_part: sphere

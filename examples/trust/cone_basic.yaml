@@ -1,0 +1,25 @@
+schema_version: "2.0"
+
+metadata:
+  name: Cone Basic Trust
+  description: >
+    Single cone. Trust check: top view (XY) = circle (base).
+    Front (XZ) = triangle: wide at bottom, point at top.
+    Side (YZ) = same triangle. Isometric = recognizable cone shape.
+    Base radius=20, height=40.
+  version: 1.0
+  author: TIA
+
+parts:
+  cone:
+    primitive: cone
+    parameters:
+      radius1: 20   # base radius
+      radius2: 0    # apex (true cone)
+      height: 40
+    origin: center
+    metadata:
+      color: "#F59E0B"  # amber
+
+export:
+  default_part: cone

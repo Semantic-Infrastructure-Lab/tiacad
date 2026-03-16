@@ -1,0 +1,40 @@
+schema_version: "2.0"
+
+metadata:
+  name: Boolean Intersection Trust
+  description: >
+    Two overlapping boxes: intersection keeps only the shared volume.
+    Box A: 60x20x20 slab (wide in X). Box B: 20x20x60 slab (tall in Z).
+    Both centered at origin. Overlap = 20x20x20 cube in the center.
+    Trust check: all orthographic views = small square (20x20).
+    Isometric = small cube. Much smaller than either input box.
+  version: 1.0
+  author: TIA
+
+parts:
+  x_slab:
+    primitive: box
+    parameters:
+      width: 60
+      height: 20
+      depth: 20
+    origin: center
+
+  z_slab:
+    primitive: box
+    parameters:
+      width: 20
+      height: 20
+      depth: 60
+    origin: center
+
+operations:
+  overlap:
+    type: boolean
+    operation: intersection
+    inputs:
+      - x_slab
+      - z_slab
+
+export:
+  default_part: overlap

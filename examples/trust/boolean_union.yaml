@@ -1,0 +1,40 @@
+schema_version: "2.0"
+
+metadata:
+  name: Boolean Union Trust
+  description: >
+    Two intersecting boxes merged via union. One box is wide+thin (X slab),
+    the other is narrow+tall (Z slab). Both centered at origin.
+    Trust check: top view (XY) = plus/cross shape (+).
+    Front (XZ) = wide rectangle (union bounding box). Side (YZ) = tall rectangle.
+    If this were difference, you'd see a notch. Union should be solid.
+  version: 1.0
+  author: TIA
+
+parts:
+  x_slab:
+    primitive: box
+    parameters:
+      width: 80
+      height: 20
+      depth: 20
+    origin: center
+
+  z_slab:
+    primitive: box
+    parameters:
+      width: 20
+      height: 20
+      depth: 60
+    origin: center
+
+operations:
+  cross:
+    type: boolean
+    operation: union
+    inputs:
+      - x_slab
+      - z_slab
+
+export:
+  default_part: cross

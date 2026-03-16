@@ -1,0 +1,60 @@
+schema_version: "2.0"
+
+metadata:
+  name: Hull Spheres Trust
+  description: >
+    Convex hull around 3 spheres in an equilateral triangle (XY plane).
+    Sphere A at origin, B at (40,0,0), C at (20,34.6,0). All r=8.
+    Trust check: top (XY) = rounded triangle / smooth triangular blob.
+    Front (XZ) = wide, short, rounded shape. Side (YZ) = narrower.
+    Hull must be smooth — no flat faces between spheres, no hard corners.
+  version: 1.0
+  author: TIA
+
+parts:
+  sphere_a:
+    primitive: sphere
+    parameters:
+      radius: 8
+    origin: center
+
+  sphere_b:
+    primitive: sphere
+    parameters:
+      radius: 8
+    origin: center
+
+  sphere_c:
+    primitive: sphere
+    parameters:
+      radius: 8
+    origin: center
+
+operations:
+  sphere_b_moved:
+    type: transform
+    input: sphere_b
+    transforms:
+      - translate:
+          - 40
+          - 0
+          - 0
+
+  sphere_c_moved:
+    type: transform
+    input: sphere_c
+    transforms:
+      - translate:
+          - 20
+          - 34
+          - 0
+
+  smooth_hull:
+    type: hull
+    inputs:
+      - sphere_a
+      - sphere_b_moved
+      - sphere_c_moved
+
+export:
+  default_part: smooth_hull

@@ -1,0 +1,57 @@
+schema_version: "2.0"
+
+metadata:
+  name: Loft Rect-to-Circle Trust
+  description: >
+    Smooth loft from a 40x40 square at Z=0 to a circle r=15 at Z=30.
+    Trust check: front (XZ) = trapezoid (wide at bottom, narrow at top).
+    Top (XY) = circle (r=15). Bottom = square corners visible in isometric.
+    Side (YZ) = same trapezoid. The shape tapers and the corners round out
+    as it rises — this is the key visual tell distinguishing loft from extrude.
+  version: 1.0
+  author: TIA
+
+sketches:
+  square_base:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      - type: rectangle
+        width: 40
+        height: 40
+        center:
+          - 0
+          - 0
+
+  circle_top:
+    plane: XY
+    origin:
+      - 0
+      - 0
+      - 30
+    shapes:
+      - type: circle
+        radius: 15
+        center:
+          - 0
+          - 0
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  transition:
+    type: loft
+    profiles:
+      - square_base
+      - circle_top
+    ruled: false
+
+export:
+  default_part: transition

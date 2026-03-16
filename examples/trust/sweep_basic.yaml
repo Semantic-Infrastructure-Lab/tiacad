@@ -1,0 +1,45 @@
+schema_version: "2.0"
+
+metadata:
+  name: Sweep Basic Trust
+  description: >
+    Circular cross-section (r=5) swept along an L-shaped path:
+    up 40mm (Z), then right 40mm (X). Creates an L-shaped pipe.
+    Trust check: front (XZ) = L shape (vertical + horizontal segments meeting at corner).
+    Top (XY) = horizontal bar with thickness 10. Side (YZ) = vertical bar with thickness 10.
+    The 90° corner is the key visual tell.
+  version: 1.0
+  author: TIA
+
+parameters:
+  pipe_radius: 5
+
+sketches:
+  pipe_profile:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      - type: circle
+        radius: ${pipe_radius}
+        center: [0, 0]
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  l_pipe:
+    type: sweep
+    profile: pipe_profile
+    path:
+      - [0, 0, 0]
+      - [0, 0, 40]
+      - [40, 0, 40]
+
+export:
+  default_part: l_pipe

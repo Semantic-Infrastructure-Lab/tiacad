@@ -1,0 +1,28 @@
+schema_version: "2.0"
+
+metadata:
+  name: Linear Pattern Trust
+  description: >
+    A box repeated 5 times along the X axis with 30mm spacing.
+    Trust check: top view (XY) = 5 equally-spaced squares in a row.
+    Front (XZ) = 5 rectangles in a row. Side (YZ) = single rectangle
+    (all 5 are stacked in depth). Spacing between boxes should be visible.
+  version: 1.0
+  author: TIA
+
+parts:
+  box:
+    primitive: box
+    parameters:
+      width: 20
+      height: 20
+      depth: 20
+    origin: center
+
+operations:
+  row:
+    type: pattern
+    pattern: linear
+    input: box
+    count: 5
+    spacing: [30, 0, 0]
