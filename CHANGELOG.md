@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-03-15 (session: astral-warrior-0315)
+
+#### Component/Module Import System (`tiacad_core/parser/component_importer.py`)
+
+**New `imports:` section in TiaCAD YAML** — reuse parts from other YAML files:
+
+```yaml
+imports:
+  - path: ./components/m3_screw.yaml
+    as: screw
+    parameters:
+      length: 20          # override component defaults
+
+  - path: ./components/bracket.yaml
+    as: bracket
+```
+
+Imported parts appear as `{namespace}.{part_name}` (e.g. `screw.shaft`, `bracket.base`)
+and are available for use in any `operations:` section of the importing file.
+
+**Features:**
+- Local file imports with relative path resolution
+- Optional parameter overrides per import (merged over component defaults)
+- Namespace prefix required (`as:`) — prevents name collisions
+- Circular import detection (raises `ComponentImportError` with full chain)
+- Nested imports: B imports C, A imports B → `b_comp.c_comp.part` available in A
+- Designs with only imports (no local `parts:`) are valid
+- Same component importable twice with different namespaces and parameters
+
+**New files:**
+- `tiacad_core/parser/component_importer.py` — `ComponentImporter` class
+- `tiacad_core/tests/test_parser/test_component_import.py` — 20 tests
+- `examples/components/m3_screw.yaml` — reusable M3 screw component
+- `examples/components/mounting_bracket.yaml` — reusable L-bracket component
+- `examples/component_import_demo.yaml` — demo of import composition
+
+**Tests:** 20 new tests covering basic import, parameter overrides, multiple imports,
+nested imports, error cases (missing file, missing fields, circular imports, namespace collisions)
+
+---
+
 ### Fixed - 2026-03-15 (session: ruby-shine-0315)
 
 #### Test Health: 1132 → 1177 passing (+45 tests, 47 → 2 skipped)

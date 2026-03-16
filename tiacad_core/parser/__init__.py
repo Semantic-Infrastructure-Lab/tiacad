@@ -28,6 +28,7 @@ from .tiacad_parser import (
     TiaCADParserError,
     parse  # Convenience function
 )
+from .component_importer import ComponentImporter, ComponentImportError
 
 __all__ = [
     # Parameter resolution
@@ -44,4 +45,7 @@ __all__ = [
     'TiaCADDocument',
     'TiaCADParserError',
     'parse',
+    # Component imports
+    'ComponentImporter',
+    'ComponentImportError',
 ]

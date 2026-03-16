@@ -1,0 +1,73 @@
+schema_version: "2.0"
+
+# Component Import System Demo
+#
+# Demonstrates the `imports:` feature — bringing in reusable YAML components
+# with optional parameter overrides.
+#
+# Run:
+#   python -m tiacad examples/component_import_demo.yaml
+
+metadata:
+  name: Component Import Demo
+  description: >
+    Wall panel assembly using imported mounting brackets and M3 screws.
+    Shows how to compose designs from reusable components.
+  version: 1.0
+  author: TIA
+
+# Import reusable components with parameter customization
+imports:
+  - path: ./components/mounting_bracket.yaml
+    as: bracket
+    parameters:
+      width: 60
+      base_depth: 35
+      flange_height: 50
+
+  - path: ./components/m3_screw.yaml
+    as: screw_short
+    parameters:
+      length: 12
+
+  - path: ./components/m3_screw.yaml
+    as: screw_long
+    parameters:
+      length: 25
+
+parameters:
+  panel_width: 200
+  panel_height: 150
+  panel_thickness: 3
+
+# Local parts — the main design elements
+parts:
+  panel:
+    primitive: box
+    parameters:
+      width: '${panel_width}'
+      depth: '${panel_thickness}'
+      height: '${panel_height}'
+
+# Operations can reference imported parts by {namespace}.{part_name}
+operations:
+  position_bracket:
+    type: transform
+    input: bracket.base
+    transforms:
+      - translate:
+          x: -50
+          y: 0
+          z: -40
+
+  position_bracket_flange:
+    type: transform
+    input: bracket.flange
+    transforms:
+      - translate:
+          x: -50
+          y: 0
+          z: -40
+
+export:
+  default_part: panel

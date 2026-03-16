@@ -13,8 +13,9 @@ Version: 0.1.0-alpha
 """
 
 import logging
+import os
 import yaml
-from typing import Dict, Any, Optional
+from typing import Dict, Any, FrozenSet, Optional
 
 from ..part import PartRegistry
 from ..utils.exceptions import TiaCADError
@@ -25,6 +26,7 @@ from .operations_builder import OperationsBuilder
 from .color_parser import ColorParser
 from .schema_validator import SchemaValidator
 from .yaml_with_lines import parse_yaml_with_lines, LineTracker
+from .component_importer import ComponentImporter, ComponentImportError
 
 logger = logging.getLogger(__name__)
 
@@ -432,6 +434,7 @@ class TiaCADParser:
         return {
             'metadata': yaml_data.get('metadata', {}),
             'parameters': yaml_data.get('parameters', {}),
+            'imports': yaml_data.get('imports', []),
             'colors': yaml_data.get('colors', {}),
             'materials': yaml_data.get('materials', {}),
             'references': yaml_data.get('references', {}),
@@ -448,7 +451,8 @@ class TiaCADParser:
         validate_schema: bool = False,
         build_graph: bool = False,
         line_tracker: Optional[LineTracker] = None,
-        yaml_string: Optional[str] = None
+        yaml_string: Optional[str] = None,
+        _import_stack: FrozenSet[str] = frozenset()
     ) -> TiaCADDocument:
         """Parse TiaCAD data from a dict; returns TiaCADDocument or raises TiaCADParserError."""
         try:
@@ -474,11 +478,20 @@ class TiaCADParser:
             metadata, parameters = s['metadata'], s['parameters']
             parts_spec, operations_spec = s['parts'], s['operations']
 
-            if not parts_spec:
+            if not parts_spec and not s['imports']:
                 raise TiaCADParserError("YAML must contain 'parts' section", file_path=file_path)
 
             logger.info(f"Building model: {metadata.get('name', 'Unnamed')}")
             logger.debug(f"Parameters: {len(parameters)}, Parts: {len(parts_spec)}, Operations: {len(operations_spec)}, Colors: {len(s['colors'])}")
+
+            # Phase 0: Process imports → pre-populate registry with namespaced parts
+            imported_registry = None
+            if s['imports']:
+                base_dir = os.path.dirname(os.path.abspath(file_path)) if file_path else os.getcwd()
+                imported_registry = ComponentImporter.load_imports(
+                    s['imports'], base_dir, _import_stack
+                )
+                logger.info(f"Imported {len(imported_registry)} parts from {len(s['imports'])} component(s)")
 
             # Phase 1: Parameters → palette → color parser → sketches
             param_resolver = ParameterResolver(parameters)
@@ -492,9 +505,14 @@ class TiaCADParser:
 
             sketches = TiaCADParser._build_sketches_from_spec(s['sketches'], param_resolver) if s['sketches'] else {}
 
-            # Phase 2: Parts → references → spatial resolver → operations
+            # Phase 2: Parts → merge imports → references → spatial resolver → operations
             registry = PartsBuilder(param_resolver, color_parser).build_parts(parts_spec)
             logger.info(f"Built {len(parts_spec)} parts")
+
+            if imported_registry:
+                for part_name in imported_registry.list_parts():
+                    registry.add(imported_registry.get(part_name))
+                logger.debug(f"Merged {len(imported_registry)} imported parts into registry")
 
             resolved_references = TiaCADParser._resolve_references(s['references'], param_resolver) if s['references'] else {}
             spatial_resolver = SpatialResolver(registry, resolved_references)
