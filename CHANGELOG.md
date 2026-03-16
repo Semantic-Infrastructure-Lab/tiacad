@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-03-15 (session: drifting-expedition-0315)
+
+#### Phase 4 — Watch Mode (`tiacad watch <file>`)
+
+Capstone of the DAG incremental rebuild arc. Watches a YAML file for saves
+and rebuilds immediately, reusing cached geometry via IncrementalBuilder.
+
+**`tiacad watch examples/bracket.yaml`** — live rebuild loop:
+```
+[14:32:01] initial     ✓  1842ms  1 rebuilt, 0 cached
+[14:32:07] changed     ✓   112ms  1 rebuilt, 3 cached
+```
+
+- `tiacad_core/watcher.py` — `FileWatcher` class with watchdog + 300ms debounce
+- Handles atomic saves (editor write-rename patterns)
+- Connects directly to `IncrementalBuilder` (not parser shortcut) — real cache hits
+- 11 tests: 8 unit (mocked, ~1s), 3 integration (real builds, marked `slow`)
+
+#### Bug fix — lib3mf locale corruption
+
+`lib3mf.WriteToFile()` calls `setlocale(LC_ALL, "C")` internally and never
+restores it, corrupting Python file I/O encoding to ASCII for all subsequent
+code in the same process. Fixed with save/restore in `threemf_exporter.py`.
+
+This was causing `test_namespace_collision_raises` to fail in full suite runs
+(the test writes a YAML comment containing `→` which ASCII can't encode).
+
+**Test baseline:** 1323 pass, 0 fail (was 1 ordering failure). Full suite clean.
+
+#### Visual regression references
+
+45 reference PNGs committed to `tiacad_core/visual_references/`, closing the
+"6 missing visual regression tests" item. Visual suite now: 81 pass, 2 skip
+(dag_test_cycle and pipe_sweep — known OCCT limitations).
+
 ### Added - 2026-03-15 (session: sutegaku-0315)
 
 #### Correctness Infrastructure — `tiacad check`, `tiacad audit`, geometric contracts
