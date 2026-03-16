@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-03-16 (session: enchanted-hydra-0316)
+
+#### Tier 2 Geometric Contracts — Component Import Demo
+
+9 new tests in `test_correctness/test_example_contracts.py::TestComponentImportDemo`
+that independently verify geometry from parameter math, not snapshots:
+
+- Panel: 200×3×150mm, vol=90,000mm³
+- `bracket.base`: 60×35×5mm, vol=10,500mm³
+- `bracket.flange`: 60×5×50mm, vol=15,000mm³
+- `screw_short.shaft` height=12mm, `screw_long.shaft` height=25mm
+- Parameter override isolation: two imports of same file produce independent geometry
+
+**Axis convention documented:** `get_dimensions` returns X/Y/Z bounding box extents.
+CadQuery box YAML `depth` → Y axis → `dims["height"]`; YAML `height` → Z → `dims["depth"]`.
+
+#### `tiacad watch --export <path>` flag
+
+Auto-export final part to STL/3MF/STEP on each successful rebuild:
+
+```
+tiacad watch examples/bracket.yaml --export /tmp/bracket.stl
+[14:32:07]  changed   ✓   112ms  1 rebuilt, 3 cached  → bracket.stl
+```
+
+- `WatchBuildResult.exported_path` field
+- `FileWatcher(export_path=...)` + `_export()` method handles all 3 formats
+- Validates extension before starting the watch loop
+
+#### Component Standard Library (`examples/components/`)
+
+Five new reusable hardware components:
+
+| File | Spec | Key parameters |
+|---|---|---|
+| `m4_screw.yaml` | M4 pan head (DIN 7985) | shaft_radius=2.0, head_radius=4.0 |
+| `m5_screw.yaml` | M5 pan head (DIN 7985) | shaft_radius=2.5, head_radius=5.0 |
+| `m6_bolt.yaml` | M6 hex bolt (DIN 931) | shaft_radius=3.0, head_radius=5.5 |
+| `m3_washer.yaml` | DIN 125 flat washer | OD=7mm, ID=3.2mm via boolean diff |
+| `m3_standoff.yaml` | Cylindrical standoff | M3 bore via boolean diff |
+
+New demo: `examples/hardware_assembly_demo.yaml` — 25-part assembly importing all 6 hardware components. Added to Tier 1 BUILDABLE_EXAMPLES list.
+
+**Test baseline:** 1330 pass, 0 fail (up from 1319, +11 new tests).
+
 ### Added - 2026-03-15 (session: drifting-expedition-0315)
 
 #### Phase 4 — Watch Mode (`tiacad watch <file>`)
