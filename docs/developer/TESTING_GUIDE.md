@@ -29,17 +29,17 @@ beth_topics:
 
 ## Current State
 
-TiaCAD has **1244 passing tests** as of March 2026.
+TiaCAD has **1405 passing tests** as of March 2026.
 
 | Category | Location | Tests | Notes |
 |---|---|---|---|
 | Parser | `test_parser/` | ~520 | YAML → geometry pipeline |
-| Correctness | `test_correctness/` | 68 | Attachment, rotation, dimensions |
-| Visual regression | `test_visual_regression.py` | 57 | Pixel-diff vs reference images |
+| Correctness | `test_correctness/` | ~90 | Attachment, rotation, dimensions, example contracts |
+| Visual regression | `test_visual_regression.py` | 57 | Pixel-diff vs reference images — catches regressions, not original correctness |
 | DAG (incremental rebuild) | `test_dag/` | 101 | Graph, invalidation, cache, builder |
 | Testing utilities | `test_testing/` | ~40 | Tests for the test utilities themselves |
 | Integration | scattered | ~200 | Multi-component workflows |
-| Unit | scattered | ~300 | Backend, part, spatial, etc. |
+| Unit | scattered | ~400 | Backend, part, spatial, stdlib contracts, etc. |
 
 ```bash
 pytest                          # full suite — ~2 min
@@ -52,7 +52,7 @@ pytest tiacad_core/tests/test_dag/           # DAG tests — <1s
 
 ## Correctness Gap — What We Know
 
-**The core problem:** TiaCAD has been producing geometry that doesn't look right. The test suite is large but catches the wrong classes of bug for this problem.
+**The core problem:** TiaCAD can produce geometry that looks plausible but is wrong in ways the test suite doesn't catch.
 
 ### What the tests actually verify
 
@@ -84,7 +84,11 @@ The `test_geometry_validation.py` covers 3 examples with `trimesh` validity chec
 
 The 51 visual reference images were generated at some point. If a bug existed at snapshot time, the reference *is* the bug. Visual regression tests would then actively protect incorrect behavior.
 
-### Recommended approaches (pick one to start)
+### What we've done about it
+
+**Option A** (geometric contracts) is now in place — `test_correctness/test_example_contracts.py` covers all assembly examples with Tier 2 contracts. This is the primary regression net.
+
+### Remaining approaches
 
 **Option A — Geometric tests on key examples (highest value)**
 
@@ -135,6 +139,22 @@ for f in sorted(glob.glob('examples/*.yaml')):
 "
 ```
 This establishes ground truth for what each example actually produces, so you can tell if something changed.
+
+**Option D — Trust renderer (human + AI visual verification)**
+
+The trust renderer is a multi-view colored rendering tool for visually confirming that TiaCAD operations produce the expected 3D structure. It renders each part in a distinct color with 4 viewpoints (isometric, front, top, side), an axis indicator, and a color legend — producing a single PNG you (or AI) can inspect and say "yep, that's right."
+
+```bash
+python scripts/trust_render.py examples/trust/stacked_boxes.yaml
+# → trust_output/stacked_boxes.png: 4-panel render, red box on bottom, blue on top
+```
+
+This is especially useful for:
+- Validating new primitives and operations as you build them
+- Catching positioning bugs that geometric assertions miss (a part in the wrong place but correct shape)
+- AI-assisted review — show the render and ask "is the blue cylinder centered on top of the red plate?"
+
+The trust renderer lives in `tiacad_core/visual/trust_renderer.py`. Curated trust scenarios are in `examples/trust/`.
 
 ---
 

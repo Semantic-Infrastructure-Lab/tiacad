@@ -14,10 +14,11 @@
 - ✅ Component/Module Import System — local, stdlib, GitHub URI schemes (Mar 2026)
 - ✅ Dependency Graph (DAG) + Incremental Rebuild + Watch Mode (Mar 2026)
 - ✅ `polygon` primitive — regular N-sided prism (hex nuts, gears, etc.)
-- ✅ Hardware stdlib: m3_screw, m4_screw, m5_screw, m6_bolt, m3_washer, m3_standoff, m3_nut, mounting_bracket
+- ✅ Hardware stdlib: m3/m4/m5/m6 screws, m3/m4/m5/m6 nuts, m3 washer, m3 standoff, mounting bracket
 - ✅ Tier 2 geometric contracts for all assembly examples
+- ✅ PCB standoff assembly example (`examples/pcb_standoff_assembly.yaml`)
 
-**Current test suite:** 1382 pass, 2 skip, 1 xfail, 0 fail
+**Current test suite:** 1405 pass, 2 skip, 1 xfail, 0 fail
 
 ---
 

@@ -60,9 +60,9 @@ parts:             # Required: define primitive parts
   part_name:
     primitive: box
     parameters:
-      width: 100
-      height: 50
-      depth: 10
+      width: 100     # X axis
+      depth: 50      # Y axis
+      height: 10     # Z axis
 
 operations:        # Optional: transform, boolean, pattern, finish
   operation_name:
@@ -528,11 +528,13 @@ parts:
   my_box:
     primitive: box
     parameters:
-      width: 100                  # X dimension
-      height: 50                  # Y dimension
-      depth: 20                   # Z dimension
+      width: 100                  # X axis (left/right)
+      depth: 30                   # Y axis (front/back)
+      height: 20                  # Z axis (up/down)
     origin: center                # center, corner, or [x,y,z]
 ```
+
+> ⚠️ **Axis mapping gotcha:** `width`→X, `depth`→Y, `height`→Z. The name "depth" maps to Y (not Z), and "height" maps to Z (not Y). This is counterintuitive — think of `depth` as the front-to-back dimension of a flat plate, not vertical depth. When building assemblies, verify Z positioning with a rendered view.
 
 **Origin modes:**
 - `center`: Center at (0, 0, 0) - default
