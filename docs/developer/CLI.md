@@ -203,6 +203,93 @@ Statistics:
 
 ---
 
+### `tiacad check` - Build and Report Dimensions
+
+Build a file and print dimensions + volume for every part. No output file written.
+
+**Usage:**
+```bash
+tiacad check INPUT [-v]
+```
+
+```bash
+# Report all part dimensions without exporting
+tiacad check examples/assembly.yaml
+```
+
+---
+
+### `tiacad audit` - Batch Validate Multiple Files
+
+Build each file and report final-part dimensions; flags failures.
+
+**Usage:**
+```bash
+tiacad audit FILES... [-v]
+```
+
+```bash
+# Audit all examples
+tiacad audit examples/*.yaml
+
+# Verbose output with tracebacks on failure
+tiacad audit examples/*.yaml --verbose
+```
+
+---
+
+### `tiacad validate-geometry` - Check Printability
+
+Validates that geometry is watertight and has no disconnected parts.
+
+**Usage:**
+```bash
+tiacad validate-geometry INPUT [-p PART] [-v]
+```
+
+```bash
+# Validate geometry of a model
+tiacad validate-geometry examples/bracket.yaml
+
+# Check a specific part
+tiacad validate-geometry examples/assembly.yaml --part final_assembly
+```
+
+---
+
+### `tiacad watch` - Watch and Rebuild on Save
+
+Watch a YAML file and incrementally rebuild on each save. Uses the dependency graph to only recompute changed parts.
+
+**Usage:**
+```bash
+tiacad watch INPUT [--export PATH]
+```
+
+**Options:**
+- `--export PATH, -e PATH` - Auto-export final part to STL/3MF/STEP after each successful rebuild
+
+**Examples:**
+```bash
+# Watch and rebuild (no export)
+tiacad watch examples/bracket.yaml
+
+# Watch and auto-export to STL
+tiacad watch examples/bracket.yaml --export /tmp/bracket.stl
+
+# Watch and auto-export to 3MF
+tiacad watch examples/assembly.yaml --export /tmp/assembly.3mf
+```
+
+**Output:**
+```
+Watching: examples/bracket.yaml
+[14:32:07]  changed   ✓   112ms  1 rebuilt, 3 cached  → bracket.stl
+[14:32:15]  changed   ✓    89ms  2 rebuilt, 2 cached  → bracket.stl
+```
+
+---
+
 ## Global Options
 
 Available for all commands:
@@ -397,7 +484,7 @@ fi
 
 ## Future Enhancements
 
-Planned features for future CLI versions:
+Planned features for future CLI versions (watch mode is already implemented — see above):
 
 ### QW8: Interactive Wizard
 ```bash
@@ -408,12 +495,6 @@ tiacad wizard
 ### Render Command
 ```bash
 tiacad render examples/bracket.yaml --view isometric --output preview.png
-```
-
-### Watch Mode
-```bash
-tiacad watch examples/design.yaml --auto-build
-# Rebuild on file changes
 ```
 
 ### Batch Export
