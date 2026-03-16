@@ -5,7 +5,7 @@ status: active
 phase: v3-complete
 priority: high
 started: 2024-10-18
-last_active: 2026-02-15
+last_active: 2026-03-16
 lead_sessions:
   - fafecoha-1103
   - magical-altar-1103
@@ -35,7 +35,7 @@ tech_stack:
   - CadQuery 2.6.0
   - pytest
   - YAML
-  - networkx (planned for v3.1 DAG)
+  - networkx (DAG implementation)
 ---
 
 # TiaCAD Project
@@ -52,9 +52,8 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Status Updated:** 2026-02-15
 
 **Test Suite:**
-- 1125 tests total
-- 1062 passing (94.4%), 45 skipped, 17 failing (being fixed), 1 xfailed
-- 92% code coverage
+- 1382 passing, 0 failing, 2 skipped, 1 xfailed
+- 92%+ code coverage
 - Comprehensive coverage: unit, integration, correctness, visual regression
 
 **Components Complete:**
@@ -71,8 +70,13 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - ✅ 3MF export with color and metadata
 - ✅ Rule-based assembly validator (8 validation rules)
 - ✅ Auto-generated references (box.face_top, cylinder.axis_z, etc.)
+- ✅ Component imports: local (./file.yaml), stdlib (tiacad://std/...), GitHub (github:user/repo/file.yaml)
+- ✅ Hardware stdlib: m3/m4/m5/m6 screws, m3 washer, m3 standoff, m3 nut, mounting bracket
+- ✅ Dependency graph (DAG) — incremental rebuild, cycle detection
+- ✅ Watch mode: `tiacad watch model.yaml [--export path]` — auto-rebuild on save
+- ✅ `polygon` primitive — regular N-sided extruded prism
 
-**Next Milestone:** TBD - See ROADMAP.md (component system vs DAG under consideration)
+**Next Milestone:** Constraint Solver (Q4 2026) — see ROADMAP.md
 
 ## Project Evolution
 
@@ -93,34 +97,35 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - Migration guide
 - Working examples
 
-### v3.1: Dependency Graph (PLANNED 📋)
-**Duration:** 6-8 weeks
-**Status:** Not started
+### v3.1: Component System + DAG + Watch Mode (COMPLETE ✅)
+**Completed:** March 2026
 
-**Goal:** True parametric modeling with incremental rebuilds
+**Delivered:**
+- Component imports: local, stdlib (`tiacad://std/...`), GitHub (`github:user/repo/...`)
+- Hardware stdlib (8 components: m3–m6 screws, washer, standoff, nut, bracket)
+- `polygon` primitive for hex/N-sided geometry
+- Dependency graph (ModelGraph, GraphBuilder, Visualizer)
+- IncrementalBuilder — only rebuilds changed parts
+- `tiacad watch` — auto-rebuild on file save
+- `tiacad watch --export <path>` — auto-export STL/3MF/STEP on rebuild
+- 1382 tests passing, 0 failing (up from 1062 passing, 17 failing)
+
+**Sessions:** enchanted-hydra-0316, ninja-xenarch-0316
+
+### v3.2: Constraint Solver (PLANNED 📋)
+**Duration:** 10-16 weeks
+**Dependencies:** v3.1 complete ✅
+
+**Goal:** Declarative assembly constraints — specify intent, not coordinates
 
 **Features:**
-- ModelGraph using networkx
-- Dependency tracking (params → parts → operations)
-- Invalidation propagation
-- `--watch` mode for auto-rebuild
-- `--show-deps` for graph visualization
-
-**Deliverable:** v3.1.0 release
-
-### v3.2: Explicit Constraints (PLANNED 📋)
-**Duration:** 4-6 weeks
-**Dependencies:** v3.1 complete
-
-**Goal:** Declarative constraints (manual solving)
-
-**Features:**
-- Constraint YAML schema (flush, coaxial, offset)
-- Constraint validation
-- Integration with ModelGraph
+- Constraint YAML schema (flush, coaxial, offset, tangent)
+- Constraint validation (detect contradictions before solve)
+- Constraint propagation (rigid constraints compile to transforms)
+- Integration with ModelGraph (constraints as edges)
 - Assembly examples
 
-**Deliverable:** v3.2.0 release
+**Deliverable:** v3.2.0 release (target Q4 2026)
 
 ### Future: Advanced Features
 - Constraint solver (symbolic + numeric)
@@ -214,7 +219,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 ---
 
-**Project Status:** ✅ v3.1.2 Stable (maintenance mode)
-**Current Focus:** Stability, examples, documentation (see ROADMAP.md)
-**Last Updated:** 2026-02-15
-**Test Suite:** 1125 tests (1062 passing, 94.4%)
+**Project Status:** ✅ Active development — v3.1 component system + DAG complete
+**Current Focus:** Constraint Solver (Q4 2026) — see ROADMAP.md
+**Last Updated:** 2026-03-16
+**Test Suite:** 1382 passing, 0 failing

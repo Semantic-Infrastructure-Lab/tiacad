@@ -1,9 +1,9 @@
 # TiaCAD Known Limitations
 
-**Version:** v3.1.2
-**Last Updated:** 2026-02-15
+**Version:** v3.1.2 (+32 commits)
+**Last Updated:** 2026-03-16
 
-This document honestly describes what TiaCAD **cannot do** as of v3.1.2, with practical workarounds.
+This document honestly describes what TiaCAD **cannot do**, with practical workarounds.
 
 ---
 
@@ -18,16 +18,28 @@ Before limitations, here's what works great:
 - Proper rotation math (Rodrigues formula, explicit origins)
 
 ✅ **Complete Primitives & Operations:**
-- All primitives (box, cylinder, sphere, cone)
+- All primitives (box, cylinder, sphere, cone, polygon)
 - Boolean ops (union, difference, intersection)
 - Patterns (linear, polar, grid)
 - Finishing (fillet, chamfer)
 - Sketch ops (extrude, revolve, sweep, loft)
 - Advanced ops (hull, gusset, text)
 
+✅ **Component System:**
+- Local file imports (`./bracket.yaml`)
+- Bundled stdlib (`tiacad://std/hardware/m3_screw`)
+- GitHub imports (`github:user/repo/path.yaml`, cached to `~/.tiacad/cache/github/`)
+- Hardware stdlib: m3/m4/m5/m6 screws, m3 washer, m3 standoff, m3 nut, mounting bracket
+
+✅ **Dependency Graph + Watch Mode:**
+- Incremental rebuild — only recomputes parts that changed
+- `tiacad watch model.yaml` — auto-rebuild on file save
+- `tiacad watch model.yaml --export /tmp/model.stl` — auto-export on each rebuild
+- Cycle detection at build time
+
 ✅ **Production Quality:**
-- 1125 comprehensive tests (94.4% passing)
-- 92% code coverage
+- 1382 tests, 0 failing, 2 skipped, 1 xfailed
+- 92%+ code coverage
 - 3MF export with color/metadata
 - Schema validation
 
@@ -35,90 +47,11 @@ Before limitations, here's what works great:
 
 ## Current Limitations
 
-### 1. No Component/Module Import System
+### 1. No Constraint Solver (Manual Positioning Only)
 
 **What's Missing:**
 ```yaml
-# ❌ CAN'T DO THIS (yet):
-imports:
-  - tiacad://std/hardware/m3_screw
-  - github:user/repo/bracket.yaml
-  - ./local_component.yaml
-
-parts:
-  screw:
-    component: m3_screw  # Import from library
-    parameters: {length: 20mm}
-```
-
-**Impact:**
-- Cannot import standard parts (screws, nuts, bearings)
-- No component sharing or reuse
-- Copy-paste for common patterns
-
-**Workaround:**
-```yaml
-# Use examples/ folder as template library
-# Copy relevant YAML sections into your design
-parts:
-  screw:
-    primitive: cylinder  # Model from primitives
-    parameters: {radius: 1.5, height: 20}
-  # ... manual screw threads not practical
-```
-
-**Best Practice:**
-- Keep reusable patterns in `examples/` folder
-- Use descriptive naming for copy-paste
-- Create project-specific component libraries locally
-
-**Future:** See ROADMAP.md - Component system under active consideration
-
----
-
-### 2. No Dependency Graph (Full Rebuild on Changes)
-
-**What's Missing:**
-```yaml
-parameters:
-  screw_diameter: 3mm  # Change this value
-
-# Currently: Rebuilds ENTIRE model
-# Desired: Only parts depending on screw_diameter
-```
-
-**Impact:**
-- Parameter changes require full model rebuild
-- Slow iteration on complex models (>500 lines)
-- No circular dependency detection at parse time
-
-**Workaround:**
-- Keep models under 200-300 lines for fast iteration
-- Split complex assemblies into separate files
-- Use parameters to centralize values
-- Comment which parts depend on which parameters
-
-**Best Practice:**
-```yaml
-parameters:
-  # Base dimensions (affects: base, pillars, top_plate)
-  base_width: 100
-  base_depth: 80
-
-  # Fasteners (affects: all mounting holes)
-  screw_diameter: 3
-  hole_clearance: 0.2
-```
-
-**Future:** See ROADMAP.md - DAG as alternative to component system
-
----
-
-### 3. No Constraint Solver (Manual Positioning Only)
-
-**What's Missing:**
-```yaml
-# ❌ CAN'T DO THIS (yet):
+# CAN'T DO THIS (yet):
 constraints:
   - type: flush
     faces: [bracket.bottom, base.top]
@@ -161,45 +94,11 @@ operations:
 - Comment the intent ("5mm clearance for wiring")
 - Test assembly fit with multiple parameter values
 
-**Future:** See ROADMAP.md - Requires DAG first, then 16+ weeks for solver
+**Future:** Next major milestone — see ROADMAP.md. Target: Q4 2026.
 
 ---
 
-### 4. No Live Preview/Watch Mode
-
-**What's Missing:**
-```bash
-# ❌ CAN'T DO THIS (yet):
-tiacad build model.yaml --watch
-# Auto-rebuild on file save (like hot reload)
-```
-
-**Impact:**
-- Manual rebuild after each edit
-- Slower iteration cycle
-
-**Workaround:**
-```bash
-# Use shell watch command
-while true; do
-  tiacad build model.yaml -o output.stl
-  sleep 2
-done
-
-# Or use file watcher tools (entr, watchexec)
-ls model.yaml | entr tiacad build model.yaml -o output.stl
-```
-
-**Best Practice:**
-- Keep terminal and viewer (FreeCAD, PrusaSlicer) side-by-side
-- Use incremental saves (model_v1.yaml, model_v2.yaml)
-- Test small changes before full assembly
-
-**Future:** Requires DAG for efficient incremental rebuilds
-
----
-
-### 5. Limited Export Formats
+### 2. Limited Export Formats
 
 **What Works:**
 - ✅ STL (widely supported)
@@ -221,11 +120,11 @@ ls model.yaml | entr tiacad build model.yaml -o output.stl
 - Export STEP → import to FreeCAD → export to other formats
 - Use external tools for CAM (Fusion360, FreeCAD Path)
 
-**Future:** Community-driven - add if there's demand
+**Future:** Community-driven — add if there's demand
 
 ---
 
-### 6. CadQuery Coupling (Internal Issue)
+### 3. CadQuery Coupling (Internal Issue)
 
 **What It Means:**
 - TiaCAD uses CadQuery as its geometry kernel
@@ -237,43 +136,67 @@ ls model.yaml | entr tiacad build model.yaml -o output.stl
 - Testing slower than with pure mock backend
 - Cannot leverage alternative CAD kernels
 
-**For Users:** This doesn't affect YAML usage - you won't notice it
+**For Users:** This doesn't affect YAML usage — you won't notice it
 
 **For Contributors:**
 - New code should use `GeometryBackend` abstraction
 - Gradual refactoring during feature work
 - No plan to support multiple backends (maintenance burden)
 
-**Decision:** Stay with CadQuery - it works well, no strong reason to change
+**Decision:** Stay with CadQuery — it works well, no strong reason to change
 
 ---
 
-## Test Health (Honest Status)
+### 4. GitHub Import: No Branch Override
 
-**As of 2026-02-15:**
-- 1125 total tests
-- 1062 passing (94.4%)
-- 45 skipped (intentional)
-- **17 failing (1.5%)** - actively being fixed:
-  - 11 hull builder tests (CadQuery 2.7.0 STL import compatibility)
-  - 6 visual regression tests (missing reference images, needs one-time generation)
-- 1 xfailed (expected failure)
+**What's Missing:**
+```yaml
+# CAN'T specify branch (defaults to main):
+imports:
+  - github:user/repo@develop/path.yaml  # syntax not yet supported
+```
 
-**Not "production-ready with 100% pass rate"** - we're honest about current state.
+**Workaround:** Only `main` branch is supported. Use local copies for non-main branches.
+
+**Future:** Could add `github:user/repo@branch/file.yaml` syntax if there's demand.
+
+---
+
+### 5. Assembly Parts Not Auto-Positioned
+
+**What It Means:**
+- When using component imports in an assembly, parts float at their default origin
+- No spatial placement without explicit transforms in the parent YAML
+
+**Impact:**
+- Visual demos may show parts interpenetrating or floating in space
+- Functional geometry (volume, dimensions) is correct; visual assembly is not
+
+**Workaround:**
+```yaml
+operations:
+  place_screw:
+    type: transform
+    input: screw
+    transforms:
+      - translate: {to: bracket.hole_1}
+```
+
+**Future:** Constraint solver (next milestone) will address this.
+
+---
+
+## Test Health
+
+**As of 2026-03-16:**
+- 1382 passing
+- 2 skipped (intentional — visual regression tests needing reference images)
+- 0 failing
+- 1 xfailed (expected failure, tracked)
 
 ---
 
 ## Best Practices for Working Within Limitations
-
-### For Missing Components:
-1. Use `examples/` as template library
-2. Create project-specific component collections
-3. Document your patterns for reuse
-
-### For Missing DAG:
-1. Keep models modular (<300 lines per file)
-2. Comment parameter dependencies clearly
-3. Test with multiple parameter combinations
 
 ### For Missing Constraints:
 1. Use spatial references (`base.face_top`)
@@ -281,10 +204,10 @@ ls model.yaml | entr tiacad build model.yaml -o output.stl
 3. Comment design intent ("5mm clearance")
 4. Validate fits with measurement tests
 
-### For Missing Imports:
-1. Use YAML anchors for repetition within one file
-2. Copy-paste is OK for now (document source)
-3. Standardize naming conventions
+### For Limited Export:
+1. Export STEP as CAD interchange format
+2. Use FreeCAD for secondary format conversion
+3. STL/3MF for direct printing
 
 ---
 

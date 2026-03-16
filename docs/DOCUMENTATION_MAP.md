@@ -44,6 +44,7 @@
 |----------|---------|-------------|
 | [TESTING_GUIDE](developer/TESTING_GUIDE.md) | Comprehensive testing strategies | When writing or running tests |
 | [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md) | Quick test commands | When you just need the command |
+| [DAG_INCREMENTAL_REBUILD](developer/DAG_INCREMENTAL_REBUILD.md) | Dependency graph architecture and watch mode | When working on incremental rebuild or watch |
 | [TERMINOLOGY_GUIDE](developer/TERMINOLOGY_GUIDE.md) | Canonical terminology decisions | When writing docs or code |
 | [MIGRATION_GUIDE_V3](developer/MIGRATION_GUIDE_V3.md) | Upgrading from v0.3.0 to v3.x | When migrating old YAML files |
 | [CLI](developer/CLI.md) | Command-line interface reference | When using tiacad CLI |
@@ -175,6 +176,6 @@ See [Archive Summary](archive/ARCHIVE_SUMMARY.md) for:
 
 ---
 
-**Last Updated:** 2025-12-07
-**TiaCAD Version:** 3.1.2
-**Recent Additions:** SIL_INTEGRATION.md, SKIPPED_TESTS_AUDIT.md, CODE_QUALITY_SUMMARY.md
+**Last Updated:** 2026-03-16
+**TiaCAD Version:** 3.1.2 (+32 commits)
+**Recent Additions:** DAG_INCREMENTAL_REBUILD.md, TESTING_GUIDE.md (updated), TESTING_QUICK_REFERENCE.md

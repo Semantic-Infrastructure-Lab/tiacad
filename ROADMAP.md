@@ -1,140 +1,105 @@
 # TiaCAD Roadmap
 
-**Last Updated:** 2026-02-15
-**Current Version:** v3.1.2 (+19 maintenance commits)
+**Last Updated:** 2026-03-16
+**Current Version:** v3.1.2 (+32 commits since release)
 
 ---
 
 ## Current Focus (Q1 2026)
 
-**Status:** 🟡 **Maintenance Mode**
+**Status:** 🟢 **Active Development** — both Q1 milestones completed ahead of schedule
 
-TiaCAD v3.1.2 is production-ready with solid mathematical foundations and comprehensive testing. Current work focuses on stability and ecosystem health:
+**Completed this quarter:**
+- ✅ Fixed all 17 test failures (0 failing as of 2026-03-10)
+- ✅ Component/Module Import System — local, stdlib, GitHub URI schemes (Mar 2026)
+- ✅ Dependency Graph (DAG) + Incremental Rebuild + Watch Mode (Mar 2026)
+- ✅ `polygon` primitive — regular N-sided prism (hex nuts, gears, etc.)
+- ✅ Hardware stdlib: m3_screw, m4_screw, m5_screw, m6_bolt, m3_washer, m3_standoff, m3_nut, mounting_bracket
+- ✅ Tier 2 geometric contracts for all assembly examples
 
-**Active Work:**
-- ✅ Fixed 21 examples (50% → 95% pass rate) - API migrations complete
-- ✅ Infrastructure validation (dependencies, test suite, CI)
-- 🔧 Fixing 17 test failures:
-  - 11 hull builder tests (CadQuery 2.7.0 STL import issue)
-  - 6 visual regression tests (missing reference images)
-- 📝 Documentation consolidation (this roadmap!)
-
-**Reality Check:** No active feature development as of Feb 2026. Focus is on stability, examples, and clarity.
+**Current test suite:** 1382 pass, 2 skip, 1 xfail, 0 fail
 
 ---
 
-## Strategic Recommendation
+## Strategic Plan (Updated Mar 2026)
 
-**🎯 Recommended Path (2026):**
+**Executed roadmap:**
 
-1. **Q2 2026:** Component/Module System (3-4 weeks) - **Ecosystem foundation**
-2. **Q3 2026:** Complete DAG implementation (4-6 weeks) - **Performance infrastructure**
-3. **Q4 2026:** Constraint Solver (10-16 weeks) - **Parametric design capabilities**
-4. **2027+:** CGA v5.0 Architecture (40-80 weeks) - **Research moonshot**
-
-**Rationale:** Build ecosystem value first (components enable community growth), then complete infrastructure (DAG + constraints), then pursue revolutionary architecture (CGA) as 2.0 rewrite.
+1. **Q1 2026:** Component System ✅ **DONE** — local/stdlib/GitHub imports + hardware stdlib
+2. **Q1 2026:** DAG + Watch ✅ **DONE** — incremental rebuild, wired into watcher.py
+3. **Q4 2026:** Constraint Solver — **current next milestone**
+4. **2027+:** CGA v5.0 Architecture — research moonshot
 
 ---
 
-## Near-Term Possibilities (Q2 2026)
+## What Was Built (Q1 2026)
 
-**Decision Needed:** What delivers most value to open-source modeling community?
+### Component/Module System ✅ Complete
 
-### Option A: Component/Module System 🏆 **(Recommended)**
+**Vision realized:** npm/cargo for CAD — reusable, shareable, parametric components
 
-**Vision:** npm/cargo for CAD - reusable, shareable, parametric components
-
-**Impact:** 🔥🔥🔥🔥🔥 (Ecosystem-defining)
-- Build real things without modeling every screw from primitives
-- Community contributions create compounding value
-- Lower barrier to entry (assemble vs model)
-- Git-friendly component sharing
-
-**What You'll Be Able to Do:**
 ```yaml
 imports:
-  - tiacad://std/hardware/m3_screw
-  - github:scottsen/guitar-hangers/hook
-  - ./bracket.yaml
+  - tiacad://std/hardware/m3_screw    # bundled stdlib
+  - github:scottsen/guitar-hangers/hook  # fetched from GitHub, cached
+  - ./bracket.yaml                    # local file
 
 parts:
-  bracket:
-    component: bracket
-    parameters: {width: 50mm}
-
-  screws:
+  screw:
     component: m3_screw
     parameters: {length: 20mm}
-    pattern: {positions: [bracket.hole_1, bracket.hole_2, ...]}
 ```
 
-**Implementation:**
-- Week 1-2: Import system (local files, parameter passing)
-- Week 2-3: Standard library (ISO hardware, bearings, gears)
-- Week 3-4: GitHub imports (github:user/repo/file.yaml)
-- Week 4: Documentation & examples
+**What was delivered:**
+- `tiacad://std/...` → resolves to bundled `tiacad_core/stdlib/hardware/*.yaml`
+- `github:user/repo/path.yaml` → fetches `raw.githubusercontent.com`, cached to `~/.tiacad/cache/github/`
+- Local paths → unchanged behavior
+- Hardware stdlib: m3/m4/m5/m6 screws, m3 washer, m3 standoff, m3 nut, mounting bracket
 
-**Effort:** 3-4 weeks
-**Timeline:** Mar-Apr 2026 (if prioritized)
+**Session:** ninja-xenarch-0316, enchanted-hydra-0316
 
 ---
 
-### Option B: Dependency Graph (DAG) ⚡ **← Week 1-2 Complete!**
+### Dependency Graph (DAG) + Incremental Rebuild ✅ Complete
 
-**Vision:** True parametric modeling with incremental rebuilds
+**Vision realized:** True parametric modeling with incremental rebuilds
 
-**Impact:** 🔥🔥🔥 (Essential but invisible)
-- 10x faster rebuilds when changing parameters
-- Watch mode (auto-rebuild on save)
-- Circular dependency detection
+```bash
+tiacad watch examples/assembly.yaml --export /tmp/assembly.stl
+[14:32:07]  changed   ✓   112ms  1 rebuilt, 3 cached  → assembly.stl
+```
 
-**What You'll Be Able to Do:**
+**What was delivered:**
+- `ModelGraph`, `GraphBuilder`, `Visualizer` — core DAG module
+- Cycle detection at build time
+- CLI `--show-deps` flag
+- `InvalidationTracker` + `IncrementalBuilder` — only rebuild changed parts
+- `tiacad watch` command — auto-rebuild on save (incremental)
+- `--export <path>` flag — auto-export to STL/3MF/STEP on each rebuild
+
+**Session:** enchanted-hydra-0316 (watch + export), prior foundation in hidden-sorcerer-0215
+
+---
+
+### `polygon` Primitive ✅ Complete
+
+Regular N-sided extruded prism:
+
 ```yaml
+primitive: polygon
 parameters:
-  screw_diameter: 3mm  # Change this
-  # ... 500 lines ...
-
-# Only rebuilds parts depending on screw_diameter
-# Not the entire model
+  sides: 6
+  diameter: 8.0     # circumscribed circle
+  height: 4.0
 ```
 
-**Current Status (Feb 2026):**
-- ✅ Week 1-2: Foundation complete (53 tests passing)
-  - Core DAG module (ModelGraph, GraphBuilder, Visualizer)
-  - Cycle detection working
-  - CLI `--show-deps` flag integrated
-  - Session: `hidden-sorcerer-0215`
-
-**Remaining Implementation:**
-- Week 3-4: Full dependency tracking (patterns, references, sketches)
-- Week 5-6: InvalidationTracker + IncrementalBuilder
-- Week 7-8: Watch mode + performance benchmarking
-
-**Effort:** 4-6 more weeks (already 25% done)
-**Timeline:** Apr-Jun 2026 (if prioritized)
+Unlocks: hex nuts, hex standoffs, gear blanks, decorative prisms.
 
 ---
 
-### Option C: Stay in Maintenance Mode
+## Next Milestone: Constraint Solver (Q4 2026)
 
-**Rational Choice:** TiaCAD works well for current use cases
-
-- Focus on fixing test failures
-- Improve documentation and examples
-- Let community feedback guide priorities
-- Wait for clear signal on what's needed
-
----
-
-## Long-Term Vision (6-12 months)
-
-**These require significant investment - only pursue with clear need:**
-
-### Constraint Solver
-**What:** Declarative assemblies ("make these flush")
-**Requires:** DAG first (Phase 4b + 5 from original plan)
-**Effort:** 16-22 weeks total
-**Impact:** Intent-based modeling like SolidWorks/Fusion360
+**Vision:** Declarative assemblies — specify intent, not coordinates
 
 ```yaml
 constraints:
@@ -142,7 +107,34 @@ constraints:
     faces: [bracket.bottom, base.top]
   - type: coaxial
     axes: [shaft.axis, bearing.inner]
+  - type: offset
+    distance: 5mm
+    parts: [mount, surface]
 ```
+
+**Why now:**
+- Component system + DAG are both done — constraints are the logical next capability
+- Users currently do manual positioning math; constraints eliminate this
+- Enables design intent: "make these flush" vs hardcoded offsets
+
+**What's required:**
+- Constraint YAML schema (flush, coaxial, offset, tangent)
+- Constraint validator (detect contradictions before solve)
+- Solver: start with geometric constraint propagation, not full symbolic solver
+- Integration with ModelGraph (constraints are just edges)
+
+**Effort:** 10-16 weeks
+**Timeline:** Q4 2026 (if prioritized)
+
+**Note:** A full symbolic constraint solver is hard. MVP approach: compile constraints to
+transform operations at build time (rigid constraint propagation, not general solving).
+This covers 80% of assembly use cases without PhD-level math.
+
+---
+
+## Long-Term Vision (2027+)
+
+**These require significant investment - only pursue with clear need:**
 
 ### Web-Based Preview/Editor
 **What:** Try TiaCAD in browser, share designs via URL
@@ -156,10 +148,7 @@ constraints:
 **Effort:** 6-10 weeks per feature
 **Impact:** Production-ready workflows
 
----
-
-## The Moonshot: CGA v5.0 Architecture (2027+)
-
+### The Moonshot: CGA v5.0 Architecture
 **🔮 Research Vision:** Replace BREP with Conformal Geometric Algebra
 
 **What:** Fundamental architectural shift - exact algebraic geometry instead of approximate BREP
@@ -190,13 +179,12 @@ constraints:
 **Reality Check:**
 - 📚 Requires deep CGA expertise (PhD-level geometric algebra)
 - 🔧 Massive refactor (entire codebase moves to CGA)
-- ⏱️ 1-2 year project (vs 3-4 weeks for component system)
+- ⏱️ 1-2 year project
 - 🎓 Genuinely publishable research contribution
 
 **When to Pursue:**
-- After component system + DAG + constraints are proven
+- After constraints are proven and component ecosystem has grown
 - When ready for 2.0 architectural rewrite
-- If pursuing CAD research/innovation
 
 **Documentation:** See `docs/architecture/CGA_V5_FUTURE_VISION.md` (1549 lines, complete specification)
 
@@ -210,30 +198,9 @@ constraints:
 - **Why Not:** 3x testing burden, CadQuery works well
 - **Decision:** Stay with CadQuery, enforce backend abstraction in new code
 
-❌ **Constraint Solver (near-term)**
-- **Why Not:** Requires DAG first, complex implementation
-- **Decision:** Defer until DAG is proven and working
-
 ❌ **Animation/Motion**
 - **Why Not:** Static CAD focus, different problem domain
 - **Decision:** Out of scope for TiaCAD v1.x
-
----
-
-## Decision Framework
-
-**When choosing what to build next, prioritize:**
-
-1. **Community Value** - Does it solve real user problems?
-2. **Ecosystem Effects** - Does it enable others to contribute?
-3. **TiaCAD Strengths** - Does it leverage YAML + Git + Declarative?
-4. **Implementation Risk** - Can we deliver in reasonable time?
-
-**Current Assessment (Feb 2026):**
-- **Component System** = High value + ecosystem growth + low risk = **Best ROI**
-- **DAG Completion** = 25% done, finish infrastructure = **Complete what we started**
-- **Constraints** = High complexity + requires DAG = **Future milestone**
-- **CGA v5** = World-class moonshot + massive scope = **Research when ready**
 
 ---
 
@@ -244,12 +211,9 @@ constraints:
 - **Flexible:** Options, not commitments
 - **Clear:** No promises without timelines
 
-**Feedback:** File issues at `/home/scottsen/src/projects/tiacad` or discuss in sessions
-
 ---
 
-**Last Decision:** Feb 2026 - Strategic recommendation: Components → DAG → Constraints → CGA v5
-**Next Decision:** Q2 2026 - Component system vs DAG completion vs maintenance
+**Last Decision:** Mar 2026 — Component System + DAG both complete. Next: Constraint Solver (Q4 2026).
 
 ---
 
@@ -263,9 +227,11 @@ constraints:
 
 **Implementation Reference:**
 - **CHANGELOG.md:** History of changes and completed work
+- **DAG_INCREMENTAL_REBUILD.md:** Dependency graph architecture and usage
 - **TESTING_GUIDE.md:** Test strategy and coverage
 - **MIGRATION_GUIDE_V3.md:** Upgrading from v0.3.0 to v3.x
 
 **Session References:**
-- **hidden-sorcerer-0215:** DAG Week 1-2 implementation (53 tests, foundation complete)
-- **charcoal-ray-0215:** DAG implementation plan (8-week roadmap)
+- **ninja-xenarch-0316:** GitHub/stdlib imports, polygon primitive, m3_nut stdlib
+- **enchanted-hydra-0316:** Component stdlib, watch --export, Tier 2 contracts
+- **hidden-sorcerer-0215:** DAG foundation (Week 1-2, 53 tests)
