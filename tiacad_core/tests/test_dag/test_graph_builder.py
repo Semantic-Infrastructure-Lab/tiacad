@@ -412,6 +412,87 @@ class TestGraphBuilder:
         deps = graph.get_dependencies("part:extruded")
         assert "sketch:profile" in deps
 
+    def test_operation_sketch_dependencies(self):
+        """Test operation referencing sketch (extrude/revolve/sweep via 'sketch:' field)"""
+        builder = GraphBuilder()
+
+        yaml_data = {
+            'sketches': {
+                'bottle_profile': {
+                    'type': 'spline',
+                    'points': [[0, 0], [10, 20], [0, 40]]
+                }
+            },
+            'operations': {
+                'bottle': {
+                    'type': 'revolve',
+                    'sketch': 'bottle_profile',
+                    'axis': 'Z',
+                    'angle': 360
+                }
+            }
+        }
+
+        graph = builder.build_graph(yaml_data)
+
+        deps = graph.get_dependencies("operation:bottle")
+        assert "sketch:bottle_profile" in deps
+
+    def test_operation_sketch_missing_sketch_no_error(self):
+        """Test operation with sketch: field referencing non-existent sketch is silently skipped"""
+        builder = GraphBuilder()
+
+        yaml_data = {
+            'operations': {
+                'sweep_op': {
+                    'type': 'sweep',
+                    'sketch': 'nonexistent_profile',
+                    'path': 'rail'
+                }
+            }
+        }
+
+        # Should not raise — missing sketch node is just skipped
+        graph = builder.build_graph(yaml_data)
+        assert "operation:sweep_op" in graph
+
+    def test_operation_sketch_parameter_chain(self):
+        """Test full chain: parameter → sketch → operation"""
+        builder = GraphBuilder()
+
+        yaml_data = {
+            'parameters': {
+                'profile_width': 50
+            },
+            'sketches': {
+                'profile': {
+                    'type': 'rectangle',
+                    'width': '${profile_width}',
+                    'height': 20
+                }
+            },
+            'operations': {
+                'extruded_body': {
+                    'type': 'extrude',
+                    'sketch': 'profile',
+                    'depth': 100
+                }
+            }
+        }
+
+        graph = builder.build_graph(yaml_data)
+
+        op_deps = graph.get_dependencies("operation:extruded_body")
+        sketch_deps = graph.get_dependencies("sketch:profile")
+
+        assert "sketch:profile" in op_deps
+        assert "parameter:profile_width" in sketch_deps
+
+        # Transitive dependents of parameter should include the operation
+        transitive = graph.get_transitive_dependents("parameter:profile_width")
+        assert "sketch:profile" in transitive
+        assert "operation:extruded_body" in transitive
+
     def test_complex_dependencies(self):
         """Test complete dependency chain"""
         builder = GraphBuilder()

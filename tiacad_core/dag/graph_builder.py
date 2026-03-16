@@ -220,10 +220,11 @@ class GraphBuilder:
 
     def _extract_operation_dependencies(self, operations: Dict[str, Any]) -> None:
         """
-        Extract operation → part and operation → parameter dependencies.
+        Extract operation → part, operation → sketch, and operation → parameter dependencies.
 
         Operations can reference:
         - Parts (as inputs, bases, tools)
+        - Sketches (extrude, revolve, sweep use a 'sketch:' field)
         - Parameters (in transformation values)
         """
         for op_name, op_spec in operations.items():
@@ -235,6 +236,12 @@ class GraphBuilder:
             for ref_param in refs:
                 if ref_param in self.parameter_names:
                     self.graph.add_dependency(dependent_id, f"parameter:{ref_param}")
+
+            # Check for sketch references (extrude, revolve, sweep)
+            if 'sketch' in op_spec:
+                sketch_id = f"sketch:{op_spec['sketch']}"
+                if sketch_id in self.graph:
+                    self.graph.add_dependency(dependent_id, sketch_id)
 
             # Extract part dependencies based on operation type
             part_refs = self._extract_operation_part_refs(op_spec, op_type)
