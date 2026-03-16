@@ -198,49 +198,30 @@ class FinishingBuilder:
                 operation_name=name
             ) from e
 
-    def _execute_chamfer(self, name: str, spec: Dict[str, Any]):
-        """
-        Execute chamfer operation - bevel edges.
-
-        Args:
-            name: Operation name (for error messages)
-            spec: Specification with 'input', 'length', optional 'length2', and 'edges' fields
-
-        Raises:
-            FinishingBuilderError: If operation fails
-        """
-        # Validate required fields
-        if 'input' not in spec:
-            raise FinishingBuilderError(
-                f"Chamfer operation '{name}' missing 'input' field",
-                operation_name=name
-            )
-
-        if 'length' not in spec:
-            raise FinishingBuilderError(
-                f"Chamfer operation '{name}' missing 'length' field",
-                operation_name=name
-            )
+    def _validate_chamfer_spec(self, name: str, spec: Dict[str, Any]) -> tuple:
+        """Validate chamfer spec. Returns (input_name, length, length2, edges_spec)."""
+        for field in ('input', 'length'):
+            if field not in spec:
+                raise FinishingBuilderError(
+                    f"Chamfer operation '{name}' missing '{field}' field",
+                    operation_name=name
+                )
 
         input_name = spec['input']
         length = spec['length']
-        length2 = spec.get('length2', None)
+        length2 = spec.get('length2')
         edges_spec = spec.get('edges', 'all')
 
-        # Validate length is numeric
         if not isinstance(length, (int, float)):
             raise FinishingBuilderError(
                 f"Chamfer operation '{name}' length must be a number, got: {type(length).__name__}",
                 operation_name=name
             )
-
         if length <= 0:
             raise FinishingBuilderError(
                 f"Chamfer operation '{name}' length must be positive, got: {length}",
                 operation_name=name
             )
-
-        # Validate length2 if provided
         if length2 is not None:
             if not isinstance(length2, (int, float)):
                 raise FinishingBuilderError(
@@ -252,8 +233,6 @@ class FinishingBuilder:
                     f"Chamfer operation '{name}' length2 must be positive, got: {length2}",
                     operation_name=name
                 )
-
-        # Retrieve input part
         if not self.registry.exists(input_name):
             available = ', '.join(self.registry.list_parts())
             raise FinishingBuilderError(
@@ -261,44 +240,39 @@ class FinishingBuilder:
                 f"Available parts: {available}",
                 operation_name=name
             )
+        return input_name, length, length2, edges_spec
 
+    def _apply_chamfer_geometry(self, geometry, edge_selector, length, length2):
+        """Apply chamfer to all or selected edges with optional asymmetric length2."""
+        edges = geometry.edges() if edge_selector is None else geometry.edges(edge_selector)
+        return edges.chamfer(length) if length2 is None else edges.chamfer(length, length2)
+
+    def _execute_chamfer(self, name: str, spec: Dict[str, Any]):
+        """
+        Execute chamfer operation - bevel edges.
+
+        Args:
+            name: Operation name (for error messages)
+            spec: Specification with 'input', 'length', optional 'length2', and 'edges' fields
+
+        Raises:
+            FinishingBuilderError: If operation fails
+        """
+        input_name, length, length2, edges_spec = self._validate_chamfer_spec(name, spec)
         part = self.registry.get(input_name)
-
-        # Build edge selector
         edge_selector = self._build_edge_selector(edges_spec, name)
 
-        # Apply chamfer
         try:
-            if edge_selector is None:
-                # Chamfer all edges
-                if length2 is None:
-                    result = part.geometry.edges().chamfer(length)
-                else:
-                    result = part.geometry.edges().chamfer(length, length2)
-            else:
-                # Chamfer selected edges
-                if length2 is None:
-                    result = part.geometry.edges(edge_selector).chamfer(length)
-                else:
-                    result = part.geometry.edges(edge_selector).chamfer(length, length2)
+            part.geometry = self._apply_chamfer_geometry(
+                part.geometry, edge_selector, length, length2
+            )
 
-            # Update part geometry in-place
-            part.geometry = result
-
-            # Track finishing operation in metadata
             if 'finishing_ops' not in part.metadata:
                 part.metadata['finishing_ops'] = []
-
-            op_info = {
-                'type': 'chamfer',
-                'length': length,
-                'edges': edges_spec
-            }
+            op_info = {'type': 'chamfer', 'length': length, 'edges': edges_spec}
             if length2 is not None:
                 op_info['length2'] = length2
-
             part.metadata['finishing_ops'].append(op_info)
-
             logger.debug(f"Chamfer: applied length={length} to part '{input_name}'")
 
         except Exception as e:

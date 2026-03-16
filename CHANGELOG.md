@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-03-15 (session: ruby-shine-0315)
+
+#### Test Health: 1132 → 1177 passing (+45 tests, 47 → 2 skipped)
+
+**`TiaCADDocument.get_assembly()` added** (`tiacad_core/parser/tiacad_parser.py`)
+- 47 visual regression tests were silently skipping due to missing method
+- Same priority logic as `export_stl`: export_config default → last operation → first part
+- 45 tests now pass; 2 remain skipped (dag_test_cycle.yaml parse error, pipe_sweep.yaml OCCT limitation)
+
+**Visual regression baselines generated**
+- 45 reference images created in `tiacad_core/tests/visual_references/`
+- All example YAML files now have rendering baselines
+
+### Changed - 2026-03-15 (session: ruby-shine-0315)
+
+#### Code Quality
+
+**`spatial_resolver._resolve_dict` refactored** (`tiacad_core/spatial_resolver.py`)
+- Decomposed 157-line, complexity-24 dispatch method into 4 focused methods:
+  `_resolve_point`, `_resolve_face_ref`, `_resolve_edge_ref`, `_resolve_axis`
+- `_resolve_dict` is now a 12-line dispatch table
+
+**`PatternBuilder` deduplicated** (`tiacad_core/parser/pattern_builder.py`)
+- Extracted shared helpers: `_require()`, `_get_input_part()`, `_make_and_register_part()`
+- `_execute_linear`: 108L → 43L | `_execute_circular`: 159L → 67L | `_execute_grid`: 151L → 25L
+- Moved 3 inline `from .metadata_utils import` to module-level import
+
+**Unused imports removed** (13 imports across 10 files)
+- `testing/visual_regression.py`: `hashlib`, `json`, `matplotlib.figure.Figure`
+- `testing/orientation.py`, `testing/measurements.py`: `SpatialRef` (docstring-only)
+- `testing/dimensions.py`: `math` (docstring-only)
+- Test files: `pytest`, `numpy`, `assert_array_almost_equal`, `measure_distance`
+
 ---
 
 ## [3.1.3] - 2026-02-15

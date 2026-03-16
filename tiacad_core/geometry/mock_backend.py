@@ -310,107 +310,41 @@ class MockBackend(GeometryBackend):
     # Selection
     # ========================================================================
 
-    def select_faces(self, geom: MockGeometry, selector: str) -> List[MockFace]:
-        """Mock face selection - return mock face objects"""
-        # For testing purposes, return mock faces based on selector
-        # Parse selector to determine which face (e.g., ">Z" = top face)
+    # face center/normal lookup for box faces: selector → (center_fn, normal)
+    _BOX_FACE_SPECS = {
+        '>Z': (lambda cx, cy, cz, xmin, xmax, ymin, ymax, zmin, zmax: (cx, cy, zmax), (0, 0, 1)),
+        '<Z': (lambda cx, cy, cz, xmin, xmax, ymin, ymax, zmin, zmax: (cx, cy, zmin), (0, 0, -1)),
+        '>X': (lambda cx, cy, cz, xmin, xmax, ymin, ymax, zmin, zmax: (xmax, cy, cz), (1, 0, 0)),
+        '<X': (lambda cx, cy, cz, xmin, xmax, ymin, ymax, zmin, zmax: (xmin, cy, cz), (-1, 0, 0)),
+        '>Y': (lambda cx, cy, cz, xmin, xmax, ymin, ymax, zmin, zmax: (cx, ymax, cz), (0, 1, 0)),
+        '<Y': (lambda cx, cy, cz, xmin, xmax, ymin, ymax, zmin, zmax: (cx, ymin, cz), (0, -1, 0)),
+    }
 
-        # Get bounding box for all shape types
+    def _select_z_face(self, selector: str, cx, cy, zmin, zmax) -> List[MockFace]:
+        """Return the top (>Z) or bottom (<Z) face, or empty list for other selectors."""
+        if selector == '>Z':
+            return [MockFace(center=(cx, cy, zmax), normal=(0, 0, 1), name=f"MockFace-{selector}")]
+        if selector == '<Z':
+            return [MockFace(center=(cx, cy, zmin), normal=(0, 0, -1), name=f"MockFace-{selector}")]
+        return []
+
+    def select_faces(self, geom: MockGeometry, selector: str) -> List[MockFace]:
+        """Mock face selection - return mock face objects based on selector string."""
         bbox = geom.bounds
         xmin, ymin, zmin = bbox['min']
         xmax, ymax, zmax = bbox['max']
         cx, cy, cz = bbox['center']
 
-        if geom.shape_type == 'box':
-            # Define standard box faces based on selector
-            if selector == '>Z':  # Top face
-                return [MockFace(
-                    center=(cx, cy, zmax),
-                    normal=(0, 0, 1),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '<Z':  # Bottom face
-                return [MockFace(
-                    center=(cx, cy, zmin),
-                    normal=(0, 0, -1),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '>X':  # Right face
-                return [MockFace(
-                    center=(xmax, cy, cz),
-                    normal=(1, 0, 0),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '<X':  # Left face
-                return [MockFace(
-                    center=(xmin, cy, cz),
-                    normal=(-1, 0, 0),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '>Y':  # Front face
-                return [MockFace(
-                    center=(cx, ymax, cz),
-                    normal=(0, 1, 0),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '<Y':  # Back face
-                return [MockFace(
-                    center=(cx, ymin, cz),
-                    normal=(0, -1, 0),
-                    name=f"MockFace-{selector}"
-                )]
+        if geom.shape_type == 'box' and selector in self._BOX_FACE_SPECS:
+            center_fn, normal = self._BOX_FACE_SPECS[selector]
+            return [MockFace(center=center_fn(cx, cy, cz, xmin, xmax, ymin, ymax, zmin, zmax),
+                             normal=normal, name=f"MockFace-{selector}")]
 
-        elif geom.shape_type == 'cylinder':
-            # Cylinder has top and bottom circular faces
-            if selector == '>Z':  # Top face
-                return [MockFace(
-                    center=(cx, cy, zmax),
-                    normal=(0, 0, 1),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '<Z':  # Bottom face
-                return [MockFace(
-                    center=(cx, cy, zmin),
-                    normal=(0, 0, -1),
-                    name=f"MockFace-{selector}"
-                )]
+        z_face = self._select_z_face(selector, cx, cy, zmin, zmax)
+        if z_face:
+            return z_face
 
-        elif geom.shape_type == 'sphere':
-            # Sphere has top and bottom points
-            if selector == '>Z':  # Top point
-                return [MockFace(
-                    center=(cx, cy, zmax),
-                    normal=(0, 0, 1),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '<Z':  # Bottom point
-                return [MockFace(
-                    center=(cx, cy, zmin),
-                    normal=(0, 0, -1),
-                    name=f"MockFace-{selector}"
-                )]
-
-        elif geom.shape_type == 'cone':
-            # Cone has top and bottom circular faces
-            if selector == '>Z':  # Top face
-                return [MockFace(
-                    center=(cx, cy, zmax),
-                    normal=(0, 0, 1),
-                    name=f"MockFace-{selector}"
-                )]
-            elif selector == '<Z':  # Bottom face
-                return [MockFace(
-                    center=(cx, cy, zmin),
-                    normal=(0, 0, -1),
-                    name=f"MockFace-{selector}"
-                )]
-
-        # Default: return a generic face at center
-        return [MockFace(
-            center=geom.center,
-            normal=(0, 0, 1),
-            name=f"MockFace-{selector}"
-        )]
+        return [MockFace(center=geom.center, normal=(0, 0, 1), name=f"MockFace-{selector}")]
 
     def select_edges(self, geom: MockGeometry, selector: str) -> List[MockEdge]:
         """Mock edge selection - return mock edge objects"""

@@ -14,7 +14,6 @@ Version: 1.0 (v3.1)
 """
 
 import pytest
-import numpy as np
 import math
 
 from tiacad_core.testing.measurements import (

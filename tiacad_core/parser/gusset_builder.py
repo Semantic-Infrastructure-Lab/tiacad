@@ -15,6 +15,8 @@ Version: 0.1.0-alpha (Phase 1 - Manual Points MVP)
 import logging
 from typing import Dict, Any, List, Tuple
 import cadquery as cq
+import numpy as np
+from cadquery import Wire, Solid
 
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
@@ -214,6 +216,43 @@ class GussetBuilder:
                 operation_name=name
             ) from e
 
+    def _triangle_normal(
+        self,
+        p0: Tuple, p1: Tuple, p2: Tuple
+    ) -> np.ndarray:
+        """Return the unit normal vector for triangle (p0, p1, p2)."""
+        v1 = np.array([p1[i] - p0[i] for i in range(3)])
+        v2 = np.array([p2[i] - p0[i] for i in range(3)])
+        normal = np.cross(v1, v2)
+        length = np.linalg.norm(normal)
+        if length < 1e-6:
+            raise GussetBuilderError(
+                "Gusset points are collinear (form a line, not a triangle)"
+            )
+        return normal / length
+
+    def _offset_triangle(
+        self,
+        p0: Tuple, p1: Tuple, p2: Tuple,
+        normal: np.ndarray, thickness: float
+    ) -> Tuple:
+        """Return three offset points translated by normal * thickness."""
+        offset = normal * thickness
+        return (
+            tuple(p0[i] + offset[i] for i in range(3)),
+            tuple(p1[i] + offset[i] for i in range(3)),
+            tuple(p2[i] + offset[i] for i in range(3)),
+        )
+
+    def _loft_triangles(self, base: Tuple, top: Tuple) -> cq.Workplane:
+        """Loft between two triangles (each a tuple of 3 points) to create a prism."""
+        p0, p1, p2 = base
+        q0, q1, q2 = top
+        wire1 = Wire.makePolygon([cq.Vector(*p0), cq.Vector(*p1), cq.Vector(*p2), cq.Vector(*p0)])
+        wire2 = Wire.makePolygon([cq.Vector(*q0), cq.Vector(*q1), cq.Vector(*q2), cq.Vector(*q0)])
+        solid = Solid.makeLoft([wire1, wire2])
+        return cq.Workplane("XY").newObject([solid])
+
     def _create_triangular_gusset(
         self,
         points: List[Tuple[float, float, float]],
@@ -222,113 +261,22 @@ class GussetBuilder:
         """
         Create a triangular gusset solid from three points.
 
-        Strategy:
-        1. Create triangle from three points
-        2. Calculate extrusion direction (perpendicular to triangle)
-        3. Extrude triangle to create wedge/gusset
-
         Args:
             points: List of 3 (x,y,z) tuples defining triangle vertices
-            thickness: Extrusion thickness
+            thickness: Extrusion thickness (perpendicular to triangle plane)
 
         Returns:
             CadQuery Workplane with gusset solid
         """
-        import numpy as np
-
-        # Extract points
-        p0, p1, p2 = points
-
-        # Calculate two edge vectors
-        v1 = np.array([p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]])
-        v2 = np.array([p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]])
-
-        # Calculate normal (perpendicular to triangle plane)
-        normal = np.cross(v1, v2)
-        normal_length = np.linalg.norm(normal)
-
-        if normal_length < 1e-6:
-            raise GussetBuilderError(
-                "Gusset points are collinear (form a line, not a triangle)"
-            )
-
-        # Normalize
-        normal = normal / normal_length
-
-        # Create sketch on XY plane at Z=0, then transform
-        # This is easier than trying to create sketches on arbitrary planes
-
-        # Step 1: Create triangle wireframe in 3D space
-        wp = cq.Workplane("XY")
-        wire = wp.moveTo(p0[0], p0[1])
-        wire = wire.lineTo(p1[0], p1[1])
-        wire = wire.lineTo(p2[0], p2[1])
-        wire = wire.close()
-
-        # HACK: CadQuery 2D sketches assume XY plane
-        # For arbitrary 3D triangles, we need to:
-        # 1. Project to XY plane
-        # 2. Create face
-        # 3. Transform to actual 3D position
-        # OR use polyhedron approach
-
-        # For Phase 1 MVP, let's use simpler approach:
-        # Create polyhedron (triangular prism) directly
-
-        # Calculate offset points for other face
-        offset = normal * thickness
-        p0_offset = (p0[0] + offset[0], p0[1] + offset[1], p0[2] + offset[2])
-        p1_offset = (p1[0] + offset[0], p1[1] + offset[1], p1[2] + offset[2])
-        p2_offset = (p2[0] + offset[0], p2[1] + offset[1], p2[2] + offset[2])
-
-        # Create loft between two triangular faces
-        # This is more reliable than trying to sketch on arbitrary planes
-
         try:
-            # Note: Initial approach using extruded faces was abandoned
-            # in favor of wire-based lofting (see below)
-            # Keeping as reference for potential future improvements
-            _face1 = (cq.Workplane("XY")
-                    .polyline([p0, p1, p2])
-                    .close()
-                    .extrude(0.001))  # Tiny extrusion to create solid
-
-            _face2 = (cq.Workplane("XY")
-                    .polyline([p0_offset, p1_offset, p2_offset])
-                    .close()
-                    .extrude(0.001))
-
-            # Actually, use wire-based approach (most reliable)
-            # Create two wire triangles and loft between them
-
-            # Reset - use makePolygon for robust 3D polyline
-            from cadquery import Wire
-
-            wire1 = Wire.makePolygon([
-                cq.Vector(*p0),
-                cq.Vector(*p1),
-                cq.Vector(*p2),
-                cq.Vector(*p0)
-            ])
-
-            wire2 = Wire.makePolygon([
-                cq.Vector(*p0_offset),
-                cq.Vector(*p1_offset),
-                cq.Vector(*p2_offset),
-                cq.Vector(*p0_offset)
-            ])
-
-            # Loft between wires (not faces!)
-            from cadquery import Solid
-
-            solid = Solid.makeLoft([wire1, wire2])
-
-            # Wrap in Workplane
-            result = cq.Workplane("XY").newObject([solid])
-
+            p0, p1, p2 = points
+            normal = self._triangle_normal(p0, p1, p2)
+            q0, q1, q2 = self._offset_triangle(p0, p1, p2, normal, thickness)
+            result = self._loft_triangles((p0, p1, p2), (q0, q1, q2))
             logger.debug(f"Created triangular gusset: {thickness}mm thick")
             return result
-
+        except GussetBuilderError:
+            raise
         except Exception as e:
             raise GussetBuilderError(
                 f"Failed to create triangular gusset geometry: {str(e)}"

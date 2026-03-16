@@ -280,6 +280,78 @@ class ModelRenderer:
         plotter.screenshot(output_file)
         plotter.close()
 
+    def _build_assembly_plotter(self, parts_registry, view_name: str,
+                                window_size: Tuple[int, int], background: str,
+                                show_edges: bool):
+        """Create a configured plotter with all assembly parts and camera set for view_name."""
+        plotter = self.pv.Plotter(off_screen=True, window_size=window_size)
+        plotter.set_background(background)
+
+        all_bounds = []
+        for part_name in parts_registry.list_parts():
+            part = parts_registry.get(part_name)
+            color = part.metadata.get('color')
+            mesh = self._part_to_mesh(part, color)
+            all_bounds.append(mesh.bounds)
+            if color:
+                r, g, b, a = color
+                plotter.add_mesh(mesh, color=[r, g, b], opacity=a,
+                                 show_edges=show_edges,
+                                 edge_color='gray' if show_edges else None,
+                                 lighting=True, specular=0.5, specular_power=15,
+                                 ambient=0.2, diffuse=0.8)
+            else:
+                plotter.add_mesh(mesh, color='lightgray', show_edges=show_edges, lighting=True)
+
+        if all_bounds:
+            arr = np.array(all_bounds)
+            size = max(arr[:, 1].max() - arr[:, 0].min(),
+                       arr[:, 3].max() - arr[:, 2].min(),
+                       arr[:, 5].max() - arr[:, 4].min())
+            angle = self.CAMERA_ANGLES[view_name]
+            pos = np.array(angle['position'])
+            pos = pos / np.linalg.norm(pos) * (size * 2.5)
+            plotter.camera_position = [pos.tolist(), angle['focal_point'], angle['viewup']]
+
+        plotter.enable_anti_aliasing()
+        return plotter
+
+    def _calculate_grid_layout(self, views: List[str], grid_size: Optional[Tuple[int, int]],
+                                cell_size: Tuple[int, int], title: Optional[str],
+                                show_labels: bool) -> Tuple[int, int, int, int, int, int]:
+        """Compute grid dimensions and composite image size. Returns (cols, rows, width, height, title_h, label_h)."""
+        if grid_size is None:
+            cols = int(np.ceil(np.sqrt(len(views))))
+            rows = int(np.ceil(len(views) / cols))
+        else:
+            cols, rows = grid_size
+        title_h = 60 if title else 0
+        label_h = 30 if show_labels else 0
+        return cols, rows, cols * cell_size[0], title_h + rows * (cell_size[1] + label_h), title_h, label_h
+
+    def _load_fonts(self):
+        """Load DejaVu fonts, falling back to PIL default."""
+        try:
+            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
+            label_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+        except Exception:
+            title_font = ImageFont.load_default()
+            label_font = ImageFont.load_default()
+        return title_font, label_font
+
+    def _paste_view_cell(self, composite, draw, view_img, col: int, row: int,
+                         cell_size: Tuple[int, int], title_h: int, label_h: int,
+                         view_name: str, show_labels: bool, label_font):
+        """Paste a rendered view into the composite and optionally draw its label."""
+        x = col * cell_size[0]
+        y = title_h + row * (cell_size[1] + label_h)
+        composite.paste(view_img, (x, y))
+        if show_labels:
+            label_text = view_name.title()
+            bbox = draw.textbbox((0, 0), label_text, font=label_font)
+            label_x = x + (cell_size[0] - (bbox[2] - bbox[0])) // 2
+            draw.text((label_x, y + cell_size[1] + 5), label_text, fill='black', font=label_font)
+
     def render_assembly(
         self,
         parts_registry,
@@ -300,113 +372,47 @@ class ModelRenderer:
 
         Returns:
             List of generated file paths
-
-        Example:
-            >>> doc = TiaCADParser.parse_file("assembly.yaml")
-            >>> renderer = ModelRenderer()
-            >>> paths = renderer.render_assembly(
-            ...     doc.parts,
-            ...     "output/assembly",
-            ...     views=['isometric']
-            ... )
         """
         try:
             output_files = []
-
             for view_name in views:
                 if view_name not in self.CAMERA_ANGLES:
                     logger.warning(f"Unknown view '{view_name}', skipping")
                     continue
-
-                # Create off-screen plotter
-                plotter = self.pv.Plotter(
-                    off_screen=True,
-                    window_size=self.window_size
-                )
-                plotter.set_background(background)
-
-                # Add all parts to scene
-                all_bounds = []
-                for part_name in parts_registry.list_parts():
-                    part = parts_registry.get(part_name)
-
-                    # Get color from metadata
-                    color = part.metadata.get('color')
-
-                    # Create mesh
-                    mesh = self._part_to_mesh(part, color)
-                    all_bounds.append(mesh.bounds)
-
-                    # Add to plotter
-                    if color:
-                        r, g, b, a = color
-                        plotter.add_mesh(
-                            mesh,
-                            color=[r, g, b],
-                            opacity=a,
-                            show_edges=show_edges,
-                            edge_color='gray' if show_edges else None,
-                            lighting=True,
-                            specular=0.5,
-                            specular_power=15,
-                            ambient=0.2,
-                            diffuse=0.8
-                        )
-                    else:
-                        plotter.add_mesh(
-                            mesh,
-                            color='lightgray',
-                            show_edges=show_edges,
-                            lighting=True
-                        )
-
-                # Calculate overall scene bounds
-                if all_bounds:
-                    all_bounds_array = np.array(all_bounds)
-                    scene_bounds = [
-                        all_bounds_array[:, 0].min(),  # x_min
-                        all_bounds_array[:, 1].max(),  # x_max
-                        all_bounds_array[:, 2].min(),  # y_min
-                        all_bounds_array[:, 3].max(),  # y_max
-                        all_bounds_array[:, 4].min(),  # z_min
-                        all_bounds_array[:, 5].max()   # z_max
-                    ]
-
-                    size = max(
-                        scene_bounds[1] - scene_bounds[0],
-                        scene_bounds[3] - scene_bounds[2],
-                        scene_bounds[5] - scene_bounds[4]
-                    )
-                    distance = size * 2.5
-
-                    # Set camera
-                    angle = self.CAMERA_ANGLES[view_name]
-                    pos = np.array(angle['position'])
-                    pos = pos / np.linalg.norm(pos) * distance
-
-                    plotter.camera_position = [
-                        pos.tolist(),
-                        angle['focal_point'],
-                        angle['viewup']
-                    ]
-
-                plotter.enable_anti_aliasing()
-
-                # Save
                 output_file = f"{output_path}_{view_name}.png"
+                plotter = self._build_assembly_plotter(parts_registry, view_name,
+                                                       self.window_size, background, show_edges)
                 plotter.screenshot(output_file)
                 plotter.close()
-
                 output_files.append(output_file)
-                logger.info(
-                    f"Rendered assembly ({len(parts_registry.list_parts())} parts) "
-                    f"{view_name} view to {output_file}"
-                )
-
+                logger.info(f"Rendered assembly ({len(parts_registry.list_parts())} parts) "
+                            f"{view_name} view to {output_file}")
             return output_files
-
         except Exception as e:
             raise RenderError(f"Failed to render assembly: {str(e)}") from e
+
+    def _render_views_into_composite(self, composite, draw, parts_registry, views,
+                                     cols: int, rows: int, cell_size: Tuple[int, int],
+                                     background: str, show_edges: bool,
+                                     title_h: int, label_h: int, show_labels: bool, label_font) -> None:
+        """Render each view into a temp PNG and paste it into the composite grid image."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for idx, view_name in enumerate(views):
+                if view_name not in self.CAMERA_ANGLES:
+                    logger.warning(f"Unknown view '{view_name}', skipping")
+                    continue
+                col, row = idx % cols, idx // cols
+                if row >= rows:
+                    break
+                temp_output = Path(tmpdir) / f"view_{idx}.png"
+                plotter = self._build_assembly_plotter(parts_registry, view_name,
+                                                       cell_size, background, show_edges)
+                plotter.screenshot(str(temp_output))
+                plotter.close()
+                self._paste_view_cell(composite, draw, Image.open(temp_output),
+                                      col, row, cell_size, title_h, label_h,
+                                      view_name, show_labels, label_font)
+                logger.debug(f"Added {view_name} view to grid at ({col}, {row})")
 
     def render_grid(
         self,
@@ -420,185 +426,22 @@ class ModelRenderer:
         title: Optional[str] = None,
         show_edges: bool = False
     ) -> str:
-        """
-        Render multiple views into a single grid image.
-
-        Creates a composite image with multiple camera angles arranged in a grid,
-        perfect for technical documentation and model verification.
-
-        Args:
-            parts_registry: PartRegistry with all parts
-            output_path: Path for output composite image
-            views: List of camera angles to render
-            grid_size: Tuple of (columns, rows). Auto-calculated if None
-            cell_size: Size of each cell in pixels (width, height)
-            background: Background color
-            show_labels: Whether to show view labels
-            title: Optional title for the composite image
-            show_edges: Whether to show mesh edges
-
-        Returns:
-            Path to generated composite image
-
-        Example:
-            >>> renderer = ModelRenderer()
-            >>> renderer.render_grid(
-            ...     doc.parts,
-            ...     "output/model_sheet.png",
-            ...     views=['isometric', 'front', 'top', 'right'],
-            ...     title="Multi-Material Assembly"
-            ... )
-        """
+        """Render multiple views into a single grid composite image."""
         try:
-            # Auto-calculate grid size if not provided
-            if grid_size is None:
-                num_views = len(views)
-                # Try to make a roughly square grid
-                cols = int(np.ceil(np.sqrt(num_views)))
-                rows = int(np.ceil(num_views / cols))
-                grid_size = (cols, rows)
-            else:
-                cols, rows = grid_size
-
-            # Calculate composite image size
-            title_height = 60 if title else 0
-            label_height = 30 if show_labels else 0
-
-            composite_width = cols * cell_size[0]
-            composite_height = title_height + rows * (cell_size[1] + label_height)
-
-            # Create composite image
-            composite = Image.new('RGB', (composite_width, composite_height), 'white')
+            cols, rows, comp_w, comp_h, title_h, label_h = \
+                self._calculate_grid_layout(views, grid_size, cell_size, title, show_labels)
+            composite = Image.new('RGB', (comp_w, comp_h), 'white')
             draw = ImageDraw.Draw(composite)
-
-            # Try to load a nice font, fallback to default
-            try:
-                title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
-                label_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
-            except Exception:
-                title_font = ImageFont.load_default()
-                label_font = ImageFont.load_default()
-
-            # Draw title if provided
+            title_font, label_font = self._load_fonts()
             if title:
-                # Center the title
                 bbox = draw.textbbox((0, 0), title, font=title_font)
-                text_width = bbox[2] - bbox[0]
-                text_x = (composite_width - text_width) // 2
-                draw.text((text_x, 15), title, fill='black', font=title_font)
-
-            # Render each view to temporary file
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmpdir_path = Path(tmpdir)
-
-                for idx, view_name in enumerate(views):
-                    if view_name not in self.CAMERA_ANGLES:
-                        logger.warning(f"Unknown view '{view_name}', skipping")
-                        continue
-
-                    # Calculate grid position
-                    col = idx % cols
-                    row = idx // cols
-
-                    # Skip if beyond grid bounds
-                    if row >= rows:
-                        break
-
-                    # Render view to temporary file
-                    temp_output = tmpdir_path / f"view_{idx}.png"
-
-                    # Create off-screen plotter
-                    plotter = self.pv.Plotter(
-                        off_screen=True,
-                        window_size=cell_size
-                    )
-                    plotter.set_background(background)
-
-                    # Add all parts to scene
-                    all_bounds = []
-                    for part_name in parts_registry.list_parts():
-                        part = parts_registry.get(part_name)
-                        color = part.metadata.get('color')
-                        mesh = self._part_to_mesh(part, color)
-                        all_bounds.append(mesh.bounds)
-
-                        if color:
-                            r, g, b, a = color
-                            plotter.add_mesh(
-                                mesh,
-                                color=[r, g, b],
-                                opacity=a,
-                                show_edges=show_edges,
-                                edge_color='gray' if show_edges else None,
-                                lighting=True,
-                                specular=0.5,
-                                specular_power=15,
-                                ambient=0.2,
-                                diffuse=0.8
-                            )
-                        else:
-                            plotter.add_mesh(
-                                mesh,
-                                color='lightgray',
-                                show_edges=show_edges,
-                                lighting=True
-                            )
-
-                    # Set camera for this view
-                    if all_bounds:
-                        all_bounds_array = np.array(all_bounds)
-                        size = max(
-                            all_bounds_array[:, 1].max() - all_bounds_array[:, 0].min(),
-                            all_bounds_array[:, 3].max() - all_bounds_array[:, 2].min(),
-                            all_bounds_array[:, 5].max() - all_bounds_array[:, 4].min()
-                        )
-                        distance = size * 2.5
-
-                        angle = self.CAMERA_ANGLES[view_name]
-                        pos = np.array(angle['position'])
-                        pos = pos / np.linalg.norm(pos) * distance
-
-                        plotter.camera_position = [
-                            pos.tolist(),
-                            angle['focal_point'],
-                            angle['viewup']
-                        ]
-
-                    plotter.enable_anti_aliasing()
-                    plotter.screenshot(str(temp_output))
-                    plotter.close()
-
-                    # Load rendered image and paste into composite
-                    view_img = Image.open(temp_output)
-
-                    # Calculate paste position
-                    x_pos = col * cell_size[0]
-                    y_pos = title_height + row * (cell_size[1] + label_height)
-
-                    composite.paste(view_img, (x_pos, y_pos))
-
-                    # Draw label if enabled
-                    if show_labels:
-                        label_text = view_name.title()
-                        label_y = y_pos + cell_size[1] + 5
-
-                        # Center label under image
-                        bbox = draw.textbbox((0, 0), label_text, font=label_font)
-                        text_width = bbox[2] - bbox[0]
-                        label_x = x_pos + (cell_size[0] - text_width) // 2
-
-                        draw.text((label_x, label_y), label_text, fill='black', font=label_font)
-
-                    logger.debug(f"Added {view_name} view to grid at ({col}, {row})")
-
-            # Save composite image
+                draw.text(((comp_w - (bbox[2] - bbox[0])) // 2, 15), title, fill='black', font=title_font)
+            self._render_views_into_composite(composite, draw, parts_registry, views,
+                                              cols, rows, cell_size, background, show_edges,
+                                              title_h, label_h, show_labels, label_font)
             composite.save(output_path)
-            logger.info(
-                f"Created grid composite ({cols}x{rows}) with {len(views)} views: {output_path}"
-            )
-
+            logger.info(f"Created grid composite ({cols}x{rows}) with {len(views)} views: {output_path}")
             return output_path
-
         except Exception as e:
             raise RenderError(f"Failed to create grid composite: {str(e)}") from e
 

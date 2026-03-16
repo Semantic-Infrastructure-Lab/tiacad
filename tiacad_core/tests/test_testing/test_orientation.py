@@ -13,7 +13,6 @@ Version: 1.0 (v3.1 Week 2)
 
 import pytest
 import numpy as np
-from numpy.testing import assert_array_almost_equal
 
 from tiacad_core.testing.orientation import (
     get_orientation_angles,

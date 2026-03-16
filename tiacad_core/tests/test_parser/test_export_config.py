@@ -6,7 +6,6 @@ fixing the issue where finishing operations broke exports due to
 relying on dict ordering instead of explicit user intent.
 """
 
-import pytest
 import tempfile
 import os
 from tiacad_core.parser.tiacad_parser import TiaCADParser

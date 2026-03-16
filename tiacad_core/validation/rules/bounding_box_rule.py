@@ -16,6 +16,38 @@ class BoundingBoxRule(ValidationRule):
     def category(self) -> str:
         return "geometry"
 
+    def _check_part_bbox(self, part_name: str, part) -> List[ValidationIssue]:
+        """Return bounding box issues for a single part."""
+        try:
+            bbox = self._get_bounding_box(part.geometry)
+            dims = [bbox.xlen, bbox.ylen, bbox.zlen]
+            issues = []
+            if any(d < self.constants.MIN_DIMENSION for d in dims):
+                issues.append(ValidationIssue(
+                    severity=Severity.WARNING,
+                    category=self.category,
+                    part_name=part_name,
+                    message=f"Part has near-zero dimension: [{dims[0]:.4f}, {dims[1]:.4f}, {dims[2]:.4f}]",
+                    suggestion="Check part definition - may be degenerate geometry"
+                ))
+            if any(d > self.constants.LARGE_DIMENSION for d in dims):
+                issues.append(ValidationIssue(
+                    severity=Severity.INFO,
+                    category=self.category,
+                    part_name=part_name,
+                    message=f"Large part detected: max dimension = {max(dims):.1f}mm",
+                    suggestion="Verify dimensions are in millimeters"
+                ))
+            return issues
+        except Exception as e:
+            return [ValidationIssue(
+                severity=Severity.WARNING,
+                category=self.category,
+                part_name=part_name,
+                message=f"Could not compute bounding box: {str(e)}",
+                suggestion="Part geometry may be invalid"
+            )]
+
     def check(self, document) -> List[ValidationIssue]:
         issues = []
         try:
@@ -23,35 +55,7 @@ class BoundingBoxRule(ValidationRule):
             for part_name, part in parts_dict.items():
                 if not hasattr(part, 'geometry') or part.geometry is None:
                     continue
-                try:
-                    bbox = self._get_bounding_box(part.geometry)
-                    dims = [bbox.xlen, bbox.ylen, bbox.zlen]
-
-                    if any(d < self.constants.MIN_DIMENSION for d in dims):
-                        issues.append(ValidationIssue(
-                            severity=Severity.WARNING,
-                            category=self.category,
-                            part_name=part_name,
-                            message=f"Part has near-zero dimension: [{dims[0]:.4f}, {dims[1]:.4f}, {dims[2]:.4f}]",
-                            suggestion="Check part definition - may be degenerate geometry"
-                        ))
-
-                    if any(d > self.constants.LARGE_DIMENSION for d in dims):
-                        issues.append(ValidationIssue(
-                            severity=Severity.INFO,
-                            category=self.category,
-                            part_name=part_name,
-                            message=f"Large part detected: max dimension = {max(dims):.1f}mm",
-                            suggestion="Verify dimensions are in millimeters"
-                        ))
-                except Exception as e:
-                    issues.append(ValidationIssue(
-                        severity=Severity.WARNING,
-                        category=self.category,
-                        part_name=part_name,
-                        message=f"Could not compute bounding box: {str(e)}",
-                        suggestion="Part geometry may be invalid"
-                    ))
+                issues.extend(self._check_part_bbox(part_name, part))
         except Exception as e:
             issues.append(ValidationIssue(
                 severity=Severity.INFO,

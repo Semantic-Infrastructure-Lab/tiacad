@@ -5,7 +5,6 @@ This module tests that text sketches can be extruded properly despite
 CadQuery's text() method creating 3D geometry directly rather than 2D wires.
 """
 
-import pytest
 import cadquery as cq
 from tiacad_core.sketch import Sketch2D, Text2D, Rectangle2D
 from tiacad_core.parser.extrude_builder import ExtrudeBuilder

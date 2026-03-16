@@ -221,6 +221,44 @@ class TiaCADDocument:
                 f"Failed to export 3MF: {str(e)}"
             ) from e
 
+    def get_assembly(self, part_name: Optional[str] = None):
+        """
+        Get the final assembled geometry as a CadQuery Workplane.
+
+        Returns the "final" part of the model — same priority as export_stl:
+        1. Explicitly named part_name
+        2. export_config default_part
+        3. Last operation result (convention: final assembled result)
+        4. First part if no operations
+
+        Args:
+            part_name: Specific part to return (optional)
+
+        Returns:
+            CadQuery Workplane object suitable for rendering or export
+
+        Raises:
+            TiaCADParserError: If no parts exist or named part not found
+        """
+        if not self.parts.list_parts():
+            raise TiaCADParserError("Document has no parts to assemble")
+
+        if part_name is None:
+            part_name = self.export_config.get('default_part')
+
+        if part_name is None:
+            if self.operations:
+                part_name = list(self.operations.keys())[-1]
+            else:
+                part_name = self.parts.list_parts()[0]
+
+        try:
+            return self.parts.get(part_name).geometry
+        except Exception as e:
+            raise TiaCADParserError(
+                f"Failed to get assembly part '{part_name}': {str(e)}"
+            ) from e
+
     def __repr__(self) -> str:
         part_count = len(self.parts.list_parts())
         return f"TiaCADDocument(parts={part_count}, metadata={self.metadata.get('name', 'Unnamed')})"
@@ -338,6 +376,72 @@ class TiaCADParser:
         return yaml_data
 
     @staticmethod
+    def _maybe_build_graph(yaml_data: Dict[str, Any], file_path: Optional[str], build_graph: bool):
+        """Build dependency graph if requested; returns graph or None."""
+        if not build_graph:
+            return None
+        try:
+            from ..dag import GraphBuilder
+            graph = GraphBuilder().build_graph(yaml_data)
+            logger.info(f"Built dependency graph with {len(graph)} nodes")
+            return graph
+        except ImportError:
+            logger.warning("NetworkX not installed. Install with: pip install networkx>=3.0")
+            return None
+        except TiaCADError as e:
+            raise TiaCADParserError(f"Dependency graph error: {str(e)}", file_path=file_path) from e
+
+    @staticmethod
+    def _resolve_color_palette(colors_palette: Dict, param_resolver: ParameterResolver) -> Dict:
+        """Resolve parameter expressions in all palette color values."""
+        resolved = {name: param_resolver.resolve(val) for name, val in colors_palette.items()}
+        logger.info(f"Loaded {len(resolved)} palette colors")
+        return resolved
+
+    @staticmethod
+    def _build_sketches_from_spec(sketches_spec: Dict, param_resolver: ParameterResolver) -> Dict:
+        """Build all sketches from YAML spec."""
+        from .sketch_builder import SketchBuilder
+        sketches = SketchBuilder(param_resolver).build_sketches(sketches_spec)
+        logger.info(f"Built {len(sketches)} sketches")
+        return sketches
+
+    @staticmethod
+    def _resolve_references(references_spec: Dict, param_resolver: ParameterResolver) -> Dict:
+        """Resolve parameter expressions in all spatial references."""
+        resolved = {name: param_resolver.resolve(spec) for name, spec in references_spec.items()}
+        logger.info(f"Loaded {len(resolved)} references")
+        return resolved
+
+    @staticmethod
+    def _build_export_config(export_spec: Dict) -> Dict:
+        """Build export configuration dict from YAML export section."""
+        cfg = {
+            'default_part': export_spec.get('default_part'),
+            'formats': export_spec.get('formats', []),
+            'color_mode': export_spec.get('color_mode', 'realistic'),
+            'default_color': export_spec.get('default_color', [0.7, 0.7, 0.7]),
+        }
+        if cfg['default_part']:
+            logger.info(f"Export config: default_part={cfg['default_part']}")
+        return cfg
+
+    @staticmethod
+    def _extract_yaml_sections(yaml_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract all top-level YAML sections into a named dict."""
+        return {
+            'metadata': yaml_data.get('metadata', {}),
+            'parameters': yaml_data.get('parameters', {}),
+            'colors': yaml_data.get('colors', {}),
+            'materials': yaml_data.get('materials', {}),
+            'references': yaml_data.get('references', {}),
+            'parts': yaml_data.get('parts', {}),
+            'sketches': yaml_data.get('sketches', {}),
+            'operations': yaml_data.get('operations', {}),
+            'export': yaml_data.get('export', {}),
+        }
+
+    @staticmethod
     def parse_dict(
         yaml_data: Dict[str, Any],
         file_path: Optional[str] = None,
@@ -346,55 +450,19 @@ class TiaCADParser:
         line_tracker: Optional[LineTracker] = None,
         yaml_string: Optional[str] = None
     ) -> TiaCADDocument:
-        """
-        Parse TiaCAD data from dictionary.
-
-        Args:
-            yaml_data: Parsed YAML data
-            file_path: Optional file path for error messages
-            validate_schema: If True, validate against JSON schema before parsing
-            build_graph: If True, build dependency graph (for DAG features)
-            line_tracker: Optional YAML line tracker for error reporting
-            yaml_string: Optional original YAML string for error context
-
-        Returns:
-            TiaCADDocument ready for export
-
-        Raises:
-            TiaCADParserError: If parsing or validation fails
-        """
+        """Parse TiaCAD data from a dict; returns TiaCADDocument or raises TiaCADParserError."""
         try:
-            # Normalize YAML aliases (anchors -> references, etc.)
             yaml_data = TiaCADParser._normalize_yaml_aliases(yaml_data)
+            graph = TiaCADParser._maybe_build_graph(yaml_data, file_path, build_graph)
 
-            # Build dependency graph (optional, for incremental rebuilds)
-            graph = None
-            if build_graph:
-                try:
-                    from ..dag import GraphBuilder
-                    graph_builder = GraphBuilder()
-                    graph = graph_builder.build_graph(yaml_data)
-                    logger.info(f"Built dependency graph with {len(graph)} nodes")
-                except ImportError:
-                    logger.warning(
-                        "NetworkX not installed. Install with: pip install networkx>=3.0"
-                    )
-                except TiaCADError as e:
-                    # Re-raise TiaCAD errors (e.g., circular dependencies) with context
-                    raise TiaCADParserError(
-                        f"Dependency graph error: {str(e)}",
-                        file_path=file_path
-                    ) from e
-
-            # Schema validation (if requested)
             if validate_schema:
-                validator = SchemaValidator()
-                errors = validator.validate(yaml_data)
+                errors = SchemaValidator().validate(yaml_data)
                 if errors:
-                    error_msg = "Schema validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
-                    raise TiaCADParserError(error_msg, file_path=file_path)
+                    raise TiaCADParserError(
+                        "Schema validation failed:\n" + "\n".join(f"  - {e}" for e in errors),
+                        file_path=file_path
+                    )
 
-            # Validate schema version (optional but recommended)
             schema_version = yaml_data.get('schema_version', '2.0')
             if schema_version not in TiaCADParser.SUPPORTED_SCHEMA_VERSIONS:
                 logger.warning(
@@ -402,86 +470,43 @@ class TiaCADParser:
                     f"Supported versions: {TiaCADParser.SUPPORTED_SCHEMA_VERSIONS}"
                 )
 
-            # Extract sections
-            metadata = yaml_data.get('metadata', {})
-            parameters = yaml_data.get('parameters', {})
-            colors_palette = yaml_data.get('colors', {})
-            materials_spec = yaml_data.get('materials', {})
-            references_spec = yaml_data.get('references', {})
-            parts_spec = yaml_data.get('parts', {})
-            sketches_spec = yaml_data.get('sketches', {})
-            operations_spec = yaml_data.get('operations', {})
-            export_spec = yaml_data.get('export', {})
+            s = TiaCADParser._extract_yaml_sections(yaml_data)
+            metadata, parameters = s['metadata'], s['parameters']
+            parts_spec, operations_spec = s['parts'], s['operations']
 
-            # Validate required sections
             if not parts_spec:
-                raise TiaCADParserError(
-                    "YAML must contain 'parts' section",
-                    file_path=file_path
-                )
+                raise TiaCADParserError("YAML must contain 'parts' section", file_path=file_path)
 
             logger.info(f"Building model: {metadata.get('name', 'Unnamed')}")
-            logger.debug(f"Parameters: {len(parameters)}, Parts: {len(parts_spec)}, Operations: {len(operations_spec)}, Colors: {len(colors_palette)}")
+            logger.debug(f"Parameters: {len(parameters)}, Parts: {len(parts_spec)}, Operations: {len(operations_spec)}, Colors: {len(s['colors'])}")
 
-            # Phase 1: Resolve parameters
+            # Phase 1: Parameters → palette → color parser → sketches
             param_resolver = ParameterResolver(parameters)
             resolved_params = param_resolver.resolve_all()
             logger.info(f"Resolved {len(resolved_params)} parameters")
 
-            # Phase 1.5: Resolve color palette (may contain parameter references)
-            resolved_palette = {}
-            if colors_palette:
-                for color_name, color_value in colors_palette.items():
-                    resolved_palette[color_name] = param_resolver.resolve(color_value)
-                logger.info(f"Loaded {len(resolved_palette)} palette colors")
-
-            # Phase 1.6: Create color parser with resolved palette
+            resolved_palette = TiaCADParser._resolve_color_palette(s['colors'], param_resolver) if s['colors'] else {}
             color_parser = ColorParser(palette=resolved_palette)
-            if materials_spec:
-                logger.info(f"Loaded {len(materials_spec)} custom materials")
+            if s['materials']:
+                logger.info(f"Loaded {len(s['materials'])} custom materials")
 
-            # Phase 1.7: Build sketches (for extrude/revolve/sweep/loft operations)
-            sketches = {}
-            if sketches_spec:
-                from .sketch_builder import SketchBuilder
-                sketch_builder = SketchBuilder(param_resolver)
-                sketches = sketch_builder.build_sketches(sketches_spec)
-                logger.info(f"Built {len(sketches)} sketches")
+            sketches = TiaCADParser._build_sketches_from_spec(s['sketches'], param_resolver) if s['sketches'] else {}
 
-            # Phase 2: Build parts
-            parts_builder = PartsBuilder(param_resolver, color_parser)
-            registry = parts_builder.build_parts(parts_spec)
+            # Phase 2: Parts → references → spatial resolver → operations
+            registry = PartsBuilder(param_resolver, color_parser).build_parts(parts_spec)
             logger.info(f"Built {len(parts_spec)} parts")
 
-            # Phase 2.5: Parse spatial references (after parts, before operations)
-            resolved_references = {}
-            if references_spec:
-                # Resolve parameter expressions in all references
-                for ref_name, ref_spec in references_spec.items():
-                    resolved_references[ref_name] = param_resolver.resolve(ref_spec)
-                logger.info(f"Loaded {len(resolved_references)} references")
-
-            # Create SpatialResolver
+            resolved_references = TiaCADParser._resolve_references(s['references'], param_resolver) if s['references'] else {}
             spatial_resolver = SpatialResolver(registry, resolved_references)
             logger.info(f"Created SpatialResolver with {len(resolved_references)} references")
 
-            # Phase 3: Execute operations (if any)
             if operations_spec:
-                ops_builder = OperationsBuilder(registry, param_resolver, sketches, spatial_resolver)
-                registry = ops_builder.execute_operations(operations_spec)
+                registry = OperationsBuilder(registry, param_resolver, sketches, spatial_resolver).execute_operations(operations_spec)
                 logger.info(f"Executed {len(operations_spec)} operations")
 
-            # Phase 3.5: Parse export configuration (respects explicit user intent)
-            export_config = {
-                'default_part': export_spec.get('default_part'),
-                'formats': export_spec.get('formats', []),
-                'color_mode': export_spec.get('color_mode', 'realistic'),
-                'default_color': export_spec.get('default_color', [0.7, 0.7, 0.7])
-            }
-            if export_config['default_part']:
-                logger.info(f"Export config: default_part={export_config['default_part']}")
+            # Phase 3: Export config → document
+            export_config = TiaCADParser._build_export_config(s['export'])
 
-            # Create document
             doc = TiaCADDocument(
                 metadata=metadata,
                 parameters=resolved_params,
@@ -499,10 +524,8 @@ class TiaCADParser:
             return doc
 
         except TiaCADError:
-            # Re-raise TiaCAD errors as-is
             raise
         except Exception as e:
-            # Wrap unexpected errors
             raise TiaCADParserError(
                 f"Unexpected error during parsing: {str(e)}",
                 file_path=file_path

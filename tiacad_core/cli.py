@@ -14,6 +14,8 @@ Version: 3.1.1
 
 import argparse
 import sys
+import tempfile
+import traceback
 from pathlib import Path
 import time
 
@@ -99,34 +101,41 @@ class ProgressBar:
             print()  # New line when done
 
 
+def _show_dep_graph(args, doc, input_file: Path) -> None:
+    """Print dependency graph output if --show-deps was requested."""
+    if not (args.show_deps and doc.graph):
+        return
+    print()
+    from .dag import GraphVisualizer
+    if args.show_deps in ('text', 'both'):
+        GraphVisualizer.show_stats(doc.graph)
+    if args.show_deps in ('dot', 'both'):
+        dot_path = input_file.stem + '_deps.dot'
+        GraphVisualizer.to_dot(doc.graph, str(dot_path))
+        print_success(f"Dependency graph written to: {Colors.CYAN}{dot_path}{Colors.RESET}")
+        print_info(f"Generate image: dot -Tpng {dot_path} -o graph.png")
+        print()
+
+
 def cmd_build(args):
     """Build a TiaCAD YAML file to 3MF/STL/STEP (defaults to 3MF)"""
     from .parser.tiacad_parser import TiaCADParser
 
     input_file = Path(args.input)
 
-    # Validate input file exists
     if not input_file.exists():
         print_error(f"File not found: {input_file}")
         return 1
 
-    # Determine output file
-    if args.output:
-        output_file = Path(args.output)
-    else:
-        # Auto-generate output filename - default to 3MF (modern standard)
-        output_file = input_file.with_suffix('.3mf')
-
-    # Determine format from extension
+    output_file = Path(args.output) if args.output else input_file.with_suffix('.3mf')
     output_ext = output_file.suffix.lower()
     if output_ext not in ['.stl', '.3mf', '.step']:
         print_error(f"Unsupported output format: {output_ext}")
         print_info("Supported formats: .stl, .3mf, .step")
         return 1
 
-    doc = None  # Initialize doc before try block
+    doc = None
     try:
-        # Parse YAML (with graph if --show-deps requested)
         build_graph = (args.show_deps is not None)
         print_info(f"Building {Colors.CYAN}{input_file}{Colors.RESET}")
         start_time = time.time()
@@ -136,22 +145,8 @@ def cmd_build(args):
         parse_time = time.time() - start_time
         print_success(f"Parsed in {parse_time:.2f}s")
 
-        # Show dependency graph if requested
-        if args.show_deps and doc.graph:
-            print()
-            if args.show_deps in ('text', 'both'):
-                from .dag import GraphVisualizer
-                GraphVisualizer.show_stats(doc.graph)
+        _show_dep_graph(args, doc, input_file)
 
-            if args.show_deps in ('dot', 'both'):
-                from .dag import GraphVisualizer
-                dot_path = input_file.stem + '_deps.dot'
-                GraphVisualizer.to_dot(doc.graph, str(dot_path))
-                print_success(f"Dependency graph written to: {Colors.CYAN}{dot_path}{Colors.RESET}")
-                print_info(f"Generate image: dot -Tpng {dot_path} -o graph.png")
-                print()
-
-        # Export
         print_info(f"Exporting to {Colors.CYAN}{output_file}{Colors.RESET}")
         export_start = time.time()
 
@@ -169,7 +164,6 @@ def cmd_build(args):
         print_success(f"Total time: {total_time:.2f}s")
         print_success(f"Output: {output_file}")
 
-        # Show statistics
         if args.stats:
             print_header("\n📊 Statistics:")
             print(f"  Parts: {len(doc.parts.list_parts())}")
@@ -181,35 +175,43 @@ def cmd_build(args):
     except Exception as e:
         print_error(f"Build failed: {str(e)}")
 
-        # Show enhanced error context if available
         if hasattr(e, 'with_context') and doc and hasattr(doc, 'yaml_string') and doc.yaml_string:
             print()
             print(e.with_context(doc.yaml_string))
 
         if args.verbose:
-            import traceback
             print("\n" + Colors.GRAY + "Traceback:" + Colors.RESET)
             traceback.print_exc()
 
         return 1
 
 
-def cmd_validate(args):
-    """Validate TiaCAD YAML files without building geometry"""
-    from .parser.tiacad_parser import TiaCADParser
-
-    # Expand glob patterns
+def _resolve_file_list(patterns):
+    """Expand a list of file paths / glob patterns into resolved Path objects."""
     files = []
-    for pattern in args.files:
+    for pattern in patterns:
         path = Path(pattern)
         if path.is_file():
             files.append(path)
         elif '*' in pattern or '?' in pattern:
-            # Glob pattern
             files.extend(Path('.').glob(pattern))
         else:
             print_warning(f"No files found matching: {pattern}")
+    return files
 
+
+def _print_file_errors(file: Path, errors) -> None:
+    """Print validation errors for a single file."""
+    print_error(f"{file}")
+    for error in errors:
+        print(f"  {Colors.RED}└─{Colors.RESET} {error}")
+
+
+def cmd_validate(args):
+    """Validate TiaCAD YAML files without building geometry"""
+    from .parser.tiacad_parser import TiaCADParser
+
+    files = _resolve_file_list(args.files)
     if not files:
         print_error("No files to validate")
         return 1
@@ -222,22 +224,16 @@ def cmd_validate(args):
     for file in files:
         try:
             is_valid, errors = TiaCADParser.validate_file(str(file))
-
             if is_valid:
                 print_success(f"{file}")
                 valid_count += 1
             else:
-                print_error(f"{file}")
-                for error in errors:
-                    print(f"  {Colors.RED}└─{Colors.RESET} {error}")
+                _print_file_errors(file, errors)
                 invalid_count += 1
-
         except Exception as e:
-            print_error(f"{file}")
-            print(f"  {Colors.RED}└─{Colors.RESET} {str(e)}")
+            _print_file_errors(file, [str(e)])
             invalid_count += 1
 
-    # Summary
     print()
     print_header("Summary:")
     print(f"  {Colors.GREEN}✓ Valid:{Colors.RESET} {valid_count}")
@@ -262,25 +258,21 @@ def cmd_info(args):
     try:
         doc = TiaCADParser.parse_file(str(input_file))
 
-        # Header
         print_header(f"\n📄 {input_file.name}")
         print()
 
-        # Metadata
         if doc.metadata:
             print_header("Metadata:")
             for key, value in doc.metadata.items():
                 print(f"  {Colors.CYAN}{key}:{Colors.RESET} {value}")
             print()
 
-        # Parameters
         if doc.parameters:
             print_header(f"Parameters ({len(doc.parameters)}):")
             for name, value in doc.parameters.items():
                 print(f"  {Colors.CYAN}{name}:{Colors.RESET} {value}")
             print()
 
-        # Parts
         parts = doc.parts.list_parts()
         print_header(f"Parts ({len(parts)}):")
         for part_name in parts:
@@ -289,7 +281,6 @@ def cmd_info(args):
             print(f"  {Colors.GREEN}•{Colors.RESET} {part_name} ({prim_type})")
         print()
 
-        # Operations
         if doc.operations:
             print_header(f"Operations ({len(doc.operations)}):")
             for op_name, op_def in doc.operations.items():
@@ -297,7 +288,6 @@ def cmd_info(args):
                 print(f"  {Colors.YELLOW}•{Colors.RESET} {op_name} ({op_type})")
             print()
 
-        # Quick stats
         print_header("Statistics:")
         print(f"  Total parts: {len(parts)}")
         print(f"  Parameters: {len(doc.parameters)}")
@@ -307,11 +297,75 @@ def cmd_info(args):
 
     except Exception as e:
         print_error(f"Failed to read file: {str(e)}")
-
         if args.verbose:
-            import traceback
             traceback.print_exc()
+        return 1
 
+
+def _pick_part_to_validate(args, doc) -> str:
+    """Determine which part to validate: explicit arg, last operation, or first part."""
+    if args.part:
+        return args.part
+    if doc.operations:
+        return list(doc.operations.keys())[-1]
+    parts = doc.parts.list_parts()
+    if not parts:
+        print_error("No parts found in document")
+        return None
+    return parts[0]
+
+
+def _collect_geometry_issues(stats: dict, components, args) -> list:
+    """Return a list of human-readable issue strings for the given mesh stats."""
+    issues = []
+    if stats['components'] > 1:
+        issues.append(
+            f"❌ {stats['components']} disconnected parts (expected 1 for printable model)"
+        )
+        if args.verbose:
+            for i, comp in enumerate(components[:5]):
+                issues.append(
+                    f"   Component {i+1}: {len(comp.vertices)} vertices, {len(comp.faces)} faces"
+                )
+            if len(components) > 5:
+                issues.append(f"   ... and {len(components) - 5} more")
+    if not stats['watertight']:
+        issues.append("❌ Mesh not watertight (will cause slicing errors)")
+    if stats['volume'] <= 0:
+        issues.append(f"❌ Invalid volume: {stats['volume']:.2f} mm³")
+    if stats['vertices'] == 0:
+        issues.append("❌ Empty mesh (no vertices)")
+    if stats['faces'] == 0:
+        issues.append("❌ No faces")
+    return issues
+
+
+def _print_geometry_outcome(stats: dict, issues: list, parse_time: float, export_time: float) -> int:
+    """Print geometry stats table and outcome. Returns exit code."""
+    print()
+    print_header("📊 Geometry Analysis")
+    print()
+    print(f"  Vertices:    {stats['vertices']:,}")
+    print(f"  Faces:       {stats['faces']:,}")
+    print(f"  Volume:      {stats['volume']:.2f} mm³")
+    print(f"  Watertight:  {'✅ Yes' if stats['watertight'] else '❌ No'}")
+    print(f"  Components:  {stats['components']}")
+    print()
+
+    if not issues:
+        print_success("✅ Geometry is valid and printable")
+        print()
+        print_info(f"Parse time:  {parse_time:.2f}s")
+        print_info(f"Export time: {export_time:.2f}s")
+        return 0
+    else:
+        print_error("❌ Geometry validation failed:")
+        print()
+        for issue in issues:
+            print(f"  {issue}")
+        print()
+        print_warning("💡 Tip: For union operations, ensure parts actually overlap")
+        print()
         return 1
 
 
@@ -334,10 +388,7 @@ def cmd_validate_geometry(args):
         print_info("Install with: pip install trimesh")
         return 1
 
-    import tempfile
-
     input_file = Path(args.input)
-
     if not input_file.exists():
         print_error(f"File not found: {input_file}")
         return 1
@@ -346,29 +397,17 @@ def cmd_validate_geometry(args):
     print()
 
     try:
-        # Parse YAML
         start_time = time.time()
         doc = TiaCADParser.parse_file(str(input_file))
         parse_time = time.time() - start_time
 
-        # Determine which part to validate
-        if args.part:
-            part_name = args.part
-        elif doc.operations:
-            part_name = list(doc.operations.keys())[-1]
-        else:
-            parts = doc.parts.list_parts()
-            if not parts:
-                print_error("No parts found in document")
-                return 1
-            part_name = parts[0]
+        part_name = _pick_part_to_validate(args, doc)
+        if part_name is None:
+            return 1
 
         print_info(f"Validating part: {Colors.CYAN}{part_name}{Colors.RESET}")
-
-        # Get part
         part = doc.parts.get(part_name)
 
-        # Export to temp STL
         with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as tmp:
             tmp_path = Path(tmp.name)
 
@@ -377,12 +416,8 @@ def cmd_validate_geometry(args):
             part.geometry.val().exportStl(str(tmp_path))
             export_time = time.time() - export_start
 
-            # Load mesh
             mesh = trimesh.load(str(tmp_path))
-
-            # Compute stats
             components = mesh.split(only_watertight=False)
-
             stats = {
                 'vertices': len(mesh.vertices),
                 'faces': len(mesh.faces),
@@ -390,71 +425,16 @@ def cmd_validate_geometry(args):
                 'watertight': mesh.is_watertight,
                 'components': len(components),
             }
-
-            # Find issues
-            issues = []
-
-            if stats['components'] > 1:
-                issues.append(
-                    f"❌ {stats['components']} disconnected parts (expected 1 for printable model)"
-                )
-                if args.verbose:
-                    for i, comp in enumerate(components[:5]):
-                        issues.append(
-                            f"   Component {i+1}: {len(comp.vertices)} vertices, {len(comp.faces)} faces"
-                        )
-                    if len(components) > 5:
-                        issues.append(f"   ... and {len(components) - 5} more")
-
-            if not stats['watertight']:
-                issues.append("❌ Mesh not watertight (will cause slicing errors)")
-
-            if stats['volume'] <= 0:
-                issues.append(f"❌ Invalid volume: {stats['volume']:.2f} mm³")
-
-            if stats['vertices'] == 0:
-                issues.append("❌ Empty mesh (no vertices)")
-
-            if stats['faces'] == 0:
-                issues.append("❌ No faces")
-
-            # Display results
-            print()
-            print_header("📊 Geometry Analysis")
-            print()
-            print(f"  Vertices:    {stats['vertices']:,}")
-            print(f"  Faces:       {stats['faces']:,}")
-            print(f"  Volume:      {stats['volume']:.2f} mm³")
-            print(f"  Watertight:  {'✅ Yes' if stats['watertight'] else '❌ No'}")
-            print(f"  Components:  {stats['components']}")
-            print()
-
-            if len(issues) == 0:
-                print_success("✅ Geometry is valid and printable")
-                print()
-                print_info(f"Parse time:  {parse_time:.2f}s")
-                print_info(f"Export time: {export_time:.2f}s")
-                return 0
-            else:
-                print_error("❌ Geometry validation failed:")
-                print()
-                for issue in issues:
-                    print(f"  {issue}")
-                print()
-                print_warning("💡 Tip: For union operations, ensure parts actually overlap")
-                print()
-                return 1
+            issues = _collect_geometry_issues(stats, components, args)
+            return _print_geometry_outcome(stats, issues, parse_time, export_time)
 
         finally:
             tmp_path.unlink(missing_ok=True)
 
     except Exception as e:
         print_error(f"Validation failed: {str(e)}")
-
         if args.verbose:
-            import traceback
             traceback.print_exc()
-
         return 1
 
 
@@ -524,16 +504,13 @@ def main(argv=None):
     parser = create_parser()
     args = parser.parse_args(argv)
 
-    # Disable colors if requested or not a TTY
     if args.no_color or not sys.stdout.isatty():
         Colors.disable()
 
-    # Show help if no command specified
     if not args.command:
         parser.print_help()
         return 0
 
-    # Run the command
     try:
         return args.func(args)
     except KeyboardInterrupt:

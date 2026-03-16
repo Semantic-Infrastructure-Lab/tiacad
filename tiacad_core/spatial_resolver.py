@@ -192,162 +192,130 @@ class SpatialResolver:
         )
 
     def _resolve_dict(self, spec: dict) -> SpatialRef:
-        """
-        Resolve inline reference definition.
-
-        Handles different reference types:
-        - point: Absolute or derived (with offset)
-        - face: Extract from part geometry
-        - edge: Extract from part geometry
-        - axis: Defined by two points
-
-        Args:
-            spec: Dictionary with reference specification
-
-        Returns:
-            Resolved SpatialRef
-
-        Raises:
-            SpatialResolverError: If invalid specification
-        """
+        """Dispatch inline reference spec to the appropriate type resolver."""
         ref_type = spec.get('type', 'point')
-
-        if ref_type == 'point':
-            # Case 1: Absolute point
-            if 'value' in spec:
-                value = spec['value']
-                if not isinstance(value, list) or len(value) != 3:
-                    raise SpatialResolverError(
-                        f"Point 'value' must be list of 3 coordinates, got: {value}"
-                    )
-                return SpatialRef(
-                    position=np.array([float(value[0]), float(value[1]), float(value[2])]),
-                    ref_type='point'
-                )
-
-            # Case 2: Offset from another reference
-            elif 'from' in spec:
-                if 'offset' not in spec:
-                    raise SpatialResolverError(
-                        "Derived reference must have both 'from' and 'offset' keys"
-                    )
-
-                # Resolve base reference (recursive)
-                base = self.resolve(spec['from'])
-
-                # Get offset
-                offset = spec['offset']
-                if not isinstance(offset, list) or len(offset) != 3:
-                    raise SpatialResolverError(
-                        f"Offset must be list of 3 values, got: {offset}"
-                    )
-                offset_arr = np.array([float(offset[0]), float(offset[1]), float(offset[2])])
-
-                # Apply offset in base's local frame (if it has orientation)
-                if base.orientation is not None:
-                    frame = base.frame
-                    world_offset = (
-                        offset_arr[0] * frame.x_axis +
-                        offset_arr[1] * frame.y_axis +
-                        offset_arr[2] * frame.z_axis
-                    )
-                else:
-                    # No orientation - offset in world coordinates
-                    world_offset = offset_arr
-
-                return SpatialRef(
-                    position=base.position + world_offset,
-                    orientation=None,  # Derived points don't inherit orientation
-                    ref_type='point'
-                )
-
-            else:
-                raise SpatialResolverError(
-                    f"Point reference must have either 'value' or 'from'+'offset'. Got: {spec}"
-                )
-
-        elif ref_type == 'face':
-            # Extract face reference from part geometry
-            if 'part' not in spec or 'selector' not in spec:
-                raise SpatialResolverError(
-                    f"Face reference must have 'part' and 'selector'. Got: {spec}"
-                )
-
-            part_name = spec['part']
-            if not self.registry.exists(part_name):
-                raise SpatialResolverError(
-                    f"Part '{part_name}' not found in registry. "
-                    f"Available parts: {', '.join(self.registry.list_parts())}"
-                )
-
-            part = self.registry.get(part_name)
-            selector = spec['selector']
-            at = spec.get('at', 'center')  # Default to center
-
-            return self._extract_face_ref(part, selector, at)
-
-        elif ref_type == 'edge':
-            # Extract edge reference from part geometry
-            if 'part' not in spec or 'selector' not in spec:
-                raise SpatialResolverError(
-                    f"Edge reference must have 'part' and 'selector'. Got: {spec}"
-                )
-
-            part_name = spec['part']
-            if not self.registry.exists(part_name):
-                raise SpatialResolverError(
-                    f"Part '{part_name}' not found in registry. "
-                    f"Available parts: {', '.join(self.registry.list_parts())}"
-                )
-
-            part = self.registry.get(part_name)
-            selector = spec['selector']
-            at = spec.get('at', 'midpoint')  # Default to midpoint
-
-            return self._extract_edge_ref(part, selector, at)
-
-        elif ref_type == 'axis':
-            # Axis defined by two points
-            if 'from' not in spec or 'to' not in spec:
-                raise SpatialResolverError(
-                    f"Axis reference must have 'from' and 'to'. Got: {spec}"
-                )
-
-            # Resolve the two points
-            from_spec = spec['from']
-            to_spec = spec['to']
-
-            # Handle both list and reference forms
-            if isinstance(from_spec, list):
-                from_pt = np.array([float(from_spec[0]), float(from_spec[1]), float(from_spec[2])])
-            else:
-                from_pt = self.resolve(from_spec).position
-
-            if isinstance(to_spec, list):
-                to_pt = np.array([float(to_spec[0]), float(to_spec[1]), float(to_spec[2])])
-            else:
-                to_pt = self.resolve(to_spec).position
-
-            # Calculate direction
-            direction = to_pt - from_pt
-            length = np.linalg.norm(direction)
-            if length < 1e-10:
-                raise SpatialResolverError(
-                    f"Axis 'from' and 'to' points are identical: {from_pt}"
-                )
-            direction = direction / length  # Normalize
-
-            return SpatialRef(
-                position=from_pt,
-                orientation=direction,
-                ref_type='axis'
-            )
-
-        else:
+        dispatch = {
+            'point': self._resolve_point,
+            'face': self._resolve_face_ref,
+            'edge': self._resolve_edge_ref,
+            'axis': self._resolve_axis,
+        }
+        if ref_type not in dispatch:
             raise SpatialResolverError(
                 f"Unknown reference type: {ref_type}. "
                 f"Valid types: point, face, edge, axis"
             )
+        return dispatch[ref_type](spec)
+
+    def _resolve_point(self, spec: dict) -> SpatialRef:
+        """Resolve a point reference — either absolute value or offset from another ref."""
+        if 'value' in spec:
+            value = spec['value']
+            if not isinstance(value, list) or len(value) != 3:
+                raise SpatialResolverError(
+                    f"Point 'value' must be list of 3 coordinates, got: {value}"
+                )
+            return SpatialRef(
+                position=np.array([float(v) for v in value]),
+                ref_type='point'
+            )
+
+        if 'from' in spec:
+            if 'offset' not in spec:
+                raise SpatialResolverError(
+                    "Derived reference must have both 'from' and 'offset' keys"
+                )
+            base = self.resolve(spec['from'])
+            offset = spec['offset']
+            if not isinstance(offset, list) or len(offset) != 3:
+                raise SpatialResolverError(
+                    f"Offset must be list of 3 values, got: {offset}"
+                )
+            offset_arr = np.array([float(v) for v in offset])
+            if base.orientation is not None:
+                frame = base.frame
+                world_offset = (
+                    offset_arr[0] * frame.x_axis +
+                    offset_arr[1] * frame.y_axis +
+                    offset_arr[2] * frame.z_axis
+                )
+            else:
+                world_offset = offset_arr
+            return SpatialRef(
+                position=base.position + world_offset,
+                orientation=None,
+                ref_type='point'
+            )
+
+        raise SpatialResolverError(
+            f"Point reference must have either 'value' or 'from'+'offset'. Got: {spec}"
+        )
+
+    def _resolve_face_ref(self, spec: dict) -> SpatialRef:
+        """Resolve a face reference — extract position/orientation from part geometry."""
+        if 'part' not in spec or 'selector' not in spec:
+            raise SpatialResolverError(
+                f"Face reference must have 'part' and 'selector'. Got: {spec}"
+            )
+        part_name = spec['part']
+        if not self.registry.exists(part_name):
+            raise SpatialResolverError(
+                f"Part '{part_name}' not found in registry. "
+                f"Available parts: {', '.join(self.registry.list_parts())}"
+            )
+        return self._extract_face_ref(
+            self.registry.get(part_name),
+            spec['selector'],
+            spec.get('at', 'center'),
+        )
+
+    def _resolve_edge_ref(self, spec: dict) -> SpatialRef:
+        """Resolve an edge reference — extract position/direction from part geometry."""
+        if 'part' not in spec or 'selector' not in spec:
+            raise SpatialResolverError(
+                f"Edge reference must have 'part' and 'selector'. Got: {spec}"
+            )
+        part_name = spec['part']
+        if not self.registry.exists(part_name):
+            raise SpatialResolverError(
+                f"Part '{part_name}' not found in registry. "
+                f"Available parts: {', '.join(self.registry.list_parts())}"
+            )
+        return self._extract_edge_ref(
+            self.registry.get(part_name),
+            spec['selector'],
+            spec.get('at', 'midpoint'),
+        )
+
+    def _resolve_axis(self, spec: dict) -> SpatialRef:
+        """Resolve an axis reference — direction defined by two points."""
+        if 'from' not in spec or 'to' not in spec:
+            raise SpatialResolverError(
+                f"Axis reference must have 'from' and 'to'. Got: {spec}"
+            )
+        from_spec = spec['from']
+        to_spec = spec['to']
+        from_pt = (
+            np.array([float(v) for v in from_spec])
+            if isinstance(from_spec, list)
+            else self.resolve(from_spec).position
+        )
+        to_pt = (
+            np.array([float(v) for v in to_spec])
+            if isinstance(to_spec, list)
+            else self.resolve(to_spec).position
+        )
+        direction = to_pt - from_pt
+        length = np.linalg.norm(direction)
+        if length < 1e-10:
+            raise SpatialResolverError(
+                f"Axis 'from' and 'to' points are identical: {from_pt}"
+            )
+        return SpatialRef(
+            position=from_pt,
+            orientation=direction / length,
+            ref_type='axis'
+        )
 
     def _resolve_part_local(self, part, ref_name: str) -> SpatialRef:
         """

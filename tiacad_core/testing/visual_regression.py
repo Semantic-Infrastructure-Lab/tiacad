@@ -13,8 +13,6 @@ Version: 3.1.1
 """
 
 import os
-import hashlib
-import json
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass, asdict
@@ -24,7 +22,6 @@ try:
     import matplotlib
     matplotlib.use('Agg')  # Non-interactive backend
     import matplotlib.pyplot as plt
-    from matplotlib.figure import Figure
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
@@ -428,6 +425,84 @@ class VisualRegressionTester:
 
         return result
 
+    _HTML_STYLES = """
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .summary {
+            background: white; padding: 20px; border-radius: 8px;
+            margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .passed { color: #28a745; font-weight: bold; }
+        .failed { color: #dc3545; font-weight: bold; }
+        .test-result {
+            background: white; padding: 20px; margin-bottom: 20px;
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result.pass { border-left: 5px solid #28a745; }
+        .test-result.fail { border-left: 5px solid #dc3545; }
+        .images { display: flex; gap: 20px; margin-top: 15px; }
+        .image-container { flex: 1; }
+        .image-container img { max-width: 100%; border: 1px solid #ddd; }
+        .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .metric { background: #f8f9fa; padding: 10px; border-radius: 4px; }
+        .metric-label { font-weight: bold; color: #666; font-size: 0.9em; }
+        .metric-value { font-size: 1.2em; color: #333; }
+    </style>"""
+
+    def _generate_html_header(self, total: int, passed: int, failed: int) -> str:
+        """Return HTML head + summary banner."""
+        rate = (passed / total * 100) if total > 0 else 0
+        return (
+            f'<!DOCTYPE html>\n<html>\n<head>\n'
+            f'    <title>TiaCAD Visual Regression Report</title>\n'
+            f'{self._HTML_STYLES}\n</head>\n<body>\n'
+            f'    <h1>TiaCAD Visual Regression Report</h1>\n\n'
+            f'    <div class="summary">\n'
+            f'        <h2>Summary</h2>\n'
+            f'        <p>Total Tests: {total}</p>\n'
+            f'        <p class="passed">Passed: {passed}</p>\n'
+            f'        <p class="failed">Failed: {failed}</p>\n'
+            f'        <p>Pass Rate: {rate:.1f}%</p>\n'
+            f'    </div>\n'
+        )
+
+    def _generate_result_html(self, result: 'VisualDiffResult', output_path: str) -> str:
+        """Return HTML block for a single visual diff result."""
+        status_class = "pass" if result.passed else "fail"
+        status_text = "PASSED" if result.passed else "FAILED"
+        status_color = "passed" if result.passed else "failed"
+        ref_path = os.path.relpath(result.reference_path, os.path.dirname(output_path))
+        test_path = os.path.relpath(result.test_path, os.path.dirname(output_path))
+
+        html = (
+            f'\n    <div class="test-result {status_class}">\n'
+            f'        <h3>{result.test_name} - <span class="{status_color}">{status_text}</span></h3>\n\n'
+            f'        <div class="metrics">\n'
+            f'            <div class="metric"><div class="metric-label">Pixel Diff %</div>'
+            f'<div class="metric-value">{result.pixel_diff_percentage:.3f}%</div></div>\n'
+            f'            <div class="metric"><div class="metric-label">Threshold</div>'
+            f'<div class="metric-value">{result.threshold}%</div></div>\n'
+            f'            <div class="metric"><div class="metric-label">RMS Difference</div>'
+            f'<div class="metric-value">{result.rms_diff:.2f}</div></div>\n'
+            f'            <div class="metric"><div class="metric-label">Max Pixel Diff</div>'
+            f'<div class="metric-value">{result.max_pixel_diff}</div></div>\n'
+            f'        </div>\n\n'
+            f'        <div class="images">\n'
+            f'            <div class="image-container"><h4>Reference</h4>'
+            f'<img src="{ref_path}" alt="Reference"></div>\n'
+            f'            <div class="image-container"><h4>Test</h4>'
+            f'<img src="{test_path}" alt="Test"></div>\n'
+        )
+        if result.diff_path:
+            diff_path = os.path.relpath(result.diff_path, os.path.dirname(output_path))
+            html += (
+                f'            <div class="image-container"><h4>Difference</h4>'
+                f'<img src="{diff_path}" alt="Difference"></div>\n'
+            )
+        html += '        </div>\n    </div>\n'
+        return html
+
     def generate_report(
         self,
         results: List[VisualDiffResult],
@@ -443,126 +518,15 @@ class VisualRegressionTester:
         Returns:
             Path to generated report
         """
-        # Calculate summary statistics
-        total_tests = len(results)
-        passed_tests = sum(1 for r in results if r.passed)
-        failed_tests = total_tests - passed_tests
-
-        # Generate HTML
-        html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <title>TiaCAD Visual Regression Report</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
-        h1 {{ color: #333; }}
-        .summary {{
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }}
-        .passed {{ color: #28a745; font-weight: bold; }}
-        .failed {{ color: #dc3545; font-weight: bold; }}
-        .test-result {{
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }}
-        .test-result.pass {{ border-left: 5px solid #28a745; }}
-        .test-result.fail {{ border-left: 5px solid #dc3545; }}
-        .images {{ display: flex; gap: 20px; margin-top: 15px; }}
-        .image-container {{ flex: 1; }}
-        .image-container img {{ max-width: 100%; border: 1px solid #ddd; }}
-        .metrics {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }}
-        .metric {{ background: #f8f9fa; padding: 10px; border-radius: 4px; }}
-        .metric-label {{ font-weight: bold; color: #666; font-size: 0.9em; }}
-        .metric-value {{ font-size: 1.2em; color: #333; }}
-    </style>
-</head>
-<body>
-    <h1>TiaCAD Visual Regression Report</h1>
-
-    <div class="summary">
-        <h2>Summary</h2>
-        <p>Total Tests: {total_tests}</p>
-        <p class="passed">Passed: {passed_tests}</p>
-        <p class="failed">Failed: {failed_tests}</p>
-        <p>Pass Rate: {(passed_tests/total_tests*100) if total_tests > 0 else 0:.1f}%</p>
-    </div>
-"""
-
-        # Add individual test results
+        total = len(results)
+        passed = sum(1 for r in results if r.passed)
+        html = self._generate_html_header(total, passed, total - passed)
         for result in results:
-            status_class = "pass" if result.passed else "fail"
-            status_text = "PASSED" if result.passed else "FAILED"
-            status_color = "passed" if result.passed else "failed"
+            html += self._generate_result_html(result, output_path)
+        html += "\n</body>\n</html>\n"
 
-            # Convert paths to relative for HTML
-            ref_path = os.path.relpath(result.reference_path, os.path.dirname(output_path))
-            test_path = os.path.relpath(result.test_path, os.path.dirname(output_path))
-
-            html += f"""
-    <div class="test-result {status_class}">
-        <h3>{result.test_name} - <span class="{status_color}">{status_text}</span></h3>
-
-        <div class="metrics">
-            <div class="metric">
-                <div class="metric-label">Pixel Diff %</div>
-                <div class="metric-value">{result.pixel_diff_percentage:.3f}%</div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">Threshold</div>
-                <div class="metric-value">{result.threshold}%</div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">RMS Difference</div>
-                <div class="metric-value">{result.rms_diff:.2f}</div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">Max Pixel Diff</div>
-                <div class="metric-value">{result.max_pixel_diff}</div>
-            </div>
-        </div>
-
-        <div class="images">
-            <div class="image-container">
-                <h4>Reference</h4>
-                <img src="{ref_path}" alt="Reference">
-            </div>
-            <div class="image-container">
-                <h4>Test</h4>
-                <img src="{test_path}" alt="Test">
-            </div>
-"""
-
-            # Add diff image if available
-            if result.diff_path:
-                diff_path = os.path.relpath(result.diff_path, os.path.dirname(output_path))
-                html += f"""
-            <div class="image-container">
-                <h4>Difference</h4>
-                <img src="{diff_path}" alt="Difference">
-            </div>
-"""
-
-            html += """
-        </div>
-    </div>
-"""
-
-        html += """
-</body>
-</html>
-"""
-
-        # Write report
         with open(output_path, 'w') as f:
             f.write(html)
-
         return output_path
 
 

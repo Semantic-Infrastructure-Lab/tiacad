@@ -358,152 +358,77 @@ class PartsBuilder:
 
         return torus
 
-    def _build_text(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
-        """
-        Build a 3D text primitive.
+    _TEXT_VALID_STYLES = ['regular', 'bold', 'italic', 'bold-italic']
+    _TEXT_VALID_HALIGN = ['left', 'center', 'right']
+    _TEXT_VALID_VALIGN = ['top', 'center', 'baseline', 'bottom']
 
-        Args:
-            name: Part name
-            spec: Specification with 'text', 'size', 'height' (required)
-                  and optional 'font', 'style', 'halign', 'valign', 'font_path', 'spacing'
-
-        Returns:
-            CadQuery Workplane with 3D text geometry
-
-        Raises:
-            PartsBuilderError: If required parameters missing or invalid
-        """
-        # Validate required parameters
-        if 'text' not in spec:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' missing required 'text' parameter",
-                part_name=name
-            )
-        if 'size' not in spec:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' missing required 'size' parameter (font size)",
-                part_name=name
-            )
-        if 'height' not in spec:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' missing required 'height' parameter (extrusion height)",
-                part_name=name
-            )
-
-        # Extract required parameters
-        text = spec['text']
-        size = spec['size']
-        height = spec['height']
-
-        # Validate text is not empty
+    def _validate_text_spec(self, name: str, spec: Dict[str, Any]) -> None:
+        """Validate text primitive spec, raising PartsBuilderError on failure."""
+        _req_labels = {'text': 'text', 'size': 'font size', 'height': 'extrusion height'}
+        for req, label in _req_labels.items():
+            if req not in spec:
+                raise PartsBuilderError(
+                    f"Text primitive '{name}' missing required '{req}' parameter ({label})",
+                    part_name=name
+                )
+        text, size, height = spec['text'], spec['size'], spec['height']
         if not text or (isinstance(text, str) and not text.strip()):
-            raise PartsBuilderError(
-                f"Text primitive '{name}' has empty text string",
-                part_name=name
-            )
-
-        # Validate numeric parameters
+            raise PartsBuilderError(f"Text primitive '{name}' has empty text string", part_name=name)
         if size <= 0:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' size must be positive, got {size}",
-                part_name=name
-            )
+            raise PartsBuilderError(f"Text primitive '{name}' size must be positive, got {size}", part_name=name)
         if height <= 0:
+            raise PartsBuilderError(f"Text primitive '{name}' height must be positive, got {height}", part_name=name)
+        if size < 1.0:
+            logger.warning(f"Text primitive '{name}' has very small size {size}mm. Text may not render well. Consider size >= 1mm.")
+        style = spec.get('style', 'regular')
+        if style not in self._TEXT_VALID_STYLES:
             raise PartsBuilderError(
-                f"Text primitive '{name}' height must be positive, got {height}",
+                f"Text primitive '{name}' has invalid style '{style}'. Must be one of: {', '.join(self._TEXT_VALID_STYLES)}",
                 part_name=name
             )
-
-        # Warn about very small sizes
-        if size < 1.0:
-            logger.warning(
-                f"Text primitive '{name}' has very small size {size}mm. "
-                f"Text may not render well. Consider size >= 1mm."
+        halign = spec.get('halign', 'center')
+        if halign not in self._TEXT_VALID_HALIGN:
+            raise PartsBuilderError(
+                f"Text primitive '{name}' has invalid horizontal alignment '{halign}'. Must be one of: {', '.join(self._TEXT_VALID_HALIGN)}",
+                part_name=name
             )
+        valign = spec.get('valign', 'center')
+        if valign not in self._TEXT_VALID_VALIGN:
+            raise PartsBuilderError(
+                f"Text primitive '{name}' has invalid vertical alignment '{valign}'. Must be one of: {', '.join(self._TEXT_VALID_VALIGN)}",
+                part_name=name
+            )
+        spacing = spec.get('spacing', 1.0)
+        if spacing <= 0:
+            raise PartsBuilderError(f"Text primitive '{name}' spacing must be positive, got {spacing}", part_name=name)
 
-        # Extract optional parameters with defaults
+    def _build_text(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
+        """Build a 3D text primitive."""
+        self._validate_text_spec(name, spec)
+        text, size, height = spec['text'], spec['size'], spec['height']
         font = spec.get('font', 'Liberation Sans')
         style = spec.get('style', 'regular')
         halign = spec.get('halign', 'center')
         valign = spec.get('valign', 'center')
         font_path = spec.get('font_path', None)
-        spacing = spec.get('spacing', 1.0)
-
-        # Validate style
-        valid_styles = ['regular', 'bold', 'italic', 'bold-italic']
-        if style not in valid_styles:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' has invalid style '{style}'. "
-                f"Must be one of: {', '.join(valid_styles)}",
-                part_name=name
-            )
-
-        # Validate alignment
-        valid_halign = ['left', 'center', 'right']
-        if halign not in valid_halign:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' has invalid horizontal alignment '{halign}'. "
-                f"Must be one of: {', '.join(valid_halign)}",
-                part_name=name
-            )
-
-        valid_valign = ['top', 'center', 'baseline', 'bottom']
-        if valign not in valid_valign:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' has invalid vertical alignment '{valign}'. "
-                f"Must be one of: {', '.join(valid_valign)}",
-                part_name=name
-            )
-
-        # Validate spacing
-        if spacing <= 0:
-            raise PartsBuilderError(
-                f"Text primitive '{name}' spacing must be positive, got {spacing}",
-                part_name=name
-            )
-
-        # Map style to CadQuery 'kind' parameter
-        # CadQuery expects: 'regular', 'bold', 'italic'
-        # For bold-italic, use 'bold' (CadQuery limitation)
-        cq_kind = style
-        if style == 'bold-italic':
-            cq_kind = 'bold'
-
-        # Create text on XY plane
+        cq_kind = 'bold' if style == 'bold-italic' else style
         try:
-            wp = cq.Workplane("XY")
-            text_wp = wp.text(
-                text,
-                fontsize=size,
-                distance=height,  # Full extrusion height (not placeholder like Text2D)
-                font=font,
-                fontPath=font_path,
-                kind=cq_kind,
-                halign=halign,
-                valign=valign
+            text_wp = cq.Workplane("XY").text(
+                text, fontsize=size, distance=height,
+                font=font, fontPath=font_path, kind=cq_kind,
+                halign=halign, valign=valign
             )
-
-            logger.debug(
-                f"Built text primitive '{name}': text='{text}', size={size}, "
-                f"height={height}, font='{font}', style='{style}'"
-            )
-
+            logger.debug(f"Built text primitive '{name}': text='{text}', size={size}, height={height}, font='{font}', style='{style}'")
             return text_wp
-
         except Exception as e:
-            # Provide helpful error for font issues
             error_msg = str(e)
             if 'font' in error_msg.lower() or 'freetype' in error_msg.lower():
                 raise PartsBuilderError(
                     f"Font error in text primitive '{name}': {error_msg}. "
-                    f"Font '{font}' may not be available. "
-                    f"Try 'Liberation Sans', 'Arial', or specify 'font_path' parameter.",
+                    f"Font '{font}' may not be available. Try 'Liberation Sans', 'Arial', or specify 'font_path' parameter.",
                     part_name=name
                 )
-            raise PartsBuilderError(
-                f"Error creating text primitive '{name}': {error_msg}",
-                part_name=name
-            )
+            raise PartsBuilderError(f"Error creating text primitive '{name}': {error_msg}", part_name=name)
 
     def __repr__(self) -> str:
         return f"PartsBuilder(resolver={self.resolver})"

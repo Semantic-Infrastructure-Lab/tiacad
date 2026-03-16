@@ -16,40 +16,49 @@ class BooleanGapsRule(ValidationRule):
     def category(self) -> str:
         return "geometry"
 
+    def _check_union_gap(self, op_name, operation, parts_dict) -> List[ValidationIssue]:
+        """Check if union parts are close enough to touch; return gap issues."""
+        issues = []
+        base_name = self._get_operation_attr(operation, 'base') or self._get_operation_attr(operation, 'input')
+        add_names = self._get_operation_attr(operation, 'add', [])
+        if not base_name or not add_names or base_name not in parts_dict:
+            return issues
+        base_part = parts_dict[base_name]
+        if not hasattr(base_part, 'geometry') or base_part.geometry is None:
+            return issues
+        base_bbox = self._get_bounding_box(base_part.geometry)
+        for add_name in add_names:
+            if add_name not in parts_dict:
+                continue
+            add_part = parts_dict[add_name]
+            if not hasattr(add_part, 'geometry') or add_part.geometry is None:
+                continue
+            add_bbox = self._get_bounding_box(add_part.geometry)
+            if not self._boxes_are_close(base_bbox, add_bbox):
+                gap = self._calculate_bbox_gap(base_bbox, add_bbox)
+                issues.append(ValidationIssue(
+                    severity=Severity.WARNING,
+                    category=self.category,
+                    message=f"Union '{op_name}': parts '{base_name}' and '{add_name}' may not be touching (gap ≈ {gap:.2f}mm)",
+                    suggestion="Verify parts are positioned to touch or overlap. Union of disconnected parts creates separate bodies."
+                ))
+        return issues
+
+    def _check_operations(self, operations, parts_dict) -> List[ValidationIssue]:
+        """Check all operations for boolean union gaps; return issues found."""
+        issues = []
+        for op_name, operation in operations.items():
+            if (self._get_operation_attr(operation, 'type') == 'boolean'
+                    and self._get_operation_attr(operation, 'operation') == 'union'):
+                issues.extend(self._check_union_gap(op_name, operation, parts_dict))
+        return issues
+
     def check(self, document) -> List[ValidationIssue]:
         issues = []
         try:
             parts_dict = self._get_parts_dict(document)
             if hasattr(document, 'operations') and document.operations:
-                for op_name, operation in document.operations.items():
-                    op_type = self._get_operation_attr(operation, 'type')
-                    op_operation = self._get_operation_attr(operation, 'operation')
-
-                    if op_type == 'boolean' and op_operation == 'union':
-                        base_name = self._get_operation_attr(operation, 'base') or self._get_operation_attr(operation, 'input')
-                        add_names = self._get_operation_attr(operation, 'add', [])
-
-                        if not base_name or not add_names:
-                            continue
-
-                        if base_name in parts_dict:
-                            base_part = parts_dict[base_name]
-                            if hasattr(base_part, 'geometry') and base_part.geometry is not None:
-                                base_bbox = self._get_bounding_box(base_part.geometry)
-
-                                for add_name in add_names:
-                                    if add_name in parts_dict:
-                                        add_part = parts_dict[add_name]
-                                        if hasattr(add_part, 'geometry') and add_part.geometry is not None:
-                                            add_bbox = self._get_bounding_box(add_part.geometry)
-                                            if not self._boxes_are_close(base_bbox, add_bbox):
-                                                gap = self._calculate_bbox_gap(base_bbox, add_bbox)
-                                                issues.append(ValidationIssue(
-                                                    severity=Severity.WARNING,
-                                                    category=self.category,
-                                                    message=f"Union '{op_name}': parts '{base_name}' and '{add_name}' may not be touching (gap ≈ {gap:.2f}mm)",
-                                                    suggestion="Verify parts are positioned to touch or overlap. Union of disconnected parts creates separate bodies."
-                                                ))
+                issues.extend(self._check_operations(document.operations, parts_dict))
         except Exception as e:
             issues.append(ValidationIssue(
                 severity=Severity.INFO,

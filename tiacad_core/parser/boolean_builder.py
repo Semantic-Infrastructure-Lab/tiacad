@@ -62,82 +62,58 @@ class BooleanBuilder:
         self.registry = part_registry
         self.resolver = parameter_resolver
 
+    def _expand_str_item(self, item: str) -> List[str]:
+        """Expand a string item: wildcard pattern or plain part name."""
+        if '*' not in item:
+            return [item]
+        prefix = item.replace('*', '')
+        matches = self._find_pattern_matches(prefix)
+        if not matches:
+            raise BooleanBuilderError(
+                f"Pattern '{item}' matched no parts. "
+                f"Available parts: {', '.join(self.registry.list_parts())}"
+            )
+        logger.debug(f"Expanded pattern '{item}' to {len(matches)} parts: {matches}")
+        return matches
+
+    def _expand_dict_item(self, item: Dict[str, Any]) -> List[str]:
+        """Expand a dict item: {pattern:} or {range:} specification."""
+        if 'pattern' in item:
+            pattern_name = item['pattern']
+            matches = self._find_pattern_matches(f"{pattern_name}_")
+            if not matches:
+                raise BooleanBuilderError(
+                    f"Pattern '{pattern_name}' matched no parts. "
+                    f"Available parts: {', '.join(self.registry.list_parts())}"
+                )
+            logger.debug(f"Expanded pattern '{pattern_name}' to {len(matches)} parts")
+            return matches
+        if 'range' in item:
+            expanded = self._expand_range_spec(item['range'])
+            logger.debug(f"Expanded range '{item['range']}' to {len(expanded)} parts")
+            return expanded
+        raise BooleanBuilderError(
+            f"Invalid pattern dict: {item}. Expected 'pattern' or 'range' key"
+        )
+
     def _expand_part_list(self, part_list: List[Union[str, Dict[str, Any]]]) -> List[str]:
         """
         Expand pattern references in part list to concrete part names.
 
-        Supports multiple syntaxes:
-        - Regular part name: "bolt_hole_1"
-        - Pattern wildcard: "bolt_circle_*" (matches all bolt_circle_N)
-        - Dict with pattern key: {"pattern": "bolt_circle"} (same as bolt_circle_*)
-        - Dict with range key: {"range": "bolt_circle[0..5]"}
-        - Dict with range wildcard: {"range": "bolt_circle[*]"}
-
-        Args:
-            part_list: List of part names or pattern specifications
-
-        Returns:
-            Expanded list of concrete part names
-
-        Raises:
-            BooleanBuilderError: If pattern matches no parts
-
-        Examples:
-            >>> # Instead of: ["hole_0", "hole_1", "hole_2"]
-            >>> # Use: ["hole_*"] or [{"pattern": "hole"}]
+        Supports: plain names, wildcard strings ("bolt_*"), {"pattern": "name"},
+        {"range": "name[0..5]"}, {"range": "name[*]"}.
         """
         expanded = []
-
         for item in part_list:
             if isinstance(item, str):
-                # String: could be regular name or wildcard pattern
-                if '*' in item:
-                    # Wildcard pattern: "bolt_circle_*"
-                    pattern_prefix = item.replace('*', '')
-                    matches = self._find_pattern_matches(pattern_prefix)
-                    if not matches:
-                        raise BooleanBuilderError(
-                            f"Pattern '{item}' matched no parts. "
-                            f"Available parts: {', '.join(self.registry.list_parts())}"
-                        )
-                    expanded.extend(matches)
-                    logger.debug(f"Expanded pattern '{item}' to {len(matches)} parts: {matches}")
-                else:
-                    # Regular part name
-                    expanded.append(item)
-
+                expanded.extend(self._expand_str_item(item))
             elif isinstance(item, dict):
-                # Dict-based pattern specification
-                if 'pattern' in item:
-                    # {"pattern": "bolt_circle"} → all bolt_circle_N
-                    pattern_name = item['pattern']
-                    matches = self._find_pattern_matches(f"{pattern_name}_")
-                    if not matches:
-                        raise BooleanBuilderError(
-                            f"Pattern '{pattern_name}' matched no parts. "
-                            f"Available parts: {', '.join(self.registry.list_parts())}"
-                        )
-                    expanded.extend(matches)
-                    logger.debug(f"Expanded pattern '{pattern_name}' to {len(matches)} parts")
-
-                elif 'range' in item:
-                    # {"range": "bolt_circle[0..5]"} or {"range": "bolt_circle[*]"}
-                    range_spec = item['range']
-                    expanded_range = self._expand_range_spec(range_spec)
-                    expanded.extend(expanded_range)
-                    logger.debug(f"Expanded range '{range_spec}' to {len(expanded_range)} parts")
-
-                else:
-                    raise BooleanBuilderError(
-                        f"Invalid pattern dict: {item}. "
-                        f"Expected 'pattern' or 'range' key"
-                    )
+                expanded.extend(self._expand_dict_item(item))
             else:
                 raise BooleanBuilderError(
                     f"Invalid part list item type: {type(item).__name__}. "
                     f"Expected str or dict"
                 )
-
         return expanded
 
     def _find_pattern_matches(self, prefix: str) -> List[str]:
@@ -231,6 +207,20 @@ class BooleanBuilder:
 
             return part_names
 
+    def _find_source_part(self, operation: str, resolved_spec: Dict[str, Any]):
+        """Find the source part for metadata inheritance based on operation type."""
+        if operation in ('difference', 'intersection'):
+            base_name = resolved_spec.get('base')
+            if base_name and self.registry.exists(base_name):
+                return self.registry.get(base_name)
+        elif operation == 'union':
+            inputs = resolved_spec.get('inputs', [])
+            if inputs:
+                first = inputs[0]
+                if isinstance(first, str) and '*' not in first and self.registry.exists(first):
+                    return self.registry.get(first)
+        return None
+
     def execute_boolean_operation(self, name: str, spec: Dict[str, Any]):
         """
         Execute a boolean operation and add result to registry.
@@ -242,10 +232,8 @@ class BooleanBuilder:
         Raises:
             BooleanBuilderError: If operation fails
         """
-        # Resolve parameters first
         resolved_spec = self.resolver.resolve(spec)
 
-        # Validate operation field
         if 'operation' not in resolved_spec:
             raise BooleanBuilderError(
                 f"Boolean operation '{name}' missing 'operation' field",
@@ -254,7 +242,6 @@ class BooleanBuilder:
 
         operation = resolved_spec['operation']
 
-        # Execute based on operation type
         try:
             if operation == 'union':
                 geometry = self._execute_union(name, resolved_spec)
@@ -269,48 +256,14 @@ class BooleanBuilder:
                     operation_name=name
                 )
 
-            # Get source part for metadata inheritance
-            # For boolean operations, inherit metadata from the base part
-            source_part = None
-            if operation == 'difference' or operation == 'intersection':
-                # These operations have a 'base' part
-                if 'base' in resolved_spec:
-                    base_name = resolved_spec['base']
-                    if self.registry.exists(base_name):
-                        source_part = self.registry.get(base_name)
-            elif operation == 'union':
-                # Union uses first part from 'inputs' list
-                # Note: inputs might contain patterns/dicts, so extract first string
-                if 'inputs' in resolved_spec and resolved_spec['inputs']:
-                    first_input = resolved_spec['inputs'][0]
-                    # Handle pattern dict or string
-                    if isinstance(first_input, str) and '*' not in first_input:
-                        # Simple string part name (not a wildcard)
-                        if self.registry.exists(first_input):
-                            source_part = self.registry.get(first_input)
-                    # If it's a pattern, we can't easily get the source here
-                    # Metadata will use defaults
-
-            # Copy appearance metadata (color, material, etc.) from source part
+            source_part = self._find_source_part(operation, resolved_spec)
             from .metadata_utils import copy_propagating_metadata
-
             metadata = copy_propagating_metadata(
                 source_metadata=source_part.metadata if source_part else None,
-                target_metadata={
-                    'operation_type': 'boolean',
-                    'boolean_op': operation
-                }
+                target_metadata={'operation_type': 'boolean', 'boolean_op': operation}
             )
 
-            # Create new part with result
-            result_part = Part(
-                name=name,
-                geometry=geometry,
-                metadata=metadata
-            )
-
-            # Add to registry
-            self.registry.add(result_part)
+            self.registry.add(Part(name=name, geometry=geometry, metadata=metadata))
             logger.info(f"Boolean operation '{operation}' created part '{name}'")
 
         except BooleanBuilderError:

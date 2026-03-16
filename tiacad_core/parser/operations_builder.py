@@ -24,6 +24,7 @@ Version: 3.1.1
 """
 
 import logging
+import math
 from typing import Dict, Any, Tuple
 import numpy as np
 
@@ -377,86 +378,95 @@ class OperationsBuilder:
                 operation_name=context
             )
 
-    def _apply_rotate(self, tracker: TransformTracker, params: Dict[str, Any], context: str):
-        """
-        Apply rotate transform.
+    def _parse_angle(self, angle_val, context: str) -> float:
+        """Parse angle value — converts 'Xrad' strings to degrees, otherwise returns float."""
+        if isinstance(angle_val, str) and angle_val.endswith('rad'):
+            return math.degrees(float(angle_val[:-3]))
+        return float(angle_val)
 
-        Supports two modes:
-        1. Traditional: axis (X/Y/Z or [x,y,z]) + origin (point)
-        2. Frame-based: around (spatial reference with orientation)
-
-        Traditional mode requires:
-        - angle: degrees (or "Xrad" for radians)
-        - axis: X|Y|Z or [x,y,z]
-        - origin: point (rotation center)
-
-        Frame-based mode requires:
-        - angle: degrees (or "Xrad" for radians)
-        - around: spatial reference (face, edge, or axis)
-          - For faces: rotates around normal through face center
-          - For edges: rotates around tangent
-          - For axes: rotates around axis direction
-
-        Args:
-            tracker: TransformTracker to apply to
-            params: Rotation parameters
-            context: Context for error messages
-        """
-        if not isinstance(params, dict):
-            raise OperationsBuilderError(
-                f"Rotate parameters must be a dict, got: {params}",
-                operation_name=context
-            )
-
-        # Validate required fields
-        if 'angle' not in params:
-            raise OperationsBuilderError(
-                "Rotate missing required 'angle' field",
-                operation_name=context
-            )
-
-        # Parse angle
-        angle = params['angle']
-        if isinstance(angle, str) and angle.endswith('rad'):
-            # Convert radians to degrees
-            import math
-            angle_rad = float(angle[:-3])
-            angle_deg = math.degrees(angle_rad)
-        else:
-            angle_deg = float(angle)
-
-        # Determine mode: traditional (axis + origin) or frame-based (around)
-        if 'around' in params:
-            # Frame-based rotation using spatial reference
-            around_spec = params['around']
-
-            # Resolve the spatial reference
+    def _resolve_axis_vector(self, axis, context: str) -> Tuple[float, float, float]:
+        """Parse an axis spec (X/Y/Z string, [x,y,z] list, or spatial reference) to a 3-tuple."""
+        axis_map = {'X': (1, 0, 0), 'Y': (0, 1, 0), 'Z': (0, 0, 1)}
+        if isinstance(axis, str):
+            if axis in axis_map:
+                return axis_map[axis]
             try:
-                spatial_ref = self.spatial_resolver.resolve(around_spec)
+                spatial_ref = self.spatial_resolver.resolve(axis)
+                if spatial_ref.orientation is None:
+                    raise OperationsBuilderError(
+                        f"Axis reference '{axis}' resolved to a point without orientation. "
+                        f"Use a face, edge, or axis reference, or specify as 'around' parameter.",
+                        operation_name=context
+                    )
+                logger.debug(f"Resolved axis '{axis}' to orientation: {tuple(spatial_ref.orientation.tolist())}")
+                return tuple(spatial_ref.orientation.tolist())
+            except OperationsBuilderError:
+                raise
             except Exception as e:
                 raise OperationsBuilderError(
-                    f"Failed to resolve 'around' reference '{around_spec}': {str(e)}",
+                    f"Invalid axis '{axis}'. Must be X, Y, Z, [x,y,z], or a spatial reference.",
                     operation_name=context
                 ) from e
-
-            # Validate that we got a reference with orientation
-            if spatial_ref.orientation is None:
+        if isinstance(axis, list) and len(axis) == 3:
+            return tuple(axis)
+        if isinstance(axis, dict):
+            try:
+                spatial_ref = self.spatial_resolver.resolve(axis)
+                if spatial_ref.orientation is None:
+                    raise OperationsBuilderError(
+                        "Axis reference resolved to a point without orientation", operation_name=context
+                    )
+                return tuple(spatial_ref.orientation.tolist())
+            except OperationsBuilderError:
+                raise
+            except Exception as e:
                 raise OperationsBuilderError(
-                    f"Frame-based rotation requires 'around' reference with orientation, "
-                    f"but '{around_spec}' resolved to a point without orientation. "
-                    f"Use a face, edge, or axis reference.",
-                    operation_name=context
-                )
+                    f"Failed to resolve axis reference: {str(e)}", operation_name=context
+                ) from e
+        raise OperationsBuilderError(
+            f"Invalid axis: {axis}. Must be X|Y|Z, [x,y,z], or a spatial reference",
+            operation_name=context
+        )
 
-            # Use orientation as rotation axis
-            axis_vector = tuple(spatial_ref.orientation.tolist())
-            # Use position as rotation origin
-            origin_point = tuple(spatial_ref.position.tolist())
+    def _resolve_around_axis(self, around_spec, context: str):
+        """Resolve a frame-based 'around' reference. Returns (axis_vector, origin_point)."""
+        try:
+            spatial_ref = self.spatial_resolver.resolve(around_spec)
+        except Exception as e:
+            raise OperationsBuilderError(
+                f"Failed to resolve 'around' reference '{around_spec}': {str(e)}",
+                operation_name=context
+            ) from e
+        if spatial_ref.orientation is None:
+            raise OperationsBuilderError(
+                f"Frame-based rotation requires 'around' reference with orientation, "
+                f"but '{around_spec}' resolved to a point without orientation. "
+                f"Use a face, edge, or axis reference.",
+                operation_name=context
+            )
+        axis_vector = tuple(spatial_ref.orientation.tolist())
+        origin_point = tuple(spatial_ref.position.tolist())
+        logger.debug(f"Frame-based rotation around {around_spec}: axis={axis_vector}, origin={origin_point}")
+        return axis_vector, origin_point
 
-            logger.debug(f"Frame-based rotation around {around_spec}: axis={axis_vector}, origin={origin_point}")
+    def _apply_rotate(self, tracker: TransformTracker, params: Dict[str, Any], context: str):
+        """
+        Apply rotate transform. Supports two modes:
+        - Frame-based: angle + around (spatial reference with orientation)
+        - Traditional: angle + axis (X/Y/Z or [x,y,z]) + origin (rotation center)
+        Angle may be degrees (float) or radians ("Xrad" string).
+        """
+        if not isinstance(params, dict):
+            raise OperationsBuilderError(f"Rotate parameters must be a dict, got: {params}",
+                                         operation_name=context)
+        if 'angle' not in params:
+            raise OperationsBuilderError("Rotate missing required 'angle' field", operation_name=context)
 
+        angle_deg = self._parse_angle(params['angle'], context)
+
+        if 'around' in params:
+            axis_vector, origin_point = self._resolve_around_axis(params['around'], context)
         else:
-            # Traditional rotation with explicit axis and origin
             if 'axis' not in params:
                 raise OperationsBuilderError(
                     "Rotate missing required 'axis' field (or use 'around' for frame-based rotation)",
@@ -467,116 +477,45 @@ class OperationsBuilder:
                     "Rotate missing required 'origin' field (or use 'around' for frame-based rotation)",
                     operation_name=context
                 )
+            axis_vector = self._resolve_axis_vector(params['axis'], context)
+            origin_point = self._resolve_point(params['origin'], context)
 
-            # Parse axis
-            axis = params['axis']
-            if isinstance(axis, str):
-                # Check if it's a named axis (X, Y, Z) or a spatial reference
-                axis_map = {'X': (1, 0, 0), 'Y': (0, 1, 0), 'Z': (0, 0, 1)}
-                if axis in axis_map:
-                    # Named axis
-                    axis_vector = axis_map[axis]
-                else:
-                    # Try to resolve as spatial reference
-                    try:
-                        spatial_ref = self.spatial_resolver.resolve(axis)
-                        if spatial_ref.orientation is None:
-                            raise OperationsBuilderError(
-                                f"Axis reference '{axis}' resolved to a point without orientation. "
-                                f"Use a face, edge, or axis reference, or specify as 'around' parameter.",
-                                operation_name=context
-                            )
-                        axis_vector = tuple(spatial_ref.orientation.tolist())
-                        logger.debug(f"Resolved axis '{axis}' to orientation: {axis_vector}")
-                    except Exception as e:
-                        raise OperationsBuilderError(
-                            f"Invalid axis '{axis}'. Must be X, Y, Z, [x,y,z], or a spatial reference.",
-                            operation_name=context
-                        ) from e
-            elif isinstance(axis, list) and len(axis) == 3:
-                axis_vector = tuple(axis)
-            elif isinstance(axis, dict):
-                # Inline spatial reference
-                try:
-                    spatial_ref = self.spatial_resolver.resolve(axis)
-                    if spatial_ref.orientation is None:
-                        raise OperationsBuilderError(
-                            "Axis reference resolved to a point without orientation",
-                            operation_name=context
-                        )
-                    axis_vector = tuple(spatial_ref.orientation.tolist())
-                except Exception as e:
-                    raise OperationsBuilderError(
-                        f"Failed to resolve axis reference: {str(e)}",
-                        operation_name=context
-                    ) from e
-            else:
-                raise OperationsBuilderError(
-                    f"Invalid axis: {axis}. Must be X|Y|Z, [x,y,z], or a spatial reference",
-                    operation_name=context
-                )
-
-            # Resolve origin point (supports named points, lists, dicts, dot notation)
-            origin_spec = params['origin']
-            origin_point = self._resolve_point(origin_spec, context)
-
-        # Apply rotation
-        tracker.apply_transform({
-            'type': 'rotate',
-            'angle': angle_deg,
-            'axis': axis_vector,
-            'origin': origin_point
-        })
+        tracker.apply_transform({'type': 'rotate', 'angle': angle_deg,
+                                  'axis': axis_vector, 'origin': origin_point})
         logger.debug(f"Rotated {angle_deg}° around {axis_vector} at {origin_point}")
+
+    @staticmethod
+    def _calc_alignment_rotation(v1: np.ndarray, v2: np.ndarray) -> Tuple[np.ndarray, float]:
+        """Return (rotation_axis, angle_degrees) to rotate unit vector v1 onto unit vector v2."""
+        axis = np.cross(v1, v2)
+        axis_len = np.linalg.norm(axis)
+        if axis_len < 1e-10:
+            dot = np.dot(v1, v2)
+            if dot > 0.999:
+                return np.array([0.0, 0.0, 1.0]), 0.0
+            # Anti-parallel: pick a perpendicular axis for 180° rotation
+            perp = np.array([1.0, 0.0, 0.0]) if abs(v1[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+            ax = np.cross(v1, perp)
+            return ax / np.linalg.norm(ax), 180.0
+        return axis / axis_len, np.degrees(np.arccos(np.clip(np.dot(v1, v2), -1.0, 1.0)))
 
     def _apply_align_to_face(self, tracker: TransformTracker, params: Dict[str, Any], context: str):
         """
-        Apply align_to_face transform.
+        Apply align_to_face transform: rotate part's -Z to face normal, then translate to face position.
 
-        Aligns a part to a target face reference by:
-        1. Rotating to match the face normal (orientation)
-        2. Translating to the face position + optional offset along normal
-
-        Supports:
-        - face: face reference (string, dict, or SpatialRef)
-        - orientation: how to align ('normal' aligns part's -Z to face normal)
-        - offset: distance from face along normal (default: 0)
-
-        Args:
-            tracker: TransformTracker to apply to
-            params: align_to_face parameters
-            context: Context for error messages
-
-        Example:
-            align_to_face:
-              face: base.top_face
-              orientation: normal
-              offset: 5
+        Params: face (required), orientation ('normal'), offset (default 0).
         """
         if not isinstance(params, dict):
-            raise OperationsBuilderError(
-                f"align_to_face parameters must be a dict, got: {params}",
-                operation_name=context
-            )
-
-        # Validate required fields
+            raise OperationsBuilderError(f"align_to_face parameters must be a dict, got: {params}", operation_name=context)
         if 'face' not in params:
-            raise OperationsBuilderError(
-                "align_to_face missing required 'face' field",
-                operation_name=context
-            )
+            raise OperationsBuilderError("align_to_face missing required 'face' field", operation_name=context)
 
-        # Resolve face reference
         face_spec = params['face']
         try:
             face_ref = self.spatial_resolver.resolve(face_spec)
         except Exception as e:
-            raise OperationsBuilderError(
-                f"Failed to resolve face reference '{face_spec}': {str(e)}",
-                operation_name=context
-            ) from e
+            raise OperationsBuilderError(f"Failed to resolve face reference '{face_spec}': {str(e)}", operation_name=context) from e
 
-        # Validate that we got a face reference with orientation
         if face_ref.orientation is None:
             raise OperationsBuilderError(
                 f"align_to_face requires a face reference with normal (orientation), "
@@ -584,7 +523,6 @@ class OperationsBuilder:
                 operation_name=context
             )
 
-        # Get orientation mode (default: 'normal')
         orientation_mode = params.get('orientation', 'normal')
         if orientation_mode != 'normal':
             raise OperationsBuilderError(
@@ -592,76 +530,26 @@ class OperationsBuilder:
                 operation_name=context
             )
 
-        # Get offset along normal (default: 0)
+        target_normal = face_ref.orientation
         offset_distance = float(params.get('offset', 0))
 
-        # Step 1: Calculate rotation to align part's -Z axis to face normal
-        # Face normal is the target direction
-        target_normal = face_ref.orientation
-
-        # Part's current -Z axis in world coordinates (before rotation)
-        # Assuming part starts with -Z pointing down
-        part_z_axis = np.array([0.0, 0.0, -1.0])
-
-        # Calculate rotation axis and angle to align part_z_axis with target_normal
-        # Using Rodrigues' rotation formula
-
-        # Normalize vectors (should already be normalized, but be safe)
-        v1 = part_z_axis / np.linalg.norm(part_z_axis)
+        # Step 1: Rotate part's -Z axis to align with face normal
+        v1 = np.array([0.0, 0.0, -1.0])
         v2 = target_normal / np.linalg.norm(target_normal)
-
-        # Calculate rotation axis (cross product)
-        rotation_axis = np.cross(v1, v2)
-        rotation_axis_length = np.linalg.norm(rotation_axis)
-
-        # Check if vectors are parallel or anti-parallel
-        if rotation_axis_length < 1e-10:
-            # Vectors are parallel or anti-parallel
-            dot_product = np.dot(v1, v2)
-            if dot_product > 0.999:
-                # Already aligned, no rotation needed
-                rotation_angle_deg = 0.0
-                rotation_axis = np.array([0.0, 0.0, 1.0])  # Arbitrary axis
-            else:
-                # Anti-parallel, rotate 180° around perpendicular axis
-                # Choose a perpendicular axis
-                if abs(v1[0]) < 0.9:
-                    rotation_axis = np.cross(v1, np.array([1.0, 0.0, 0.0]))
-                else:
-                    rotation_axis = np.cross(v1, np.array([0.0, 1.0, 0.0]))
-                rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)
-                rotation_angle_deg = 180.0
-        else:
-            # Normal case: calculate rotation angle
-            rotation_axis = rotation_axis / rotation_axis_length
-
-            # Calculate angle using dot product
-            dot_product = np.dot(v1, v2)
-            # Clamp to [-1, 1] to avoid numerical errors
-            dot_product = np.clip(dot_product, -1.0, 1.0)
-            rotation_angle_rad = np.arccos(dot_product)
-            rotation_angle_deg = np.degrees(rotation_angle_rad)
-
-        # Apply rotation around current position (part's center)
-        if rotation_angle_deg > 1e-6:  # Only rotate if angle is significant
+        rotation_axis, rotation_angle_deg = self._calc_alignment_rotation(v1, v2)
+        if rotation_angle_deg > 1e-6:
             tracker.apply_transform({
                 'type': 'rotate',
                 'angle': rotation_angle_deg,
                 'axis': tuple(rotation_axis.tolist()),
-                'origin': 'current'  # Rotate around current position
+                'origin': 'current'
             })
             logger.debug(f"Rotated {rotation_angle_deg:.2f}° around {rotation_axis} to align with face normal")
 
         # Step 2: Translate to face position + offset along normal
         target_position = face_ref.position + (offset_distance * target_normal)
-
-        current_pos = np.array(list(tracker.current_position))
-        translation = target_position - current_pos
-
-        tracker.apply_transform({
-            'type': 'translate',
-            'offset': list(translation)
-        })
+        translation = target_position - np.array(list(tracker.current_position))
+        tracker.apply_transform({'type': 'translate', 'offset': list(translation)})
         logger.debug(f"Translated to face position {face_ref.position} + offset {offset_distance} along normal")
 
     def _resolve_point(self, point_spec: Any, context: str) -> Tuple[float, float, float]:

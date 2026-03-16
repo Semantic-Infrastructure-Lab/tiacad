@@ -112,77 +112,40 @@ class ThreeMFExporter:
                 f"Failed to export 3MF: {str(e)}"
             ) from e
 
-    def _create_material_groups(self, model, parts_registry) -> Dict[str, Tuple]:
-        """
-        Create BaseMaterialGroup with all unique materials.
-
-        Returns:
-            material_map: Dict mapping material_key -> (resource_id, property_id)
-        """
-        # Collect unique materials
-        unique_materials = {}
-
+    def _collect_unique_materials(self, parts_registry) -> Dict:
+        """Collect unique materials/colors from all parts, keyed by mat_key."""
+        unique: Dict = {}
         for part_name in parts_registry.list_parts():
             part = parts_registry.get(part_name)
-
-            # Determine material key
-            if 'material' in part.metadata:
-                # Named material from library
+            if 'material' in part.metadata and 'color' in part.metadata:
                 mat_key = f"mat_{part.metadata['material']}"
-                if mat_key not in unique_materials:
-                    # Get RGBA from metadata
-                    if 'color' in part.metadata:
-                        r, g, b, a = part.metadata['color']
-                        unique_materials[mat_key] = {
-                            'name': part.metadata['material'],
-                            'color': (r, g, b, a)
-                        }
-
+                if mat_key not in unique:
+                    r, g, b, a = part.metadata['color']
+                    unique[mat_key] = {'name': part.metadata['material'], 'color': (r, g, b, a)}
             elif 'color' in part.metadata:
-                # Color-only (no named material)
                 r, g, b, a = part.metadata['color']
-                # Create key from color
                 mat_key = f"color_{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}"
-                if mat_key not in unique_materials:
-                    unique_materials[mat_key] = {
-                        'name': f"Color RGB({int(r*255)},{int(g*255)},{int(b*255)})",
-                        'color': (r, g, b, a)
-                    }
+                if mat_key not in unique:
+                    unique[mat_key] = {'name': f"Color RGB({int(r*255)},{int(g*255)},{int(b*255)})", 'color': (r, g, b, a)}
+        return unique
 
-        # No materials? Return empty map
+    def _create_material_groups(self, model, parts_registry) -> Dict[str, Tuple]:
+        """Create BaseMaterialGroup with all unique materials; returns material_map."""
+        unique_materials = self._collect_unique_materials(parts_registry)
         if not unique_materials:
             logger.debug("No materials found, using default gray")
             return {}
 
-        # Create BaseMaterialGroup
         material_group = model.AddBaseMaterialGroup()
         group_resource_id = material_group.GetResourceID()
-
-        # Add each material to the group
         material_map = {}
         for mat_key, mat_info in unique_materials.items():
-            # Create lib3mf Color
             r, g, b, a = mat_info['color']
             color = self.lib3mf.Color()
-            color.Red = int(r * 255)
-            color.Green = int(g * 255)
-            color.Blue = int(b * 255)
-            color.Alpha = int(a * 255)
-
-            # Add material and get PropertyID
-            property_id = material_group.AddMaterial(
-                mat_info['name'],
-                color
-            )
-
-            # Store mapping
+            color.Red, color.Green, color.Blue, color.Alpha = int(r*255), int(g*255), int(b*255), int(a*255)
+            property_id = material_group.AddMaterial(mat_info['name'], color)
             material_map[mat_key] = (group_resource_id, property_id)
-
-            logger.debug(
-                f"Added material '{mat_info['name']}' "
-                f"(RGB: {int(r*255)}, {int(g*255)}, {int(b*255)})"
-            )
-
+            logger.debug(f"Added material '{mat_info['name']}' (RGB: {int(r*255)}, {int(g*255)}, {int(b*255)})")
         return material_map
 
     def _create_mesh_object(self, model, part, part_name: str):

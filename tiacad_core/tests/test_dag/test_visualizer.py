@@ -5,7 +5,6 @@ Author: TIA
 Version: 3.2.0
 """
 
-import pytest
 import tempfile
 from pathlib import Path
 from io import StringIO

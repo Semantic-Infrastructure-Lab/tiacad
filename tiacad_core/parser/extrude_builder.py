@@ -16,6 +16,7 @@ from ..part import Part, PartRegistry
 from ..sketch import Sketch2D
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
+from tiacad_core.sketch import Text2D
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
@@ -79,270 +80,133 @@ class ExtrudeBuilder:
             return (line, col)
         return (None, None)
 
+    def _validate_extrude_spec(self, name: str, spec: Dict[str, Any]):
+        """Validate extrude spec fields. Returns (sketch, sketch_name, distance, direction, taper)."""
+        def _err(field, msg):
+            line, col = self._get_line_info(['operations', name, field])
+            raise ExtrudeBuilderError(msg, operation_name=name, line=line, column=col)
+
+        sketch_name = spec.get('sketch')
+        if not sketch_name:
+            _err('sketch', f"Extrude operation '{name}' missing required 'sketch' field")
+        if sketch_name not in self.sketches:
+            available = ', '.join(self.sketches.keys())
+            _err('sketch', f"Sketch '{sketch_name}' not found for extrude operation '{name}'. Available sketches: {available}")
+        sketch = self.sketches[sketch_name]
+
+        distance = spec.get('distance')
+        if distance is None:
+            _err('distance', f"Extrude operation '{name}' missing required 'distance' field")
+        if not isinstance(distance, (int, float)) or distance <= 0:
+            _err('distance', f"Extrude distance must be positive number, got {distance}")
+
+        direction = spec.get('direction')
+        if direction is None:
+            direction = self._default_direction(sketch.plane)
+            logger.debug(f"Extrude '{name}': Auto-detected direction {direction} for {sketch.plane} plane")
+        else:
+            direction = str(direction).upper()
+            if direction not in ['X', 'Y', 'Z']:
+                _err('direction', f"Invalid extrude direction '{direction}'. Must be X, Y, or Z")
+
+        taper = spec.get('taper', 0)
+        if not isinstance(taper, (int, float)):
+            _err('taper', f"Taper angle must be a number, got {taper}")
+
+        return sketch, sketch_name, distance, direction, taper
+
     def execute_extrude_operation(self, name: str, spec: Dict[str, Any]):
         """
-        Execute an extrude operation.
-
-        Creates a 3D part by extruding a 2D sketch profile.
+        Execute an extrude operation — creates 3D geometry by extruding a 2D sketch profile.
 
         Args:
             name: Result part name
-            spec: Extrude specification with:
-                - sketch: Name of sketch to extrude (required)
-                - distance: Extrusion distance (required)
-                - direction: Extrude direction X|Y|Z (optional, auto-detected)
-                - taper: Draft angle in degrees (optional, default: 0)
+            spec: Extrude spec (sketch, distance required; direction, taper optional)
 
         Raises:
             ExtrudeBuilderError: If operation fails
         """
         try:
-            # Resolve parameters
             resolved_spec = self.resolver.resolve(spec)
+            sketch, sketch_name, distance, direction, taper = self._validate_extrude_spec(name, resolved_spec)
 
-            # Validate and get sketch
-            sketch_name = resolved_spec.get('sketch')
-            if not sketch_name:
-                line, col = self._get_line_info(['operations', name, 'sketch'])
-                raise ExtrudeBuilderError(
-                    f"Extrude operation '{name}' missing required 'sketch' field",
-                    operation_name=name,
-                    line=line,
-                    column=col
-                )
-
-            if sketch_name not in self.sketches:
-                line, col = self._get_line_info(['operations', name, 'sketch'])
-                available = ', '.join(self.sketches.keys())
-                raise ExtrudeBuilderError(
-                    f"Sketch '{sketch_name}' not found for extrude operation '{name}'. "
-                    f"Available sketches: {available}",
-                    operation_name=name,
-                    line=line,
-                    column=col
-                )
-
-            sketch = self.sketches[sketch_name]
-
-            # Validate and get distance
-            distance = resolved_spec.get('distance')
-            if distance is None:
-                line, col = self._get_line_info(['operations', name, 'distance'])
-                raise ExtrudeBuilderError(
-                    f"Extrude operation '{name}' missing required 'distance' field",
-                    operation_name=name,
-                    line=line,
-                    column=col
-                )
-
-            if not isinstance(distance, (int, float)) or distance <= 0:
-                line, col = self._get_line_info(['operations', name, 'distance'])
-                raise ExtrudeBuilderError(
-                    f"Extrude distance must be positive number, got {distance}",
-                    operation_name=name,
-                    line=line,
-                    column=col
-                )
-
-            # Get direction (default based on sketch plane)
-            direction = resolved_spec.get('direction')
-            if direction is None:
-                direction = self._default_direction(sketch.plane)
-                logger.debug(
-                    f"Extrude '{name}': Auto-detected direction {direction} "
-                    f"for {sketch.plane} plane"
-                )
-            else:
-                direction = str(direction).upper()
-                if direction not in ['X', 'Y', 'Z']:
-                    line, col = self._get_line_info(['operations', name, 'direction'])
-                    raise ExtrudeBuilderError(
-                        f"Invalid extrude direction '{direction}'. Must be X, Y, or Z",
-                        operation_name=name,
-                        line=line,
-                        column=col
-                    )
-
-            # Get taper angle (optional)
-            taper = resolved_spec.get('taper', 0)
-            if not isinstance(taper, (int, float)):
-                line, col = self._get_line_info(['operations', name, 'taper'])
-                raise ExtrudeBuilderError(
-                    f"Taper angle must be a number, got {taper}",
-                    operation_name=name,
-                    line=line,
-                    column=col
-                )
-
-            # Build geometry
-            logger.info(
-                f"Extruding sketch '{sketch_name}' by {distance} in {direction} direction"
-                + (f" with {taper}° taper" if taper != 0 else "")
-            )
+            logger.info(f"Extruding sketch '{sketch_name}' by {distance} in {direction} direction"
+                        + (f" with {taper}° taper" if taper != 0 else ""))
 
             geometry = self._extrude_sketch(sketch, distance, direction, taper, name)
-
-            # Create part
-            part = Part(
-                name=name,
-                geometry=geometry,
-                metadata={
-                    'source': 'extrude',
-                    'sketch': sketch_name,
-                    'operation_type': 'extrude',
-                    'distance': distance,
-                    'direction': direction,
-                    'taper': taper
-                }
-            )
-
-            # Add to registry
-            self.registry.add(part)
+            self.registry.add(Part(name=name, geometry=geometry, metadata={
+                'source': 'extrude', 'sketch': sketch_name, 'operation_type': 'extrude',
+                'distance': distance, 'direction': direction, 'taper': taper
+            }))
             logger.debug(f"Created extruded part '{name}' from sketch '{sketch_name}'")
 
         except ExtrudeBuilderError:
-            # Re-raise ExtrudeBuilderError as-is
             raise
         except Exception as e:
             line, col = self._get_line_info(['operations', name])
-            raise ExtrudeBuilderError(
-                f"Failed to execute extrude operation '{name}': {str(e)}",
-                operation_name=name,
-                line=line,
-                column=col
-            ) from e
+            raise ExtrudeBuilderError(f"Failed to execute extrude operation '{name}': {str(e)}",
+                                       operation_name=name, line=line, column=col) from e
 
     def _default_direction(self, plane: str) -> str:
-        """
-        Get default extrude direction for a sketch plane.
-
-        Args:
-            plane: Sketch plane (XY, XZ, or YZ)
-
-        Returns:
-            Default direction (X, Y, or Z)
-        """
+        """Get default extrude direction for a sketch plane."""
         return self.DEFAULT_DIRECTIONS.get(plane, 'Z')
 
+    def _make_sketch_workplane(self, plane: str, origin) -> cq.Workplane:
+        """Create a workplane for the given plane, centered at origin if non-zero."""
+        wp = cq.Workplane(plane)
+        if origin != (0, 0, 0):
+            if plane == 'XY':
+                wp = wp.center(origin[0], origin[1])
+            elif plane == 'XZ':
+                wp = wp.center(origin[0], origin[2])
+            elif plane == 'YZ':
+                wp = wp.center(origin[1], origin[2])
+        return wp
+
+    def _build_shape_solid(self, shape, workplane, distance: float,
+                           taper: float, factor: float = 1.0):
+        """Build a 3D solid from a shape on workplane. Handles Text2D and regular shapes."""
+        dist = distance * factor
+        if isinstance(shape, Text2D):
+            return shape.build(workplane, extrusion_distance=dist)
+        built_wp = shape.build(workplane)
+        return built_wp.extrude(dist) if taper == 0 else built_wp.extrude(dist, taper=taper)
+
     def _extrude_sketch(self, sketch: Sketch2D, distance: float,
-                       direction: str, taper: float, context: str) -> cq.Workplane:
+                        direction: str, taper: float, context: str) -> cq.Workplane:
         """
         Extrude a sketch profile to create 3D geometry.
-
-        Handles both simple extrusion and complex sketches with subtract operations.
-        For sketches with holes/subtracts, extrudes additive and subtractive shapes
-        separately, then performs boolean operations.
-
-        Args:
-            sketch: Sketch2D to extrude
-            distance: Extrusion distance
-            direction: Extrusion direction (X, Y, or Z)
-            taper: Draft angle in degrees (0 = no taper)
-            context: Operation name for error messages
-
-        Returns:
-            CadQuery Workplane with extruded 3D geometry
-
-        Raises:
-            ExtrudeBuilderError: If extrusion fails
+        Handles add/subtract shapes separately via boolean union/cut.
         """
         try:
-            # Check if requested direction matches plane normal
-            expected_direction = self._default_direction(sketch.plane)
-            if direction != expected_direction:
-                logger.warning(
-                    f"Extrude direction {direction} differs from sketch plane {sketch.plane} "
-                    f"normal ({expected_direction}). This may produce unexpected results."
-                )
+            expected = self._default_direction(sketch.plane)
+            if direction != expected:
+                logger.warning(f"Extrude direction {direction} differs from sketch plane "
+                               f"{sketch.plane} normal ({expected}). This may produce unexpected results.")
 
-            # Separate shapes by operation
             add_shapes = [s for s in sketch.shapes if s.operation == 'add']
             subtract_shapes = [s for s in sketch.shapes if s.operation == 'subtract']
 
-            # Build base geometry from additive shapes
-            base_wp = cq.Workplane(sketch.plane)
-            if sketch.origin != (0, 0, 0):
-                if sketch.plane == 'XY':
-                    base_wp = base_wp.center(sketch.origin[0], sketch.origin[1])
-                elif sketch.plane == 'XZ':
-                    base_wp = base_wp.center(sketch.origin[0], sketch.origin[2])
-                elif sketch.plane == 'YZ':
-                    base_wp = base_wp.center(sketch.origin[1], sketch.origin[2])
-
-            # Build and extrude first additive shape
-            # Special case for Text2D: it creates 3D geometry directly
-            from tiacad_core.sketch import Text2D
-            if isinstance(add_shapes[0], Text2D):
-                # Text already creates 3D geometry at the specified distance
-                base_wp = add_shapes[0].build(base_wp, extrusion_distance=distance)
-                geometry = base_wp
-            else:
-                # Regular shapes create 2D wires, then extrude
-                base_wp = add_shapes[0].build(base_wp)
-                if taper == 0:
-                    geometry = base_wp.extrude(distance)
-                else:
-                    geometry = base_wp.extrude(distance, taper=taper)
-
-            # Union remaining additive shapes
-            for shape in add_shapes[1:]:
-                shape_wp = cq.Workplane(sketch.plane)
-                if sketch.origin != (0, 0, 0):
-                    if sketch.plane == 'XY':
-                        shape_wp = shape_wp.center(sketch.origin[0], sketch.origin[1])
-                    elif sketch.plane == 'XZ':
-                        shape_wp = shape_wp.center(sketch.origin[0], sketch.origin[2])
-                    elif sketch.plane == 'YZ':
-                        shape_wp = shape_wp.center(sketch.origin[1], sketch.origin[2])
-
-                # Special case for Text2D
-                if isinstance(shape, Text2D):
-                    # Text already creates 3D geometry
-                    shape_solid = shape.build(shape_wp, extrusion_distance=distance)
-                else:
-                    # Regular shapes create 2D wires, then extrude
-                    shape_wp = shape.build(shape_wp)
-                    if taper == 0:
-                        shape_solid = shape_wp.extrude(distance)
-                    else:
-                        shape_solid = shape_wp.extrude(distance, taper=taper)
-                geometry = geometry.union(shape_solid)
-
-            # Subtract shapes (make holes that go all the way through)
-            for shape in subtract_shapes:
-                shape_wp = cq.Workplane(sketch.plane)
-                if sketch.origin != (0, 0, 0):
-                    if sketch.plane == 'XY':
-                        shape_wp = shape_wp.center(sketch.origin[0], sketch.origin[1])
-                    elif sketch.plane == 'XZ':
-                        shape_wp = shape_wp.center(sketch.origin[0], sketch.origin[2])
-                    elif sketch.plane == 'YZ':
-                        shape_wp = shape_wp.center(sketch.origin[1], sketch.origin[2])
-
-                # Special case for Text2D
-                # Extrude slightly longer to ensure clean cut through
-                if isinstance(shape, Text2D):
-                    # Text already creates 3D geometry
-                    cut_solid = shape.build(shape_wp, extrusion_distance=distance * 1.1)
-                else:
-                    # Regular shapes create 2D wires, then extrude
-                    shape_wp = shape.build(shape_wp)
-                    cut_solid = shape_wp.extrude(distance * 1.1)
-                geometry = geometry.cut(cut_solid)
-
-            logger.debug(
-                f"Extruded {distance} units: {len(add_shapes)} add, "
-                f"{len(subtract_shapes)} subtract"
-                + (f", {taper}° taper" if taper != 0 else "")
+            geometry = self._build_shape_solid(
+                add_shapes[0], self._make_sketch_workplane(sketch.plane, sketch.origin), distance, taper
             )
+            for shape in add_shapes[1:]:
+                geometry = geometry.union(self._build_shape_solid(
+                    shape, self._make_sketch_workplane(sketch.plane, sketch.origin), distance, taper
+                ))
+            for shape in subtract_shapes:
+                geometry = geometry.cut(self._build_shape_solid(
+                    shape, self._make_sketch_workplane(sketch.plane, sketch.origin), distance, taper, factor=1.1
+                ))
 
+            logger.debug(f"Extruded {distance} units: {len(add_shapes)} add, "
+                         f"{len(subtract_shapes)} subtract"
+                         + (f", {taper}° taper" if taper != 0 else ""))
             return geometry
 
         except Exception as e:
-            raise ExtrudeBuilderError(
-                f"Failed to extrude sketch '{sketch.name}': {str(e)}",
-                operation_name=context
-            ) from e
+            raise ExtrudeBuilderError(f"Failed to extrude sketch '{sketch.name}': {str(e)}",
+                                       operation_name=context) from e
 
     def __repr__(self) -> str:
         return (

@@ -17,7 +17,6 @@ Version: 1.0 (v3.1)
 """
 
 from typing import Dict, Optional
-import math
 
 from tiacad_core.part import Part
 

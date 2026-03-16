@@ -17,7 +17,6 @@ import pytest
 import numpy as np
 import math
 
-from tiacad_core.testing.measurements import measure_distance
 from tiacad_core.testing.orientation import (
     get_orientation_angles,
     get_normal_vector,
