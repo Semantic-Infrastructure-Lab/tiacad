@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-03-16 (session: x-ray-beta-0316)
+
+#### Finishing Builder — Fillet/Chamfer Now Create Named Result Parts (`tiacad_core/parser/finishing_builder.py`)
+
+Previously `finishing` operations (fillet/chamfer) modified the input part
+in-place and never registered the result under the operation name. Any YAML
+with `export: default_part: <finishing-op-name>` would fail at export (part
+not found). Root cause: all other builders use `registry.add(Part(name=name,
+...))` but finishing builder only mutated `part.geometry`.
+
+- **Fix**: replace in-place mutation with `registry.add(Part(name=name, ...))` in
+  both `_execute_fillet` and `_execute_chamfer`
+- **Re-enabled**: `examples/chamfered_bracket.yaml` and `examples/formats_demo.yaml`
+  had finishing ops commented out with "temporarily disabled" — now active
+- **Tests updated**: 22 finishing tests rewritten to check the result part, not
+  the input (which is now correctly left unchanged)
+
+### Added - 2026-03-16 (session: x-ray-beta-0316)
+
+#### Trust Scenario: PCB Standoff Assembly (`examples/trust/pcb_standoff_assembly.yaml`)
+
+Richest multi-component trust scenario. Exercises stdlib imports, transforms,
+and multi-part rendering: base plate → 4 M3 standoffs at corners → PCB board →
+4 M3 screws. 26 parts total. Key visual tells: 3-layer Z-stack in Front/Side
+views, 4 corner circles + two nested rectangles in Top view.
+
+#### Trust Renderer: Smooth Mesh to Reduce Tessellation Stripes (`tiacad_core/visual/trust_renderer.py`)
+
+Added `mesh.smooth(n_iter=20, relaxation_factor=0.1)` after STL import in
+`_geometry_to_pyvista()`. Eliminates visible tessellation stripes on curved
+surfaces (cylinders, spheres, swept pipes) without changing geometry.
+
+### Fixed - 2026-03-16 (session: crystalline-dawn-0316)
+
+#### Sweep Multi-Segment Bug (`tiacad_core/parser/sweep_builder.py`)
+
+`sweep(..., multisection=True)` was silently discarding all path segments after
+the first. All multi-point sweeps (pipes, rails) were producing a single straight
+cylinder regardless of path. Fix: removed `multisection=True`; added spline
+fallback for non-planar paths with sharp 3D corners that OCCT cannot sweep as a
+polyline. Visual regression reference for `pipe_sweep` updated accordingly.
+Tests: 1406 pass, 0 fail.
+
+### Added - 2026-03-16 (session: crystalline-dawn-0316)
+
+#### 10 New Trust Scenarios (`examples/trust/`)
+
+Extended trust renderer coverage from 7 scenarios to 17, covering features
+that had zero visual verification:
+
+| File | Feature verified |
+|---|---|
+| `sphere_basic.yaml` | Sphere primitive — circle in all 4 views |
+| `cone_basic.yaml` | Cone — triangle front/side, circle top |
+| `boolean_union.yaml` | Union op — plus/cross shape in top view |
+| `boolean_intersect.yaml` | Intersection op — small cube from two crossing slabs |
+| `linear_pattern.yaml` | 5 colored boxes in a row (distinct colors per instance) |
+| `circular_pattern.yaml` | Flat plate with 6-hole bolt circle + center hole |
+| `revolve_basic.yaml` | Spool profile — I-beam in side view confirms revolve |
+| `sweep_basic.yaml` | L-pipe — 90° bend visible in front (XZ) view |
+| `hull_spheres.yaml` | Rounded-triangle blob from 3 positioned spheres |
+| `loft_rect_to_circle.yaml` | Trapezoid front, circle top, square bottom |
+
+Gallery: `trust_output/gallery.html` (17 scenarios, all 17 pass).
+
+Discovered along the way: `origin:` as list `[x,y,z]` on parts is valid
+positioning (not the same as the silently-ignored `position:` key).
+Expression parameters `${expr}` cannot appear inside YAML flow sequences `[...]`;
+use block sequences for any point that involves a parameter expression.
+
 ### Added - 2026-03-16 (session: turbulent-mist-0316)
 
 #### M4/M5/M6 Hex Nuts (ISO 4032)
