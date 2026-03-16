@@ -1,0 +1,48 @@
+schema_version: "2.0"
+# TRUST: Base plate + two posts, one at each end along X.
+# base: 100×40×8, centered at origin → Z=-4 to +4
+# post_raw: radius=8, height=35
+# post_left: translated to X=-35, Z=+21.5 → sits on left end of base
+# post_right: translated to X=+35, Z=+21.5 → sits on right end of base
+# (Z = 4 (plate top) + 17.5 (half post) = 21.5)
+#
+# Expect: Orange plate at bottom. Blue post on left, green post on right.
+# Top (XY): two circles at each end of the orange rectangle.
+# Front (XZ): plate extending to both sides, two posts rising symmetrically.
+
+metadata:
+  name: three_part_assembly
+  description: Base plate + two posts — verifies multi-part layout and color distinction
+
+parts:
+  base:
+    primitive: box
+    color: "#FF9800"
+    parameters:
+      width: 100
+      depth: 40
+      height: 8
+
+  post_raw:
+    primitive: cylinder
+    parameters:
+      radius: 8
+      height: 35
+
+operations:
+  post_left:
+    type: transform
+    input: post_raw
+    color: "#2196F3"
+    transforms:
+      - translate: [-35, 0, 21.5]
+
+  post_right:
+    type: transform
+    input: post_raw
+    color: "#4CAF50"
+    transforms:
+      - translate: [35, 0, 21.5]
+
+export:
+  default_part: base

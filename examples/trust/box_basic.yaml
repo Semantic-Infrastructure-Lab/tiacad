@@ -1,0 +1,21 @@
+schema_version: "2.0"
+# TRUST: Single box, 50×30×20mm, centered at origin.
+# Expect: Red box. Width (X) is widest, depth (Y) medium, height (Z) shortest.
+# Front view: 50 wide × 20 tall. Top view: 50 × 30 rectangle.
+
+metadata:
+  name: box_basic
+  description: Single box — verifies box primitive dimensions and axis mapping
+
+parts:
+  box:
+    primitive: box
+    color: "#E63946"
+    parameters:
+      width: 50    # X — widest
+      depth: 30    # Y — medium
+      height: 20   # Z — shortest
+    origin: center
+
+export:
+  default_part: box

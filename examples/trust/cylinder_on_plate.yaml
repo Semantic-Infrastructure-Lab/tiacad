@@ -1,0 +1,40 @@
+schema_version: "2.0"
+# TRUST: Flat plate with a cylinder standing centered on top.
+# plate:  80×60×5, centered at origin → top face at Z=+2.5
+# post_raw: radius=10, height=25, at origin → Z=-12.5 to +12.5
+# post: translated to Z=+15 → base at Z=+2.5, top at Z=+27.5
+#
+# Expect: Orange flat plate (wide). Blue cylinder standing upright on top, centered.
+# Front (XZ): plate wide/flat, cylinder narrow/tall rising from center.
+# Top (XY): circle centered on rectangle.
+# Side (YZ): plate wider in Y than cylinder (60 vs 20).
+
+metadata:
+  name: cylinder_on_plate
+  description: Plate with upright centered cylinder — verifies XY centering and Z stacking
+
+parts:
+  plate:
+    primitive: box
+    color: "#FF9800"
+    parameters:
+      width: 80
+      depth: 60
+      height: 5
+
+  post_raw:
+    primitive: cylinder
+    parameters:
+      radius: 10
+      height: 25
+
+operations:
+  post:
+    type: transform
+    input: post_raw
+    color: "#2196F3"
+    transforms:
+      - translate: [0, 0, 15]    # 2.5 (plate top) + 12.5 (half cylinder)
+
+export:
+  default_part: plate

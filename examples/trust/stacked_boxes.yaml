@@ -1,0 +1,41 @@
+schema_version: "2.0"
+# TRUST: Two boxes stacked along Z. Red box on bottom, blue box on top. Flush, no gap.
+#
+# bottom: 60×40×20, centered at origin → Z=-10 to Z=+10
+# top_raw: 40×30×15, centered at origin
+# top: translated to Z=+17.5 → Z=+10 to Z=+25 (flush on top of bottom)
+#
+# Expect: Red wider/shorter box at bottom. Blue smaller box sitting flush on top.
+# Front (XZ): step profile — red below, blue narrower on top.
+# Top (XY): blue rectangle centered inside red border.
+
+metadata:
+  name: stacked_boxes
+  description: Two boxes stacked — verifies Z positioning and flush contact
+
+parts:
+  bottom:
+    primitive: box
+    color: "#E63946"
+    parameters:
+      width: 60
+      depth: 40
+      height: 20
+
+  top_raw:
+    primitive: box
+    parameters:
+      width: 40
+      depth: 30
+      height: 15
+
+operations:
+  top:
+    type: transform
+    input: top_raw
+    color: "#2196F3"
+    transforms:
+      - translate: [0, 0, 17.5]   # 10 (half bottom) + 7.5 (half top) = flush
+
+export:
+  default_part: bottom

@@ -1,0 +1,40 @@
+schema_version: "2.0"
+# TRUST: Box with a cylindrical hole through it along Z.
+# Box: 60×60×20, centered at origin.
+# Hole: radius=12, height=30 (taller than box so it punches clean through).
+# Cylinder is centered at X=0, Y=0 — dead center of box.
+#
+# Expect: Green box with a round hole through the top face.
+# Top view: square with circular cutout in the center.
+# Front/side views: box profile with hole visible at center.
+
+metadata:
+  name: boolean_subtract
+  description: Box with centered cylindrical hole — verifies boolean subtract
+
+parts:
+  plate:
+    primitive: box
+    color: "#4CAF50"
+    parameters:
+      width: 60
+      depth: 60
+      height: 20
+    origin: center
+
+  hole_cyl:
+    primitive: cylinder
+    parameters:
+      radius: 12
+      height: 30    # taller than plate so it cuts clean through
+    origin: center
+
+operations:
+  result:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract: [hole_cyl]
+
+export:
+  default_part: result

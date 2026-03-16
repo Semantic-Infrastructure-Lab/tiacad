@@ -1,0 +1,39 @@
+schema_version: "2.0"
+# TRUST: Two boxes side by side along X. No overlap, 20mm gap between them.
+# Raw box is 30wide×20deep×20tall.
+# left: translated to X=-25  → occupies X=-40 to X=-10
+# right: translated to X=+25 → occupies X=+10 to X=+40
+# Gap from X=-10 to X=+10 = 20mm.
+#
+# Expect: Two equal-sized boxes at the same height, clearly separated with visible gap.
+# Front (XZ): two squares side by side with gap. Top (XY): two rectangles with gap.
+
+metadata:
+  name: side_by_side
+  description: Two boxes side by side — verifies X positioning and separation
+
+parts:
+  box_raw:
+    primitive: box
+    parameters:
+      width: 30
+      depth: 20
+      height: 20
+
+operations:
+  left:
+    type: transform
+    input: box_raw
+    color: "#E63946"
+    transforms:
+      - translate: [-25, 0, 0]
+
+  right:
+    type: transform
+    input: box_raw
+    color: "#2196F3"
+    transforms:
+      - translate: [25, 0, 0]
+
+export:
+  default_part: left
