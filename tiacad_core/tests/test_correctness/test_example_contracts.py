@@ -397,3 +397,162 @@ class TestComponentImportDemo:
             f"screw_short ({short['depth']:.1f}mm) should be shorter than "
             f"screw_long ({long_['depth']:.1f}mm)"
         )
+
+
+# ---------------------------------------------------------------------------
+# Tier 2: hardware_assembly_demo — 25-part assembly geometric contracts
+# ---------------------------------------------------------------------------
+
+# Ground truth from `tiacad check examples/hardware_assembly_demo.yaml` 2026-03-16
+# Axis convention: get_dimensions() → X=width, Y=height, Z=depth
+# CadQuery maps: YAML width→X, YAML height→Y/Z depending on build orientation.
+# plate: box with width=100, height=4 (thin), depth=80 → X=100, Y=4, Z=80
+
+class TestHardwareAssemblyDemo:
+    """
+    hardware_assembly_demo.yaml: 25-part assembly using 6 imported components.
+
+    Imported: m3_screw (shaft r=1.5, length=8), m4_screw (shaft r=2.0, length=16),
+              m5_screw (shaft r=2.5, length=20), m6_bolt (shaft r=3.0, length=25),
+              m3_washer (OD=7mm, thickness=0.5mm),
+              m3_standoff (body OD=6mm, height=8mm).
+    Local: plate box 100×4×80.
+    """
+
+    def _parse(self):
+        return TiaCADParser.parse_file(str(EXAMPLES / "hardware_assembly_demo.yaml"))
+
+    def test_plate_dimensions(self):
+        """Plate: width=100, thickness=4, depth=80 → vol=32,000mm³."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("plate"))
+        assert dims["volume"] == pytest.approx(32_000.0, abs=VOL_TOL)
+        assert dims["width"] == pytest.approx(100.0, abs=TOL)
+
+    def test_m3_shaft_dimensions(self):
+        """M3 screw shaft: radius=1.5mm (diameter=3mm), length=8mm."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("m3.shaft"))
+        assert dims["width"] == pytest.approx(3.0, abs=TOL)    # diameter
+        assert dims["depth"] == pytest.approx(8.0, abs=TOL)    # length
+
+    def test_m4_shaft_dimensions(self):
+        """M4 screw shaft: radius=2mm (diameter=4mm), length=16mm."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("m4.shaft"))
+        assert dims["width"] == pytest.approx(4.0, abs=TOL)
+        assert dims["depth"] == pytest.approx(16.0, abs=TOL)
+
+    def test_m5_shaft_dimensions(self):
+        """M5 screw shaft: radius=2.5mm (diameter=5mm), length=20mm."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("m5.shaft"))
+        assert dims["width"] == pytest.approx(5.0, abs=TOL)
+        assert dims["depth"] == pytest.approx(20.0, abs=TOL)
+
+    def test_m6_shaft_dimensions(self):
+        """M6 bolt shaft: radius=3mm (diameter=6mm), length=25mm."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("m6.shaft"))
+        assert dims["width"] == pytest.approx(6.0, abs=TOL)
+        assert dims["depth"] == pytest.approx(25.0, abs=TOL)
+
+    def test_washer_outer_diameter(self):
+        """M3 washer outer disc: OD=7mm, thickness=0.5mm."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("washer.disc"))
+        assert dims["width"] == pytest.approx(7.0, abs=TOL)
+        assert dims["depth"] == pytest.approx(0.5, abs=0.05)
+
+    def test_washer_boolean_smaller_than_disc(self):
+        """Boolean washer has bore removed — volume < disc volume."""
+        doc = self._parse()
+        disc_vol = get_dimensions(doc.parts.get("washer.disc"))["volume"]
+        washer_vol = get_dimensions(doc.parts.get("washer.washer"))["volume"]
+        assert washer_vol < disc_vol, "boolean subtract must remove material from washer"
+        assert washer_vol > 0, "washer must have positive volume after subtract"
+
+    def test_washer_volume(self):
+        """M3 washer: π × (3.5² - 1.6²) × 0.5 ≈ 15.2 mm³."""
+        import math
+        expected = math.pi * (3.5**2 - 1.6**2) * 0.5
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("washer.washer"))
+        assert dims["volume"] == pytest.approx(expected, abs=0.5)
+
+    def test_standoff_height(self):
+        """M3 standoff: height=8mm."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("standoff.body"))
+        assert dims["depth"] == pytest.approx(8.0, abs=TOL)
+
+    def test_standoff_outer_diameter(self):
+        """M3 standoff body: OD=6mm (radius=3mm)."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("standoff.body"))
+        assert dims["width"] == pytest.approx(6.0, abs=TOL)
+
+    def test_standoff_boolean_smaller_than_body(self):
+        """Boolean standoff has M3 bore — volume < body volume."""
+        doc = self._parse()
+        body_vol = get_dimensions(doc.parts.get("standoff.body"))["volume"]
+        standoff_vol = get_dimensions(doc.parts.get("standoff.standoff"))["volume"]
+        assert standoff_vol < body_vol, "bore must remove material from standoff"
+        assert standoff_vol > 0
+
+    def test_all_25_parts_present(self):
+        """All 25 parts build without error."""
+        doc = self._parse()
+        assert len(doc.parts.list_parts()) == 25
+
+
+# ---------------------------------------------------------------------------
+# Tier 2: m3_nut stdlib component — polygon primitive geometric contracts
+# ---------------------------------------------------------------------------
+
+import math as _math
+_NUT_STDLIB = Path(__file__).parents[3] / "tiacad_core" / "stdlib" / "hardware" / "m3_nut.yaml"
+
+
+class TestM3NutContracts:
+    """
+    tiacad_core/stdlib/hardware/m3_nut.yaml: ISO 4032 M3 hex nut.
+
+    Parameters (defaults): diameter=6.35, thickness=2.4, bore_radius=1.5
+    Expected geometry:
+      - hex_body: hexagonal prism, circumscribed diameter=6.35, height=2.4
+      - bore: cylinder r=1.5, height≈2.41 (slight oversize for clean cut)
+      - nut (boolean difference): positive volume, outer = hex dims
+    """
+
+    def _parse(self):
+        return TiaCADParser.parse_file(str(_NUT_STDLIB))
+
+    def test_hex_body_builds(self):
+        doc = self._parse()
+        assert doc.parts.get("hex_body") is not None
+
+    def test_nut_has_positive_volume(self):
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("nut"))
+        assert dims["volume"] > 0
+
+    def test_nut_height_matches_thickness(self):
+        """Thickness=2.4 → nut Z extent ≈ 2.4mm."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("nut"))
+        assert dims["depth"] == pytest.approx(2.4, abs=TOL)
+
+    def test_nut_volume_less_than_full_hex(self):
+        """Bore must remove material — nut.vol < hex_body.vol."""
+        doc = self._parse()
+        body_vol = get_dimensions(doc.parts.get("hex_body"))["volume"]
+        nut_vol = get_dimensions(doc.parts.get("nut"))["volume"]
+        assert nut_vol < body_vol
+
+    def test_bore_volume_matches_formula(self):
+        """bore: cylinder r=1.5, h≈2.41 → vol = π × 1.5² × 2.41 ≈ 17.0mm³."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("bore"))
+        expected = _math.pi * 1.5**2 * 2.41
+        assert dims["volume"] == pytest.approx(expected, abs=0.5)

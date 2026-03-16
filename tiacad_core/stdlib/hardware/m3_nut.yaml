@@ -1,0 +1,42 @@
+schema_version: "2.0"
+
+metadata:
+  name: M3 Hex Nut
+  description: >
+    ISO 4032 M3 hex nut. 5.5mm across-flats (AF), 2.4mm thick.
+    Hexagonal body with M3 through-bore (3.0mm diameter).
+  standard: ISO 4032
+  version: 1.0
+  author: TIA
+
+parameters:
+  # Circumscribed circle diameter: AF / cos(30°) ≈ 5.5 / 0.866 ≈ 6.35mm
+  diameter: 6.35        # tip-to-tip (circumscribed circle)
+  thickness: 2.4        # ISO 4032 M3 height
+  bore_radius: 1.5      # M3 through-hole radius (3.0mm diameter)
+
+parts:
+  hex_body:
+    primitive: polygon
+    parameters:
+      sides: 6
+      diameter: '${diameter}'
+      height: '${thickness}'
+      circumscribed: true
+
+  bore:
+    primitive: cylinder
+    parameters:
+      radius: '${bore_radius}'
+      height: '${thickness + 0.01}'
+
+operations:
+  nut:
+    type: boolean
+    operation: difference
+    base: hex_body
+    subtract:
+      - bore
+
+export:
+  default_part: nut

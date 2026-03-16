@@ -127,6 +127,8 @@ class PartsBuilder:
             geometry = self._build_cone(name, resolved_spec)
         elif primitive_type == 'torus':
             geometry = self._build_torus(name, resolved_spec)
+        elif primitive_type == 'polygon':
+            geometry = self._build_polygon(name, resolved_spec)
         elif primitive_type == 'text':
             geometry = self._build_text(name, resolved_spec)
         else:
@@ -357,6 +359,64 @@ class PartsBuilder:
                  .revolve(360, (0, 0, 0), (0, 0, 1)))
 
         return torus
+
+    def _build_polygon(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
+        """
+        Build a regular polygon extruded into a prism.
+
+        YAML parameters:
+          sides:      number of sides (integer ≥ 3, required)
+          diameter:   circumscribed circle diameter in mm (required)
+          height:     extrusion height in mm (required)
+          circumscribed: true (default) = diameter is outer circle;
+                         false = diameter is inner (inscribed) circle
+
+        Examples:
+          Hexagonal nut blank:
+            primitive: polygon
+            parameters: {sides: 6, diameter: 8, height: 4}
+
+          Square post:
+            primitive: polygon
+            parameters: {sides: 4, diameter: 20, height: 50}
+        """
+        params = spec.get('parameters', spec)
+
+        required = ['sides', 'diameter', 'height']
+        missing = [p for p in required if p not in params]
+        if missing:
+            raise PartsBuilderError(
+                f"Polygon '{name}' missing required parameters: {', '.join(missing)}",
+                part_name=name
+            )
+
+        sides = int(params['sides'])
+        diameter = float(params['diameter'])
+        height = float(params['height'])
+        circumscribed = params.get('circumscribed', True)
+
+        if sides < 3:
+            raise PartsBuilderError(
+                f"Polygon '{name}' must have at least 3 sides, got {sides}",
+                part_name=name
+            )
+        if diameter <= 0:
+            raise PartsBuilderError(
+                f"Polygon '{name}' diameter must be positive, got {diameter}",
+                part_name=name
+            )
+        if height <= 0:
+            raise PartsBuilderError(
+                f"Polygon '{name}' height must be positive, got {height}",
+                part_name=name
+            )
+
+        polygon = (
+            cq.Workplane("XY")
+            .polygon(sides, diameter, circumscribed=circumscribed)
+            .extrude(height)
+        )
+        return polygon
 
     _TEXT_VALID_STYLES = ['regular', 'bold', 'italic', 'bold-italic']
     _TEXT_VALID_HALIGN = ['left', 'center', 'right']
