@@ -1,0 +1,42 @@
+schema_version: "2.0"
+
+metadata:
+  name: M5 Hex Nut
+  description: >
+    ISO 4032 M5 hex nut. 8mm across-flats (AF), 4.7mm thick.
+    Hexagonal body with M5 through-bore (5.0mm diameter).
+  standard: ISO 4032
+  version: 1.0
+  author: TIA
+
+parameters:
+  # Circumscribed circle diameter: AF / cos(30°) ≈ 8.0 / 0.866 ≈ 9.24mm
+  diameter: 9.24        # tip-to-tip (circumscribed circle)
+  thickness: 4.7        # ISO 4032 M5 height
+  bore_radius: 2.5      # M5 through-hole radius (5.0mm diameter)
+
+parts:
+  hex_body:
+    primitive: polygon
+    parameters:
+      sides: 6
+      diameter: '${diameter}'
+      height: '${thickness}'
+      circumscribed: true
+
+  bore:
+    primitive: cylinder
+    parameters:
+      radius: '${bore_radius}'
+      height: '${thickness + 0.01}'
+
+operations:
+  nut:
+    type: boolean
+    operation: difference
+    base: hex_body
+    subtract:
+      - bore
+
+export:
+  default_part: nut

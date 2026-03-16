@@ -34,9 +34,12 @@ Every TiaCAD YAML file follows this structure:
 
 ```yaml
 imports:            # Optional: component imports (local, stdlib, GitHub)
-  - tiacad://std/hardware/m3_screw
-  - github:user/repo/path/to/component.yaml
-  - ./local_component.yaml
+  - path: tiacad://std/hardware/m3_screw
+    as: m3
+  - path: github:user/repo/path/to/component.yaml
+    as: my_part
+  - path: ./local_component.yaml
+    as: local_part
 
 metadata:           # Optional: document information
   name: My Design
@@ -112,19 +115,40 @@ These fields help readers immediately understand the document's purpose and desi
 ## Imports (Component System)
 
 The `imports:` section lets you reuse YAML components from three sources.
+Each entry requires a `path:` and `as:` (namespace) key.
 
 ### Stdlib (Bundled Hardware)
 
 ```yaml
 imports:
-  - tiacad://std/hardware/m3_screw
-  - tiacad://std/hardware/m3_nut
-  - tiacad://std/hardware/m3_washer
-  - tiacad://std/hardware/m3_standoff
-  - tiacad://std/hardware/m4_screw
-  - tiacad://std/hardware/m5_screw
-  - tiacad://std/hardware/m6_bolt
-  - tiacad://std/hardware/mounting_bracket
+  - path: tiacad://std/hardware/m3_screw
+    as: m3
+
+  - path: tiacad://std/hardware/m3_nut
+    as: m3_nut
+
+  - path: tiacad://std/hardware/m3_washer
+    as: washer
+
+  - path: tiacad://std/hardware/m3_standoff
+    as: standoff
+    parameters:
+      height: 10          # override default height
+
+  - path: tiacad://std/hardware/m4_screw
+    as: m4
+  - path: tiacad://std/hardware/m5_screw
+    as: m5
+  - path: tiacad://std/hardware/m6_bolt
+    as: m6
+  - path: tiacad://std/hardware/m4_nut
+    as: m4_nut
+  - path: tiacad://std/hardware/m5_nut
+    as: m5_nut
+  - path: tiacad://std/hardware/m6_nut
+    as: m6_nut
+  - path: tiacad://std/hardware/mounting_bracket
+    as: bracket
 ```
 
 These resolve to `tiacad_core/stdlib/hardware/*.yaml` — no install needed.
@@ -133,8 +157,11 @@ These resolve to `tiacad_core/stdlib/hardware/*.yaml` — no install needed.
 
 ```yaml
 imports:
-  - github:scottsen/guitar-hangers/components/hook.yaml
-  - github:org/repo/path/to/component.yaml
+  - path: github:scottsen/guitar-hangers/components/hook.yaml
+    as: hook
+
+  - path: github:org/repo/path/to/component.yaml
+    as: my_part
 ```
 
 Fetched from `raw.githubusercontent.com/user/repo/main/...`, cached to `~/.tiacad/cache/github/`.
@@ -144,30 +171,51 @@ Fetched from `raw.githubusercontent.com/user/repo/main/...`, cached to `~/.tiaca
 
 ```yaml
 imports:
-  - ./bracket.yaml
-  - ../shared/fasteners/m3_standoff.yaml
+  - path: ./bracket.yaml
+    as: bracket
+
+  - path: ../shared/fasteners/m3_standoff.yaml
+    as: standoff
 ```
 
-### Using an Imported Component
+### Parameter Overrides
 
-After importing, reference by component name (filename without extension):
+Any parameter defined in the component can be overridden at import time:
 
 ```yaml
 imports:
-  - tiacad://std/hardware/m3_screw
-  - ./bracket.yaml
-
-parts:
-  mounting_screw:
-    component: m3_screw
+  - path: tiacad://std/hardware/m3_screw
+    as: m3
     parameters:
-      length: 20
+      length: 20          # override the default length
+```
 
-  frame:
-    component: bracket
+### Using Imported Parts
+
+After importing, access parts as `{namespace}.{part_name}`:
+
+```yaml
+imports:
+  - path: tiacad://std/hardware/m3_screw
+    as: m3
     parameters:
-      width: 60
-      depth: 40
+      length: 12
+
+  - path: ./bracket.yaml
+    as: bracket
+
+operations:
+  place_screw:
+    type: transform
+    input: m3.shaft        # namespace.part_name
+    transforms:
+      - translate: [10, 0, 5]
+
+  place_bracket:
+    type: transform
+    input: bracket.base    # namespace.part_name
+    transforms:
+      - translate: [0, 0, 0]
 ```
 
 ---

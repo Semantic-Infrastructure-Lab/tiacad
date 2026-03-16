@@ -1,0 +1,169 @@
+schema_version: "2.0"
+
+# PCB Standoff Assembly
+#
+# Real-world assembly: PCB mounted on standoffs above a base plate.
+# Demonstrates the stdlib component system with correctly positioned parts.
+#
+# Assembly geometry (all centered at origin):
+#   Base plate:  100mm wide × 80mm tall × 5mm thick  (flat, thickness along Z)
+#   4x standoffs: M3, height=10mm, at corners (±38mm, ±30mm)
+#   PCB board:   80mm × 60mm × 2mm, sitting on top of standoffs
+#   4x M3 screws: passing through plate + standoff + into PCB
+#
+# Z-axis layout:
+#   Z = -2.5   plate bottom
+#   Z =  0.0   plate center
+#   Z = +2.5   plate top / standoff base
+#   Z = +7.5   standoff center (height=10 → center at 2.5 + 5)
+#   Z = +12.5  standoff top / PCB bottom
+#   Z = +13.5  PCB center  (thickness=2 → center at 12.5 + 1)
+#   Z = +14.5  PCB top
+#
+# Run:
+#   python tiacad check examples/pcb_standoff_assembly.yaml
+
+metadata:
+  name: PCB Standoff Assembly
+  description: >
+    Four-corner PCB standoff mount. Base plate → M3 standoffs → PCB board.
+    Demonstrates stdlib imports with correctly positioned parts.
+  version: 1.0
+  author: TIA
+  type: assembly
+
+# Import stdlib hardware components
+# Each standoff import gets a unique namespace so all 4 can be positioned independently.
+imports:
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_fl                    # front-left  (+38, +30)
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_fr                    # front-right (-38, +30)
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_bl                    # back-left   (+38, -30)
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_br                    # back-right  (-38, -30)
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_fl
+    parameters: {length: 16}    # through 5mm plate + 10mm standoff + 1mm into PCB
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_fr
+    parameters: {length: 16}
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_bl
+    parameters: {length: 16}
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_br
+    parameters: {length: 16}
+
+parameters:
+  # Plate dimensions
+  plate_width: 100      # X axis
+  plate_height: 80      # Y axis
+  plate_thickness: 5    # Z axis (thickness along Z — standoffs sit on top in Z)
+
+  # PCB dimensions
+  pcb_width: 80
+  pcb_height: 60
+  pcb_thickness: 2
+
+  # Standoff corner positions (inset 12mm from each edge)
+  corner_x: 38         # ±38mm in X
+  corner_y: 30         # ±30mm in Y
+
+  # Derived Z positions (see diagram in header)
+  standoff_height: 10
+  plate_top_z: 2.5     # plate_thickness / 2
+  standoff_center_z: 7.5   # plate_top_z + standoff_height / 2
+  pcb_center_z: 13.5   # plate_top_z + standoff_height + pcb_thickness / 2
+
+parts:
+  # Base mounting plate — flat (thickness in Z so standoffs align naturally)
+  plate:
+    primitive: box
+    parameters:
+      width: '${plate_width}'
+      height: '${plate_height}'
+      depth: '${plate_thickness}'
+
+  # PCB board — sits on top of standoffs
+  pcb:
+    primitive: box
+    parameters:
+      width: '${pcb_width}'
+      height: '${pcb_height}'
+      depth: '${pcb_thickness}'
+    translate: [0, 0, '${pcb_center_z}']
+
+operations:
+  # --- Position standoffs at plate corners ---
+  # Standoff cylinders are along Z; center at Z=standoff_center_z places
+  # the base at plate top (Z=+2.5) and top at PCB bottom (Z=+12.5).
+
+  standoff_fl:
+    type: transform
+    input: s_fl.standoff
+    transforms:
+      - translate: ['${corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  standoff_fr:
+    type: transform
+    input: s_fr.standoff
+    transforms:
+      - translate: ['${0 - corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  standoff_bl:
+    type: transform
+    input: s_bl.standoff
+    transforms:
+      - translate: ['${corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+  standoff_br:
+    type: transform
+    input: s_br.standoff
+    transforms:
+      - translate: ['${0 - corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+  # --- Position M3 screws through plate + standoff ---
+  # Screw shaft length=16 (centered): from Z=-8 to Z=+8.
+  # Center at standoff_center_z=7.5 → shaft from Z=-0.5 to Z=+15.5
+  # (passes through plate bottom at Z=-2.5, up to near PCB top at Z=+14.5)
+
+  screw_fl:
+    type: transform
+    input: screw_fl.shaft
+    transforms:
+      - translate: ['${corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  screw_fr:
+    type: transform
+    input: screw_fr.shaft
+    transforms:
+      - translate: ['${0 - corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  screw_bl:
+    type: transform
+    input: screw_bl.shaft
+    transforms:
+      - translate: ['${corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+  screw_br:
+    type: transform
+    input: screw_br.shaft
+    transforms:
+      - translate: ['${0 - corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+export:
+  # Export the base plate. Run `tiacad check` to see all assembly parts and dimensions.
+  default_part: plate

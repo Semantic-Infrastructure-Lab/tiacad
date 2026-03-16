@@ -556,3 +556,212 @@ class TestM3NutContracts:
         dims = get_dimensions(doc.parts.get("bore"))
         expected = _math.pi * 1.5**2 * 2.41
         assert dims["volume"] == pytest.approx(expected, abs=0.5)
+
+
+# Tier 2: m4_nut stdlib component
+# ---------------------------------------------------------------------------
+
+_M4_NUT_STDLIB = Path(__file__).parents[3] / "tiacad_core" / "stdlib" / "hardware" / "m4_nut.yaml"
+
+
+class TestM4NutContracts:
+    """
+    tiacad_core/stdlib/hardware/m4_nut.yaml: ISO 4032 M4 hex nut.
+
+    Parameters (defaults): diameter=8.08, thickness=3.2, bore_radius=2.0
+    AF=7mm → circumscribed=7/cos(30°)≈8.08mm
+    """
+
+    def _parse(self):
+        return TiaCADParser.parse_file(str(_M4_NUT_STDLIB))
+
+    def test_hex_body_builds(self):
+        doc = self._parse()
+        assert doc.parts.get("hex_body") is not None
+
+    def test_nut_has_positive_volume(self):
+        doc = self._parse()
+        assert get_dimensions(doc.parts.get("nut"))["volume"] > 0
+
+    def test_nut_height_matches_thickness(self):
+        """Thickness=3.2 → nut Z extent ≈ 3.2mm."""
+        doc = self._parse()
+        assert get_dimensions(doc.parts.get("nut"))["depth"] == pytest.approx(3.2, abs=TOL)
+
+    def test_nut_volume_less_than_hex_body(self):
+        """Bore must remove material."""
+        doc = self._parse()
+        body_vol = get_dimensions(doc.parts.get("hex_body"))["volume"]
+        nut_vol = get_dimensions(doc.parts.get("nut"))["volume"]
+        assert nut_vol < body_vol
+
+    def test_bore_volume_matches_formula(self):
+        """bore: cylinder r=2.0, h≈3.21 → vol = π × 2.0² × 3.21 ≈ 40.3mm³."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("bore"))
+        expected = _math.pi * 2.0**2 * 3.21
+        assert dims["volume"] == pytest.approx(expected, abs=0.5)
+
+
+# Tier 2: m5_nut stdlib component
+# ---------------------------------------------------------------------------
+
+_M5_NUT_STDLIB = Path(__file__).parents[3] / "tiacad_core" / "stdlib" / "hardware" / "m5_nut.yaml"
+
+
+class TestM5NutContracts:
+    """
+    tiacad_core/stdlib/hardware/m5_nut.yaml: ISO 4032 M5 hex nut.
+
+    Parameters (defaults): diameter=9.24, thickness=4.7, bore_radius=2.5
+    AF=8mm → circumscribed=8/cos(30°)≈9.24mm
+    """
+
+    def _parse(self):
+        return TiaCADParser.parse_file(str(_M5_NUT_STDLIB))
+
+    def test_hex_body_builds(self):
+        doc = self._parse()
+        assert doc.parts.get("hex_body") is not None
+
+    def test_nut_has_positive_volume(self):
+        doc = self._parse()
+        assert get_dimensions(doc.parts.get("nut"))["volume"] > 0
+
+    def test_nut_height_matches_thickness(self):
+        """Thickness=4.7 → nut Z extent ≈ 4.7mm."""
+        doc = self._parse()
+        assert get_dimensions(doc.parts.get("nut"))["depth"] == pytest.approx(4.7, abs=TOL)
+
+    def test_nut_volume_less_than_hex_body(self):
+        """Bore must remove material."""
+        doc = self._parse()
+        body_vol = get_dimensions(doc.parts.get("hex_body"))["volume"]
+        nut_vol = get_dimensions(doc.parts.get("nut"))["volume"]
+        assert nut_vol < body_vol
+
+    def test_bore_volume_matches_formula(self):
+        """bore: cylinder r=2.5, h≈4.71 → vol = π × 2.5² × 4.71 ≈ 92.5mm³."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("bore"))
+        expected = _math.pi * 2.5**2 * 4.71
+        assert dims["volume"] == pytest.approx(expected, abs=0.5)
+
+
+# Tier 2: m6_nut stdlib component
+# ---------------------------------------------------------------------------
+
+_M6_NUT_STDLIB = Path(__file__).parents[3] / "tiacad_core" / "stdlib" / "hardware" / "m6_nut.yaml"
+
+
+class TestM6NutContracts:
+    """
+    tiacad_core/stdlib/hardware/m6_nut.yaml: ISO 4032 M6 hex nut.
+
+    Parameters (defaults): diameter=11.55, thickness=5.2, bore_radius=3.0
+    AF=10mm → circumscribed=10/cos(30°)≈11.55mm
+    """
+
+    def _parse(self):
+        return TiaCADParser.parse_file(str(_M6_NUT_STDLIB))
+
+    def test_hex_body_builds(self):
+        doc = self._parse()
+        assert doc.parts.get("hex_body") is not None
+
+    def test_nut_has_positive_volume(self):
+        doc = self._parse()
+        assert get_dimensions(doc.parts.get("nut"))["volume"] > 0
+
+    def test_nut_height_matches_thickness(self):
+        """Thickness=5.2 → nut Z extent ≈ 5.2mm."""
+        doc = self._parse()
+        assert get_dimensions(doc.parts.get("nut"))["depth"] == pytest.approx(5.2, abs=TOL)
+
+    def test_nut_volume_less_than_hex_body(self):
+        """Bore must remove material."""
+        doc = self._parse()
+        body_vol = get_dimensions(doc.parts.get("hex_body"))["volume"]
+        nut_vol = get_dimensions(doc.parts.get("nut"))["volume"]
+        assert nut_vol < body_vol
+
+    def test_bore_volume_matches_formula(self):
+        """bore: cylinder r=3.0, h≈5.21 → vol = π × 3.0² × 5.21 ≈ 147.3mm³."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("bore"))
+        expected = _math.pi * 3.0**2 * 5.21
+        assert dims["volume"] == pytest.approx(expected, abs=0.5)
+
+
+# Tier 2: pcb_standoff_assembly — correctly positioned multi-component assembly
+# ---------------------------------------------------------------------------
+
+_PCB_ASSEMBLY = EXAMPLES / "pcb_standoff_assembly.yaml"
+
+
+class TestPcbStandoffAssembly:
+    """
+    examples/pcb_standoff_assembly.yaml: 4-corner PCB standoff mount.
+
+    Geometry (all centered at origin, thickness along Z):
+      plate: 100 × 80 × 5mm (W × H × D)
+      pcb:    80 × 60 × 2mm
+      standoffs (×4): 6mm OD, 10mm tall
+      screws (×4): M3, 16mm shaft
+    """
+
+    def _parse(self):
+        return TiaCADParser.parse_file(str(_PCB_ASSEMBLY))
+
+    def test_plate_dimensions(self):
+        """Plate: W=100, H=5 (YAML depth→Y), D=80 (YAML height→Z)."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("plate"))
+        assert dims["width"] == pytest.approx(100.0, abs=TOL)   # YAML width=100
+        assert dims["height"] == pytest.approx(5.0, abs=TOL)    # YAML depth=5 → Y
+        assert dims["depth"] == pytest.approx(80.0, abs=TOL)    # YAML height=80 → Z
+
+    def test_plate_volume(self):
+        """Plate: 100 × 80 × 5 = 40,000mm³."""
+        doc = self._parse()
+        assert get_dimensions(doc.parts.get("plate"))["volume"] == pytest.approx(40000.0, abs=1.0)
+
+    def test_pcb_dimensions(self):
+        """PCB: W=80, H=2 (YAML depth=2→Y), D=60 (YAML height=60→Z)."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("pcb"))
+        assert dims["width"] == pytest.approx(80.0, abs=TOL)    # YAML width=80
+        assert dims["height"] == pytest.approx(2.0, abs=TOL)    # YAML depth=2 → Y
+        assert dims["depth"] == pytest.approx(60.0, abs=TOL)    # YAML height=60 → Z
+
+    def test_standoff_height(self):
+        """All 4 standoffs are 10mm tall."""
+        doc = self._parse()
+        for name in ("standoff_fl", "standoff_fr", "standoff_bl", "standoff_br"):
+            dims = get_dimensions(doc.parts.get(name))
+            assert dims["depth"] == pytest.approx(10.0, abs=TOL), f"{name} height wrong"
+
+    def test_standoff_volume_matches_body_minus_bore(self):
+        """Each standoff (body - bore) must have less volume than body."""
+        doc = self._parse()
+        body_vol = get_dimensions(doc.parts.get("s_fl.body"))["volume"]
+        standoff_vol = get_dimensions(doc.parts.get("s_fl.standoff"))["volume"]
+        assert standoff_vol < body_vol
+
+    def test_screw_shaft_dimensions(self):
+        """All 4 screw shafts: M3 (3mm dia) × 16mm."""
+        doc = self._parse()
+        for name in ("screw_fl", "screw_fr", "screw_bl", "screw_br"):
+            dims = get_dimensions(doc.parts.get(name))
+            assert dims["depth"] == pytest.approx(16.0, abs=TOL), f"{name} length wrong"
+            assert dims["width"] == pytest.approx(3.0, abs=TOL), f"{name} diameter wrong"
+
+    def test_all_parts_have_positive_volume(self):
+        """Every final assembly part must have positive volume."""
+        doc = self._parse()
+        final_parts = ["plate", "pcb",
+                       "standoff_fl", "standoff_fr", "standoff_bl", "standoff_br",
+                       "screw_fl", "screw_fr", "screw_bl", "screw_br"]
+        for name in final_parts:
+            vol = get_dimensions(doc.parts.get(name))["volume"]
+            assert vol > 0, f"{name} has zero or negative volume"

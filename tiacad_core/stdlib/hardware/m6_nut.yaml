@@ -1,0 +1,42 @@
+schema_version: "2.0"
+
+metadata:
+  name: M6 Hex Nut
+  description: >
+    ISO 4032 M6 hex nut. 10mm across-flats (AF), 5.2mm thick.
+    Hexagonal body with M6 through-bore (6.0mm diameter).
+  standard: ISO 4032
+  version: 1.0
+  author: TIA
+
+parameters:
+  # Circumscribed circle diameter: AF / cos(30°) ≈ 10.0 / 0.866 ≈ 11.55mm
+  diameter: 11.55       # tip-to-tip (circumscribed circle)
+  thickness: 5.2        # ISO 4032 M6 height
+  bore_radius: 3.0      # M6 through-hole radius (6.0mm diameter)
+
+parts:
+  hex_body:
+    primitive: polygon
+    parameters:
+      sides: 6
+      diameter: '${diameter}'
+      height: '${thickness}'
+      circumscribed: true
+
+  bore:
+    primitive: cylinder
+    parameters:
+      radius: '${bore_radius}'
+      height: '${thickness + 0.01}'
+
+operations:
+  nut:
+    type: boolean
+    operation: difference
+    base: hex_body
+    subtract:
+      - bore
+
+export:
+  default_part: nut

@@ -1,0 +1,42 @@
+schema_version: "2.0"
+
+metadata:
+  name: M4 Hex Nut
+  description: >
+    ISO 4032 M4 hex nut. 7mm across-flats (AF), 3.2mm thick.
+    Hexagonal body with M4 through-bore (4.0mm diameter).
+  standard: ISO 4032
+  version: 1.0
+  author: TIA
+
+parameters:
+  # Circumscribed circle diameter: AF / cos(30°) ≈ 7.0 / 0.866 ≈ 8.08mm
+  diameter: 8.08        # tip-to-tip (circumscribed circle)
+  thickness: 3.2        # ISO 4032 M4 height
+  bore_radius: 2.0      # M4 through-hole radius (4.0mm diameter)
+
+parts:
+  hex_body:
+    primitive: polygon
+    parameters:
+      sides: 6
+      diameter: '${diameter}'
+      height: '${thickness}'
+      circumscribed: true
+
+  bore:
+    primitive: cylinder
+    parameters:
+      radius: '${bore_radius}'
+      height: '${thickness + 0.01}'
+
+operations:
+  nut:
+    type: boolean
+    operation: difference
+    base: hex_body
+    subtract:
+      - bore
+
+export:
+  default_part: nut
