@@ -543,7 +543,7 @@ tiacad/
 
 ### Test Coverage
 
-**Overall:** 1025+ tests, 87% code coverage, 100% pass rate (all passing, 0 skipped)
+**Overall:** 1382 tests, 92%+ code coverage, 0 failing
 
 **New in v3.1:** 131+ testing confidence tests
 - Testing utility tests: 71 tests (measurement, orientation, dimension utilities)
@@ -625,14 +625,15 @@ tiacad/
 
 **See [ROADMAP.md](ROADMAP.md) for detailed plans and priorities.**
 
-**Current Status (Feb 2026):** Maintenance mode - focus on stability and clarity
+**Current Status (Mar 2026):** Active development — Component System + DAG both complete
 
-**Under Consideration:**
-- **Component/Module System** - Import YAML files, standard parts library (recommended)
-- **Dependency Graph (DAG)** - Incremental rebuilds, true parametric modeling
-- **Stay in Maintenance** - Let community feedback guide priorities
+**Completed in Q1 2026:**
+- ✅ **Component/Module System** — local, stdlib (`tiacad://std/...`), GitHub (`github:user/repo/...`) imports
+- ✅ **Hardware stdlib** — m3/m4/m5/m6 screws, washer, standoff, nut, mounting bracket
+- ✅ **Dependency Graph (DAG)** — incremental rebuild, watch mode, `--export` flag
+- ✅ **`polygon` primitive** — regular N-sided prism (hex nuts, gears, etc.)
 
-**Decision Point:** Q2 2026 - Choose direction based on community needs
+**Next Milestone (Q4 2026):** Constraint Solver — declarative assemblies ("make these flush")
 
 ---
 
@@ -647,17 +648,15 @@ tiacad/
 **Quick Summary:**
 
 **Current Limitations:**
-- No component/module import system (cannot reuse YAML files or import standard parts)
-- No dependency graph (full rebuild on parameter changes)
-- No constraint solver (manual positioning only)
-- Limited export formats (STL/3MF/STEP only)
+- No constraint solver (manual positioning only) — next milestone Q4 2026
+- Limited export formats (STL/3MF/STEP; no DXF/G-code/SVG)
+- GitHub imports default to `main` branch only (no branch override syntax)
 
-**What's Next (Under Consideration):**
-- Component system with standard library (screws, bearings, etc.)
-- Dependency graph for incremental rebuilds
-- Constraint solver for declarative assemblies
-
-**Current Focus:** Maintenance mode - stability, examples, documentation
+**Recent Additions (Q1 2026):**
+- ✅ Component imports: local, stdlib, GitHub
+- ✅ Hardware stdlib (8 components)
+- ✅ Incremental rebuild + watch mode
+- ✅ `polygon` primitive
 
 ### Advanced Features (v4.0+)
 
@@ -852,7 +851,8 @@ mypy tiacad_core/ --strict
 | Phase 3: Sketch Ops | ✅ 100% | 7/7 | 124 tests | High | 100% |
 | **v3.0 Complete** | ✅ Complete | - | 502 tests | 95%+ | 100% |
 | **v3.1 Phase 1** | ✅ Complete | 3/3 | 131 tests | High | 100% |
-| **Total** | **✅ Stable** | **21/21** | **1125 tests** | **92%** | **94.4%** |
+| **v3.1: Component+DAG** | ✅ Complete | - | 257+ tests | High | 100% |
+| **Total** | **✅ Active** | **21/21** | **1382 tests** | **92%+** | **100%** |
 
 ### Component Breakdown
 
