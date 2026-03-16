@@ -14,6 +14,7 @@ This exporter leverages TiaCAD's color system to create production-ready
 3MF files that work with modern slicers (PrusaSlicer, BambuStudio, OrcaSlicer).
 """
 
+import locale
 import logging
 from typing import Dict, List, Tuple, Optional
 
@@ -98,9 +99,16 @@ class ThreeMFExporter:
             if metadata:
                 self._add_metadata(model, metadata)
 
-            # Write 3MF file
-            writer = model.QueryWriter("3mf")
-            writer.WriteToFile(str(output_path))
+            # Write 3MF file.
+            # lib3mf's WriteToFile() calls setlocale(LC_ALL, "C") internally
+            # and never restores it, corrupting Python's file I/O encoding for
+            # the rest of the process. Save and restore around the call.
+            _saved_locale = locale.setlocale(locale.LC_ALL)
+            try:
+                writer = model.QueryWriter("3mf")
+                writer.WriteToFile(str(output_path))
+            finally:
+                locale.setlocale(locale.LC_ALL, _saved_locale)
 
             logger.info(
                 f"Exported {len(part_objects)} parts to {output_path} "

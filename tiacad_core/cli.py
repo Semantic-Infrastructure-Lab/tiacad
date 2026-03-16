@@ -703,6 +703,65 @@ def cmd_audit(args):
     return 0 if fail_count == 0 else 1
 
 
+def cmd_watch(args):
+    """
+    Watch a TiaCAD YAML file for changes and rebuild on each modification.
+
+    Uses IncrementalBuilder to reuse cached geometry between rebuilds —
+    unchanged parts are served from cache rather than re-computed.
+
+      tiacad watch examples/bracket.yaml
+      # [14:32:01] initial   ✓  1842ms  1 rebuilt, 0 cached
+      # [14:32:07] changed   ✓   112ms  1 rebuilt, 3 cached
+    """
+    from .watcher import FileWatcher, WatchBuildResult
+
+    input_file = Path(args.input)
+    if not input_file.exists():
+        print_error(f"File not found: {input_file}")
+        return 1
+
+    print_info(
+        f"Watching {Colors.BOLD}{input_file.name}{Colors.RESET}"
+        f"  (Ctrl+C to stop)"
+    )
+    print()
+
+    def on_rebuild(result: WatchBuildResult) -> None:
+        ts = time.strftime("%H:%M:%S")
+        tag = "initial" if result.is_initial else "changed"
+        if result.ok:
+            cache_str = (
+                f"{result.rebuilt} rebuilt, {result.cached} cached"
+                if result.cached > 0
+                else f"{result.rebuilt} rebuilt"
+            )
+            print(
+                f"  {Colors.GRAY}[{ts}]{Colors.RESET}"
+                f"  {tag:<9}"
+                f"  {Colors.GREEN}✓{Colors.RESET}"
+                f"  {result.rebuild_ms:>6.0f}ms"
+                f"  {Colors.GRAY}{cache_str}{Colors.RESET}"
+            )
+        else:
+            print(
+                f"  {Colors.GRAY}[{ts}]{Colors.RESET}"
+                f"  {tag:<9}"
+                f"  {Colors.RED}✗{Colors.RESET}"
+                f"  {Colors.RED}{result.error}{Colors.RESET}"
+            )
+
+    watcher = FileWatcher(input_file, on_rebuild=on_rebuild)
+    try:
+        watcher.start()
+    except KeyboardInterrupt:
+        pass
+
+    print()
+    print_info("Stopped.")
+    return 0
+
+
 def create_parser():
     """Create the argument parser"""
     parser = argparse.ArgumentParser(
@@ -778,6 +837,14 @@ For more information: https://github.com/scottsen/tiacad
     audit_parser.add_argument('files', nargs='+', help='YAML file(s) to audit (supports glob patterns)')
     audit_parser.add_argument('-v', '--verbose', action='store_true', help='Show full tracebacks on failure')
     audit_parser.set_defaults(func=cmd_audit)
+
+    # Watch command
+    watch_parser = subparsers.add_parser(
+        'watch',
+        help='Watch a file and rebuild on each save (incremental — reuses cached geometry)'
+    )
+    watch_parser.add_argument('input', help='Input YAML file to watch')
+    watch_parser.set_defaults(func=cmd_watch)
 
     return parser
 
