@@ -10,7 +10,8 @@
 
 1. [Document Structure](#document-structure)
 2. [Metadata](#metadata)
-3. [Parameters](#parameters)
+3. [Imports (Component System)](#imports-component-system)
+4. [Parameters](#parameters)
 4. [References (v3.0)](#references-v30)
    - [Auto-Generated References](#auto-generated-references)
    - [Named References](#named-references)
@@ -32,6 +33,11 @@
 Every TiaCAD YAML file follows this structure:
 
 ```yaml
+imports:            # Optional: component imports (local, stdlib, GitHub)
+  - tiacad://std/hardware/m3_screw
+  - github:user/repo/path/to/component.yaml
+  - ./local_component.yaml
+
 metadata:           # Optional: document information
   name: My Design
   description: ...
@@ -100,6 +106,69 @@ All fields are optional and for documentation only.
 - `reference-based` - TiaCAD's composition model (recommended)
 
 These fields help readers immediately understand the document's purpose and design approach.
+
+---
+
+## Imports (Component System)
+
+The `imports:` section lets you reuse YAML components from three sources.
+
+### Stdlib (Bundled Hardware)
+
+```yaml
+imports:
+  - tiacad://std/hardware/m3_screw
+  - tiacad://std/hardware/m3_nut
+  - tiacad://std/hardware/m3_washer
+  - tiacad://std/hardware/m3_standoff
+  - tiacad://std/hardware/m4_screw
+  - tiacad://std/hardware/m5_screw
+  - tiacad://std/hardware/m6_bolt
+  - tiacad://std/hardware/mounting_bracket
+```
+
+These resolve to `tiacad_core/stdlib/hardware/*.yaml` — no install needed.
+
+### GitHub (Remote, Cached)
+
+```yaml
+imports:
+  - github:scottsen/guitar-hangers/components/hook.yaml
+  - github:org/repo/path/to/component.yaml
+```
+
+Fetched from `raw.githubusercontent.com/user/repo/main/...`, cached to `~/.tiacad/cache/github/`.
+**Note:** Only `main` branch is supported (no `@branch` syntax yet).
+
+### Local Files
+
+```yaml
+imports:
+  - ./bracket.yaml
+  - ../shared/fasteners/m3_standoff.yaml
+```
+
+### Using an Imported Component
+
+After importing, reference by component name (filename without extension):
+
+```yaml
+imports:
+  - tiacad://std/hardware/m3_screw
+  - ./bracket.yaml
+
+parts:
+  mounting_screw:
+    component: m3_screw
+    parameters:
+      length: 20
+
+  frame:
+    component: bracket
+    parameters:
+      width: 60
+      depth: 40
+```
 
 ---
 
@@ -456,6 +525,34 @@ parts:
       height: 40                  # Cone height
     origin: center                # center, corner, or [x,y,z]
 ```
+
+### Polygon Primitive
+
+Regular N-sided extruded prism (hexagonal, triangular, octagonal, etc.).
+
+```yaml
+parts:
+  hex_nut_body:
+    primitive: polygon
+    parameters:
+      sides: 6              # Number of sides (≥ 3)
+      diameter: 8.0         # Diameter of circumscribed circle (vertex to vertex)
+      height: 4.0           # Extrusion height
+      circumscribed: true   # Optional, default true
+```
+
+**Common `sides` values:**
+- `3` — triangle
+- `4` — square (same as box, but rotation-centered)
+- `6` — hex (nuts, standoffs)
+- `8` — octagon
+
+**Tip:** For hex nuts and standoffs, use `diameter = AF / cos(30°)` where `AF` is the across-flats dimension.
+- M3 nut: AF=5.5mm → `diameter: 6.35`
+- M4 nut: AF=7mm → `diameter: 8.08`
+- M6 nut: AF=10mm → `diameter: 11.55`
+
+---
 
 ### Parts with Transforms
 
@@ -1278,6 +1375,7 @@ operations:
 | cylinder | radius, height | origin |
 | sphere | radius | origin |
 | cone | radius, height | origin |
+| polygon | sides, diameter, height | circumscribed (default true) |
 
 ### Origin Modes
 
