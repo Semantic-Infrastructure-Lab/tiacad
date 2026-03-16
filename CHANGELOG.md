@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-03-16 (session: ninja-xenarch-0316)
+
+#### GitHub + Stdlib URI Schemes for Component Imports
+
+`component_importer.py` now supports two new URI schemes alongside local `path:`:
+
+- `tiacad://std/hardware/m3_screw` — resolves to `tiacad_core/stdlib/hardware/*.yaml` (bundled)
+- `github:user/repo/path/to/file.yaml` — fetches from `raw.githubusercontent.com/user/repo/main/...`, cached to `~/.tiacad/cache/github/`
+
+New `_resolve_path()` routes all three schemes. 18 new tests (TestResolvePath, TestStdlibImports, TestGithubImports — GitHub mocked, no network required).
+
+#### `primitive: polygon` — Regular N-sided Extruded Prism
+
+New primitive in `parts_builder.py`:
+```yaml
+primitive: polygon
+parameters:
+  sides: 6          # number of sides (≥ 3)
+  diameter: 8.0     # circumscribed circle diameter
+  height: 4.0       # extrusion height
+  circumscribed: true  # optional, default true
+```
+Backed by CadQuery `Workplane.polygon(nSides, diameter).extrude(height)`. 13 new tests in `TestPolygon`.
+
+#### M3 Hex Nut Stdlib Component
+
+`tiacad_core/stdlib/hardware/m3_nut.yaml` — ISO 4032 M3 hex nut using polygon + boolean difference:
+- Circumscribed diameter: 6.35mm (5.5mm AF / cos30°)
+- Thickness: 2.4mm, bore radius: 1.5mm
+- 5 Tier 2 geometric contracts in `TestM3NutContracts`
+
+#### Tier 2 Contracts — Hardware Assembly Demo
+
+12 new contracts in `TestHardwareAssemblyDemo` locking shaft diameters (M3–M6), washer OD/volume, standoff height, plate dimensions, boolean subtract correctness.
+
+**Suite: 1330 → 1378 pass (+48)**
+
 ### Added - 2026-03-16 (session: enchanted-hydra-0316)
 
 #### Tier 2 Geometric Contracts — Component Import Demo
