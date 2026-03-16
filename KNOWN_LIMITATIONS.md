@@ -29,7 +29,7 @@ Before limitations, here's what works great:
 - Local file imports (`./bracket.yaml`)
 - Bundled stdlib (`tiacad://std/hardware/m3_screw`)
 - GitHub imports (`github:user/repo/path.yaml`, cached to `~/.tiacad/cache/github/`)
-- Hardware stdlib: m3/m4/m5/m6 screws, m3 washer, m3 standoff, m3 nut, mounting bracket
+- Hardware stdlib: m3/m4/m5/m6 screws, m3/m4/m5/m6 nuts, m3 washer, m3 standoff, mounting bracket
 
 ✅ **Dependency Graph + Watch Mode:**
 - Incremental rebuild — only recomputes parts that changed

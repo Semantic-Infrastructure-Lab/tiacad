@@ -52,7 +52,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Status Updated:** 2026-02-15
 
 **Test Suite:**
-- 1382 passing, 0 failing, 2 skipped, 1 xfailed
+- 1405 passing, 0 failing, 2 skipped, 1 xfailed
 - 92%+ code coverage
 - Comprehensive coverage: unit, integration, correctness, visual regression
 
@@ -71,7 +71,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - ✅ Rule-based assembly validator (8 validation rules)
 - ✅ Auto-generated references (box.face_top, cylinder.axis_z, etc.)
 - ✅ Component imports: local (./file.yaml), stdlib (tiacad://std/...), GitHub (github:user/repo/file.yaml)
-- ✅ Hardware stdlib: m3/m4/m5/m6 screws, m3 washer, m3 standoff, m3 nut, mounting bracket
+- ✅ Hardware stdlib: m3/m4/m5/m6 screws, m3/m4/m5/m6 nuts, m3 washer, m3 standoff, mounting bracket
 - ✅ Dependency graph (DAG) — incremental rebuild, cycle detection
 - ✅ Watch mode: `tiacad watch model.yaml [--export path]` — auto-rebuild on save
 - ✅ `polygon` primitive — regular N-sided extruded prism
@@ -222,4 +222,4 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Project Status:** ✅ Active development — v3.1 component system + DAG complete
 **Current Focus:** Constraint Solver (Q4 2026) — see ROADMAP.md
 **Last Updated:** 2026-03-16
-**Test Suite:** 1382 passing, 0 failing
+**Test Suite:** 1405 passing, 0 failing

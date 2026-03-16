@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-03-16 (session: turbulent-mist-0316)
+
+#### M4/M5/M6 Hex Nuts (ISO 4032)
+
+Three new stdlib components completing the nut set alongside `m3_nut`:
+- `tiacad_core/stdlib/hardware/m4_nut.yaml` — 8.08mm dia, 3.2mm thick, 4mm bore
+- `tiacad_core/stdlib/hardware/m5_nut.yaml` — 9.24mm dia, 4.7mm thick, 5mm bore
+- `tiacad_core/stdlib/hardware/m6_nut.yaml` — 11.55mm dia, 5.2mm thick, 6mm bore
+
+All use `polygon` primitive (6 sides) + boolean difference for bore. 15 Tier 2
+contracts in `TestM4NutContracts`, `TestM5NutContracts`, `TestM6NutContracts`.
+
+#### PCB Standoff Assembly Example
+
+`examples/pcb_standoff_assembly.yaml` — first properly-positioned multi-component
+assembly example. Demonstrates 4-corner PCB mount using stdlib imports:
+- Base plate: 100×80×5mm (thickness along Z for natural standoff alignment)
+- 4× M3 standoffs (10mm) from stdlib, positioned at ±(38mm, 30mm)
+- PCB board: 80×60×2mm, resting on standoff tops at Z=12.5mm
+- 4× M3 screws (16mm) passing through plate + standoff
+
+All 34 parts build correctly. 7 Tier 2 geometric contracts in
+`TestPcbStandoffAssembly`. Visual reference generated.
+
+#### Documentation Accuracy Pass
+
+All planning/reference docs updated to reflect v3.1 completion (both docs commits):
+- `ROADMAP.md`: Component System + DAG marked done, Constraint Solver as Q4 2026 next
+- `KNOWN_LIMITATIONS.md`: removed 3 resolved limitations, added 2 real current ones
+- `PROJECT.md`: test counts, completed milestones, next milestone
+- `docs/developer/CLI.md`: added watch/check/audit/validate-geometry command docs
+- `docs/user/YAML_REFERENCE.md`: fixed import syntax (path:/as: format), added polygon
+  primitive docs, added full imports section with stdlib/GitHub/local examples
+- `docs/DOCUMENTATION_MAP.md`: added DAG_INCREMENTAL_REBUILD.md entry
+
+**Suite: 1382 → 1405 pass (+23)**
+
 ### Added - 2026-03-16 (session: ninja-xenarch-0316)
 
 #### GitHub + Stdlib URI Schemes for Component Imports
