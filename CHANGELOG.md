@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-03-15 (session: metallic-shade-0315)
+
+#### DAG Incremental Rebuild — Phases 0–3
+
+Full incremental rebuild infrastructure. On repeated builds, only nodes downstream
+of changed parameters/parts are rebuilt; everything else is restored from cache.
+
+**Phase 0 — GraphBuilder fix:** Operations (extrude/revolve/sweep) now track their
+`sketch:` dependency. Was silently missing, meaning sketch changes didn't invalidate
+downstream operations.
+
+**Phase 1 — `InvalidationTracker`** (`tiacad_core/dag/invalidation_tracker.py`):
+- `compute_dirty_set(new_graph)` → changed nodes + all transitive dependents
+- `compute_deleted_set()` → nodes to evict from cache
+- `compute_full_report()` → hit_rate + added/deleted/modified breakdown
+
+**Phase 2 — `BuildCache`** (`tiacad_core/dag/build_cache.py`):
+- In-memory cache keyed by `(node_id, content_hash)` — stale results never returned
+- `put/get/evict/evict_many/has/get_stats()`
+
+**Phase 3 — `IncrementalBuilder`** (`tiacad_core/dag/incremental_builder.py`):
+- `build(yaml_data, parts_spec, ops_spec, registry, parts_builder, ops_builder, old_state)`
+- Full build when `old_state=None`; incremental otherwise
+- `IncrementalState(graph, cache)` — caller preserves and passes back next call
+- `BuildStats`: rebuilt/cached counts, hit_rate, total_ms
+- Operations executed in topological order; cached results restored before downstream ops run
+
+**Test baseline:** 101 DAG tests (was 53), +48 new. Full suite: 1244 pass.
+
+**Still to build:** Phase 4 — Watch Mode (`tiacad_core/watcher.py`, `watchdog` dependency)
+
+#### Testing Docs
+
+Rewrote `docs/developer/TESTING_GUIDE.md` and `TESTING_QUICK_REFERENCE.md`:
+- Accurate test counts and category breakdown
+- New **Correctness Gap** section: what tests verify vs what's missing, "snapshot of a bug" risk
+- Three concrete next-step options for improving geometric correctness coverage
+- Removed broken links to files that don't exist
+
 ### Added - 2026-03-15 (session: astral-warrior-0315)
 
 #### Component/Module Import System (`tiacad_core/parser/component_importer.py`)
