@@ -38,10 +38,7 @@ operations:
     type: transform
     input: head
     transforms:
-      - translate:
-          x: 0
-          y: 0
-          z: '${length}'
+      - translate: [0, 0, '${length}']
 
 export:
   default_part: shaft

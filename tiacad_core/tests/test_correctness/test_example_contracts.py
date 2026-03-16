@@ -8,6 +8,7 @@ Catches "built but wrong" errors that visual regression cannot detect:
   - Zero-volume geometry (sweep or revolve produced nothing)
 
 Audit ground truth established 2026-03-15 (session: sutegaku-0315).
+Bugs fixed same session: component_import_demo (translate dict syntax), pipe_sweep_simple (coplanar path).
 Run `tiacad audit examples/*.yaml` to regenerate.
 
 Two tiers:
@@ -52,6 +53,7 @@ def _parse_and_measure_final(filename: str):
 BUILDABLE_EXAMPLES = [
     "anchors_demo.yaml",
     "auto_references_box_stack.yaml",
+    "component_import_demo.yaml",
     "auto_references_cylinder_assembly.yaml",
     "auto_references_rotation.yaml",
     "auto_references_with_offsets.yaml",
@@ -73,6 +75,7 @@ BUILDABLE_EXAMPLES = [
     "mounting_plate_with_bolt_circle.yaml",
     "multi_material_demo.yaml",
     "multi_material_enclosure.yaml",
+    "pipe_sweep_simple.yaml",
     "references_demo.yaml",
     "rounded_mounting_plate.yaml",
     "simple_box.yaml",
@@ -102,12 +105,6 @@ KNOWN_FAILURES = {
     "dag_test_cycle.yaml": "intentional: cycle detection test",
     "error_demo.yaml": "intentional: error handling demo",
     "pipe_sweep.yaml": "known OCCT limitation: boolean cut on swept geometry (Null TopoDS_Shape)",
-    "component_import_demo.yaml": "bug: translate format changed, position_flange uses old dict syntax",
-}
-
-# Known warnings — build succeeds but geometry is suspicious.
-KNOWN_WARNINGS = {
-    "pipe_sweep_simple.yaml": "zero volume: pipe sweep produces 0-depth geometry (real bug)",
 }
 
 

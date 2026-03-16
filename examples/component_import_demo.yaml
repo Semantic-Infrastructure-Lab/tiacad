@@ -55,19 +55,13 @@ operations:
     type: transform
     input: bracket.base
     transforms:
-      - translate:
-          x: -50
-          y: 0
-          z: -40
+      - translate: [-50, 0, -40]
 
   position_bracket_flange:
     type: transform
     input: bracket.flange
     transforms:
-      - translate:
-          x: -50
-          y: 0
-          z: -40
+      - translate: [-50, 0, -40]
 
 export:
   default_part: panel

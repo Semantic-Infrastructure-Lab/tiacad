@@ -41,10 +41,7 @@ operations:
     type: transform
     input: flange
     transforms:
-      - translate:
-          x: 0
-          y: '${base_depth / 2 - thickness / 2}'
-          z: '${flange_height / 2 + thickness / 2}'
+      - translate: [0, '${base_depth / 2 - thickness / 2}', '${flange_height / 2 + thickness / 2}']
 
 export:
   default_part: base
