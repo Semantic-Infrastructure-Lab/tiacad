@@ -1,466 +1,195 @@
-# TiaCAD Testing Confidence - Quick Reference
+---
+title: "TiaCAD Testing — Quick Reference"
+type: reference
+beth_topics:
+  - tiacad
+  - testing
+  - correctness
+---
 
-**Version:** 1.0
-**Created:** 2025-11-10
-**Related:** [TESTING_CONFIDENCE_PLAN.md](./TESTING_CONFIDENCE_PLAN.md) | [TESTING_ROADMAP.md](./TESTING_ROADMAP.md)
+# TiaCAD Testing — Quick Reference
+
+**Updated:** 2026-03-15 (session: metallic-shade-0315)
 
 ---
 
 ## At a Glance
 
-**Goal:** Build confidence that TiaCAD YAML specifications translate correctly into 3D models.
+**Current baseline:** 1244 pass, 3 skip, 1 xfailed
 
-**Four Dimensions:**
-1. **Attachment** - Parts connect at correct locations
-2. **Rotation** - Parts orient correctly
-3. **Visual** - Models look correct
-4. **Dimensions** - Measurements are accurate
+| Suite | Tests | Runtime |
+|---|---|---|
+| Full suite | 1244 | ~2 min |
+| Correctness only | 68 | ~2s |
+| DAG only | 101 | <1s |
+| Visual regression | 57 | ~60s |
+| Fast (not visual) | ~1187 | ~10s |
 
-**Current Status (v3.0):** 896 tests, 84% coverage
-**Target (v3.1):** 950+ tests, 90% coverage
-**Target (v3.2):** 1050+ tests, visual regression
-**Target (v3.3+):** 1200+ tests, stress testing
+**Known gap:** Visual regression tests prove consistency, not correctness. 49 examples have no dimension/volume assertions. See [TESTING_GUIDE.md](./TESTING_GUIDE.md#correctness-gap--what-we-know) for analysis and next steps.
 
 ---
 
-## Quick Start
-
-### Running Tests
+## Common Commands
 
 ```bash
-# All tests
+# Run everything
 pytest
 
-# Only attachment tests
-pytest -m attachment
+# Skip visual (fast feedback)
+pytest -m "not visual"
 
-# Only rotation tests
-pytest -m rotation
+# Correctness only
+pytest tiacad_core/tests/test_correctness/
 
-# Only dimensional tests
-pytest -m dimensions
+# DAG tests
+pytest tiacad_core/tests/test_dag/
 
-# Only visual tests
+# Visual regression
 pytest -m visual
 
-# Fast tests (exclude visual and stress)
-pytest -m "not visual and not stress"
+# Update visual references (intentional change)
+UPDATE_VISUAL_REFERENCES=1 pytest -m visual
 
-# With coverage
-pytest --cov=tiacad_core
-```
+# Failed tests from last run
+pytest --lf
 
-### Saving Visual References
+# Coverage
+pytest --cov=tiacad_core --cov-report=html
 
-```bash
-# Save new references for visual tests
-SAVE_REFERENCE=1 pytest -m visual
-
-# Save specific example
-SAVE_REFERENCE=1 pytest tests/test_correctness/test_visual_correctness.py::test_guitar_hanger
+# Slowest 10 tests
+pytest --durations=10
 ```
 
 ---
 
-## Testing Utilities (v3.1+)
+## Test Markers
 
-### Measurement
+```bash
+pytest -m attachment     # part positioning
+pytest -m rotation       # orientation correctness
+pytest -m dimensions     # dimensional accuracy
+pytest -m visual         # pixel-diff vs references
+pytest -m integration    # multi-component workflows
+pytest -m parser         # YAML parser tests
+pytest -m "not slow"     # exclude slow tests
+pytest -m "not visual and not slow"   # fast correctness loop
+```
+
+---
+
+## Testing Utilities
+
+### Dimensions
 
 ```python
-from tiacad_core.testing.measurements import measure_distance
+from tiacad_core.testing.dimensions import get_dimensions, get_volume, get_surface_area
 
-# Distance between part centers
-dist = measure_distance(part1, part2)
+dims = get_dimensions(part)
+# → {"width": 80.0, "height": 40.0, "depth": 10.0, "volume": 28450, "surface_area": ...}
 
-# Distance between specific reference points
-dist = measure_distance(
-    box, cylinder,
-    ref1="face_top.center",
-    ref2="face_bottom.center"
-)
+assert dims["width"] == pytest.approx(80.0, abs=0.1)
+assert get_volume(part) < 80 * 40 * 10   # hole present
+```
+
+### Measurements
+
+```python
+from tiacad_core.testing.measurements import measure_distance, get_bounding_box_dimensions
+
+dist = measure_distance(part1, part2)                              # center-to-center
+dist = measure_distance(box, cyl, ref1="face_top", ref2="face_bottom")
+assert dist < 0.01   # touching
+
+dims = get_bounding_box_dimensions(part)
+assert abs(dims["width"] - 50.0) < 0.1
 ```
 
 ### Orientation
 
 ```python
-from tiacad_core.testing.orientation import (
-    get_orientation_angles,
-    get_normal_vector,
-    parts_aligned
-)
+from tiacad_core.testing.orientation import get_orientation_angles, get_normal_vector, parts_aligned
 
-# Get rotation angles
-angles = get_orientation_angles(part)  # {"roll": 0, "pitch": 45, "yaw": 90}
-
-# Get face normal
-normal = get_normal_vector(part, "face_top")  # [0, 0, 1]
-
-# Check alignment
-aligned = parts_aligned(part1, part2, axis="z", tolerance=0.5)
+angles = get_orientation_angles(part)    # {"roll": 0, "pitch": 45, "yaw": 90}
+normal = get_normal_vector(part, "face_top")   # [0, 0, 1]
+aligned = parts_aligned(part1, part2, axis="z", tolerance=0.01)
 ```
 
-### Dimensions
+### Visual Regression
 
 ```python
-from tiacad_core.testing.dimensions import (
-    get_dimensions,
-    get_volume,
-    get_surface_area
-)
+from tiacad_core.testing.visual_regression import pytest_visual_compare
 
-# Get bounding box dimensions
-dims = get_dimensions(part)  # {"width": 50, "height": 30, "depth": 20}
-
-# Get volume
-volume = get_volume(part)  # 30000.0 cubic units
-
-# Get surface area
-area = get_surface_area(part)  # 6200.0 square units
-```
-
-### Visual (v3.2+)
-
-```python
-from tiacad_core.testing.visual_regression import VisualRegression
-
-vr = VisualRegression()
-
-# Save reference
-vr.save_reference("my_part", part)
-
-# Verify against reference
-assert vr.verify_against_reference("my_part", part, threshold=0.95)
-```
-
----
-
-## Test Patterns
-
-### Attachment Correctness
-
-```python
-@pytest.mark.attachment
-def test_cylinder_on_box():
-    """Verify cylinder sits on box top."""
-    yaml = """
-    parts:
-      - name: base
-        type: box
-        size: [50, 50, 10]
-      - name: post
-        type: cylinder
-        radius: 5
-        height: 20
-        position: base.face_top
-    """
-
-    model = build_model(yaml)
-
-    # Verify zero distance
-    dist = measure_distance(
-        model.get("base"),
-        model.get("post"),
-        ref1="face_top.center",
-        ref2="face_bottom.center"
-    )
-    assert dist < 0.001
-```
-
-### Rotation Correctness
-
-```python
-@pytest.mark.rotation
-def test_rotated_box():
-    """Verify box rotated 45° around Z."""
-    yaml = """
-    parts:
-      - name: box
-        type: box
-        size: [10, 20, 5]
-        rotation:
-          axis: [0, 0, 1]
-          angle: 45
-    """
-
-    model = build_model(yaml)
-    box = model.get("box")
-
-    # Verify yaw angle
-    angles = get_orientation_angles(box)
-    assert abs(angles["yaw"] - 45.0) < 0.1
-```
-
-### Visual Correctness
-
-```python
 @pytest.mark.visual
-def test_guitar_hanger_appearance(visual_tester):
-    """Verify guitar hanger looks correct."""
-    yaml = load_file("examples/guitar_hanger.yaml")
-    model = build_model(yaml)
-
-    assert visual_tester.verify_against_reference(
-        "guitar_hanger",
-        model.get_default_part(),
-        threshold=0.95
-    )
+def test_model():
+    result = pytest_visual_compare(geometry=asm, test_name="my_model", threshold=1.0)
+    assert result.passed, f"Pixel diff: {result.pixel_diff_percentage:.2f}%"
 ```
 
-### Dimensional Accuracy
+---
+
+## Writing a Correctness Test (Template)
 
 ```python
+import pytest
+from tiacad_core.parser.tiacad_parser import TiaCADParser
+from tiacad_core.testing.dimensions import get_dimensions, get_volume
+
 @pytest.mark.dimensions
-def test_box_volume():
-    """Verify box volume calculation."""
-    yaml = """
-    parts:
-      - name: box
-        type: box
-        size: [10, 20, 5]
-    """
-
-    model = build_model(yaml)
-    box = model.get("box")
-
-    volume = get_volume(box)
-    expected = 10 * 20 * 5  # 1000
-
-    assert abs(volume - expected) < 0.1
+def test_bracket_with_hole():
+    """Bracket: 80×40×10mm, hole reduces volume below solid."""
+    doc = TiaCADParser().parse_file("examples/bracket_with_hole.yaml")
+    part = doc.get_part("final")
+    dims = get_dimensions(part)
+    assert dims["width"] == pytest.approx(80.0, abs=0.1)
+    assert dims["height"] == pytest.approx(40.0, abs=0.1)
+    assert get_volume(part) < 80 * 40 * 10
 ```
 
----
+### Tolerances
 
-## Timeline Summary
-
-### Phase 1: v3.1 (Q1 2026) - 6-8 weeks
-
-**Focus:** Core utilities
-
-**Week 1:** Distance & position utilities
-**Week 2:** Orientation & rotation utilities
-**Week 3:** Dimensional utilities
-**Week 4:** Attachment tests
-**Week 5:** Rotation tests
-**Week 6:** Dimensional tests
-**Week 7:** CI/CD integration
-**Week 8:** Coverage & polish
-
-**Deliverables:**
-- 3 new utility modules
-- 48+ new correctness tests
-- 950+ total tests
-- 90% coverage
-
-### Phase 2: v3.2 (Q2 2026) - 8-10 weeks
-
-**Focus:** Visual regression & advanced features
-
-**Weeks 1-2:** Research & design
-**Weeks 3-4:** Visual regression implementation
-**Weeks 5-6:** Generate references & tests
-**Week 7:** Contact detection
-**Week 8:** Feature detection (holes, fillets)
-**Week 9:** CI/CD integration
-**Week 10:** Polish & documentation
-
-**Deliverables:**
-- Visual regression framework
-- 50+ visual tests
-- Contact detection
-- Hole/feature detection
-- 1050+ total tests
-
-### Phase 3: v3.3+ (Q3+ 2026) - Ongoing
-
-**Focus:** Stress testing & optimization
-
-**Tasks:**
-- Large assembly tests (100+ parts)
-- Property-based testing
-- Differential testing
-- Mutation testing
-- Performance benchmarks
-
-**Deliverables:**
-- Stress test suite
-- Property-based tests
-- 1200+ total tests
-- 80%+ mutation score
+| Type | Tolerance |
+|---|---|
+| Distances | `< 0.01` mm |
+| Angles | `< 0.1` degrees |
+| Volumes | within `1%` of expected |
+| Dimensions | `abs=0.1` mm |
 
 ---
 
-## Key Metrics
+## Correctness Gap — Next Steps
 
-### Test Count Growth
+The examples lack dimension/volume assertions. Three approaches:
 
-| Version | Total Tests | New Tests | Coverage |
-|---------|-------------|-----------|----------|
-| v3.0 | 896 | - | 84% |
-| v3.1 | 950+ | +54+ | 90% |
-| v3.2 | 1050+ | +100+ | 92% |
-| v3.3+ | 1200+ | +150+ | 95% |
+**A. Write geometric tests for known examples**
+Add to `test_correctness/test_example_contracts.py`. Start with 5 examples where you know the intended dimensions. This directly catches "built but wrong."
 
-### Correctness Coverage
+**B. `--check` CLI flag**
+Fast manual audit: `python -m tiacad examples/foo.yaml --check` prints dimensions + validity. No test writing required. Best for development loop.
 
-| Dimension | v3.0 | v3.1 | v3.2 | v3.3+ |
-|-----------|------|------|------|-------|
-| Attachment | 5% | 60% | 90% | 95% |
-| Rotation | 20% | 70% | 90% | 95% |
-| Visual | 0% | 25% | 100% | 100% |
-| Dimensions | 40% | 80% | 95% | 98% |
+**C. Audit all 49 examples**
+Run all examples, dump dimensions/volume, review for anything that looks wrong. Establishes ground truth.
+
+See [TESTING_GUIDE.md](./TESTING_GUIDE.md#correctness-gap--what-we-know) for full analysis.
 
 ---
 
-## File Structure
+## File Map
 
 ```
 tiacad_core/
-├── testing/                          # Testing utilities (v3.1+)
-│   ├── __init__.py
-│   ├── measurements.py               # Distance, contact detection
-│   ├── orientation.py                # Rotation, normals, alignment
-│   ├── dimensions.py                 # Dimensions, volume, area, holes
-│   └── visual_regression.py          # Visual testing (v3.2+)
+├── testing/
+│   ├── dimensions.py          get_dimensions, get_volume, get_surface_area
+│   ├── measurements.py        measure_distance, get_bounding_box_dimensions
+│   ├── orientation.py         get_orientation_angles, get_normal_vector, parts_aligned
+│   └── visual_regression.py   VisualRegressionTester, pytest_visual_compare
 │
-tests/
-├── test_testing/                     # Tests for testing utilities
-│   ├── test_measurements.py
-│   ├── test_orientation.py
-│   ├── test_dimensions.py
-│   └── test_visual_regression.py
-│
-├── test_correctness/                 # Correctness tests (v3.1+)
-│   ├── test_attachment_correctness.py
-│   ├── test_rotation_correctness.py
-│   ├── test_dimensional_accuracy.py
-│   └── test_visual_correctness.py   # (v3.2+)
-│
-└── visual_references/                # Reference images (v3.2+)
-    ├── guitar_hanger.png
-    ├── mounting_bracket.png
-    └── ...
-
-docs/
-├── TESTING_CONFIDENCE_PLAN.md        # Full strategic plan
-├── TESTING_ROADMAP.md                # Week-by-week implementation guide
-├── TESTING_QUICK_REFERENCE.md        # This file
-├── TESTING_GUIDE.md                  # How-to guide (v3.1+)
-├── TESTING_UTILITIES_API.md          # API reference (v3.2+)
-└── VISUAL_REGRESSION_GUIDE.md        # Visual testing guide (v3.2+)
+└── tests/
+    ├── test_correctness/      68 tests — attachment, rotation, dimensions, mesh validity
+    ├── test_dag/              101 tests — graph, invalidation, cache, incremental builder
+    ├── test_parser/           ~520 tests — YAML → geometry pipeline
+    ├── test_testing/          ~40 tests — tests for testing utilities
+    ├── test_visualization/    renderer tests
+    ├── test_validation/       validation rules
+    ├── test_visual_regression.py   pixel-diff for 49 examples
+    └── visual_references/     51 reference PNGs
 ```
-
----
-
-## Common Tasks
-
-### Adding a New Attachment Test
-
-1. Create test in `tests/test_correctness/test_attachment_correctness.py`
-2. Mark with `@pytest.mark.attachment`
-3. Use `measure_distance()` to verify attachment
-4. Run: `pytest -m attachment`
-
-### Adding a New Rotation Test
-
-1. Create test in `tests/test_correctness/test_rotation_correctness.py`
-2. Mark with `@pytest.mark.rotation`
-3. Use `get_orientation_angles()` or `get_normal_vector()`
-4. Run: `pytest -m rotation`
-
-### Adding a New Visual Test (v3.2+)
-
-1. Create test in `tests/test_correctness/test_visual_correctness.py`
-2. Mark with `@pytest.mark.visual`
-3. Save reference: `SAVE_REFERENCE=1 pytest <test>`
-4. Verify: `pytest <test>`
-
-### Updating Coverage
-
-1. Run: `pytest --cov=tiacad_core --cov-report=html`
-2. Open: `htmlcov/index.html`
-3. Identify gaps
-4. Add tests for uncovered code
-
----
-
-## Troubleshooting
-
-### Visual Test Failing
-
-**Problem:** Visual test fails but model looks correct
-
-**Solutions:**
-1. Check similarity threshold (may need adjustment)
-2. Regenerate reference: `SAVE_REFERENCE=1 pytest <test>`
-3. Check for platform-specific rendering differences
-
-### Attachment Test Failing
-
-**Problem:** `measure_distance()` returns non-zero distance
-
-**Solutions:**
-1. Check reference names are correct (`"face_top"` vs `"face_top.center"`)
-2. Verify parts exist in model
-3. Check tolerance (may need to increase from 0.001)
-
-### Rotation Test Failing
-
-**Problem:** Angles don't match expected
-
-**Solutions:**
-1. Check rotation order (axis-angle vs quaternion vs Euler)
-2. Verify gimbal lock isn't causing issues
-3. Use normal vectors instead of angles for verification
-
----
-
-## Resources
-
-**Documentation:**
-- [TESTING_CONFIDENCE_PLAN.md](./TESTING_CONFIDENCE_PLAN.md) - Full plan
-- [TESTING_ROADMAP.md](./TESTING_ROADMAP.md) - Implementation timeline
-- [PROJECT.md](../PROJECT.md) - TiaCAD overview
-
-**External:**
-- [pytest documentation](https://docs.pytest.org/)
-- [numpy.testing](https://numpy.org/doc/stable/reference/routines.testing.html)
-- [trimesh documentation](https://trimsh.org/)
-
----
-
-## Quick Wins
-
-**Easy improvements you can make today:**
-
-1. **Add dimension test for new primitive**
-   ```python
-   def test_new_primitive_dimensions():
-       yaml = """..."""
-       model = build_model(yaml)
-       dims = get_dimensions(model.get("part"))
-       assert dims["width"] == expected_width
-   ```
-
-2. **Add attachment test for example**
-   ```python
-   def test_example_attachment():
-       yaml = load_file("examples/my_example.yaml")
-       model = build_model(yaml)
-       dist = measure_distance(model.get("part1"), model.get("part2"))
-       assert dist < 0.001
-   ```
-
-3. **Verify rotation correctness**
-   ```python
-   def test_rotation():
-       yaml = """..."""
-       model = build_model(yaml)
-       angles = get_orientation_angles(model.get("part"))
-       assert abs(angles["yaw"] - 45.0) < 0.1
-   ```
-
----
-
-**Last Updated:** 2025-11-10
-**Maintainer:** TIA Project
-**Status:** Active Development
