@@ -1,14 +1,18 @@
 """
-ComponentImporter - Local file import system for TiaCAD
+ComponentImporter - Import system for TiaCAD
 
 Handles the `imports:` section in TiaCAD YAML files, allowing reuse of
 parts from other YAML files with optional parameter overrides.
 
-Import spec format:
+Supported path formats:
   imports:
-    - path: ./bracket.yaml      # required: path relative to current file
-      as: bracket               # required: namespace prefix for imported parts
-      parameters:               # optional: override parameters in imported file
+    - path: ./bracket.yaml               # local file (relative to current file)
+      as: bracket
+    - path: tiacad://std/hardware/m3_screw   # bundled standard library
+      as: screw
+    - path: github:user/repo/component.yaml  # GitHub raw download (cached)
+      as: hook
+      parameters:                        # optional: override parameters
         width: 75
 
 After processing, parts from the imported file are available as:
@@ -16,9 +20,20 @@ After processing, parts from the imported file are available as:
 
 Supports recursive imports (A imports B imports C).
 Circular imports are detected and raise TiaCADParserError.
+
+GitHub import details:
+  - Fetches from https://raw.githubusercontent.com/{user}/{repo}/main/{path}
+  - Cached to ~/.tiacad/cache/github/{user}/{repo}/{path}
+  - Cache is permanent; delete ~/.tiacad/cache/github/ to force refresh
+
+Standard library details:
+  - tiacad://std/hardware/m3_screw → tiacad_core/stdlib/hardware/m3_screw.yaml
+  - Available: m3_screw, m4_screw, m5_screw, m6_bolt, m3_washer, m3_standoff
 """
 
 import logging
+import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import Dict, Any, FrozenSet, List
 
@@ -27,6 +42,12 @@ import yaml
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from .yaml_with_lines import parse_yaml_with_lines
+
+# Bundled stdlib root: tiacad_core/stdlib/
+_STDLIB_DIR = Path(__file__).parent.parent / "stdlib"
+
+# GitHub download cache: ~/.tiacad/cache/github/
+_GITHUB_CACHE_DIR = Path.home() / ".tiacad" / "cache" / "github"
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +102,7 @@ class ComponentImporter:
             namespace = import_def['as']
             param_overrides = import_def.get('parameters', {})
 
-            abs_path = str((base_path / rel_path).resolve())
+            abs_path = ComponentImporter._resolve_path(rel_path, base_path)
 
             if abs_path in import_stack:
                 raise ComponentImportError(
@@ -107,6 +128,108 @@ class ComponentImporter:
                 logger.debug(f"Imported part '{part.name}'")
 
         return registry
+
+    @staticmethod
+    def _resolve_path(path_spec: str, base_dir: Path) -> str:
+        """
+        Resolve a path spec to an absolute local filesystem path.
+
+        Handles three URI schemes:
+          - Local:   ./bracket.yaml or ../parts/bracket.yaml
+          - Stdlib:  tiacad://std/hardware/m3_screw
+          - GitHub:  github:user/repo/path/to/component.yaml
+        """
+        if path_spec.startswith("tiacad://std/"):
+            return ComponentImporter._resolve_stdlib(path_spec)
+        elif path_spec.startswith("github:"):
+            return ComponentImporter._fetch_github(path_spec)
+        else:
+            return str((base_dir / path_spec).resolve())
+
+    @staticmethod
+    def _resolve_stdlib(uri: str) -> str:
+        """
+        Resolve tiacad://std/<subpath> to an absolute path in the bundled stdlib.
+
+        Example:
+            tiacad://std/hardware/m3_screw  →  .../tiacad_core/stdlib/hardware/m3_screw.yaml
+        """
+        # Strip scheme prefix
+        subpath = uri[len("tiacad://std/"):]
+        if not subpath:
+            raise ComponentImportError(
+                f"Invalid stdlib URI '{uri}': path is empty after 'tiacad://std/'"
+            )
+
+        # Add .yaml if not already present
+        if not subpath.endswith(".yaml"):
+            subpath += ".yaml"
+
+        abs_path = _STDLIB_DIR / subpath
+        if not abs_path.exists():
+            # List available components in the same directory to help the user
+            parent = abs_path.parent
+            available = sorted(p.stem for p in parent.glob("*.yaml")) if parent.exists() else []
+            hint = f" Available in {parent.name}/: {', '.join(available)}" if available else ""
+            raise ComponentImportError(
+                f"Standard library component not found: '{uri}'.{hint}",
+                path=str(abs_path)
+            )
+
+        return str(abs_path)
+
+    @staticmethod
+    def _fetch_github(spec: str) -> str:
+        """
+        Fetch a GitHub component and cache it locally.
+
+        Format: github:user/repo/path/to/component.yaml
+        URL:    https://raw.githubusercontent.com/user/repo/main/path/to/component.yaml
+        Cache:  ~/.tiacad/cache/github/user/repo/path/to/component.yaml
+
+        Defaults to the `main` branch. Cache is permanent — delete
+        ~/.tiacad/cache/github/ to force a refresh.
+        """
+        # Strip scheme prefix: "user/repo/path/to/file.yaml"
+        remainder = spec[len("github:"):]
+        parts = remainder.split("/", 2)
+        if len(parts) < 3:
+            raise ComponentImportError(
+                f"Invalid GitHub import spec '{spec}': "
+                f"expected 'github:user/repo/path/to/file.yaml'"
+            )
+        user, repo, file_path = parts[0], parts[1], parts[2]
+
+        if not file_path.endswith(".yaml"):
+            file_path += ".yaml"
+
+        url = f"https://raw.githubusercontent.com/{user}/{repo}/main/{file_path}"
+        cache_path = _GITHUB_CACHE_DIR / user / repo / file_path
+
+        if cache_path.exists():
+            logger.info(f"GitHub cache hit: {spec} → {cache_path}")
+            return str(cache_path)
+
+        logger.info(f"Fetching GitHub component: {url}")
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            urllib.request.urlretrieve(url, str(cache_path))
+        except urllib.error.HTTPError as e:
+            cache_path.unlink(missing_ok=True)
+            raise ComponentImportError(
+                f"Failed to fetch GitHub component '{spec}': HTTP {e.code} from {url}",
+                path=str(cache_path)
+            ) from e
+        except urllib.error.URLError as e:
+            cache_path.unlink(missing_ok=True)
+            raise ComponentImportError(
+                f"Failed to fetch GitHub component '{spec}': {e.reason}",
+                path=str(cache_path)
+            ) from e
+
+        logger.info(f"Cached GitHub component: {spec} → {cache_path}")
+        return str(cache_path)
 
     @staticmethod
     def _import_file(

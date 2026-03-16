@@ -1,0 +1,47 @@
+schema_version: "2.0"
+
+# Reusable mounting bracket component
+# Import with:
+#   imports:
+#     - path: ./components/mounting_bracket.yaml
+#       as: bracket
+#       parameters:
+#         width: 60
+#         height: 40
+
+metadata:
+  name: Mounting Bracket
+  description: Simple L-bracket with a flat base and vertical flange
+  version: 1.0
+  author: TIA
+
+parameters:
+  width: 50         # bracket width
+  base_depth: 30    # horizontal base depth
+  flange_height: 40 # vertical flange height
+  thickness: 5      # material thickness
+
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: '${width}'
+      depth: '${base_depth}'
+      height: '${thickness}'
+
+  flange:
+    primitive: box
+    parameters:
+      width: '${width}'
+      depth: '${thickness}'
+      height: '${flange_height}'
+
+operations:
+  position_flange:
+    type: transform
+    input: flange
+    transforms:
+      - translate: [0, '${base_depth / 2 - thickness / 2}', '${flange_height / 2 + thickness / 2}']
+
+export:
+  default_part: base

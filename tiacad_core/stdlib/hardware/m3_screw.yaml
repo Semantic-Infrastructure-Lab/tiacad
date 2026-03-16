@@ -1,0 +1,44 @@
+schema_version: "2.0"
+
+# Reusable M3 screw component
+# Import with:
+#   imports:
+#     - path: ./components/m3_screw.yaml
+#       as: screw
+#       parameters:
+#         length: 20
+
+metadata:
+  name: M3 Screw
+  description: Parametric M3 machine screw (simplified — shaft + head)
+  version: 1.0
+  author: TIA
+
+parameters:
+  length: 16          # shaft length in mm
+  head_height: 3      # pan head height
+  head_radius: 2.8    # pan head radius (M3 spec)
+  shaft_radius: 1.5   # M3 = 3mm diameter
+
+parts:
+  shaft:
+    primitive: cylinder
+    parameters:
+      radius: '${shaft_radius}'
+      height: '${length}'
+
+  head:
+    primitive: cylinder
+    parameters:
+      radius: '${head_radius}'
+      height: '${head_height}'
+
+operations:
+  position_head:
+    type: transform
+    input: head
+    transforms:
+      - translate: [0, 0, '${length}']
+
+export:
+  default_part: shaft

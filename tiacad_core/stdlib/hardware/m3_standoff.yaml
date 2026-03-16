@@ -1,0 +1,47 @@
+schema_version: "2.0"
+
+# Reusable M3 cylindrical standoff component
+# Import with:
+#   imports:
+#     - path: ./components/m3_standoff.yaml
+#       as: standoff
+#       parameters:
+#         height: 10
+
+metadata:
+  name: M3 Cylindrical Standoff
+  description: >
+    Parametric M3 hex standoff (body approximated as cylinder).
+    Used as PCB spacers, panel separators, and assembly spacers.
+    Threaded bore modelled as solid for simplicity (subtract if needed).
+  version: 1.0
+  author: TIA
+
+parameters:
+  height: 10          # standoff height in mm
+  outer_radius: 3.0   # M3 standoff: 6mm across flats → ~3.46mm circumradius; 3mm is conservative
+  bore_radius: 1.6    # M3 threaded bore (clearance fit)
+
+parts:
+  body:
+    primitive: cylinder
+    parameters:
+      radius: '${outer_radius}'
+      height: '${height}'
+
+  bore:
+    primitive: cylinder
+    parameters:
+      radius: '${bore_radius}'
+      height: '${height + 1}'
+
+operations:
+  standoff:
+    type: boolean
+    operation: difference
+    base: body
+    subtract:
+      - bore
+
+export:
+  default_part: standoff

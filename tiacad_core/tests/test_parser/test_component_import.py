@@ -14,9 +14,13 @@ Tests cover:
 import os
 import pytest
 import tempfile
+from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 from tiacad_core.parser.tiacad_parser import TiaCADParser, TiaCADParserError
-from tiacad_core.parser.component_importer import ComponentImporter, ComponentImportError
+from tiacad_core.parser.component_importer import (
+    ComponentImporter, ComponentImportError, _STDLIB_DIR, _GITHUB_CACHE_DIR
+)
 
 
 # ---------------------------------------------------------------------------
@@ -503,3 +507,212 @@ class TestComponentImporterUnit:
     def test_validate_import_def_not_a_dict(self):
         with pytest.raises(ComponentImportError, match="mapping"):
             ComponentImporter._validate_import_def("not_a_dict", 0)
+
+
+# ---------------------------------------------------------------------------
+# _resolve_path routing
+# ---------------------------------------------------------------------------
+
+class TestResolvePath:
+
+    def test_local_path_resolved(self, tmp_path):
+        result = ComponentImporter._resolve_path("./sub/bracket.yaml", tmp_path)
+        assert result == str((tmp_path / "sub" / "bracket.yaml").resolve())
+
+    def test_stdlib_uri_routed(self):
+        result = ComponentImporter._resolve_path("tiacad://std/hardware/m3_screw", Path("/any"))
+        assert result == str(_STDLIB_DIR / "hardware" / "m3_screw.yaml")
+
+    def test_github_uri_routed(self, tmp_path):
+        # Patch _fetch_github to avoid network
+        with patch.object(ComponentImporter, '_fetch_github', return_value="/tmp/cached.yaml") as mock:
+            result = ComponentImporter._resolve_path("github:user/repo/comp.yaml", tmp_path)
+        mock.assert_called_once_with("github:user/repo/comp.yaml")
+        assert result == "/tmp/cached.yaml"
+
+
+# ---------------------------------------------------------------------------
+# Standard library imports
+# ---------------------------------------------------------------------------
+
+class TestStdlibImports:
+
+    def test_m3_screw_resolves(self):
+        path = ComponentImporter._resolve_stdlib("tiacad://std/hardware/m3_screw")
+        assert path == str(_STDLIB_DIR / "hardware" / "m3_screw.yaml")
+        assert Path(path).exists(), "m3_screw.yaml must exist in stdlib"
+
+    def test_yaml_extension_auto_added(self):
+        path = ComponentImporter._resolve_stdlib("tiacad://std/hardware/m4_screw")
+        assert path.endswith("m4_screw.yaml")
+
+    def test_yaml_extension_not_doubled(self):
+        path = ComponentImporter._resolve_stdlib("tiacad://std/hardware/m5_screw.yaml")
+        assert path.endswith("m5_screw.yaml")
+        assert not path.endswith(".yaml.yaml")
+
+    def test_all_stdlib_components_exist(self):
+        expected = ["m3_screw", "m4_screw", "m5_screw", "m6_bolt", "m3_washer", "m3_standoff"]
+        for name in expected:
+            path = ComponentImporter._resolve_stdlib(f"tiacad://std/hardware/{name}")
+            assert Path(path).exists(), f"stdlib component missing: {name}"
+
+    def test_missing_stdlib_raises_helpful_error(self):
+        with pytest.raises(ComponentImportError, match="not found") as exc_info:
+            ComponentImporter._resolve_stdlib("tiacad://std/hardware/nonexistent_widget")
+        # Error message should list available components
+        assert "m3_screw" in str(exc_info.value)
+
+    def test_empty_stdlib_uri_raises(self):
+        with pytest.raises(ComponentImportError, match="empty"):
+            ComponentImporter._resolve_stdlib("tiacad://std/")
+
+    def test_stdlib_import_builds_part(self, tmp_path):
+        """End-to-end: tiacad://std URI through the full parser."""
+        main_yaml = tmp_path / "assembly.yaml"
+        main_yaml.write_text("""
+metadata:
+  name: Stdlib Test
+imports:
+  - path: tiacad://std/hardware/m3_screw
+    as: screw
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: 50
+      height: 5
+      depth: 50
+""")
+        doc = TiaCADParser.parse_file(str(main_yaml))
+        part_names = doc.parts.list_parts()
+        assert any("screw." in n for n in part_names), f"screw.* parts missing from {part_names}"
+        assert "plate" in part_names
+
+
+# ---------------------------------------------------------------------------
+# GitHub imports (mocked — no network)
+# ---------------------------------------------------------------------------
+
+GITHUB_COMPONENT_YAML = """
+parameters:
+  radius: 5
+  height: 20
+parts:
+  shaft:
+    primitive: cylinder
+    parameters:
+      radius: '${radius}'
+      height: '${height}'
+"""
+
+
+class TestGithubImports:
+
+    def test_fetch_github_downloads_and_caches(self, tmp_path):
+        cache_root = tmp_path / "cache"
+
+        def fake_urlretrieve(url, dest):
+            Path(dest).write_text(GITHUB_COMPONENT_YAML)
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
+            result = ComponentImporter._fetch_github("github:alice/parts/peg.yaml")
+
+        expected = str(cache_root / "alice" / "parts" / "peg.yaml")
+        assert result == expected
+        assert Path(result).read_text() == GITHUB_COMPONENT_YAML
+
+    def test_fetch_github_uses_cache_on_second_call(self, tmp_path):
+        cache_root = tmp_path / "cache"
+        cached_file = cache_root / "alice" / "parts" / "peg.yaml"
+        cached_file.parent.mkdir(parents=True)
+        cached_file.write_text(GITHUB_COMPONENT_YAML)
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve") as mock_dl:
+            result = ComponentImporter._fetch_github("github:alice/parts/peg.yaml")
+
+        mock_dl.assert_not_called()
+        assert result == str(cached_file)
+
+    def test_fetch_github_yaml_extension_auto_added(self, tmp_path):
+        cache_root = tmp_path / "cache"
+
+        def fake_urlretrieve(url, dest):
+            Path(dest).write_text(GITHUB_COMPONENT_YAML)
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
+            result = ComponentImporter._fetch_github("github:alice/parts/peg")
+
+        assert result.endswith("peg.yaml")
+
+    def test_fetch_github_builds_correct_url(self, tmp_path):
+        cache_root = tmp_path / "cache"
+        captured_url = []
+
+        def fake_urlretrieve(url, dest):
+            captured_url.append(url)
+            Path(dest).write_text(GITHUB_COMPONENT_YAML)
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
+            ComponentImporter._fetch_github("github:bob/my-repo/hardware/bracket.yaml")
+
+        assert captured_url[0] == "https://raw.githubusercontent.com/bob/my-repo/main/hardware/bracket.yaml"
+
+    def test_fetch_github_http_error_raises(self, tmp_path):
+        import urllib.error
+        cache_root = tmp_path / "cache"
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=urllib.error.HTTPError(
+                 url=None, code=404, msg="Not Found", hdrs=None, fp=None
+             )):
+            with pytest.raises(ComponentImportError, match="404"):
+                ComponentImporter._fetch_github("github:alice/parts/missing.yaml")
+
+    def test_fetch_github_network_error_raises(self, tmp_path):
+        import urllib.error
+        cache_root = tmp_path / "cache"
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=urllib.error.URLError("Network unreachable")):
+            with pytest.raises(ComponentImportError, match="Network unreachable"):
+                ComponentImporter._fetch_github("github:alice/parts/widget.yaml")
+
+    def test_fetch_github_invalid_spec_raises(self, tmp_path):
+        """Spec must have user/repo/path — 'github:user/repo' alone is invalid."""
+        with pytest.raises(ComponentImportError, match="Invalid GitHub"):
+            ComponentImporter._fetch_github("github:user/repo")
+
+    def test_github_import_end_to_end(self, tmp_path):
+        """End-to-end: github: URI through the full parser (mocked download)."""
+        cache_root = tmp_path / "cache"
+
+        def fake_urlretrieve(url, dest):
+            Path(dest).write_text(GITHUB_COMPONENT_YAML)
+
+        main_yaml = tmp_path / "assembly.yaml"
+        main_yaml.write_text("""
+metadata:
+  name: Github Import Test
+imports:
+  - path: github:alice/parts/peg.yaml
+    as: peg
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: 30
+      height: 5
+      depth: 30
+""")
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
+            doc = TiaCADParser.parse_file(str(main_yaml))
+
+        part_names = doc.parts.list_parts()
+        assert "peg.shaft" in part_names
+        assert "base" in part_names
