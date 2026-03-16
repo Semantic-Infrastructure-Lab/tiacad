@@ -438,6 +438,271 @@ def cmd_validate_geometry(args):
         return 1
 
 
+def cmd_check(args):
+    """
+    Build a TiaCAD file and report dimensions, volume, and validity for every part.
+
+    No file output. Designed as a fast development loop tool:
+      - Did my boolean subtract actually remove material?
+      - Is this box really 80mm wide?
+      - Did the revolve produce positive volume?
+    """
+    from .parser.tiacad_parser import TiaCADParser
+    from .testing.dimensions import get_dimensions, DimensionError
+
+    input_file = Path(args.input)
+    if not input_file.exists():
+        print_error(f"File not found: {input_file}")
+        return 1
+
+    print_header(f"\n📄 {input_file.name}")
+    print()
+
+    try:
+        start_time = time.time()
+        doc = TiaCADParser.parse_file(str(input_file))
+        parse_time = time.time() - start_time
+
+        if doc.parameters:
+            print_header(f"Parameters ({len(doc.parameters)}):")
+            pairs = [f"{Colors.CYAN}{k}{Colors.RESET}={v}" for k, v in doc.parameters.items()]
+            # Wrap at ~80 chars
+            line = "  "
+            for p in pairs:
+                line += p + "  "
+            print(line.rstrip())
+            print()
+
+        # Identify the "final" part (last operation result)
+        final_part_name = None
+        if doc.operations:
+            final_part_name = list(doc.operations.keys())[-1]
+
+        parts = doc.parts.list_parts()
+        if not parts:
+            print_warning("No parts found in document")
+            return 0
+
+        # Column widths (exclude internal _ parts)
+        visible_parts = [p for p in parts if not p.startswith('_')]
+        max_name = max((len(p) for p in visible_parts), default=8)
+        col_w = max(max_name, 8)
+
+        print_header(f"Parts ({len(visible_parts)}):")
+        print(f"  {'NAME':<{col_w}}  {'TYPE':<8}  {'W × H × D (mm)':<30}  VOLUME (mm³)")
+        print(f"  {'─'*col_w}  {'─'*8}  {'─'*30}  {'─'*14}")
+
+        errors = []
+        build_start = time.time()
+
+        for part_name in parts:
+            if part_name.startswith('_'):
+                continue  # skip internal placeholder parts
+            part = doc.parts.get(part_name)
+            prim_type = (
+                part.metadata.get('primitive_type')
+                or part.metadata.get('operation_type')
+                or part.metadata.get('source')
+                or '?'
+            )
+            is_final = part_name == final_part_name
+
+            try:
+                dims = get_dimensions(part)
+                w, h, d = dims['width'], dims['height'], dims['depth']
+                vol = dims['volume']
+                dim_str = f"{w:.1f} × {h:.1f} × {d:.1f}"
+                vol_str = f"{vol:>14,.1f}"
+
+                star = f"{Colors.YELLOW}★{Colors.RESET}" if is_final else " "
+                pad = ' ' * (col_w - len(part_name))
+                if is_final:
+                    name_col = f"{Colors.BOLD}{Colors.GREEN}{part_name}{Colors.RESET}"
+                else:
+                    name_col = f"{Colors.GREEN}{part_name}{Colors.RESET}"
+                print(f"  {name_col}{pad}  {star} {Colors.GRAY}{prim_type:<8}{Colors.RESET}  {dim_str:<30}  {vol_str}")
+
+            except DimensionError as e:
+                errors.append((part_name, str(e)))
+                star = "★" if is_final else " "
+                pad = ' ' * (col_w - len(part_name))
+                print(f"  {Colors.RED}{part_name}{Colors.RESET}{pad}  {star} {Colors.GRAY}{prim_type:<8}{Colors.RESET}  {Colors.RED}ERROR: {e}{Colors.RESET}")
+
+        build_time = time.time() - build_start
+        print()
+
+        if errors:
+            print_error(f"{len(errors)} part(s) failed measurement")
+            for name, msg in errors:
+                print(f"  {Colors.RED}└─ {name}:{Colors.RESET} {msg}")
+            return 1
+        else:
+            n = len(visible_parts)
+            print_success(
+                f"All {n} part{'s' if n != 1 else ''} built  "
+                f"(parse: {parse_time:.2f}s  build: {build_time:.2f}s)"
+            )
+            return 0
+
+    except Exception as e:
+        print_error(f"Check failed: {str(e)}")
+        if args.verbose:
+            traceback.print_exc()
+        return 1
+
+
+def _audit_one_file(input_file: Path, verbose: bool):
+    """
+    Build a single file and return a result dict for the audit table.
+    Keys: name, status ('ok'/'fail'/'warn'), dims, volume, parts_count,
+          final_part, error, elapsed.
+    """
+    from .parser.tiacad_parser import TiaCADParser
+    from .testing.dimensions import get_dimensions, DimensionError
+
+    result = {
+        'name': input_file.name,
+        'status': 'ok',
+        'dims': None,
+        'volume': None,
+        'parts_count': 0,
+        'final_part': None,
+        'issues': [],
+        'error': None,
+        'elapsed': 0.0,
+    }
+
+    try:
+        t0 = time.time()
+        doc = TiaCADParser.parse_file(str(input_file))
+
+        parts = doc.parts.list_parts()
+        result['parts_count'] = len(parts)
+
+        # Pick final part
+        final_name = None
+        if doc.operations:
+            final_name = list(doc.operations.keys())[-1]
+        elif parts:
+            final_name = parts[0]
+
+        result['final_part'] = final_name
+
+        if final_name:
+            part = doc.parts.get(final_name)
+            try:
+                dims = get_dimensions(part)
+                result['dims'] = (dims['width'], dims['height'], dims['depth'])
+                result['volume'] = dims['volume']
+
+                if dims['volume'] <= 0:
+                    result['issues'].append(f"zero/negative volume: {dims['volume']:.1f}")
+                    result['status'] = 'warn'
+
+            except DimensionError as e:
+                result['issues'].append(f"measure failed: {e}")
+                result['status'] = 'warn'
+
+        result['elapsed'] = time.time() - t0
+
+    except Exception as e:
+        result['status'] = 'fail'
+        result['error'] = str(e)
+        if verbose:
+            result['error'] += f"\n{traceback.format_exc()}"
+
+    return result
+
+
+def cmd_audit(args):
+    """
+    Audit multiple TiaCAD files: build each, report dimensions and volume of
+    the final part, flag failures and anomalies.
+
+    Designed for establishing ground truth across all examples:
+      tiacad audit examples/*.yaml
+    """
+    files = _resolve_file_list(args.files)
+    if not files:
+        print_error("No files to audit")
+        return 1
+
+    # Sort for stable output
+    files = sorted(files, key=lambda p: p.name)
+
+    print_header(f"Auditing {len(files)} file(s)...\n")
+
+    results = []
+    total_start = time.time()
+
+    for i, f in enumerate(files, 1):
+        # Show progress on TTY
+        if sys.stdout.isatty():
+            print(f"\r  [{i}/{len(files)}] {f.name:<50}", end='', flush=True)
+        result = _audit_one_file(f, verbose=args.verbose)
+        results.append(result)
+
+    if sys.stdout.isatty():
+        print(f"\r{' ' * 60}\r", end='')  # clear progress line
+
+    total_elapsed = time.time() - total_start
+
+    # Column widths
+    max_name = max(len(r['name']) for r in results)
+    col_w = max(max_name, 12)
+
+    # Header
+    print(f"  {'FILE':<{col_w}}  {'PARTS':>5}  {'STATUS':<7}  {'DIMS W×H×D (mm)':<32}  {'VOLUME (mm³)':>14}  TIME")
+    print(f"  {'─'*col_w}  {'─'*5}  {'─'*7}  {'─'*32}  {'─'*14}  {'─'*6}")
+
+    ok_count = warn_count = fail_count = 0
+
+    for r in results:
+        name = r['name']
+        parts_str = str(r['parts_count']) if r['parts_count'] else '-'
+        elapsed_str = f"{r['elapsed']:.1f}s"
+
+        if r['status'] == 'ok':
+            ok_count += 1
+            status_str = f"{Colors.GREEN}✓ OK   {Colors.RESET}"
+        elif r['status'] == 'warn':
+            warn_count += 1
+            status_str = f"{Colors.YELLOW}⚠ WARN {Colors.RESET}"
+        else:
+            fail_count += 1
+            status_str = f"{Colors.RED}✗ FAIL {Colors.RESET}"
+
+        if r['dims']:
+            w, h, d = r['dims']
+            dims_str = f"{w:.1f} × {h:.1f} × {d:.1f}"
+        elif r['error']:
+            # Truncate error to fit column
+            dims_str = r['error'][:30]
+        else:
+            dims_str = '-'
+
+        vol_str = f"{r['volume']:>14,.1f}" if r['volume'] is not None else f"{'—':>14}"
+
+        print(
+            f"  {name:<{col_w}}  {parts_str:>5}  {status_str}  "
+            f"{dims_str:<32}  {vol_str}  {elapsed_str}"
+        )
+
+        for issue in r['issues']:
+            print(f"  {' '*(col_w+2)}  {Colors.YELLOW}└─ {issue}{Colors.RESET}")
+
+    print()
+    print_header("Summary:")
+    print(f"  {Colors.GREEN}✓ OK:   {ok_count}{Colors.RESET}")
+    if warn_count:
+        print(f"  {Colors.YELLOW}⚠ WARN: {warn_count}{Colors.RESET}")
+    if fail_count:
+        print(f"  {Colors.RED}✗ FAIL: {fail_count}{Colors.RESET}")
+    print(f"  Total: {len(files)} files  ({total_elapsed:.1f}s)")
+
+    return 0 if fail_count == 0 else 1
+
+
 def create_parser():
     """Create the argument parser"""
     parser = argparse.ArgumentParser(
@@ -495,6 +760,24 @@ For more information: https://github.com/scottsen/tiacad
     validate_geom_parser.add_argument('-p', '--part', help='Specific part to validate (default: last operation)')
     validate_geom_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with component details')
     validate_geom_parser.set_defaults(func=cmd_validate_geometry)
+
+    # Check command
+    check_parser = subparsers.add_parser(
+        'check',
+        help='Build a file and report dimensions + volume for every part (no output file)'
+    )
+    check_parser.add_argument('input', help='Input YAML file')
+    check_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback on error')
+    check_parser.set_defaults(func=cmd_check)
+
+    # Audit command
+    audit_parser = subparsers.add_parser(
+        'audit',
+        help='Audit multiple files: build each, report final-part dimensions and flag failures'
+    )
+    audit_parser.add_argument('files', nargs='+', help='YAML file(s) to audit (supports glob patterns)')
+    audit_parser.add_argument('-v', '--verbose', action='store_true', help='Show full tracebacks on failure')
+    audit_parser.set_defaults(func=cmd_audit)
 
     return parser
 

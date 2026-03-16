@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-03-15 (session: sutegaku-0315)
+
+#### Correctness Infrastructure — `tiacad check`, `tiacad audit`, geometric contracts
+
+**Problem:** TiaCAD had 1244 tests but none verified that example files produce correct
+geometry. Visual regression proved "looks the same as before" not "looks right."
+
+**`tiacad check <file>`** — new CLI command (no file output):
+- Builds all parts, reports W×H×D and volume for each
+- Highlights final part (★ = last operation result), shows parameters inline
+- Fast dev loop: "did my boolean subtract actually remove material?"
+
+**`tiacad audit <files...>`** — batch across many files, summary table:
+- 44 OK, 1 WARN (pipe_sweep_simple zero volume), 4 FAIL on all 49 examples
+- Identified 1 real bug: component_import_demo uses old translate dict syntax
+
+**`test_example_contracts.py`** — 64 geometric contract tests:
+- Tier 1: all 44 buildable examples must have positive volume (parametrized)
+- Tier 2: dimensional contracts for 8 key examples (independently verifiable)
+  - `bracket_with_hole`: hole subtract confirmed, exact vol ~9,214
+  - `auto_references_box_stack`: each of 3 boxes checked individually
+  - `lego_brick`: 3×1 > 2×1 volume relationship asserted
+  - `text_engraved`: engraving confirmed (volume < uncut base plate)
+
+**Test baseline:** 1308 pass (was 1244, +64). Pre-existing failure unchanged.
+
 ### Added - 2026-03-15 (session: metallic-shade-0315)
 
 #### DAG Incremental Rebuild — Phases 0–3
