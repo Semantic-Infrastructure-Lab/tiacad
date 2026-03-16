@@ -727,6 +727,14 @@ def cmd_watch(args):
     )
     print()
 
+    export_path = Path(args.export) if args.export else None
+    if export_path:
+        ext = export_path.suffix.lower()
+        if ext not in ('.stl', '.3mf', '.step'):
+            print_error(f"Unsupported export format: {ext}  (use .stl, .3mf, or .step)")
+            return 1
+        print_info(f"Auto-export → {Colors.CYAN}{export_path}{Colors.RESET}")
+
     def on_rebuild(result: WatchBuildResult) -> None:
         ts = time.strftime("%H:%M:%S")
         tag = "initial" if result.is_initial else "changed"
@@ -736,12 +744,17 @@ def cmd_watch(args):
                 if result.cached > 0
                 else f"{result.rebuilt} rebuilt"
             )
+            export_str = (
+                f"  → {Colors.CYAN}{Path(result.exported_path).name}{Colors.RESET}"
+                if result.exported_path else ""
+            )
             print(
                 f"  {Colors.GRAY}[{ts}]{Colors.RESET}"
                 f"  {tag:<9}"
                 f"  {Colors.GREEN}✓{Colors.RESET}"
                 f"  {result.rebuild_ms:>6.0f}ms"
                 f"  {Colors.GRAY}{cache_str}{Colors.RESET}"
+                f"{export_str}"
             )
         else:
             print(
@@ -751,7 +764,7 @@ def cmd_watch(args):
                 f"  {Colors.RED}{result.error}{Colors.RESET}"
             )
 
-    watcher = FileWatcher(input_file, on_rebuild=on_rebuild)
+    watcher = FileWatcher(input_file, on_rebuild=on_rebuild, export_path=export_path)
     try:
         watcher.start()
     except KeyboardInterrupt:
@@ -844,6 +857,10 @@ For more information: https://github.com/scottsen/tiacad
         help='Watch a file and rebuild on each save (incremental — reuses cached geometry)'
     )
     watch_parser.add_argument('input', help='Input YAML file to watch')
+    watch_parser.add_argument(
+        '--export', '-e', metavar='PATH',
+        help='Auto-export final part to STL/3MF/STEP on each successful rebuild'
+    )
     watch_parser.set_defaults(func=cmd_watch)
 
     return parser

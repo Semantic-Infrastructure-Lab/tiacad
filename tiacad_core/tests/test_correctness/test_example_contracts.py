@@ -68,6 +68,7 @@ BUILDABLE_EXAMPLES = [
     "formats_demo.yaml",
     "guitar_hanger_named_points.yaml",
     "guitar_hanger_with_holes.yaml",
+    "hardware_assembly_demo.yaml",
     "hull_enclosure.yaml",
     "hull_simple.yaml",
     "lego_brick_2x1.yaml",
@@ -291,3 +292,108 @@ class TestTextOperations:
         """text_operation_emboss_simple.yaml: embossing must produce geometry."""
         dims, _ = _parse_and_measure_final("text_operation_emboss_simple.yaml")
         assert dims["volume"] > 0
+
+
+class TestComponentImportDemo:
+    """
+    component_import_demo.yaml: wall panel assembly using imported components.
+
+    Imports:
+      - mounting_bracket.yaml as 'bracket' (width=60, base_depth=35, flange_height=50, thickness=5)
+      - m3_screw.yaml as 'screw_short' (length=12) and 'screw_long' (length=25)
+
+    Local parts:
+      - panel: box width=200, depth=3 (panel_thickness), height=150
+        → vol = 200 × 3 × 150 = 90,000 mm³
+
+    Imported part ground truth (derived from component YAML + overrides):
+      - bracket.base:   box  60 × 35 × 5  → vol = 10,500 mm³
+      - bracket.flange: box  60 × 5  × 50 → vol = 15,000 mm³
+      - screw_short.shaft: cylinder r=1.5, h=12
+      - screw_long.shaft:  cylinder r=1.5, h=25
+    """
+
+    def _parse(self):
+        doc = TiaCADParser.parse_file(str(EXAMPLES / "component_import_demo.yaml"))
+        return doc
+
+    def test_panel_dimensions(self):
+        """Panel box: YAML width=200, depth=3, height=150.
+        get_dimensions maps: X=width(200), Y=height(3), Z=depth(150).
+        YAML 'depth' → CadQuery Y → dims['height'].
+        YAML 'height' → CadQuery Z → dims['depth'].
+        """
+        doc = self._parse()
+        part = doc.parts.get("panel")
+        dims = get_dimensions(part)
+        assert dims["width"] == pytest.approx(200.0, abs=TOL)   # X: YAML width
+        assert dims["height"] == pytest.approx(3.0, abs=TOL)    # Y: YAML depth (panel_thickness)
+        assert dims["depth"] == pytest.approx(150.0, abs=TOL)   # Z: YAML height
+
+    def test_panel_volume(self):
+        """Panel vol = 200 × 3 × 150 = 90,000 mm³."""
+        doc = self._parse()
+        part = doc.parts.get("panel")
+        dims = get_dimensions(part)
+        assert dims["volume"] == pytest.approx(90_000.0, abs=VOL_TOL)
+
+    def test_bracket_base_dimensions(self):
+        """bracket.base: YAML width=60, base_depth=35, thickness=5.
+        dims: width(X)=60, height(Y)=35, depth(Z)=5.
+        """
+        doc = self._parse()
+        part = doc.parts.get("bracket.base")
+        dims = get_dimensions(part)
+        assert dims["width"] == pytest.approx(60.0, abs=TOL)    # X
+        assert dims["height"] == pytest.approx(35.0, abs=TOL)   # Y: base_depth
+        assert dims["depth"] == pytest.approx(5.0, abs=TOL)     # Z: thickness
+
+    def test_bracket_base_volume(self):
+        """bracket.base vol = 60 × 35 × 5 = 10,500 mm³."""
+        doc = self._parse()
+        part = doc.parts.get("bracket.base")
+        dims = get_dimensions(part)
+        assert dims["volume"] == pytest.approx(10_500.0, abs=VOL_TOL)
+
+    def test_bracket_flange_dimensions(self):
+        """bracket.flange: YAML width=60, depth=thickness=5, height=flange_height=50.
+        dims: width(X)=60, height(Y)=5, depth(Z)=50.
+        """
+        doc = self._parse()
+        part = doc.parts.get("bracket.flange")
+        dims = get_dimensions(part)
+        assert dims["width"] == pytest.approx(60.0, abs=TOL)    # X
+        assert dims["height"] == pytest.approx(5.0, abs=TOL)    # Y: thickness
+        assert dims["depth"] == pytest.approx(50.0, abs=TOL)    # Z: flange_height
+
+    def test_bracket_flange_volume(self):
+        """bracket.flange vol = 60 × 5 × 50 = 15,000 mm³."""
+        doc = self._parse()
+        part = doc.parts.get("bracket.flange")
+        dims = get_dimensions(part)
+        assert dims["volume"] == pytest.approx(15_000.0, abs=VOL_TOL)
+
+    def test_screw_short_shaft_height(self):
+        """screw_short imported with length=12. Cylinder along Z: depth(Z)=12, width(X)=3mm diameter."""
+        doc = self._parse()
+        part = doc.parts.get("screw_short.shaft")
+        dims = get_dimensions(part)
+        assert dims["depth"] == pytest.approx(12.0, abs=TOL)    # Z: cylinder height
+        assert dims["width"] == pytest.approx(3.0, abs=TOL)     # X: M3 diameter
+
+    def test_screw_long_shaft_height(self):
+        """screw_long imported with length=25. Cylinder along Z: depth(Z)=25."""
+        doc = self._parse()
+        part = doc.parts.get("screw_long.shaft")
+        dims = get_dimensions(part)
+        assert dims["depth"] == pytest.approx(25.0, abs=TOL)    # Z: cylinder height
+
+    def test_parameter_override_isolation(self):
+        """screw_short and screw_long have different lengths — imports are independent."""
+        doc = self._parse()
+        short = get_dimensions(doc.parts.get("screw_short.shaft"))
+        long_ = get_dimensions(doc.parts.get("screw_long.shaft"))
+        assert short["depth"] < long_["depth"], (
+            f"screw_short ({short['depth']:.1f}mm) should be shorter than "
+            f"screw_long ({long_['depth']:.1f}mm)"
+        )

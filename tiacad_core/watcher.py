@@ -34,6 +34,7 @@ class WatchBuildResult:
     total_parts: int = 0
     error: Optional[str] = None
     is_initial: bool = False
+    exported_path: Optional[str] = None   # set if --export succeeded
 
     @property
     def ok(self) -> bool:
@@ -67,10 +68,12 @@ class FileWatcher:
         file_path: Path,
         on_rebuild: Callable[[WatchBuildResult], None],
         debounce: float = _DEBOUNCE_SECONDS,
+        export_path: Optional[Path] = None,
     ) -> None:
         self.file_path = Path(file_path).resolve()
         self.on_rebuild = on_rebuild
         self.debounce = debounce
+        self.export_path = Path(export_path) if export_path else None
         self._state = None          # IncrementalState from last successful build
         self._pending = threading.Event()
         self._stop = threading.Event()
@@ -199,9 +202,34 @@ class FileWatcher:
                 [p for p in registry.list_parts() if not p.startswith('_')]
             )
 
+            if self.export_path:
+                self._export(registry, result)
+
         except Exception as exc:
             result.rebuild_ms = (time.monotonic() - t0) * 1000
             result.error = str(exc)
             logger.debug("Watch rebuild error", exc_info=True)
 
         self.on_rebuild(result)
+
+    def _export(self, registry, result: WatchBuildResult) -> None:
+        """Export the final built part to self.export_path after a successful rebuild."""
+        parts = [p for p in registry.list_parts() if not p.startswith('_')]
+        if not parts:
+            return
+        part = registry.get(parts[-1])
+        ext = self.export_path.suffix.lower()
+        try:
+            if ext == '.stl':
+                part.geometry.val().exportStl(str(self.export_path))
+            elif ext == '.3mf':
+                from .exporters.threemf_exporter import ThreeMFExporter
+                ThreeMFExporter().export(registry, str(self.export_path))
+            elif ext == '.step':
+                part.geometry.val().exportStep(str(self.export_path))
+            else:
+                logger.warning("Unsupported export format: %s", ext)
+                return
+            result.exported_path = str(self.export_path)
+        except Exception as exc:
+            logger.warning("Auto-export failed: %s", exc)

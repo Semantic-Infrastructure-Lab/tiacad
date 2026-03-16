@@ -1,0 +1,44 @@
+schema_version: "2.0"
+
+# Reusable M3 flat washer component (DIN 125)
+# Import with:
+#   imports:
+#     - path: ./components/m3_washer.yaml
+#       as: washer
+
+metadata:
+  name: M3 Flat Washer
+  description: >
+    Parametric M3 flat washer (DIN 125). Outer disc with central through-hole
+    produced by boolean subtract. Outer diameter 7mm, inner 3.2mm, thickness 0.5mm.
+  version: 1.0
+  author: TIA
+
+parameters:
+  outer_radius: 3.5   # DIN 125 M3: OD = 7mm
+  inner_radius: 1.6   # DIN 125 M3: ID = 3.2mm (clearance hole)
+  thickness: 0.5      # DIN 125 M3: 0.5mm thick
+
+parts:
+  disc:
+    primitive: cylinder
+    parameters:
+      radius: '${outer_radius}'
+      height: '${thickness}'
+
+  hole:
+    primitive: cylinder
+    parameters:
+      radius: '${inner_radius}'
+      height: '${thickness + 1}'
+
+operations:
+  washer:
+    type: boolean
+    operation: difference
+    base: disc
+    subtract:
+      - hole
+
+export:
+  default_part: washer

@@ -1,0 +1,106 @@
+schema_version: "2.0"
+
+# Hardware Assembly Demo
+#
+# Demonstrates the component standard library — metric hardware assembled
+# onto a mounting plate. Shows M3/M4/M5/M6 fasteners, washers, and standoffs.
+#
+# Run:
+#   python -m tiacad examples/hardware_assembly_demo.yaml
+#   tiacad check examples/hardware_assembly_demo.yaml
+
+metadata:
+  name: Hardware Assembly Demo
+  description: >
+    PCB mounting plate with M3 standoffs, M4 screws, M5 screws, and M3 washers.
+    Demonstrates the reusable hardware component library.
+  version: 1.0
+  author: TIA
+
+imports:
+  - path: ./components/m3_screw.yaml
+    as: m3
+    parameters:
+      length: 8
+
+  - path: ./components/m4_screw.yaml
+    as: m4
+    parameters:
+      length: 16
+
+  - path: ./components/m5_screw.yaml
+    as: m5
+    parameters:
+      length: 20
+
+  - path: ./components/m6_bolt.yaml
+    as: m6
+    parameters:
+      length: 25
+
+  - path: ./components/m3_washer.yaml
+    as: washer
+
+  - path: ./components/m3_standoff.yaml
+    as: standoff
+    parameters:
+      height: 8
+
+parameters:
+  plate_width: 100
+  plate_height: 80
+  plate_thickness: 4
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: '${plate_width}'
+      depth: '${plate_thickness}'
+      height: '${plate_height}'
+
+operations:
+  # Place M3 screw at front-left
+  m3_pos:
+    type: transform
+    input: m3.shaft
+    transforms:
+      - translate: [-35, 6, -25]
+
+  # Place M4 screw at front-right
+  m4_pos:
+    type: transform
+    input: m4.shaft
+    transforms:
+      - translate: [35, 6, -25]
+
+  # Place M5 screw at back-left
+  m5_pos:
+    type: transform
+    input: m5.shaft
+    transforms:
+      - translate: [-35, 6, 25]
+
+  # Place M6 bolt at back-right
+  m6_pos:
+    type: transform
+    input: m6.shaft
+    transforms:
+      - translate: [35, 6, 25]
+
+  # Place washer under m3 (resting on plate surface)
+  washer_pos:
+    type: transform
+    input: washer.washer
+    transforms:
+      - translate: [-35, 4, -25]
+
+  # Place standoff at center
+  standoff_pos:
+    type: transform
+    input: standoff.standoff
+    transforms:
+      - translate: [0, 4, 0]
+
+export:
+  default_part: plate
