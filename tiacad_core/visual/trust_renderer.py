@@ -87,6 +87,8 @@ def _geometry_to_pyvista(geometry) -> Optional[pv.PolyData]:
 
         if mesh.n_points == 0:
             return None
+        # Smooth to eliminate tessellation stripes on curved surfaces (cylinders, spheres)
+        mesh = mesh.smooth(n_iter=20, relaxation_factor=0.1)
         return mesh
 
     except Exception as e:

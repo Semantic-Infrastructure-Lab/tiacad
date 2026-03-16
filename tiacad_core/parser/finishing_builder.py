@@ -16,7 +16,7 @@ Version: 0.1.0-alpha (Phase 2)
 import logging
 from typing import Dict, Any, List, Union, Optional
 
-from ..part import PartRegistry
+from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
 
@@ -178,19 +178,16 @@ class FinishingBuilder:
                 # Fillet selected edges
                 result = part.geometry.edges(edge_selector).fillet(radius)
 
-            # Update part geometry in-place
-            part.geometry = result
-
-            # Track finishing operation in metadata
-            if 'finishing_ops' not in part.metadata:
-                part.metadata['finishing_ops'] = []
-            part.metadata['finishing_ops'].append({
+            # Register result as a new named part (consistent with all other builders)
+            metadata = dict(part.metadata)
+            metadata['finishing_ops'] = list(metadata.get('finishing_ops', [])) + [{
                 'type': 'fillet',
                 'radius': radius,
                 'edges': edges_spec
-            })
+            }]
+            self.registry.add(Part(name=name, geometry=result, metadata=metadata, backend=part.backend))
 
-            logger.debug(f"Fillet: applied radius={radius} to part '{input_name}'")
+            logger.debug(f"Fillet: applied radius={radius} to part '{input_name}' → '{name}'")
 
         except Exception as e:
             raise FinishingBuilderError(
@@ -263,17 +260,18 @@ class FinishingBuilder:
         edge_selector = self._build_edge_selector(edges_spec, name)
 
         try:
-            part.geometry = self._apply_chamfer_geometry(
+            result = self._apply_chamfer_geometry(
                 part.geometry, edge_selector, length, length2
             )
 
-            if 'finishing_ops' not in part.metadata:
-                part.metadata['finishing_ops'] = []
+            # Register result as a new named part (consistent with all other builders)
             op_info = {'type': 'chamfer', 'length': length, 'edges': edges_spec}
             if length2 is not None:
                 op_info['length2'] = length2
-            part.metadata['finishing_ops'].append(op_info)
-            logger.debug(f"Chamfer: applied length={length} to part '{input_name}'")
+            metadata = dict(part.metadata)
+            metadata['finishing_ops'] = list(metadata.get('finishing_ops', [])) + [op_info]
+            self.registry.add(Part(name=name, geometry=result, metadata=metadata, backend=part.backend))
+            logger.debug(f"Chamfer: applied length={length} to part '{input_name}' → '{name}'")
 
         except Exception as e:
             raise FinishingBuilderError(

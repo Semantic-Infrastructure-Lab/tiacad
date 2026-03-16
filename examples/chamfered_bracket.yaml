@@ -135,5 +135,13 @@ operations:
       - vertical_hole_1_positioned
       - vertical_hole_2_positioned
 
-  # Note: Finishing operations (chamfer) temporarily disabled
-  # until export section default_part parsing is implemented
+  bracket_chamfered:
+    type: finishing
+    finish: chamfer
+    input: bracket_with_holes
+    length: '${chamfer_size}'
+    edges: all
+
+export:
+  default_part: bracket_chamfered
+  format: stl

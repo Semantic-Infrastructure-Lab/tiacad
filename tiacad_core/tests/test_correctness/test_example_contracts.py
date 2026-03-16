@@ -253,11 +253,12 @@ class TestTransitionLoft:
 
 
 class TestFormatsDemo:
-    """formats_demo.yaml: simple box exported in multiple formats — geometry must be correct."""
+    """formats_demo.yaml: simple box with fillet exported in multiple formats — geometry must be correct."""
 
     def test_volume(self):
         dims, _ = _parse_and_measure_final("formats_demo.yaml")
-        assert dims["volume"] == pytest.approx(50_000.0, abs=VOL_TOL)
+        # Filleted box: 50x50x20 = 50,000mm³ minus corner material from r=2 fillet
+        assert dims["volume"] == pytest.approx(49_598.0, abs=200.0)
 
 
 class TestLegoMath:

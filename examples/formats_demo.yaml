@@ -61,8 +61,13 @@ parts:
       depth: '${height}'
     origin: center
 
-# Note: Finishing operations (fillet) temporarily removed
-# until export section default_part parsing is implemented
+operations:
+  demo_box_filleted:
+    type: finishing
+    finish: fillet
+    input: demo_box
+    radius: 2.0
+    edges: all
 
 # ============================================================================
 # TRY IT YOURSELF:

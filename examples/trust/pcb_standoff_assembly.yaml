@@ -1,0 +1,135 @@
+schema_version: "2.0"
+
+metadata:
+  name: PCB Standoff Assembly Trust
+  description: >
+    Multi-component assembly: base plate → 4 M3 standoffs at corners → PCB board.
+    Exercises stdlib imports, transforms, and multi-part rendering in a single scene.
+
+    Trust check (Top XY): Large rectangle (100×80 plate), 4 small circles at corners
+    (standoffs), smaller inner rectangle (80×60 PCB centered above).
+    Trust check (Front XZ): Three distinct horizontal layers — plate at Z=0±2.5,
+    standoffs spanning Z=+2.5 to +12.5, PCB at Z=+12.5 to +14.5.
+    Trust check (Side YZ): Mirror of front — same 3-layer stack visible.
+    Trust check (Isometric): Clear layered structure — all 9 parts visible
+    as distinct colored shapes (plate, 4 standoffs, PCB, 4 screws).
+  version: 1.0
+  author: TIA
+
+imports:
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_fl
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_fr
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_bl
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_standoff
+    as: s_br
+    parameters: {height: 10}
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_fl
+    parameters: {length: 16}
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_fr
+    parameters: {length: 16}
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_bl
+    parameters: {length: 16}
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw_br
+    parameters: {length: 16}
+
+parameters:
+  plate_width: 100
+  plate_height: 80
+  plate_thickness: 5
+  pcb_width: 80
+  pcb_height: 60
+  pcb_thickness: 2
+  corner_x: 38
+  corner_y: 30
+  plate_top_z: 2.5
+  standoff_height: 10
+  standoff_center_z: 7.5
+  pcb_center_z: 13.5
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: '${plate_width}'
+      height: '${plate_height}'
+      depth: '${plate_thickness}'
+    color: "#4a90d9"
+
+  pcb:
+    primitive: box
+    parameters:
+      width: '${pcb_width}'
+      height: '${pcb_height}'
+      depth: '${pcb_thickness}'
+    translate:
+      - [0, 0, '${pcb_center_z}']
+    color: "#2d7a2d"
+
+operations:
+  standoff_fl:
+    type: transform
+    input: s_fl.standoff
+    transforms:
+      - translate: ['${corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  standoff_fr:
+    type: transform
+    input: s_fr.standoff
+    transforms:
+      - translate: ['${0 - corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  standoff_bl:
+    type: transform
+    input: s_bl.standoff
+    transforms:
+      - translate: ['${corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+  standoff_br:
+    type: transform
+    input: s_br.standoff
+    transforms:
+      - translate: ['${0 - corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+  screw_fl:
+    type: transform
+    input: screw_fl.shaft
+    transforms:
+      - translate: ['${corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  screw_fr:
+    type: transform
+    input: screw_fr.shaft
+    transforms:
+      - translate: ['${0 - corner_x}', '${corner_y}', '${standoff_center_z}']
+
+  screw_bl:
+    type: transform
+    input: screw_bl.shaft
+    transforms:
+      - translate: ['${corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+  screw_br:
+    type: transform
+    input: screw_br.shaft
+    transforms:
+      - translate: ['${0 - corner_x}', '${0 - corner_y}', '${standoff_center_z}']
+
+export:
+  default_part: plate

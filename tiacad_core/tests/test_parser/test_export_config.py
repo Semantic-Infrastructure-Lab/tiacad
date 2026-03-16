@@ -84,12 +84,7 @@ class TestExportWithFinishingOperations:
     """Test that export config enables finishing operations"""
 
     def test_export_with_finishing_operation(self):
-        """Test export with finishing operation (chamfer) using export config
-
-        NOTE: Finishing operations modify parts in-place, they don't create new
-        registry entries. That's why export config is needed - we specify which
-        part to export BEFORE the finishing operation modifies it.
-        """
+        """Test export with finishing operation (chamfer) — result is a new named part."""
         yaml_content = """
 parts:
   bracket:
@@ -111,22 +106,18 @@ operations:
     length: 1
     edges: all
 export:
-  default_part: positioned  # Export the part (which was modified by finishing)
+  default_part: finished
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
-        # Verify finishing operation executed (operations_spec has it)
-        assert 'finished' in doc.operations
-
-        # Verify the part that was modified still exists
+        # Finishing operation creates a new named part
+        assert 'finished' in doc.parts.list_parts()
         assert 'positioned' in doc.parts.list_parts()
 
-        # Verify export config respects our intent
         with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as f:
             temp_path = f.name
 
         try:
-            # Should export 'positioned' (now with chamfered edges), not fail
             doc.export_stl(temp_path)
             assert os.path.exists(temp_path)
             assert os.path.getsize(temp_path) > 0
@@ -134,8 +125,8 @@ export:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
 
-    def test_export_finishing_modifies_input_part(self):
-        """Test that finishing operations modify the input part in-place"""
+    def test_export_finishing_creates_named_part(self):
+        """Test that finishing operations create a new named part (not in-place mutation)."""
         yaml_content = """
 parts:
   base:
@@ -152,21 +143,20 @@ operations:
     radius: 2
     edges: all
 export:
-  default_part: base  # Export the base (which now has fillets)
+  default_part: filleted_base
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
-        # The base part still exists (was modified in-place)
-        assert 'base' in doc.parts.list_parts()
+        # A new part is created under the operation name
+        assert 'filleted_base' in doc.parts.list_parts()
 
-        # No new part was created for the finishing operation
-        assert 'filleted_base' not in doc.parts.list_parts()
+        # The original input part is still in the registry unchanged
+        assert 'base' in doc.parts.list_parts()
 
         with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as f:
             temp_path = f.name
 
         try:
-            # Should export 'base' (which now has fillets applied)
             doc.export_stl(temp_path)
             assert os.path.exists(temp_path)
             assert os.path.getsize(temp_path) > 0

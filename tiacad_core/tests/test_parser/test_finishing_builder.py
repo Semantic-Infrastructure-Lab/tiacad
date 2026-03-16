@@ -70,11 +70,11 @@ def test_fillet_all_edges(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    # Verify part was modified
-    part = finishing_builder.registry.get('test_box')
+    # Verify result part was created under the operation name
+    part = finishing_builder.registry.get('fillet_op')
     assert part is not None
 
-    # Verify metadata was updated
+    # Verify metadata was recorded on the result
     assert 'finishing_ops' in part.metadata
     assert len(part.metadata['finishing_ops']) == 1
     assert part.metadata['finishing_ops'][0]['type'] == 'fillet'
@@ -92,7 +92,7 @@ def test_fillet_with_parameter_expression(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('fillet_op')
     assert part.metadata['finishing_ops'][0]['radius'] == 2.0
 
 
@@ -107,7 +107,7 @@ def test_fillet_direction_selector_z(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('fillet_op')
     assert 'finishing_ops' in part.metadata
 
 
@@ -122,7 +122,7 @@ def test_fillet_direction_selector_x(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('fillet_op')
     assert part.metadata['finishing_ops'][0]['edges']['direction'] == 'X'
 
 
@@ -137,7 +137,7 @@ def test_fillet_direction_selector_vector(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('fillet_op')
     assert 'finishing_ops' in part.metadata
 
 
@@ -152,7 +152,7 @@ def test_fillet_parallel_to_z(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('fillet_op')
     assert part.metadata['finishing_ops'][0]['edges']['parallel_to'] == 'Z'
 
 
@@ -167,7 +167,7 @@ def test_fillet_perpendicular_to_z(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('fillet_op')
     assert part.metadata['finishing_ops'][0]['edges']['perpendicular_to'] == 'Z'
 
 
@@ -182,15 +182,12 @@ def test_fillet_string_selector(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('fillet_op')
     assert part.metadata['finishing_ops'][0]['edges']['selector'] == '>Z'
 
 
-def test_fillet_updates_part_in_place(finishing_builder, sample_box):
-    """Test that fillet modifies the part in-place"""
-    original_part = finishing_builder.registry.get('test_box')
-    original_id = id(original_part)
-
+def test_fillet_creates_new_named_part(finishing_builder, sample_box):
+    """Test that fillet creates a new named part (does not modify input in-place)"""
     spec = {
         'finish': 'fillet',
         'input': 'test_box',
@@ -200,13 +197,18 @@ def test_fillet_updates_part_in_place(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    # Same part object (modified in-place)
-    modified_part = finishing_builder.registry.get('test_box')
-    assert id(modified_part) == original_id
+    # Result is a new part with the operation name
+    result = finishing_builder.registry.get('fillet_op')
+    assert result is not None
+    assert 'finishing_ops' in result.metadata
+
+    # Original input part is unchanged
+    original = finishing_builder.registry.get('test_box')
+    assert 'finishing_ops' not in original.metadata
 
 
 def test_fillet_multiple_operations_same_part(finishing_builder, sample_box):
-    """Test multiple fillet operations on the same part"""
+    """Test multiple fillet operations producing separate named result parts"""
     spec1 = {
         'finish': 'fillet',
         'input': 'test_box',
@@ -224,10 +226,10 @@ def test_fillet_multiple_operations_same_part(finishing_builder, sample_box):
     finishing_builder.execute_finishing_operation('fillet_op1', spec1)
     finishing_builder.execute_finishing_operation('fillet_op2', spec2)
 
-    part = finishing_builder.registry.get('test_box')
-    assert len(part.metadata['finishing_ops']) == 2
-    assert part.metadata['finishing_ops'][0]['radius'] == 0.5
-    assert part.metadata['finishing_ops'][1]['radius'] == 0.3
+    part1 = finishing_builder.registry.get('fillet_op1')
+    part2 = finishing_builder.registry.get('fillet_op2')
+    assert part1.metadata['finishing_ops'][0]['radius'] == 0.5
+    assert part2.metadata['finishing_ops'][0]['radius'] == 0.3
 
 
 def test_fillet_missing_input_error(finishing_builder, sample_box):
@@ -318,11 +320,11 @@ def test_chamfer_all_edges(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    # Verify part was modified
-    part = finishing_builder.registry.get('test_box')
+    # Verify result part was created under the operation name
+    part = finishing_builder.registry.get('chamfer_op')
     assert part is not None
 
-    # Verify metadata was updated
+    # Verify metadata was recorded on the result
     assert 'finishing_ops' in part.metadata
     assert len(part.metadata['finishing_ops']) == 1
     assert part.metadata['finishing_ops'][0]['type'] == 'chamfer'
@@ -340,7 +342,7 @@ def test_chamfer_uniform_length(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('chamfer_op')
     assert part.metadata['finishing_ops'][0]['length'] == 1.5
     assert 'length2' not in part.metadata['finishing_ops'][0]
 
@@ -357,7 +359,7 @@ def test_chamfer_asymmetric_two_lengths(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('chamfer_op')
     assert part.metadata['finishing_ops'][0]['length'] == 2.0
     assert part.metadata['finishing_ops'][0]['length2'] == 1.0
 
@@ -373,7 +375,7 @@ def test_chamfer_with_parameter_expression(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('chamfer_op')
     assert part.metadata['finishing_ops'][0]['length'] == 1.5
 
 
@@ -388,7 +390,7 @@ def test_chamfer_direction_selector(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('chamfer_op')
     assert part.metadata['finishing_ops'][0]['edges']['direction'] == 'Z'
 
 
@@ -403,7 +405,7 @@ def test_chamfer_parallel_to_selector(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('chamfer_op')
     assert part.metadata['finishing_ops'][0]['edges']['parallel_to'] == 'X'
 
 
@@ -418,15 +420,12 @@ def test_chamfer_perpendicular_to_selector(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    part = finishing_builder.registry.get('test_box')
+    part = finishing_builder.registry.get('chamfer_op')
     assert part.metadata['finishing_ops'][0]['edges']['perpendicular_to'] == 'Y'
 
 
-def test_chamfer_updates_part_in_place(finishing_builder, sample_box):
-    """Test that chamfer modifies the part in-place"""
-    original_part = finishing_builder.registry.get('test_box')
-    original_id = id(original_part)
-
+def test_chamfer_creates_new_named_part(finishing_builder, sample_box):
+    """Test that chamfer creates a new named part (does not modify input in-place)"""
     spec = {
         'finish': 'chamfer',
         'input': 'test_box',
@@ -436,13 +435,18 @@ def test_chamfer_updates_part_in_place(finishing_builder, sample_box):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    # Same part object (modified in-place)
-    modified_part = finishing_builder.registry.get('test_box')
-    assert id(modified_part) == original_id
+    # Result is a new part with the operation name
+    result = finishing_builder.registry.get('chamfer_op')
+    assert result is not None
+    assert 'finishing_ops' in result.metadata
+
+    # Original input part is unchanged
+    original = finishing_builder.registry.get('test_box')
+    assert 'finishing_ops' not in original.metadata
 
 
 def test_chamfer_multiple_operations_same_part(finishing_builder, sample_box):
-    """Test multiple chamfer operations on the same part"""
+    """Test multiple chamfer operations producing separate named result parts"""
     spec1 = {
         'finish': 'chamfer',
         'input': 'test_box',
@@ -460,10 +464,10 @@ def test_chamfer_multiple_operations_same_part(finishing_builder, sample_box):
     finishing_builder.execute_finishing_operation('chamfer_op1', spec1)
     finishing_builder.execute_finishing_operation('chamfer_op2', spec2)
 
-    part = finishing_builder.registry.get('test_box')
-    assert len(part.metadata['finishing_ops']) == 2
-    assert part.metadata['finishing_ops'][0]['length'] == 0.5
-    assert part.metadata['finishing_ops'][1]['length'] == 0.3
+    part1 = finishing_builder.registry.get('chamfer_op1')
+    part2 = finishing_builder.registry.get('chamfer_op2')
+    assert part1.metadata['finishing_ops'][0]['length'] == 0.5
+    assert part2.metadata['finishing_ops'][0]['length'] == 0.3
 
 
 def test_chamfer_missing_input_error(finishing_builder, sample_box):
@@ -545,7 +549,7 @@ def test_chamfer_negative_length2_error(finishing_builder, sample_box):
 # ============================================================================
 
 def test_fillet_and_chamfer_same_part(finishing_builder, sample_box):
-    """Test both fillet and chamfer on the same part"""
+    """Test fillet and chamfer each produce a separate named result part"""
     spec1 = {
         'finish': 'fillet',
         'input': 'test_box',
@@ -563,10 +567,10 @@ def test_fillet_and_chamfer_same_part(finishing_builder, sample_box):
     finishing_builder.execute_finishing_operation('fillet_op', spec1)
     finishing_builder.execute_finishing_operation('chamfer_op', spec2)
 
-    part = finishing_builder.registry.get('test_box')
-    assert len(part.metadata['finishing_ops']) == 2
-    assert part.metadata['finishing_ops'][0]['type'] == 'fillet'
-    assert part.metadata['finishing_ops'][1]['type'] == 'chamfer'
+    fillet_result = finishing_builder.registry.get('fillet_op')
+    chamfer_result = finishing_builder.registry.get('chamfer_op')
+    assert fillet_result.metadata['finishing_ops'][0]['type'] == 'fillet'
+    assert chamfer_result.metadata['finishing_ops'][0]['type'] == 'chamfer'
 
 
 def test_unknown_finish_type_error(finishing_builder, sample_box):
@@ -641,7 +645,7 @@ def test_fillet_on_cylinder(finishing_builder, sample_cylinder):
 
     finishing_builder.execute_finishing_operation('fillet_op', spec)
 
-    part = finishing_builder.registry.get('test_cylinder')
+    part = finishing_builder.registry.get('fillet_op')
     assert 'finishing_ops' in part.metadata
 
 
@@ -656,7 +660,7 @@ def test_chamfer_on_cylinder(finishing_builder, sample_cylinder):
 
     finishing_builder.execute_finishing_operation('chamfer_op', spec)
 
-    part = finishing_builder.registry.get('test_cylinder')
+    part = finishing_builder.registry.get('chamfer_op')
     assert 'finishing_ops' in part.metadata
 
 
@@ -677,7 +681,7 @@ def test_edge_selector_all_axes(finishing_builder, part_registry):
 
         finishing_builder.execute_finishing_operation(f'fillet_{axis}', spec)
 
-        part = finishing_builder.registry.get(f'box_{axis}')
+        part = finishing_builder.registry.get(f'fillet_{axis}')
         assert 'finishing_ops' in part.metadata
         assert part.metadata['finishing_ops'][0]['edges']['direction'] == axis
 
