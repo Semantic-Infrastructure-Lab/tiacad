@@ -43,3 +43,6 @@ operations:
     size: 4
     depth: 0.6
     halign: center
+
+export:
+  default_part: serial_text

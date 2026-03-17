@@ -105,6 +105,5 @@ operations:
     subtract:
       - serial_carving
 
-exports:
-  - operation: final_sign
-    filename: text_engraved.stl
+export:
+  default_part: final_sign

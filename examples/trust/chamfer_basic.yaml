@@ -1,0 +1,27 @@
+schema_version: "2.0"
+metadata:
+  name: Chamfer Basic Trust
+  description: >
+    Box with all edges chamfered (length=3). Trust check: all 12 edges have flat
+    45° bevels. Isometric view shows all 8 corners have diamond-cut facets.
+    Top view shows octagonal perimeter (4 sides + 4 chamfered corners).
+
+parts:
+  box:
+    primitive: box
+    parameters:
+      width: 40
+      height: 40
+      depth: 20
+    origin: center
+
+operations:
+  chamfered:
+    type: finishing
+    finish: chamfer
+    input: box
+    length: 3.0
+    edges: all
+
+export:
+  default_part: chamfered

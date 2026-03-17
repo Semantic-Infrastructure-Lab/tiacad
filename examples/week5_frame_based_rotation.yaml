@@ -73,6 +73,9 @@ operations:
             from: [0, 0, 0]
             to: [1, 0, 0]  # Inline axis definition (X-axis)
 
+export:
+  default_part: gear_multi_rotation
+
 # Expected result: Three gears positioned above base with different rotations
 # - gear_face_rotation: rotated 30° around base's top face normal
 # - gear_axis_rotation: rotated 60° around custom vertical axis

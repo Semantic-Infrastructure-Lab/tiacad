@@ -103,6 +103,9 @@ operations:
           angle: 45
           around: shaft_axis  # Rotate around shaft axis
 
+export:
+  default_part: rotated_gear
+
 # Expected result: A simple assembly with:
 # - Platform base
 # - Bracket mounted on platform top, standing upright

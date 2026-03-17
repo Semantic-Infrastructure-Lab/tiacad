@@ -70,6 +70,9 @@ operations:
           angle: 45
           around: mount_surface  # Rotate around face normal
 
+export:
+  default_part: bracket_rotated
+
 # Expected result: Three brackets positioned on top of base plate
 # - bracket_flush: sits flush on surface
 # - bracket_offset: elevated 15mm above surface

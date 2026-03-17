@@ -36,6 +36,5 @@ operations:
     distance: 5
     direction: Z
 
-exports:
-  - operation: text_3d
-    filename: text_simple.stl
+export:
+  default_part: text_3d

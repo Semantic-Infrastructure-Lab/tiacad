@@ -52,3 +52,6 @@ operations:
     depth: 1.0
     halign: center
     valign: center
+
+export:
+  default_part: right_label

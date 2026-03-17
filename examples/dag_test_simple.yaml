@@ -27,3 +27,6 @@ operations:
     type: boolean
     operation: union
     inputs: [base, top]
+
+export:
+  default_part: stacked

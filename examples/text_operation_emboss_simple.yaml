@@ -37,3 +37,6 @@ operations:
     style: bold
     halign: center
     valign: center
+
+export:
+  default_part: product_label

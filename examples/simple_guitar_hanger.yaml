@@ -89,3 +89,6 @@ operations:
           angle: '${arm_tilt_deg}'
           axis: X
           origin: [0, 37.5, 0]
+
+export:
+  default_part: right_arm

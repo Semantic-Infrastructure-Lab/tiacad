@@ -69,6 +69,9 @@ operations:
     radius: 2.0
     edges: all
 
+export:
+  default_part: demo_box_filleted
+
 # ============================================================================
 # TRY IT YOURSELF:
 #

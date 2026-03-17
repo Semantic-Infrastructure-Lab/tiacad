@@ -36,6 +36,38 @@ Both have `export: default_part:` sections added.
 Box with all 12 edges filleted (r=3mm). Trust check: all corners softened, no
 sharp 90° angles anywhere. Rendered to `trust_output/fillet_basic.png`.
 
+### Fixed - 2026-03-16 (session: lightning-mage-0316) — examples export sweep
+
+All 14 examples that lacked `export:` sections now have them. This fixes the `exports:`
+(plural) schema error in 3 files (`text_engraved`, `text_label`, `text_simple`) — the
+plural key is silently ignored by the parser; only `export:` (singular) is read.
+
+| File | default_part | Notes |
+|---|---|---|
+| `dag_test_simple.yaml` | `stacked` | |
+| `formats_demo.yaml` | `demo_box_filleted` | |
+| `text_engraved.yaml` | `final_sign` | Fixed: `exports:` → `export:` |
+| `text_label.yaml` | `final_label` | Fixed: `exports:` → `export:` |
+| `text_simple.yaml` | `text_3d` | Fixed: `exports:` → `export:` |
+| `text_operation_emboss_simple.yaml` | `product_label` | |
+| `text_operation_multi_face.yaml` | `right_label` | |
+| `text_operation_product_label.yaml` | `serial_text` | |
+| `color_demo.yaml` | `custom` | |
+| `multi_material_demo.yaml` | `custom_knob` | |
+| `simple_guitar_hanger.yaml` | `right_arm` | |
+| `week5_align_to_face.yaml` | `bracket_rotated` | |
+| `week5_assembly.yaml` | `rotated_gear` | |
+| `week5_frame_based_rotation.yaml` | `gear_multi_rotation` | |
+
+### Added - 2026-03-16 (session: lightning-mage-0316) — trust scenarios
+
+#### Trust Scenario: Chamfer Basic (`examples/trust/chamfer_basic.yaml`)
+
+Box with all 12 edges chamfered (length=3mm). Trust check: flat 45° bevels everywhere,
+octagonal perimeter in top view. Rendered to `trust_output/chamfer_basic.png`.
+
+Trust gallery regenerated to include both `fillet_basic` and `chamfer_basic`.
+
 ### Fixed - 2026-03-16 (session: x-ray-beta-0316)
 
 #### Finishing Builder — Fillet/Chamfer Now Create Named Result Parts (`tiacad_core/parser/finishing_builder.py`)

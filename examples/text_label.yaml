@@ -103,6 +103,5 @@ operations:
     operation: union
     inputs: [base_with_frame, text_3d]
 
-exports:
-  - operation: final_label
-    filename: text_label.stl
+export:
+  default_part: final_label

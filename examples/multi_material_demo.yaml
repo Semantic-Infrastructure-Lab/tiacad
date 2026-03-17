@@ -85,3 +85,6 @@ parts:
       metalness: 0.8
       roughness: 0.2
       opacity: 1.0
+
+export:
+  default_part: custom_knob
