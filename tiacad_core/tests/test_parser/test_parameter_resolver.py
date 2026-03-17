@@ -375,7 +375,7 @@ class TestErrorHandling:
         assert 'missing' in str(exc_info.value)
 
     def test_circular_reference(self):
-        """Test circular reference detection"""
+        """Test circular reference detection via resolve_all"""
         params = {
             'a': '${b}',
             'b': '${c}',
@@ -384,26 +384,36 @@ class TestErrorHandling:
         resolver = ParameterResolver(params)
 
         with pytest.raises(ParameterResolutionError) as exc_info:
-            resolver.get_parameter('a')
+            resolver.resolve_all()
 
-        # Circular references manifest as "not found" errors
-        # because parameters in the resolution stack are excluded
         error_msg = str(exc_info.value).lower()
-        assert 'not found' in error_msg or 'circular' in error_msg
+        assert 'circular' in error_msg
+
+    def test_simple_circular_reference(self):
+        """Test two-parameter circular reference via resolve_all"""
+        params = {
+            'x': '${y}',
+            'y': '${x}',
+        }
+        resolver = ParameterResolver(params)
+
+        with pytest.raises(ParameterResolutionError) as exc_info:
+            resolver.resolve_all()
+
+        assert 'circular' in str(exc_info.value).lower()
 
     def test_self_reference(self):
-        """Test self-referencing parameter"""
+        """Test self-referencing parameter via resolve_all"""
         params = {
             'a': '${a}',  # Self reference
         }
         resolver = ParameterResolver(params)
 
         with pytest.raises(ParameterResolutionError) as exc_info:
-            resolver.get_parameter('a')
+            resolver.resolve_all()
 
-        # Self-references manifest as "not found" errors
         error_msg = str(exc_info.value).lower()
-        assert 'not found' in error_msg or 'circular' in error_msg
+        assert 'circular' in error_msg
 
     def test_invalid_expression(self):
         """Test invalid expression syntax"""

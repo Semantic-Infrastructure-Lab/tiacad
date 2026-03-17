@@ -15,7 +15,7 @@ Version: 0.1.0-alpha
 import re
 import logging
 import math
-from typing import Any, Dict, Union, List
+from typing import Any, Dict, Union, List, Optional
 from simpleeval import simple_eval, NameNotDefined, InvalidExpression
 
 from ..utils.exceptions import TiaCADError
@@ -25,10 +25,11 @@ logger = logging.getLogger(__name__)
 
 class ParameterResolutionError(TiaCADError):
     """Error during parameter resolution"""
-    def __init__(self, message: str, parameter: str = None, expression: str = None):
+    def __init__(self, message: str, parameter: str = None, expression: str = None, is_circular: bool = False):
         super().__init__(message)
         self.parameter = parameter
         self.expression = expression
+        self.is_circular = is_circular
 
 
 class ParameterResolver:
@@ -262,7 +263,8 @@ class ParameterResolver:
             cycle = ' -> '.join(self.resolution_stack + [name])
             raise ParameterResolutionError(
                 f"Circular reference detected: {cycle}",
-                parameter=name
+                parameter=name,
+                is_circular=True
             )
 
         # Resolve parameter
@@ -280,6 +282,58 @@ class ParameterResolver:
         finally:
             self.resolution_stack.pop()
 
+    def _check_cycles(self) -> None:
+        """
+        Detect circular references in the parameter dependency graph.
+
+        Raises:
+            ParameterResolutionError: If a circular reference is found
+        """
+        # Build adjacency list: param → set of param names it references
+        EXPR_RE = re.compile(r'\$\{([^}]+)\}')
+        WORD_RE = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b')
+        param_names = set(self.raw_parameters)
+        deps: Dict[str, set] = {}
+        for name, val in self.raw_parameters.items():
+            if isinstance(val, str):
+                refs: set = set()
+                for m in EXPR_RE.finditer(val):
+                    for word in WORD_RE.findall(m.group(1)):
+                        if word in param_names:
+                            refs.add(word)
+                deps[name] = refs
+            else:
+                deps[name] = set()
+
+        # DFS cycle detection (WHITE=0 / GRAY=1 / BLACK=2)
+        color: Dict[str, int] = {n: 0 for n in param_names}
+        path: List[str] = []
+
+        def dfs(node: str) -> Optional[List[str]]:
+            color[node] = 1
+            path.append(node)
+            for dep in deps.get(node, set()):
+                if color[dep] == 1:
+                    cycle_start = path.index(dep)
+                    return path[cycle_start:] + [dep]
+                if color[dep] == 0:
+                    result = dfs(dep)
+                    if result is not None:
+                        return result
+            path.pop()
+            color[node] = 2
+            return None
+
+        for name in param_names:
+            if color[name] == 0:
+                cycle = dfs(name)
+                if cycle is not None:
+                    raise ParameterResolutionError(
+                        f"Circular reference detected: {' -> '.join(cycle)}",
+                        parameter=cycle[0],
+                        is_circular=True
+                    )
+
     def resolve_all(self) -> Dict[str, Any]:
         """
         Resolve all parameters and return as dictionary.
@@ -287,6 +341,7 @@ class ParameterResolver:
         Returns:
             Dict of parameter name → resolved value
         """
+        self._check_cycles()
         result = {}
         for name in self.raw_parameters:
             result[name] = self.get_parameter(name)

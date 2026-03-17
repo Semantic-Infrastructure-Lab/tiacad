@@ -21,6 +21,7 @@ from tiacad_core.parser import TiaCADParser
 EXPECTED_FAILURES = {
     "error_demo.yaml": "Intentionally broken for error handling testing",
     "pipe_sweep.yaml": "Known OCCT geometry limitation (sweep + hollow + sharp corners)",
+    "dag_test_cycle.yaml": "Intentional circular parameter reference for cycle detection testing",
 }
 
 
