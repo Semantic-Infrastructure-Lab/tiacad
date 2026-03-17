@@ -189,8 +189,8 @@ operations:
 ## Test Health
 
 **As of 2026-03-16:**
-- 1382 passing
-- 2 skipped (intentional — visual regression tests needing reference images)
+- 1406 passing
+- 1 skipped (intentional — visual regression test for dag_test_cycle.yaml)
 - 0 failing
 - 1 xfailed (expected failure, tracked)
 

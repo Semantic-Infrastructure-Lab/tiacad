@@ -409,6 +409,26 @@ class TestErrorHandling:
 
         assert 'primitive' in str(exc_info.value).lower()
 
+    def test_position_key_error(self):
+        """'position' is not valid — must raise a clear error directing to 'origin' or 'transform'"""
+        spec = {
+            'my_part': {
+                'primitive': 'box',
+                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'position': [0, 0, 5],
+            }
+        }
+
+        resolver = ParameterResolver({})
+        builder = PartsBuilder(resolver)
+
+        with pytest.raises(PartsBuilderError) as exc_info:
+            builder.build_parts(spec)
+
+        msg = str(exc_info.value)
+        assert 'position' in msg.lower()
+        assert 'origin' in msg.lower()
+
     def test_unknown_primitive_type(self):
         """Test unknown primitive type"""
         params = {}

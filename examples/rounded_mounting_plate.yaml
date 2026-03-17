@@ -75,5 +75,14 @@ operations:
       - bolt_circle_4
       - bolt_circle_5
 
-  # Note: Finishing operations (fillet) temporarily disabled
-  # until export section default_part parsing is implemented
+  # Fillet the 4 outer vertical corner edges (safe on complex geometry with holes)
+  plate_finished:
+    type: finishing
+    finish: fillet
+    input: plate_with_holes
+    radius: '${edge_fillet_radius}'
+    edges:
+      direction: Z
+
+export:
+  default_part: plate_finished

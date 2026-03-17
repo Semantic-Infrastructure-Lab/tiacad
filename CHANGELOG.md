@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-03-16 (session: lightning-mage-0316)
+
+#### `position:` Key Now Raises a Clear Error (`tiacad_core/parser/parts_builder.py`)
+
+Parts with a `position:` key silently ignored it. Now raises `PartsBuilderError` with a
+message directing users to `origin: [x, y, z]` (build-time placement) or
+`operations: transform` (post-build placement). Test added.
+
+#### YAML_REFERENCE.md — Stale "Finishing modifies in-place" Note Corrected
+
+The finishing section stated "Finishing operations modify parts in-place!" which was
+incorrect since the x-ray-beta-0316 fix. Updated to accurately describe that finishing
+creates a new named part registered under the operation name.
+
+### Added - 2026-03-16 (session: lightning-mage-0316)
+
+#### Two More Blocked Examples Re-enabled with Finishing Operations
+
+`rounded_mounting_plate.yaml` and `v3_bracket_mount.yaml` both had finishing ops
+commented out since the original bug. Now fully enabled:
+- `rounded_mounting_plate.yaml` — `plate_finished` fillet (r=2mm, direction: Z)
+- `v3_bracket_mount.yaml` — `assembly_finished` fillet (r=1.5mm, direction: Z)
+Both have `export: default_part:` sections added.
+
+#### Trust Scenario: Fillet Basic (`examples/trust/fillet_basic.yaml`)
+
+Box with all 12 edges filleted (r=3mm). Trust check: all corners softened, no
+sharp 90° angles anywhere. Rendered to `trust_output/fillet_basic.png`.
+
 ### Fixed - 2026-03-16 (session: x-ray-beta-0316)
 
 #### Finishing Builder — Fillet/Chamfer Now Create Named Result Parts (`tiacad_core/parser/finishing_builder.py`)

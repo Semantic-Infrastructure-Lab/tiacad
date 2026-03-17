@@ -1018,7 +1018,7 @@ edges:
   selector: ">Z"           # CadQuery string selector
 ```
 
-**Important:** Finishing operations modify parts in-place!
+**Important:** Finishing creates a **new named part** (the operation name becomes the result). The input part is unchanged and the result is registered under the operation name — use it in `export: default_part:` or as input to subsequent operations.
 
 ---
 

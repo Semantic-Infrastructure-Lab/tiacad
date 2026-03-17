@@ -131,8 +131,17 @@ operations:
       - left_arm
       - right_arm
 
-  # Note: Finishing operations (fillet) temporarily disabled
-  # until export section default_part parsing is implemented
+  # Apply fillet for professional edges
+  assembly_finished:
+    type: finishing
+    finish: fillet
+    input: final_assembly
+    radius: 1.5
+    edges:
+      direction: Z
+
+export:
+  default_part: assembly_finished
 
 # v3.0 Features Demonstrated:
 # ========================

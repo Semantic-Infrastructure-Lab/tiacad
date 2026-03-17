@@ -1,0 +1,27 @@
+schema_version: "2.0"
+metadata:
+  name: Fillet Basic Trust
+  description: >
+    Box with all edges filleted (r=3). Trust check: all 12 edges are smooth arcs,
+    no sharp 90° corners anywhere. Isometric view shows all 8 corners softened.
+    Top/bottom views show rounded rectangular perimeter.
+
+parts:
+  box:
+    primitive: box
+    parameters:
+      width: 40
+      height: 40
+      depth: 20
+    origin: center
+
+operations:
+  filleted:
+    type: finishing
+    finish: fillet
+    input: box
+    radius: 3.0
+    edges: all
+
+export:
+  default_part: filleted

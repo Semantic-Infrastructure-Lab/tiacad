@@ -104,6 +104,15 @@ class PartsBuilder:
         Raises:
             PartsBuilderError: If spec is invalid or primitive unknown
         """
+        # Catch common misuse: 'position' is not valid — direct users to the right key
+        if 'position' in spec:
+            raise PartsBuilderError(
+                f"Part '{name}' has unknown key 'position'. "
+                f"Use 'origin: [x, y, z]' to set the part's build origin, "
+                f"or use 'operations: transform' to move a part after creation.",
+                part_name=name
+            )
+
         # Validate spec has 'primitive' field
         if 'primitive' not in spec:
             raise PartsBuilderError(
