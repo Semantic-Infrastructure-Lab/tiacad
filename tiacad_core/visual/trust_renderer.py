@@ -95,8 +95,10 @@ def _geometry_to_pyvista(geometry) -> Optional[pv.PolyData]:
 
         if mesh.n_points == 0:
             return None
-        # Smooth to eliminate tessellation stripes on curved surfaces (cylinders, spheres)
-        mesh = mesh.smooth(n_iter=20, relaxation_factor=0.1)
+        # Compute normals for correct lighting — do NOT use smooth() as it moves
+        # vertices and destroys flat faces (turns a box into a pillow shape).
+        mesh = mesh.compute_normals(cell_normals=False, point_normals=True,
+                                    split_vertices=True, auto_orient_normals=True)
         return mesh
 
     except Exception as e:
@@ -210,26 +212,30 @@ def render_trust(
             plotter.add_mesh(
                 mesh,
                 color=color,
-                show_edges=False,
+                show_edges=True,
+                edge_color="black",
+                line_width=0.5,
                 opacity=0.95,
-                smooth_shading=True,
-                specular=0.2,
-                specular_power=20,
-                ambient=0.35,
-                diffuse=0.65,
+                smooth_shading=False,
+                specular=0.1,
+                specular_power=10,
+                ambient=0.4,
+                diffuse=0.6,
             )
 
         _add_axes_widget(plotter)
 
-        # Position camera at scene_center + direction * radius
+        # Set camera via camera_position tuple — preserves position/focal/up atomically.
+        # Do NOT call reset_camera() after this; it overrides all three values.
         d = np.array(pos_dir, dtype=float)
         d /= np.linalg.norm(d)
         cam_pos = scene_center + d * scene_radius * 2.5
-        plotter.camera.position = cam_pos.tolist()
-        plotter.camera.focal_point = scene_center.tolist()
-        plotter.camera.up = view_up
+        plotter.camera_position = [cam_pos.tolist(), scene_center.tolist(), list(view_up)]
         plotter.camera.parallel_projection = parallel
-        plotter.reset_camera()
+        if parallel:
+            # For orthographic views, set parallel_scale to half the scene extent
+            plotter.camera.parallel_scale = scene_radius * 0.6
+        plotter.reset_camera_clipping_range()  # fix near/far planes only — does NOT move camera
 
         plotter.add_title(view_label, font_size=10, color="black")
 
