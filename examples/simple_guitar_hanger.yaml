@@ -1,94 +1,109 @@
 # Simplified Guitar Hanger
-# Demonstrates transforms and multi-part assembly
+# Demonstrates transforms and multi-part boolean assembly.
+# Three parts: wall plate (anchor), support beam, and two tilted cradle arms.
 
 metadata:
   name: Simple Guitar Hanger
-  description: Wall-mounted guitar holder (simplified for Phase 1)
-  version: "1.0"
+  description: Wall-mounted guitar holder — shows transform + union assembly
+  version: "2.0"
   author: TIA
 
 parameters:
-  # Dimensions
+  # Wall plate dimensions
   plate_w: 100
   plate_h: 80
   plate_t: 12
 
+  # Support beam
   beam_w: 32
   beam_h: 24
   beam_len: 75
 
+  # Cradle arms
   arm_w: 22
   arm_h: 16
   arm_len: 70
   arm_spacing: 72
   arm_tilt_deg: 10
 
+  # Derived: beam center Y = plate front face + half beam
+  beam_cy: '${plate_t + beam_len / 2}'
+
 parts:
-  # Wall plate
+  # Wall plate (centered at origin, thin in Y)
   plate:
     primitive: box
     parameters:
-
       width: '${plate_w}'
-
       height: '${plate_t}'
-
       depth: '${plate_h}'
 
-  # Support beam
+  # Support beam (long in Y, attached to plate front face)
   beam:
     primitive: box
     parameters:
-
       width: '${beam_w}'
-
       height: '${beam_len}'
-
       depth: '${beam_h}'
 
-  # Cradle arm (template)
+  # Cradle arm template (reused for both left and right)
   arm:
     primitive: box
     parameters:
-
       width: '${arm_w}'
-
       height: '${arm_len}'
-
       depth: '${arm_h}'
 
 operations:
-  # Position and tilt left arm
+  # Position beam flush with plate front face, extending outward
+  positioned_beam:
+    type: transform
+    input: beam
+    transforms:
+      - translate:
+          to: [0, '${beam_cy}', 0]
+
+  # Left arm: offset and tilt outward
   left_arm:
     type: transform
     input: arm
     transforms:
       - translate:
-          to: [0, 37.5, 0]  # beam front center
+          to: [0, '${plate_t + beam_len - arm_len / 2}', 0]
           offset:
-            - ${-arm_spacing / 2}
-            - ${arm_len / 2}
+            - '${-arm_spacing / 2}'
+            - 0
             - 0
       - rotate:
           angle: '${arm_tilt_deg}'
           axis: X
-          origin: [0, 37.5, 0]
+          origin: [0, '${plate_t + beam_len}', 0]
 
-  # Position and tilt right arm
+  # Right arm: mirror of left
   right_arm:
     type: transform
     input: arm
     transforms:
       - translate:
-          to: [0, 37.5, 0]
+          to: [0, '${plate_t + beam_len - arm_len / 2}', 0]
           offset:
-            - ${arm_spacing / 2}
-            - ${arm_len / 2}
+            - '${arm_spacing / 2}'
+            - 0
             - 0
       - rotate:
           angle: '${arm_tilt_deg}'
           axis: X
-          origin: [0, 37.5, 0]
+          origin: [0, '${plate_t + beam_len}', 0]
+
+  # Assemble: union all four parts into one hanger body
+  hanger:
+    type: boolean
+    operation: union
+    inputs:
+      - plate
+      - positioned_beam
+      - left_arm
+      - right_arm
 
 export:
-  default_part: right_arm
+  default_part: hanger
