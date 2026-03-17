@@ -255,19 +255,8 @@ class TestExampleGeometry:
         assert result['is_valid'], \
             f"bracket_with_hole example invalid: {result['issues']}"
 
-
-@pytest.mark.skipif(not HAS_TRIMESH, reason="trimesh not installed")
-class TestKnownFailures:
-    """Document known geometry validation failures"""
-
-    @pytest.mark.xfail(reason="Known issue: boolean union doesn't merge parts")
-    def test_awesome_guitar_hanger_union_fails(self):
-        """
-        awesome_guitar_hanger has disconnected components.
-
-        This is a known issue with CadQuery/OpenCASCADE boolean unions
-        not properly merging adjacent parts. Marked as xfail until fixed.
-        """
+    def test_awesome_guitar_hanger_is_valid(self):
+        """Test awesome_guitar_hanger example produces single printable component"""
         examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
         yaml_path = examples_dir / "awesome_guitar_hanger.yaml"
 
@@ -276,7 +265,6 @@ class TestKnownFailures:
 
         doc = TiaCADParser.parse_file(str(yaml_path))
 
-        # Get final part
         if doc.operations:
             part_name = list(doc.operations.keys())[-1]
         else:
@@ -286,7 +274,76 @@ class TestKnownFailures:
 
         result = export_and_validate_mesh(part)
 
-        # This test is expected to fail with 7 components
         assert result['is_valid'], \
-            f"awesome_guitar_hanger produces {result['stats']['components']} components"
+            f"awesome_guitar_hanger example invalid: {result['issues']}"
+        assert result['stats']['components'] == 1, \
+            f"Expected 1 component, got {result['stats']['components']}"
+
+    def test_pipe_sweep_simple_is_valid(self):
+        """pipe_sweep_simple: r=5 L-pipe sweep should produce single printable body."""
+        examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
+        doc = TiaCADParser.parse_file(str(examples_dir / "pipe_sweep_simple.yaml"))
+        part = doc.parts.get(list(doc.operations.keys())[-1])
+        result = export_and_validate_mesh(part)
+        assert result['stats']['watertight'] is True
         assert result['stats']['components'] == 1
+        assert result['stats']['volume'] > 0
+
+    def test_bottle_revolve_is_valid(self):
+        """bottle_revolve: revolved profile should produce single printable body."""
+        examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
+        doc = TiaCADParser.parse_file(str(examples_dir / "bottle_revolve.yaml"))
+        part = doc.parts.get(list(doc.operations.keys())[-1])
+        result = export_and_validate_mesh(part)
+        assert result['stats']['watertight'] is True
+        assert result['stats']['components'] == 1
+        assert result['stats']['volume'] > 0
+
+    def test_transition_loft_is_valid(self):
+        """transition_loft: loft between profiles should produce single printable body."""
+        examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
+        doc = TiaCADParser.parse_file(str(examples_dir / "transition_loft.yaml"))
+        part = doc.parts.get(list(doc.operations.keys())[-1])
+        result = export_and_validate_mesh(part)
+        assert result['stats']['watertight'] is True
+        assert result['stats']['components'] == 1
+        assert result['stats']['volume'] > 0
+
+    def test_mounting_plate_bolt_circle_watertight(self):
+        """
+        mounting_plate_with_bolt_circle: plate with bolt-hole pattern should be watertight.
+        Through-holes cause CadQuery STL to export inner hole surfaces as separate shells
+        (body_count > 1), so we validate watertight + positive volume rather than
+        components == 1.
+        """
+        examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
+        doc = TiaCADParser.parse_file(str(examples_dir / "mounting_plate_with_bolt_circle.yaml"))
+        part = doc.parts.get("final_plate")
+        result = export_and_validate_mesh(part)
+        assert result['stats']['watertight'] is True
+        assert result['stats']['volume'] > 0
+
+    def test_chamfered_bracket_is_single_component(self):
+        """chamfered_bracket should be a single merged L-bracket body."""
+        examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
+        doc = TiaCADParser.parse_file(str(examples_dir / "chamfered_bracket.yaml"))
+        part = doc.parts.get(list(doc.operations.keys())[-1])
+        result = export_and_validate_mesh(part)
+        assert result['stats']['components'] == 1, \
+            f"Expected 1 component, got {result['stats']['components']} — bracket pieces not joined"
+
+    def test_lego_brick_2x1_is_single_component(self):
+        """lego_brick_2x1 final_brick should be a single watertight merged body.
+
+        Note: trimesh.split() returns >1 for hollow geometries (inner tube surfaces
+        are closed manifolds with inverted normals). We assert watertight instead of
+        component count, which correctly distinguishes a merged solid from disconnected floaters.
+        """
+        examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
+        doc = TiaCADParser.parse_file(str(examples_dir / "lego_brick_2x1.yaml"))
+        part = doc.parts.get("final_brick")
+        result = export_and_validate_mesh(part)
+        assert result['stats']['watertight'], \
+            "Brick mesh is not watertight — parts are disconnected or union failed"
+        assert result['stats']['volume'] > 0, \
+            f"Invalid volume: {result['stats']['volume']:.1f} mm³"

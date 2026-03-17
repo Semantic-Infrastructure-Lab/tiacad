@@ -7,6 +7,230 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-03-17 (session: lightning-mountain-0317)
+
+#### `lego_brick_3x1.yaml` — same 3 coordinate bugs as 2x1 had (3 bodies disconnected)
+
+The 3x1 example was never updated when the 2x1 was fixed in hoyeduwu-0317. Identical bugs:
+1. `stud_1`, `chamfer_1`, `post_outer_1`, `post_inner_1` and `_2` variants double-counted
+   the linear pattern X offset. Pattern already shifts `_N` by `N×stud_pitch`; the translate
+   also added `stud_pitch×N`. Fixed all `_1` and `_2` positioned operations to `unit_size/2` only.
+2. Stud Z positions used `brick_height=9.6` (the Y extent) instead of
+   `brick_width - 0.1 + stud_height/2`. Studs were floating 1.6mm above the brick top.
+3. Post cylinder Z centers used `bottom_thickness` instead of
+   `bottom_thickness + connection_tube_height/2`.
+After fix: W=24, H=9.6, D=9.6, vol≈1310mm³, watertight. Bounding box now 39.25→24mm in X.
+
+### Added - 2026-03-17 (session: lightning-mountain-0317)
+
+#### 19 new geometric contracts across 8 example files (`test_example_contracts.py`)
+
+New test classes, all assertions derived from first principles (test count 1519 → 1538):
+- `TestLegoBrick3x1` (3 tests): bbox W=24/H=9.6/D=9.6; volume ≈1310mm³; 3x1 > 2x1
+- `TestV3BracketMount` (3 tests): bbox W=150/H=100/D=60 from params; volume < sum-of-parts
+- `TestSimpleGuitarHanger` (3 tests): W=plate_w=100; volume between plate-alone and sum-of-parts
+- `TestGuitarHangerNamedPoints` (4 tests): plate and beam dimensions + volumes from YAML params
+- `TestWeek5Assembly` (2 tests): gear cylinder W=H=24/D=8; vol = π×12²×8 = 3619.1mm³
+- `TestWeek5FrameBasedRotation` (2 tests): W=D=30/H=5; vol = π×15²×5 ≈ 3534.3mm³
+- `TestDagTestSimple` (2 tests): stacked boxes bbox 50×50×20; vol = 50,000mm³
+
+### Fixed - 2026-03-17 (session: hoyeduwu-0317)
+
+#### `chamfered_bracket.yaml` — vertical plate was disconnected from base (2 bodies)
+
+Root cause: `vertical_positioned` translate `[0, base_depth, base_thickness]` placed the
+vertical plate 74mm past the base plate in Y (confused `base_depth` which is the Z extent,
+not Y). Fixed to `[0, base_thickness, 0]` — plates now share the Y=6 face and union correctly.
+`test_chamfered_bracket_is_single_component` promoted from xfail → passing.
+
+#### `lego_brick_2x1.yaml` — 6 disconnected bodies (3 separate bugs)
+
+Three coordinate/offset bugs caused studs, chamfers, and one post to float in space:
+1. `stud_1`, `chamfer_1`, `post_1` positioned operations double-counted the pattern X offset —
+   the linear pattern already shifts `_1` instances by `stud_pitch=8`, but the translate also
+   added `unit_size/2 + stud_pitch`. Fixed to `unit_size/2` only.
+2. Stud Z positions used `brick_height=9.6` (which maps to Y in box semantics) instead of
+   `brick_width=8` (the actual Z extent). Studs were 0.75mm above the brick top. Fixed to
+   `brick_width - 0.1 + stud_height/2` for a 0.1mm overlap.
+3. Post cylinder Z centers placed at `bottom_thickness` instead of
+   `bottom_thickness + connection_tube_height/2`, positioning half the post outside the brick.
+Test assertion changed from `components==1` to `watertight=True` — hollow tubes produce
+multiple trimesh components but one valid watertight solid. Volume contract updated 988→907mm³
+(988 was the erroneous sum of 6 disconnected bodies).
+
+### Added - 2026-03-17 (session: hoyeduwu-0317)
+
+#### 18 new geometric contracts across 8 example files (`test_example_contracts.py`)
+
+New test classes, all assertions derived from first principles:
+- `TestChamferedBracket` (3 tests): bounding box W=80/H=66/D=80 from params; volume bounds
+- `TestPipeSweepSimple` (2 tests): exact formula π×5²×40=3141.6mm³; full bounding box
+- `TestBottleRevolve` (2 tests): W=H=2×radius=20, D=height=30; Pappus theorem volume
+- `TestMountingPlateWithBoltCircle` (3 tests): bbox W=D=150/H=8; volume < solid plate
+- `TestRoundedMountingPlate` (2 tests): bbox; volume < sharp-edge variant
+- `TestAutoRefsCylinderAssembly` (2 tests): shaft bbox W=H=10/D=50; π×5²×50=3927mm³
+- `TestAnchorsDemoPlatform` (2 tests): platform bbox 100×100; volume=100,000mm³
+- `TestWeek5AlignToFace` (2 tests): rotation preserves volume=6000mm³; depth=10 unchanged
+
+#### Boot sequence: README continuation now proposes likely next work
+
+Updated `templates/CLAUDE.md` boot sequence — for README continuation sessions, TIA now
+reasons from the README's "Next Steps" / "Open Items" and asks "Do you want me to continue
+working on [specific thing]?" instead of generic "What are we working on?"
+
+### Added - 2026-03-17 (session: rainbow-glow-0317)
+
+#### Partial-angle revolve trust contracts
+
+Two new trust YAMLs + three new test classes covering angle scaling:
+- `examples/trust/revolve_180.yaml` — half-cylinder (180°, r=15, L=40): volume = π×15²×40/2
+- `examples/trust/revolve_90.yaml` — quarter-cylinder wedge (90°): volume = π×15²×40/4
+- `TestTrustRevolve180` (3 tests): volume = half of 360°, length along X, Z diameter
+- `TestTrustRevolve90` (3 tests): volume = quarter of 360°, length along X, positive
+- `TestRevolveAngleScaling` (3 tests): 180° = half of 360°, 90° = quarter, 90° = half of 180°
+All assert from formula — no "snapshot of buggy output" risk.
+
+#### Expanded printability contracts (`test_geometry_validation.py`)
+
+Five new `TestExampleGeometry` tests covering sweep, revolve, and loft examples:
+- `test_pipe_sweep_simple_is_valid` — L-pipe sweep: 1 component, watertight, positive volume
+- `test_bottle_revolve_is_valid` — bottle revolve: 1 component, watertight, positive volume
+- `test_transition_loft_is_valid` — loft: 1 component, watertight, positive volume
+- `test_mounting_plate_bolt_circle_watertight` — plate with bolt-holes: watertight + positive
+  volume (component count not asserted — CadQuery STL exports inner hole surfaces as
+  separate shells, so body_count > 1 is expected for solids with through-holes)
+- `test_chamfered_bracket_is_single_component` (xfail) — chamfered_bracket produces 2
+  disconnected solids; translate `[0, base_depth, base_thickness]` places vertical plate
+  74mm away from base_plate in Y
+- `test_lego_brick_2x1_is_single_component` (xfail) — lego brick produces 6 disconnected
+  bodies; boolean union fails to merge studs/posts with main body
+
+### Fixed - 2026-03-17 (session: kasola-0317)
+
+#### Revolve axis bug (`tiacad_core/parser/revolve_builder.py`)
+
+`wp.revolve()` was passing axis direction vectors as workplane-local coordinate points.
+After `shape.build()` shifts the workplane via `center()`, these coords became wrong,
+producing incorrect geometry for all revolve operations. Fix: use `Solid.revolve()`
+from `cadquery.occ_impl.shapes` with world-coordinate `cq.Vector` objects, bypassing
+the workplane-frame entirely. Result: Z-axis spool now produces correct bbox (50×50×36)
+and volume (37,699 mm³) instead of the previously wrong dimensions.
+
+#### Guitar hanger union bug (`examples/awesome_guitar_hanger.yaml`)
+
+`awesome_guitar_hanger.yaml` produced 7 disconnected components instead of 1. Two root causes:
+
+1. **Arm gap**: `left_arm_start` / `right_arm_start` offsets used `arm_length / 2` (Y=40)
+   instead of `arm_thickness / 2` (Y=6), placing arm centers 18.9mm away from the beam.
+   Fixed to `arm_thickness / 2` → arm and beam now overlap → `structure_assembled` = 1 component.
+
+2. **Grip misalignment**: 4 grip cylinders used world-Y offsets `[0, ±grip_spacing, 0]`
+   from `left/right_arm_start`. The arm is tilted 12° around X, so those Y positions
+   don't intersect the arm body. Fixed to world-Z offsets `[0, 0, ±grip_spacing]`,
+   placing grips along the arm's length where they physically overlap it.
+
+`test_awesome_guitar_hanger_union_fails` (xfail) promoted to `test_awesome_guitar_hanger_is_valid`
+in `TestExampleGeometry` (regular passing test). `TestKnownFailures` class removed.
+
+### Added - 2026-03-17 (session: kasola-0317)
+
+#### Revolve X/Y axis trust contracts
+
+Two new trust YAMLs + test classes covering the axes previously untested:
+- `examples/trust/revolve_x_axis.yaml`: rectangle in XZ plane → 360° around X → cylinder r=15, h=40
+- `examples/trust/revolve_y_axis.yaml`: rectangle in XY plane → 360° around Y → cylinder r=15, h=40
+
+Both assert: correct axis length, equal perpendicular extents (circular cross-section),
+volume = π×15²×40 ≈ 28,274 mm³.
+
+#### Cross-validation test class (`TestCrossValidation`)
+
+Three independent code paths producing the same cylinder (r=15, h=40) must agree:
+primitive cylinder, revolve-X, revolve-Y. Ensures a regression in one path is caught
+by the others, not masked by consistent-but-wrong behavior.
+
+#### Tighter surface operation bounds
+
+- **Sweep**: lower bound tightened from `> one_arm` to `> 1.5 × one_arm` (catches
+  one-arm-only builds that previously passed the test)
+- **Loft**: replaced extreme-bounds check with ±30% around prismatoid approximation
+  (~34,600 mm³), narrowing the acceptable window from 2.3× to 1.6× ratio
+
+**Test suite: 1486 passing, 1 skipped, 0 failing, 0 xfailed** (was 1406 in v3.1.2)
+
+### Added - 2026-03-17 (session: rainbow-ember-0316)
+
+#### Trust Scenario Geometric Contracts (`tiacad_core/tests/test_correctness/test_trust_contracts.py`)
+
+66 new passing tests covering all 20 trust YAMLs in `examples/trust/`. Each trust YAML
+documents its own ground truth in comments and description text — these tests translate
+that prose into assertions. Coverage:
+
+- **Primitives**: exact bbox + volume for box, cylinder, sphere, cone; revolve symmetry check
+- **Assemblies**: per-part dims + volumes + positional assertions (flush contact, centroid
+  alignment, symmetry) for stacked_boxes, cylinder_on_plate, side_by_side, three_part_assembly
+- **Booleans**: exact volume formulas for subtract (box − hole), union (A+B−overlap),
+  intersect (result is 20×20×20 cube)
+- **Finishing**: bbox unchanged + material removed for chamfer and fillet
+- **Surfaces**: height contract for loft, arm-presence for sweep, containment bounds for hull
+- **Patterns**: 5-instance coverage for linear_pattern, volume + footprint for circular_pattern
+- **Complex assembly**: plate + standoffs + PCB + screws for pcb_standoff_assembly
+
+Closed the "trust YAMLs have no contracts" gap: the 20 trust files were the most
+precisely-documented examples in the codebase but had zero geometric test coverage.
+Total suite: 1474 passing tests.
+
+### Added - 2026-03-16 (session: infernal-cyclops-0316)
+
+#### Trust Renderer: Verification Checklist in Legend (`tiacad_core/visual/trust_renderer.py`)
+
+Added "Trust Check" section at the bottom of the legend strip. Reads `doc.metadata.description`
+and renders it as word-wrapped text (~32 chars/line). Makes trust renders self-documenting —
+human or AI can read the legend to know what to verify in the panels.
+
+#### Trust Renderer: Named Dimension Labels (`tiacad_core/visual/trust_renderer.py`)
+
+Orthographic panel dimension overlays now back-map scene extents to document parameter names.
+Instead of `X: 100.0  Z: 8.0`, renders `plate_size: 100.0  plate_thickness: 8.0`. Falls back
+to axis letter if no parameter matches within 0.5mm tolerance. Connects rendered geometry
+directly to YAML source parameters.
+
+#### Trust Renderer: Part Callout Labels on Iso View (`tiacad_core/visual/trust_renderer.py`)
+
+For assemblies with 2–8 parts, draws part name labels at each part's centroid in the Iso
+(shaded) panel. Uses PyVista `add_point_labels()` with white rounded-rect backgrounds for
+legibility. Suppressed for single-part models (no value) and 9+ part assemblies (too cluttered).
+
+#### Legend Width Expanded to 250px + `_find_named_dims()` Helper
+
+Legend strip widened from 220 → 250px to accommodate description text and longer parameter names.
+`_find_named_dims(sizes, parameters)` helper maps scene X/Y/Z extents to parameter names with
+axis-hint tie-breaking (prefers "width" for X, "height" for Z, "depth" for Y).
+
+#### Trust YAML Descriptions: 6 Scenarios Enriched (`examples/trust/`)
+
+Six trust scenarios with short one-liner descriptions upgraded to full verification checklists:
+`boolean_subtract`, `cylinder_basic`, `cylinder_on_plate`, `side_by_side`, `stacked_boxes`,
+`three_part_assembly`. Each now has explicit "Trust check: view = expected shape" statements.
+All 20 trust PNGs regenerated.
+
+### Fixed - 2026-03-16 (session: infernal-cyclops-0316)
+
+#### Trust Renderer: Feature Edge Angle 25° → 40° (`tiacad_core/visual/trust_renderer.py`)
+
+OCCT seam edges on revolved solids produce a dihedral discontinuity at the 0°/360° boundary
+that spikes above 25°, appearing as an artifact line. Raising `_FEATURE_ANGLE` to 40° skips
+the seam while retaining all real geometric boundaries (box edges, cylinder rims, step transitions).
+
+#### `simple_guitar_hanger.yaml` — Disconnected Bodies (`examples/simple_guitar_hanger.yaml`)
+
+The guitar hanger union produced 3 disconnected bodies instead of 1. Root cause: the cradle
+arms were positioned at Y≈44.7 (after 10° tilt) but the plate front face was only at Y=40,
+leaving a 4.7mm gap that no-overlapping-geometry boolean union preserved as separate shells.
+Fix: increased `plate_h` from 80 → 100, plate front face now at Y=50, arms now physically
+penetrate the plate. Test `test_simple_guitar_hanger_is_valid` now passes.
+**Tests: 1408 passed (was 1407 + 1 failing), 0 failed.**
+
 ### Fixed - 2026-03-16 (session: lightning-mage-0316)
 
 #### `position:` Key Now Raises a Clear Error (`tiacad_core/parser/parts_builder.py`)

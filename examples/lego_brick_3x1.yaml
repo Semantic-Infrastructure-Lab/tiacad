@@ -162,25 +162,25 @@ operations:
     transforms:
       - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${brick_height}']
+                    '${brick_width - 0.1 + stud_height / 2}']
 
   # Position second stud
   stud_1_positioned:
     type: transform
     input: stud_array_1
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${brick_height}']
+                    '${brick_width - 0.1 + stud_height / 2}']
 
   # Position third stud
   stud_2_positioned:
     type: transform
     input: stud_array_2
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${brick_height}']
+                    '${brick_width - 0.1 + stud_height / 2}']
 
   # Step 3: Add chamfers to studs
   # -----------------------------
@@ -200,25 +200,25 @@ operations:
     transforms:
       - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${brick_height + stud_height - stud_chamfer_height}']
+                    '${brick_width - 0.1 + stud_height - stud_chamfer_height / 2}']
 
   # Position second chamfer
   chamfer_1_positioned:
     type: transform
     input: chamfer_array_1
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${brick_height + stud_height - stud_chamfer_height}']
+                    '${brick_width - 0.1 + stud_height - stud_chamfer_height / 2}']
 
   # Position third chamfer
   chamfer_2_positioned:
     type: transform
     input: chamfer_array_2
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${brick_height + stud_height - stud_chamfer_height}']
+                    '${brick_width - 0.1 + stud_height - stud_chamfer_height / 2}']
 
   # Combine studs with chamfers
   stud_0_chamfered:
@@ -267,7 +267,7 @@ operations:
     transforms:
       - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${bottom_thickness}']
+                    '${bottom_thickness + connection_tube_height / 2}']
 
   post_inner_0_positioned:
     type: transform
@@ -275,41 +275,41 @@ operations:
     transforms:
       - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${bottom_thickness}']
+                    '${bottom_thickness + connection_tube_height / 2}']
 
   # Position second post
   post_outer_1_positioned:
     type: transform
     input: post_outer_array_1
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${bottom_thickness}']
+                    '${bottom_thickness + connection_tube_height / 2}']
 
   post_inner_1_positioned:
     type: transform
     input: post_inner_array_1
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${bottom_thickness}']
+                    '${bottom_thickness + connection_tube_height / 2}']
 
   # Position third post
   post_outer_2_positioned:
     type: transform
     input: post_outer_array_2
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${bottom_thickness}']
+                    '${bottom_thickness + connection_tube_height / 2}']
 
   post_inner_2_positioned:
     type: transform
     input: post_inner_array_2
     transforms:
-      - translate: ['${unit_size / 2 + stud_pitch * 2}',
+      - translate: ['${unit_size / 2}',
                     '${brick_width / 2}',
-                    '${bottom_thickness}']
+                    '${bottom_thickness + connection_tube_height / 2}']
 
   # Create hollow posts
   post_0_hollow:

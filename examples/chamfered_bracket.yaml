@@ -80,7 +80,7 @@ operations:
     type: transform
     input: vertical_plate
     transforms:
-      - translate: [0, '${base_depth}', '${base_thickness}']
+      - translate: [0, '${base_thickness}', 0]
 
   # Combine base and vertical plates
   bracket_body:
