@@ -1,9 +1,12 @@
 """
 Trust renderer for TiaCAD — multi-view colored renders for visual verification.
 
-Renders each part in a distinct color with 4 viewpoints (isometric, front XZ,
-top XY, side YZ) plus an axis indicator and color legend. Produces a single
-composite PNG you can inspect — or show to AI — and say "yep, that's right."
+Renders each part in a distinct color with 6 viewpoints (2×3 grid):
+  Row 0: Iso Front-Left, Iso Back-Right, Bottom (XY from below)
+  Row 1: Front (XZ), Top (XY), Side (YZ)
+Two isometrics cover both front-left and back-right blind spots. Bottom view
+reveals underside features (standoffs, recesses). Produces a single composite
+PNG you can inspect — or show to AI — and say "yep, that's right."
 
 Usage:
     from tiacad_core.visual.trust_renderer import render_trust
@@ -43,12 +46,17 @@ PART_PALETTE = [
 
 # Camera positions: (label, position_vector, view_up, parallel_projection)
 # position_vector is a direction — scaled to fit after reset_camera
+# 6 panels in a 2×3 grid: two isometrics cover front-left and back-right blind spots;
+# three orthographics lock in X/Y/Z planes; Bottom reveals underside features.
 VIEWS = [
-    ("Isometric",   ( 1.0, -1.2,  0.8), (0, 0, 1), False),
-    ("Front  (XZ)", ( 0.0, -1.0,  0.0), (0, 0, 1), True),   # looking along +Y
-    ("Top    (XY)", ( 0.0,  0.0,  1.0), (0, 1, 0), True),   # looking along -Z
-    ("Side   (YZ)", ( 1.0,  0.0,  0.0), (0, 0, 1), True),   # looking along -X
+    ("Iso Front-Left",  ( 1.0, -1.2,  0.8), (0, 0, 1), False),  # row0 col0
+    ("Iso Back-Right",  (-1.0,  1.2,  0.8), (0, 0, 1), False),  # row0 col1
+    ("Bottom   (XY)",   ( 0.0,  0.0, -1.0), (0, 1, 0), True),   # row0 col2 — looking along +Z
+    ("Front    (XZ)",   ( 0.0, -1.0,  0.0), (0, 0, 1), True),   # row1 col0 — looking along +Y
+    ("Top      (XY)",   ( 0.0,  0.0,  1.0), (0, 1, 0), True),   # row1 col1 — looking along -Z
+    ("Side     (YZ)",   ( 1.0,  0.0,  0.0), (0, 0, 1), True),   # row1 col2 — looking along -X
 ]
+GRID_COLS = 3
 
 
 def _hex_to_rgb_float(hex_color: str):
@@ -112,8 +120,8 @@ def render_trust(
     doc,
     output_path: str,
     title: Optional[str] = None,
-    width: int = 1400,
-    height: int = 900,
+    width: int = 1800,
+    height: int = 1000,
 ) -> str:
     """
     Render a TiaCADDocument to a 4-panel trust PNG.
@@ -172,9 +180,10 @@ def render_trust(
     if not parts_data:
         raise ValueError("No renderable geometry found in document")
 
-    # --- Render 4 views ---
+    # --- Render 6 views (2×3 grid) ---
+    n_rows = (len(VIEWS) + GRID_COLS - 1) // GRID_COLS
     plotter = pv.Plotter(
-        shape=(2, 2),
+        shape=(n_rows, GRID_COLS),
         off_screen=True,
         window_size=[width, height],
     )
@@ -194,7 +203,7 @@ def render_trust(
     ) * 1.5
 
     for idx, (view_label, pos_dir, view_up, parallel) in enumerate(VIEWS):
-        row, col = divmod(idx, 2)
+        row, col = divmod(idx, GRID_COLS)
         plotter.subplot(row, col)
 
         for name, mesh, color in parts_data:
