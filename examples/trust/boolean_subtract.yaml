@@ -42,3 +42,10 @@ operations:
 
 export:
   default_part: result
+
+expect:
+  final: result
+  volume: 62952.213
+  bbox: [60.0, 60.0, 20.0]
+  watertight: true
+  components: 1
