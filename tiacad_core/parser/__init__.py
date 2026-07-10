@@ -1,31 +1,14 @@
-"""
-TiaCAD Parser - YAML to 3D Model Pipeline
+"""Public parser package surface for TiaCAD YAML parsing and model building."""
 
-This package provides parsing and building capabilities for TiaCAD YAML files.
+from .. import __version__
 
-Main Components:
-- ParameterResolver: Resolves ${...} expressions in parameters ✅ COMPLETE
-- PartsBuilder: Builds Part objects from primitive specifications ✅ COMPLETE
-- OperationsBuilder: Builds operation pipeline from YAML operations ✅ COMPLETE
-- TiaCADParser: Main entry point for parsing YAML files ✅ COMPLETE
-- TiaCADDocument: Executable document representing complete model ✅ COMPLETE
-
-Version: 0.1.0-alpha
-Status: Phase 1 Implementation - COMPLETE! 🎉
-
-Test Coverage: 86/86 tests passing (100%)
-"""
-
-__version__ = "3.1.1"
-
-# All components implemented!
 from .parameter_resolver import ParameterResolver, ParameterResolutionError
 from .parts_builder import PartsBuilder, PartsBuilderError
 from .operations_builder import OperationsBuilder, OperationsBuilderError
+from .errors import TiaCADParserError
 from .tiacad_parser import (
     TiaCADParser,
     TiaCADDocument,
-    TiaCADParserError,
     parse  # Convenience function
 )
 from .component_importer import ComponentImporter, ComponentImportError

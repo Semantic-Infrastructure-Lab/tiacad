@@ -18,6 +18,7 @@ from tiacad_core.exporters.threemf_exporter import (
     ThreeMFExportError,
     export_3mf
 )
+from tiacad_core.geometry import MockBackend
 from tiacad_core.part import Part, PartRegistry
 
 
@@ -377,6 +378,38 @@ class TestMeshGeneration:
                 pytest.skip("lib3mf not installed")
             else:
                 raise
+
+    def test_create_mesh_uses_part_backend_tessellation(self):
+        """Mesh generation should work through non-CadQuery backend tessellation."""
+        exporter = ThreeMFExporter.__new__(ThreeMFExporter)
+
+        class FakePosition:
+            def __init__(self):
+                self.Coordinates = [0.0, 0.0, 0.0]
+
+        class FakeTriangle:
+            def __init__(self):
+                self.Indices = [0, 0, 0]
+
+        exporter.lib3mf = type('FakeLib3MF', (), {
+            'Position': FakePosition,
+            'Triangle': FakeTriangle,
+        })()
+
+        backend = MockBackend()
+        part = Part(name="mock_box", geometry=backend.create_box(10, 10, 10), backend=backend)
+
+        model = Mock()
+        mock_mesh = Mock()
+        mock_mesh.SetName = Mock()
+        mock_mesh.SetGeometry = Mock()
+        model.AddMeshObject.return_value = mock_mesh
+
+        mesh_obj = exporter._create_mesh_object(model, part, "mock_box")
+
+        assert mesh_obj is mock_mesh
+        mock_mesh.SetName.assert_called_once_with("mock_box")
+        mock_mesh.SetGeometry.assert_called_once()
 
 
 class TestMetadataHandling:

@@ -1,19 +1,17 @@
 # TiaCAD Examples Guide
 
 **Version:** 3.1.2
-**Last Updated:** 2026-02-15
-**Status:** 44/46 Examples Working (95.7% pass rate)
+**Status:** Curated active example catalog
 
 ---
 
 ## Overview
 
-This guide catalogs all **46 examples** in the `examples/` directory, organized by difficulty and concept. Each example demonstrates specific TiaCAD features and builds foundational skills.
+This guide catalogs the active examples in the `examples/` directory, organized by difficulty and concept. Each example demonstrates specific TiaCAD features and builds foundational skills.
 
-**Current Status:**
-- ✅ **44 examples working** (95.7% pass rate)
-- ⚠️ **1 intentionally broken** (error_demo.yaml - for testing error handling)
-- ⚠️ **1 known issue** (pipe_sweep.yaml - OCCT geometry limitation)
+**Special cases to note:**
+- `error_demo.yaml` is intentionally broken for error-handling tests
+- `pipe_sweep.yaml` documents a known OCCT geometry limitation
 
 ---
 
@@ -489,6 +487,5 @@ Start with a working example, modify parameters, then add your own features. The
 
 ---
 
-**Last updated:** 2026-02-15 (v3.1.2)
-**Examples passing:** 44/46 (95.7%)
-**Total examples:** 46 YAML files
+**Status:** Active example guide
+**Scope:** Includes working examples plus a small number of intentional or documented special cases

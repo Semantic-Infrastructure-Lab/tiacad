@@ -35,12 +35,13 @@ import logging
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import Dict, Any, FrozenSet, List
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional
 
 import yaml
 
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
+from .errors import TiaCADParserError
 from .yaml_with_lines import parse_yaml_with_lines
 
 # Bundled stdlib root: tiacad_core/stdlib/
@@ -50,6 +51,9 @@ _STDLIB_DIR = Path(__file__).parent.parent / "stdlib"
 _GITHUB_CACHE_DIR = Path.home() / ".tiacad" / "cache" / "github"
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from ..geometry import GeometryBackend
 
 
 class ComponentImportError(TiaCADError):
@@ -76,7 +80,8 @@ class ComponentImporter:
     def load_imports(
         imports_spec: List[Dict[str, Any]],
         base_dir: str,
-        import_stack: FrozenSet[str] = frozenset()
+        import_stack: FrozenSet[str] = frozenset(),
+        backend: Optional["GeometryBackend"] = None,
     ) -> PartRegistry:
         """
         Process all imports and return a PartRegistry with namespaced parts.
@@ -113,7 +118,11 @@ class ComponentImporter:
 
             logger.info(f"Importing component '{namespace}' from {abs_path}")
             imported_parts = ComponentImporter._import_file(
-                abs_path, namespace, param_overrides, import_stack
+                abs_path,
+                namespace,
+                param_overrides,
+                import_stack,
+                backend=backend,
             )
 
             for part_name in imported_parts.list_parts():
@@ -236,12 +245,10 @@ class ComponentImporter:
         abs_path: str,
         namespace: str,
         param_overrides: Dict[str, Any],
-        import_stack: FrozenSet[str]
+        import_stack: FrozenSet[str],
+        backend: Optional["GeometryBackend"] = None,
     ) -> PartRegistry:
         """Load one component file and return its parts, namespaced."""
-        # Deferred import to avoid circular dependency at module load time
-        from .tiacad_parser import TiaCADParser, TiaCADParserError
-
         try:
             with open(abs_path, 'r', encoding='utf-8') as f:
                 yaml_string = f.read()
@@ -271,12 +278,18 @@ class ComponentImporter:
             logger.debug(f"Applied {len(param_overrides)} parameter overrides to '{abs_path}'")
 
         try:
-            doc = TiaCADParser.parse_dict(
+            from .parse_pipeline import parse_tiacad_dict
+
+            doc = parse_tiacad_dict(
                 yaml_data,
+                document_factory=_ImportedComponentDocument,
+                supported_schema_versions=["3.0"],
+                load_imports=ComponentImporter.load_imports,
                 file_path=abs_path,
                 line_tracker=line_tracker,
                 yaml_string=yaml_string,
-                _import_stack=import_stack | {abs_path}
+                import_stack=import_stack | {abs_path},
+                backend=backend,
             )
         except TiaCADParserError as e:
             raise ComponentImportError(
@@ -316,3 +329,10 @@ class ComponentImporter:
             raise ComponentImportError(
                 f"imports[{index}] 'as' must be a valid identifier, got '{namespace}'"
             )
+
+
+class _ImportedComponentDocument:
+    """Minimal parse result for imported component files."""
+
+    def __init__(self, parts: PartRegistry, **_kwargs):
+        self.parts = parts

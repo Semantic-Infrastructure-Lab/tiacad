@@ -22,7 +22,7 @@ import cadquery as cq
 
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
-from ..geometry.cadquery_backend import CadQueryBackend
+from ..geometry import GeometryBackend, CadQueryBackend, get_default_backend
 from .parameter_resolver import ParameterResolver
 from .color_parser import ColorParser
 from .appearance_builder import AppearanceBuilder
@@ -47,18 +47,24 @@ class PartsBuilder:
         plate = registry.get('plate')
     """
 
-    def __init__(self, parameter_resolver: ParameterResolver, color_parser: Optional[ColorParser] = None):
+    def __init__(
+        self,
+        parameter_resolver: ParameterResolver,
+        color_parser: Optional[ColorParser] = None,
+        backend: Optional[GeometryBackend] = None,
+    ):
         """
         Initialize parts builder.
 
         Args:
             parameter_resolver: Resolver for ${...} expressions
             color_parser: Optional color parser for color/material support
+            backend: Geometry backend for primitive creation and spatial queries
         """
         self.resolver = parameter_resolver
         self.color_parser = color_parser or ColorParser()
         self.appearance_builder = AppearanceBuilder(self.color_parser)
-        self.backend = CadQueryBackend()  # Backend for spatial operations
+        self.backend = backend or get_default_backend()
 
     def build_parts(self, parts_spec: Dict[str, Dict]) -> PartRegistry:
         """
@@ -168,7 +174,7 @@ class PartsBuilder:
 
         return part
 
-    def _build_box(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
+    def _build_box(self, name: str, spec: Dict[str, Any]) -> Any:
         """
         Build a box primitive.
 
@@ -199,12 +205,12 @@ class PartsBuilder:
         depth = params['depth']
         origin = spec.get('origin', 'center')
 
-        # Create box at origin
-        box = cq.Workplane("XY").box(width, depth, height, centered=(origin == 'center'))
-
+        box = self.backend.create_box(width, height, depth)
+        if origin == 'corner':
+            box = self.backend.translate(box, (width / 2, depth / 2, height / 2))
         return box
 
-    def _build_cylinder(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
+    def _build_cylinder(self, name: str, spec: Dict[str, Any]) -> Any:
         """
         Build a cylinder primitive.
 
@@ -234,17 +240,12 @@ class PartsBuilder:
         height = params['height']
         origin = spec.get('origin', 'center')
 
-        # Create cylinder
-        if origin == 'center':
-            # Center at origin
-            cylinder = cq.Workplane("XY").circle(radius).extrude(height).translate((0, 0, -height/2))
-        else:  # origin == 'base'
-            # Base at origin
-            cylinder = cq.Workplane("XY").circle(radius).extrude(height)
-
+        cylinder = self.backend.create_cylinder(radius, height)
+        if origin == 'base':
+            cylinder = self.backend.translate(cylinder, (0, 0, height / 2))
         return cylinder
 
-    def _build_sphere(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
+    def _build_sphere(self, name: str, spec: Dict[str, Any]) -> Any:
         """
         Build a sphere primitive.
 
@@ -269,12 +270,9 @@ class PartsBuilder:
 
         radius = params['radius']
 
-        # Create sphere at origin (always centered)
-        sphere = cq.Workplane("XY").sphere(radius)
+        return self.backend.create_sphere(radius)
 
-        return sphere
-
-    def _build_cone(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
+    def _build_cone(self, name: str, spec: Dict[str, Any]) -> Any:
         """
         Build a cone/frustum primitive.
 
@@ -305,30 +303,9 @@ class PartsBuilder:
         height = params['height']
         origin = spec.get('origin', 'center')
 
-        # Create cone using loft between two circles
-        # CadQuery doesn't have a direct cone primitive, so we use circle -> extrude with taper
-        # Or use two circles and loft
-        if radius2 == 0:
-            # True cone (pointed top)
-            # Use circle at base and point at top
-            cone = (cq.Workplane("XY")
-                    .circle(radius1)
-                    .workplane(offset=height)
-                    .circle(0.001)  # Very small circle at top (CadQuery doesn't like 0)
-                    .loft())
-        else:
-            # Frustum (truncated cone)
-            cone = (cq.Workplane("XY")
-                    .circle(radius1)
-                    .workplane(offset=height)
-                    .circle(radius2)
-                    .loft())
-
-        # Adjust origin if needed
-        if origin == 'center':
-            cone = cone.translate((0, 0, -height/2))
-        # else: origin == 'base', already at base
-
+        cone = self.backend.create_cone(radius1, radius2, height)
+        if origin == 'base':
+            cone = self.backend.translate(cone, (0, 0, height / 2))
         return cone
 
     def _build_torus(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
@@ -356,6 +333,8 @@ class PartsBuilder:
                 f"Torus '{name}' missing required parameters: {', '.join(missing)}",
                 part_name=name
             )
+
+        self._require_cadquery_backend(name, 'torus')
 
         major_radius = params['major_radius']  # Distance from center to tube center
         minor_radius = params['minor_radius']  # Tube radius
@@ -398,6 +377,8 @@ class PartsBuilder:
                 f"Polygon '{name}' missing required parameters: {', '.join(missing)}",
                 part_name=name
             )
+
+        self._require_cadquery_backend(name, 'polygon')
 
         sides = int(params['sides'])
         diameter = float(params['diameter'])
@@ -473,6 +454,7 @@ class PartsBuilder:
 
     def _build_text(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
         """Build a 3D text primitive."""
+        self._require_cadquery_backend(name, 'text')
         self._validate_text_spec(name, spec)
         text, size, height = spec['text'], spec['size'], spec['height']
         font = spec.get('font', 'Liberation Sans')
@@ -498,6 +480,16 @@ class PartsBuilder:
                     part_name=name
                 )
             raise PartsBuilderError(f"Error creating text primitive '{name}': {error_msg}", part_name=name)
+
+    def _require_cadquery_backend(self, name: str, primitive_type: str) -> None:
+        """Fail clearly for primitives that still depend on CadQuery APIs."""
+        if isinstance(self.backend, CadQueryBackend):
+            return
+        raise PartsBuilderError(
+            f"Primitive '{primitive_type}' for part '{name}' still requires CadQueryBackend. "
+            f"Supported through GeometryBackend today: box, cylinder, sphere, cone.",
+            part_name=name,
+        )
 
     def __repr__(self) -> str:
         return f"PartsBuilder(resolver={self.resolver})"

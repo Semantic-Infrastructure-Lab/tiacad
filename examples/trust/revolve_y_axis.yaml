@@ -1,0 +1,45 @@
+schema_version: "3.0"
+
+metadata:
+  name: Revolve Y-Axis Trust
+  description: >
+    Rectangle (X=0..15, Y=0..40) in XY plane revolved 360° around world Y axis.
+    Produces a solid cylinder: radius=15, length=40, axis along Y.
+    Identical volume to cylinder_basic.yaml (r=15, h=40) — cross-validates
+    the revolve engine against the primitive cylinder code path.
+    Trust check: top (XY) = rectangle 30×40. Front (XZ) = circle (r=15).
+    Side (YZ) = rectangle 40×30. Isometric = cylinder standing on its end.
+  version: 1.0
+  author: TIA
+
+sketches:
+  cyl_profile:
+    plane: XY
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - [0,  0]   # (X, Y) = (0, 0)  — on Y axis
+          - [15, 0]   # (X, Y) = (15, 0) — radius = 15
+          - [15, 40]  # (X, Y) = (15, 40) — radius = 15
+          - [0,  40]  # (X, Y) = (0, 40)  — on Y axis
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  cyl_y:
+    type: revolve
+    sketch: cyl_profile
+    axis: Y
+    angle: 360
+
+export:
+  default_part: cyl_y

@@ -12,6 +12,7 @@ from ..part import Part, PartRegistry
 from .parameter_resolver import ParameterResolver
 from ..selector_resolver import SelectorResolver, FeatureType
 from .metadata_utils import copy_propagating_metadata
+from .backend_utils import get_cadquery_backend, require_cadquery_input_part
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
@@ -163,6 +164,7 @@ class TextBuilder:
             resolved_spec = self.resolver.resolve(spec)
             input_name, input_part, text_content, face_selector, position, size, depth = \
                 self._validate_required_params(name, resolved_spec)
+            require_cadquery_input_part(input_part, 'Text operation', name)
             font, style, halign, valign, font_path, spacing = \
                 self._validate_style_params(name, resolved_spec)
 
@@ -185,7 +187,12 @@ class TextBuilder:
                     'face': face_selector, 'depth': depth
                 }
             )
-            self.registry.add(Part(name=name, geometry=geometry, metadata=metadata))
+            self.registry.add(Part(
+                name=name,
+                geometry=geometry,
+                metadata=metadata,
+                backend=get_cadquery_backend(),
+            ))
             logger.debug(f"Created text operation '{name}': {operation_type} on '{input_name}'")
 
         except TextBuilderError:

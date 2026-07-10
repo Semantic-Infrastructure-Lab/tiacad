@@ -1,8 +1,7 @@
 # TiaCAD YAML Reference Guide
 
-**Version:** 3.1.1
-**Last Updated:** 2025-12-01
-**Status:** v3.1 - Visual Regression Testing Complete
+**Version:** Current
+**Status:** Active syntax reference
 
 ---
 
@@ -70,7 +69,7 @@ operations:        # Optional: transform, boolean, pattern, finish
     operation: union
     inputs: [...]
 
-export:            # Required: what to export
+export:            # Optional: export defaults
   default_part: final_part
 ```
 
@@ -276,9 +275,9 @@ parts:
 **Key concept**: Instead of calculating coordinates manually, you position parts using anchors: `translate: to: base.face_top` instead of `translate: [50, 25, 10]`.
 
 **Visual Guides:**
-- [auto-generated anchor Visualization](docs/diagrams/auto-generated anchor-visualization.md) - See all auto-generated anchors
-- [Local Frame Offsets](docs/diagrams/local-frame-offsets.md) - Understand how offsets work
-- [Reference Chain Dependencies](docs/diagrams/reference-chain-dependencies.md) - Learn how parts reference each other
+- [Auto-Reference Visualization](../architecture/diagrams/auto-reference-visualization.md) - See all auto-generated anchors
+- [Local Frame Offsets](../architecture/diagrams/local-frame-offsets.md) - Understand how offsets work
+- [Reference Chain Dependencies](../architecture/diagrams/reference-chain-dependencies.md) - Learn how parts reference each other
 
 ### Auto-Generated References
 
@@ -666,7 +665,7 @@ Operations in TiaCAD fall into four categories, each with different purposes:
 
 **Key Insight**: Positioning operations affect WHERE parts are, modification operations affect WHAT they look like, combining operations create NEW geometry, and replication creates COPIES.
 
-**Visual Guide:** See [Operation Categories](docs/diagrams/operation-categories.md) for detailed examples and decision tree.
+**Visual Guide:** See [Operation Categories](../architecture/diagrams/operation-categories.md) for detailed examples and decision tree.
 
 ---
 
@@ -1514,7 +1513,7 @@ Valid axes: X, Y, Z, or vector [x,y,z]
 
 ## Migration from v0.3.0
 
-If you have existing v0.3.0 YAML files, see [MIGRATION_GUIDE_V3.md](docs/MIGRATION_GUIDE_V3.md) for detailed migration instructions.
+If you have existing v0.3.0 YAML files, see [MIGRATION_GUIDE_V3.md](../developer/MIGRATION_GUIDE_V3.md) for detailed migration instructions.
 
 **Key Changes:**
 - `named_points:` → `references:` with explicit `type` field
@@ -1525,6 +1524,5 @@ If you have existing v0.3.0 YAML files, see [MIGRATION_GUIDE_V3.md](docs/MIGRATI
 
 ---
 
-**Version:** 3.1.1
-**Last Updated:** 2025-12-01
-**Status:** v3.1 Release - Visual Regression Testing Complete
+**Version:** Current
+**Status:** Active syntax reference

@@ -37,7 +37,7 @@ class FeatureBoundsRule(ValidationRule):
         if not hasattr(base_part, 'geometry') or base_part.geometry is None:
             return []
 
-        base_bbox = self._get_bounding_box(base_part.geometry)
+        base_bbox = self._get_bounding_box(base_part)
         tol = self.constants.FEATURE_EXTENSION_TOLERANCE
         issues = []
 
@@ -48,7 +48,7 @@ class FeatureBoundsRule(ValidationRule):
             if not hasattr(subtract_part, 'geometry') or subtract_part.geometry is None:
                 continue
             overflows = self._bound_overflows(
-                self._get_bounding_box(subtract_part.geometry), base_bbox, tol
+                self._get_bounding_box(subtract_part), base_bbox, tol
             )
             if overflows:
                 issues.append(ValidationIssue(

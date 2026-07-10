@@ -17,6 +17,7 @@ from ..sketch import Sketch2D
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
 from tiacad_core.sketch import Text2D
+from .backend_utils import get_cadquery_backend
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
@@ -137,7 +138,7 @@ class ExtrudeBuilder:
             self.registry.add(Part(name=name, geometry=geometry, metadata={
                 'source': 'extrude', 'sketch': sketch_name, 'operation_type': 'extrude',
                 'distance': distance, 'direction': direction, 'taper': taper
-            }))
+            }, backend=get_cadquery_backend()))
             logger.debug(f"Created extruded part '{name}' from sketch '{sketch_name}'")
 
         except ExtrudeBuilderError:

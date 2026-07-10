@@ -1,7 +1,7 @@
 # TiaCAD Known Limitations
 
-**Version:** v3.1.2 (+32 commits)
-**Last Updated:** 2026-03-16
+**Version:** Current
+**Status:** Active limitations and workarounds reference
 
 This document honestly describes what TiaCAD **cannot do**, with practical workarounds.
 
@@ -37,8 +37,8 @@ Before limitations, here's what works great:
 - `tiacad watch model.yaml --export /tmp/model.stl` — auto-export on each rebuild
 - Cycle detection at build time
 
-✅ **Production Quality:**
-- 1382 tests, 0 failing, 2 skipped, 1 xfailed
+✅ **Project Quality:**
+- Broad automated coverage across parser, correctness, DAG, and visualization workflows
 - 92%+ code coverage
 - 3MF export with color/metadata
 - Schema validation
@@ -115,10 +115,12 @@ operations:
 - Limited CAM integration
 - No direct laser cutting export
 - Manual conversion needed for some workflows
+- STL/STEP export is still tied to CadQuery-compatible parts
 
 **Workaround:**
 - Export STEP → import to FreeCAD → export to other formats
 - Use external tools for CAM (Fusion360, FreeCAD Path)
+- Prefer 3MF when the model may come from non-CadQuery-backed geometry with tessellation support
 
 **Future:** Community-driven — add if there's demand
 
@@ -128,19 +130,23 @@ operations:
 
 **What It Means:**
 - TiaCAD uses CadQuery as its geometry kernel
-- ~90% of code calls CadQuery directly (backend abstraction exists but not enforced)
+- The backend boundary is stronger than it was, but the system is still CadQuery-first
 - Cannot easily swap to FreeCAD, build123d, or other kernels
 
 **Impact:**
 - Tied to CadQuery's capabilities and limitations
 - Testing slower than with pure mock backend
 - Cannot leverage alternative CAD kernels
+- Some runtime surfaces are split:
+  - 3MF export and visualization can use backend tessellation
+  - STL/STEP export and many advanced operations still require CadQuery-compatible geometry
 
 **For Users:** This doesn't affect YAML usage — you won't notice it
 
 **For Contributors:**
 - New code should use `GeometryBackend` abstraction
 - Gradual refactoring during feature work
+- CadQuery-only paths should be explicit in code and docs rather than implicit
 - No plan to support multiple backends (maintenance burden)
 
 **Decision:** Stay with CadQuery — it works well, no strong reason to change
@@ -188,11 +194,12 @@ operations:
 
 ## Test Health
 
-**As of 2026-03-16:**
-- 1406 passing
-- 1 skipped (intentional — visual regression test for dag_test_cycle.yaml)
-- 0 failing
-- 1 xfailed (expected failure, tracked)
+TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.
+
+Known areas to keep an eye on:
+- Geometry regressions around boolean merges in complex examples
+- Visual/regression scenarios that depend on OCCT behavior
+- Example-specific limitations documented in `examples/` and the active test suite
 
 ---
 

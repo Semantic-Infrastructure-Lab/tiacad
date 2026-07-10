@@ -1,0 +1,45 @@
+schema_version: "3.0"
+
+metadata:
+  name: Revolve 180° Trust
+  description: >
+    Rectangle (X=0..40, Z=0..15) in XZ plane revolved 180° around world X axis.
+    Produces a half-cylinder: radius=15, length=40, flat face on XZ plane.
+    Volume must equal exactly half the 360° revolve (TestCrossValidation confirms full).
+    Trust check: top (XY) = semicircle (flat edge facing +Y or -Y).
+    Front (XZ) = rectangle 40×30 (same as full cylinder).
+    Isometric = half-cylinder, flat face visible.
+  version: 1.0
+  author: TIA
+
+sketches:
+  cyl_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - [0,  0]
+          - [40, 0]
+          - [40, 15]
+          - [0,  15]
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  half_cyl:
+    type: revolve
+    sketch: cyl_profile
+    axis: X
+    angle: 180
+
+export:
+  default_part: half_cyl

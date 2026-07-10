@@ -21,6 +21,7 @@ from tiacad_core.parser.tiacad_parser import TiaCADParser, TiaCADParserError
 from tiacad_core.parser.component_importer import (
     ComponentImporter, ComponentImportError, _STDLIB_DIR, _GITHUB_CACHE_DIR
 )
+from tiacad_core.geometry import MockBackend
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +146,21 @@ imports:
         doc = TiaCADParser.parse_file(main_file)
 
         assert doc.get_part('comp.body') is not None
+
+    def test_imported_parts_honor_explicit_backend(self, tmp_path):
+        """Imported parts should inherit the explicitly supplied parser backend."""
+        backend = MockBackend()
+        write_yaml(str(tmp_path), 'comp.yaml', SIMPLE_BOX_COMPONENT)
+
+        main_yaml = """
+imports:
+  - path: ./comp.yaml
+    as: comp
+"""
+        main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
+        doc = TiaCADParser.parse_file(main_file, backend=backend)
+
+        assert doc.get_part('comp.body').backend is backend
 
 
 # ---------------------------------------------------------------------------

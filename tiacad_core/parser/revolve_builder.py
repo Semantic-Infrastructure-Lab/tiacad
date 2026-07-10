@@ -16,6 +16,7 @@ from ..part import Part, PartRegistry
 from ..sketch import Sketch2D
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
+from .backend_utils import get_cadquery_backend
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
@@ -149,7 +150,8 @@ class RevolveBuilder:
                     'axis': axis,
                     'angle': angle,
                     'origin': origin
-                }
+                },
+                backend=get_cadquery_backend(),
             )
             self.registry.add(part)
             logger.debug(f"Created revolved part '{name}' from sketch '{sketch_name}'")
@@ -173,12 +175,29 @@ class RevolveBuilder:
         return wp
 
     def _revolve_shape_solid(
-        self, shape, sketch: Sketch2D, angle: float, axis_vector: Tuple
+        self, shape, sketch: Sketch2D, angle: float,
+        axis_start: cq.Vector, axis_end: cq.Vector
     ) -> cq.Workplane:
-        """Build a single shape on a workplane and revolve it."""
+        """
+        Build a 2D shape and revolve it using world-coordinate axis vectors.
+
+        Uses Solid.revolve() with world coordinates instead of wp.revolve() to avoid
+        axis-frame confusion: wp.revolve() interprets axis points relative to the
+        workplane's current position (which may be shifted by shape.build()'s center()
+        calls), whereas Solid.revolve() always uses world coordinates.
+        """
+        from cadquery.occ_impl.shapes import Solid as OccSolid
         wp = self._make_sketch_workplane(sketch)
         wp = shape.build(wp)
-        return wp.revolve(angle, axis_vector)
+        wires = wp.ctx.pendingWires
+        if not wires:
+            raise RevolveBuilderError(
+                f"No wires produced by sketch shape in sketch '{sketch.name}'",
+                operation_name=sketch.name
+            )
+        face = cq.Face.makeFromWires(wires[0])
+        solid = OccSolid.revolve(face, angle, axis_start, axis_end)
+        return cq.Workplane(sketch.plane).newObject([solid])
 
     def _revolve_sketch(self, sketch: Sketch2D, axis: str, angle: float,
                         origin: List[float], context: str) -> cq.Workplane:
@@ -189,7 +208,7 @@ class RevolveBuilder:
             sketch: Sketch2D to revolve
             axis: Rotation axis (X, Y, or Z)
             angle: Rotation angle in degrees
-            origin: Point the axis passes through
+            origin: Point the axis passes through (in world coordinates)
             context: Operation name for error messages
 
         Returns:
@@ -201,16 +220,19 @@ class RevolveBuilder:
         try:
             add_shapes = [s for s in sketch.shapes if s.operation == 'add']
             subtract_shapes = [s for s in sketch.shapes if s.operation == 'subtract']
-            axis_vector = _AXIS_VECTORS[axis]
+            ax, ay, az = _AXIS_VECTORS[axis]
+            ox, oy, oz = origin
+            axis_start = cq.Vector(ox, oy, oz)
+            axis_end = cq.Vector(ox + ax, oy + ay, oz + az)
 
-            geometry = self._revolve_shape_solid(add_shapes[0], sketch, angle, axis_vector)
+            geometry = self._revolve_shape_solid(add_shapes[0], sketch, angle, axis_start, axis_end)
             for shape in add_shapes[1:]:
                 geometry = geometry.union(
-                    self._revolve_shape_solid(shape, sketch, angle, axis_vector)
+                    self._revolve_shape_solid(shape, sketch, angle, axis_start, axis_end)
                 )
             for shape in subtract_shapes:
                 geometry = geometry.cut(
-                    self._revolve_shape_solid(shape, sketch, angle, axis_vector)
+                    self._revolve_shape_solid(shape, sketch, angle, axis_start, axis_end)
                 )
 
             logger.debug(

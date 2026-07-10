@@ -1,4 +1,4 @@
-schema_version: "2.0"
+schema_version: "3.0"
 # TRUST: Base plate + two posts, one at each end along X.
 # base: 100×40×8, centered at origin → Z=-4 to +4
 # post_raw: radius=8, height=35
@@ -12,7 +12,11 @@ schema_version: "2.0"
 
 metadata:
   name: three_part_assembly
-  description: Base plate + two posts — verifies multi-part layout and color distinction
+  description: >
+    Orange plate (100×40×8) with blue post (left, X=-35) and green post (right, X=+35),
+    both r=8 h=35. Trust check: front (XZ) = plate at base, two symmetric posts
+    rising from each end. Top (XY) = two circles at ends of orange rectangle.
+    Side (YZ) = single post profile + plate edge. All 3 parts distinct colors.
 
 parts:
   base:

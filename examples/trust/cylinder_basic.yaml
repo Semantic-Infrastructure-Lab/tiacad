@@ -1,11 +1,15 @@
-schema_version: "2.0"
+schema_version: "3.0"
 # TRUST: Single cylinder, radius=15, height=40, centered at origin, axis along Z.
 # Expect: Blue cylinder. Taller than wide (height 40 > diameter 30).
 # Front/side views: rectangle 30 wide × 40 tall. Top view: circle.
 
 metadata:
   name: cylinder_basic
-  description: Single cylinder — verifies cylinder radius, height, and Z-axis orientation
+  description: >
+    Single cylinder r=15, height=40, Z-axis orientation.
+    Trust check: front/side (XZ)/(YZ) = rectangle 30 wide × 40 tall
+    (taller than wide, 4:3 ratio). Top (XY) = circle. No corners,
+    no flat edges anywhere. Diameter = 30, height = 40.
 
 parts:
   cyl:

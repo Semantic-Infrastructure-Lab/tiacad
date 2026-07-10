@@ -19,7 +19,7 @@ class BoundingBoxRule(ValidationRule):
     def _check_part_bbox(self, part_name: str, part) -> List[ValidationIssue]:
         """Return bounding box issues for a single part."""
         try:
-            bbox = self._get_bounding_box(part.geometry)
+            bbox = self._get_bounding_box(part)
             dims = [bbox.xlen, bbox.ylen, bbox.zlen]
             issues = []
             if any(d < self.constants.MIN_DIMENSION for d in dims):

@@ -17,12 +17,12 @@ tags:
 # TiaCAD - Declarative Parametric CAD in YAML
 
 **Version:** 3.1.2 (+maintenance commits)
-**Status:** Stable - 1125 tests (94.4% passing), 92% coverage, Apache 2.0 licensed
+**Status:** Stable, extensively tested, Apache 2.0 licensed
 **Current:** v3.1.2 + examples/docs updates (see CHANGELOG.md for unreleased work)
 **Released:** v3.0.0 on Nov 19, 2025 | v3.1.0 on Nov 11 | v3.1.1 on Nov 16 | v3.1.2 on Dec 2, 2025
 **Breaking Changes:** None in v3.1.x (backward compatible)
 
-> **🎉 v3.1.2 Status: PRODUCTION READY!** All features complete:
+> **v3.1.2 Status:** Stable and feature-complete for the current scope:
 >
 > **v3.0 Foundation:**
 > - ✅ Unified `SpatialRef` dataclass (position + orientation)
@@ -35,10 +35,10 @@ tags:
 > - ✅ Complete cone primitive support across all backends
 > - ✅ Accurate origin tracking after transforms
 > - ✅ Full XZ/YZ plane support for loft operations
-> - ✅ Comprehensive testing utilities (1125 total tests, 92% coverage)
+> - ✅ Comprehensive testing utilities
 > - ✅ Terminology standardization and visual documentation
 >
-> See `RELEASE_NOTES_V3.md` for complete details and `docs/MIGRATION_GUIDE_V3.md` for upgrade instructions.
+> See `RELEASE_NOTES_V3.md` for complete details and `docs/developer/MIGRATION_GUIDE_V3.md` for upgrade instructions.
 
 ---
 
@@ -61,7 +61,7 @@ Semantic OS Architecture
 - **Geometric Reasoning** - Declarative 3D solid modeling
 - **Parametric Design** - Mathematical relationships in physical space
 - **Spatial Composition** - Reference-based assembly without hierarchies
-- **Verifiable CAD** - Deterministic, testable geometry (1125 tests, 92% coverage)
+- **Verifiable CAD** - Deterministic, testable geometry with broad automated coverage
 
 ### What Makes TiaCAD Unique in SIL
 
@@ -150,7 +150,7 @@ box:
 
 #### 4. Verifiability
 
-1025 tests ensure correctness:
+Automated tests ensure correctness:
 - Deterministic: Same YAML → Same geometry (always)
 - Testable: Parameters, operations, dimensions verified
 - Reproducible: Version-controlled designs
@@ -174,7 +174,7 @@ box:
 # Install dependencies
 pip install -r requirements.txt
 
-# Run full test suite (1080+ tests passing, 100%)
+# Run full test suite
 python3 -m pytest tiacad_core/tests/
 
 # Generate coverage report
@@ -197,6 +197,7 @@ ls -lh *.3mf
 - Finishing operations (fillet, chamfer)
 - Schema validation with helpful error messages
 - Automatic 3MF export (modern format) + STEP and STL support
+- A CadQuery-first kernel boundary with a partially enforced `GeometryBackend` abstraction
 
 ---
 
@@ -244,9 +245,9 @@ TiaCAD is a **declarative parametric CAD system** that lets you design 3D models
 
 **Why this matters:** Once you understand the reference-based model, positioning becomes intuitive: "place the cap on the pillar's top face" rather than calculating coordinates manually.
 
-**Visual Guide:** See [Reference-Based vs Hierarchical](docs/diagrams/reference-based-vs-hierarchical.md) for a detailed visual comparison.
+**Visual Guide:** See [Reference-Based vs Hierarchical](docs/architecture/diagrams/reference-based-vs-hierarchical.md) for a detailed visual comparison.
 
-**See also:** [GLOSSARY.md](GLOSSARY.md) for term definitions, [AUTO_REFERENCES_GUIDE.md](AUTO_REFERENCES_GUIDE.md) for anchor details.
+**See also:** [Glossary](docs/user/GLOSSARY.md) for term definitions, [Auto References Guide](docs/user/AUTO_REFERENCES_GUIDE.md) for anchor details.
 
 ---
 
@@ -352,7 +353,7 @@ parts:
 - Offsets follow local coordinate frames for intuitive positioning
 - Full orientation support (normals, tangents) for intelligent placement
 
-**See:** `examples/auto_references_box_stack.yaml` and `docs/MIGRATION_GUIDE_V3.md`
+**See:** `examples/auto_references_box_stack.yaml` and `docs/developer/MIGRATION_GUIDE_V3.md`
 
 ---
 
@@ -523,7 +524,7 @@ tiacad/
 - Multi-part assemblies
 - Production-ready output
 
-### v3.1: Testing Confidence (Phase 1 Complete ✅)
+### v3.1: Testing Confidence
 
 **19. Testing Utilities (71 tests ✅) - NEW in v3.1**
 - Measurement utilities: distance, dimensions, bounding boxes
@@ -531,10 +532,10 @@ tiacad/
 - Dimension utilities: volume, surface area calculations
 - Full documentation with examples
 
-**20. Correctness Tests (60+ tests ✅) - NEW in v3.1**
-- Attachment correctness: 16 tests (zero-distance, face-to-face, patterns)
-- Rotation correctness: 19 tests (angles, normals, transform composition)
-- Dimensional accuracy: 25 tests (primitives, volumes, boolean operations)
+**20. Correctness Tests**
+- Attachment correctness
+- Rotation correctness
+- Dimensional accuracy
 - Comprehensive verification of YAML → 3D translation
 
 ---
@@ -543,11 +544,11 @@ tiacad/
 
 ### Test Coverage
 
-**Overall:** 1382 tests, 92%+ code coverage, 0 failing
+**Overall:** Broad automated coverage with 92%+ code coverage
 
-**New in v3.1:** 131+ testing confidence tests
-- Testing utility tests: 71 tests (measurement, orientation, dimension utilities)
-- Correctness tests: 60+ tests (attachment, rotation, dimensional accuracy)
+**Includes:**
+- Testing utility coverage for measurement, orientation, and dimension helpers
+- Correctness coverage for attachment, rotation, and dimensional behavior
 
 **By Component:**
 - Selector resolution: 100% coverage ✨
@@ -650,6 +651,7 @@ tiacad/
 **Current Limitations:**
 - No constraint solver (manual positioning only) — next milestone Q4 2026
 - Limited export formats (STL/3MF/STEP; no DXF/G-code/SVG)
+- STL/STEP export currently requires CadQuery-compatible parts; 3MF/visualization can use backend tessellation
 - GitHub imports default to `main` branch only (no branch override syntax)
 
 **Recent Additions (Q1 2026):**
@@ -745,38 +747,38 @@ Every component has comprehensive tests:
 ### User Documentation
 
 **Getting Started:**
-- [TUTORIAL.md](TUTORIAL.md) - Step-by-step introduction
-- [GLOSSARY.md](GLOSSARY.md) - Terminology and concepts
-- [EXAMPLES_GUIDE.md](EXAMPLES_GUIDE.md) - Detailed example walkthroughs
+- [docs/user/TUTORIAL.md](docs/user/TUTORIAL.md) - Step-by-step introduction
+- [docs/user/GLOSSARY.md](docs/user/GLOSSARY.md) - Terminology and concepts
+- [docs/user/EXAMPLES_GUIDE.md](docs/user/EXAMPLES_GUIDE.md) - Detailed example walkthroughs
 
 **Reference:**
-- [YAML_REFERENCE.md](YAML_REFERENCE.md) - Complete syntax reference
-- [AUTO_REFERENCES_GUIDE.md](AUTO_REFERENCES_GUIDE.md) - Spatial anchors guide
-- [docs/CLI.md](docs/CLI.md) - Command-line interface
+- [docs/user/YAML_REFERENCE.md](docs/user/YAML_REFERENCE.md) - Complete syntax reference
+- [docs/user/AUTO_REFERENCES_GUIDE.md](docs/user/AUTO_REFERENCES_GUIDE.md) - Spatial anchors guide
+- [docs/developer/CLI.md](docs/developer/CLI.md) - Command-line interface
 
 **Migration:**
-- [MIGRATION_GUIDE_V3.md](MIGRATION_GUIDE_V3.md) - Upgrading from v0.3.0
+- [docs/developer/MIGRATION_GUIDE_V3.md](docs/developer/MIGRATION_GUIDE_V3.md) - Upgrading from v0.3.0
 - [RELEASE_NOTES_V3.md](RELEASE_NOTES_V3.md) - What's new in v3.0
 
 ### Technical Documentation
 
 **Architecture & Design:**
-- [docs/ARCHITECTURE_DECISION_V3.md](docs/ARCHITECTURE_DECISION_V3.md) - v3.0 design rationale
-- [docs/MENTAL_MODELS_AND_LANGUAGE.md](docs/MENTAL_MODELS_AND_LANGUAGE.md) - Language design exploration
-- [docs/SKETCH_ABSTRACTION_DESIGN.md](docs/SKETCH_ABSTRACTION_DESIGN.md) - Sketch system design
-- [docs/CLEAN_ARCHITECTURE_PROPOSAL.md](docs/CLEAN_ARCHITECTURE_PROPOSAL.md) - Architecture principles
+- [docs/architecture/ARCHITECTURE_DECISION_V3.md](docs/architecture/ARCHITECTURE_DECISION_V3.md) - v3.0 design rationale
+- [docs/architecture/MENTAL_MODELS_AND_LANGUAGE.md](docs/architecture/MENTAL_MODELS_AND_LANGUAGE.md) - Language design exploration
+- [docs/architecture/SKETCH_ABSTRACTION_DESIGN.md](docs/architecture/SKETCH_ABSTRACTION_DESIGN.md) - Sketch system design
+- [docs/architecture/CLEAN_ARCHITECTURE_PROPOSAL.md](docs/architecture/CLEAN_ARCHITECTURE_PROPOSAL.md) - Architecture principles
 
 **Testing:**
-- [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) - Testing strategies
-- [docs/TESTING_ROADMAP.md](docs/TESTING_ROADMAP.md) - Test coverage plans
-- [docs/TESTING_QUICK_REFERENCE.md](docs/TESTING_QUICK_REFERENCE.md) - Quick test commands
+- [docs/developer/TESTING_GUIDE.md](docs/developer/TESTING_GUIDE.md) - Testing strategies
+- [docs/archive/TESTING_ROADMAP.md](docs/archive/TESTING_ROADMAP.md) - Historical test coverage plans
+- [docs/developer/TESTING_QUICK_REFERENCE.md](docs/developer/TESTING_QUICK_REFERENCE.md) - Quick test commands
 
 **Project Planning:**
-- [docs/TIACAD_EVOLUTION_ROADMAP.md](docs/TIACAD_EVOLUTION_ROADMAP.md) - Overall project roadmap
-- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) - Known limitations and improvement plans
-- [docs/LANGUAGE_IMPROVEMENTS_STATUS.md](docs/LANGUAGE_IMPROVEMENTS_STATUS.md) - Documentation improvement tracking
-- [docs/V3_IMPLEMENTATION_STATUS.md](docs/V3_IMPLEMENTATION_STATUS.md) - Feature implementation status
-- [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) - Project health snapshot
+- [docs/archive/TIACAD_EVOLUTION_ROADMAP.md](docs/archive/TIACAD_EVOLUTION_ROADMAP.md) - Overall project roadmap
+- [docs/archive/KNOWN_ISSUES.md](docs/archive/KNOWN_ISSUES.md) - Historical known limitations and improvement plans
+- [docs/archive/LANGUAGE_IMPROVEMENTS_STATUS.md](docs/archive/LANGUAGE_IMPROVEMENTS_STATUS.md) - Documentation improvement tracking
+- [docs/archive/V3_IMPLEMENTATION_STATUS.md](docs/archive/V3_IMPLEMENTATION_STATUS.md) - Feature implementation status
+- [docs/archive/CURRENT_STATUS.md](docs/archive/CURRENT_STATUS.md) - Historical project health snapshot
 
 ---
 
@@ -957,11 +959,6 @@ Built with:
 
 ---
 
-**Last Updated:** 2025-12-01
-**Session:** claude/recent-completion-summary-011CV2cv5x8jFFVCFp4qoHXh
-**Status:** v3.1 Phase 1 Complete - Testing Confidence Foundation
-**Tests:** 1025+/1025+ passing (100% pass rate, 0 skipped)
-**Coverage:** 87% overall (target: 90% for v3.1 final)
-**Quality:** Ruff + Pylint validated, comprehensive testing + correctness verification
-**Examples:** 24+ working YAML files → STL/3MF exports
-**New:** 131+ testing confidence tests (measurement, orientation, dimensions, correctness)
+**Status:** Active project
+**Quality:** Linting, coverage, correctness tests, and example validation are part of the current workflow
+**Examples:** See `examples/` plus `docs/user/EXAMPLES_GUIDE.md` for current example coverage and special cases

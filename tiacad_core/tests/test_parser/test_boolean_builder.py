@@ -19,6 +19,7 @@ import cadquery as cq
 from tiacad_core.parser.boolean_builder import BooleanBuilder, BooleanBuilderError
 from tiacad_core.parser.parameter_resolver import ParameterResolver
 from tiacad_core.part import Part, PartRegistry
+from tiacad_core.geometry import CadQueryBackend, MockBackend
 
 
 # ============================================================================
@@ -207,6 +208,41 @@ def test_union_preserves_geometry(builder, registry):
     # So union should go from -5 to 10 in X
     assert bbox.xmin < -4
     assert bbox.xmax > 9
+
+
+def test_boolean_preserves_backend_with_mock_backend(resolver):
+    """Boolean results should preserve the source backend when using backend APIs."""
+    backend = MockBackend()
+    reg = PartRegistry()
+    reg.add(Part("box1", backend.create_box(10, 10, 10), backend=backend))
+    reg.add(Part("box2", backend.create_box(10, 10, 10), backend=backend))
+
+    builder = BooleanBuilder(reg, resolver)
+    builder.execute_boolean_operation('union_result', {
+        'operation': 'union',
+        'inputs': ['box1', 'box2']
+    })
+
+    result = reg.get('union_result')
+    assert result.backend is backend
+    assert result.geometry.shape_type == 'union'
+
+
+def test_boolean_allows_distinct_cadquery_backend_instances(resolver):
+    """CadQuery-backed parts from different builder paths should still be compatible."""
+    reg = PartRegistry()
+    reg.add(Part("box1", cq.Workplane("XY").box(10, 10, 10), backend=CadQueryBackend()))
+    reg.add(Part("box2", cq.Workplane("XY").box(10, 10, 10).translate((5, 0, 0)), backend=CadQueryBackend()))
+
+    builder = BooleanBuilder(reg, resolver)
+    builder.execute_boolean_operation('union_result', {
+        'operation': 'union',
+        'inputs': ['box1', 'box2']
+    })
+
+    result = reg.get('union_result')
+    assert result.geometry is not None
+    assert isinstance(result.backend, CadQueryBackend)
 
 
 # ============================================================================

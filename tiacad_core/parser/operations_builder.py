@@ -233,7 +233,7 @@ class OperationsBuilder:
             )
 
         # Create tracker with initial geometry
-        tracker = TransformTracker(input_part.geometry)
+        tracker = TransformTracker(input_part.geometry, backend=input_part.backend)
 
         # Apply each transform
         for i, transform in enumerate(transforms):
@@ -261,7 +261,8 @@ class OperationsBuilder:
             name=name,
             geometry=tracker.get_geometry(),
             metadata=metadata,
-            current_position=tracker.current_position
+            current_position=tracker.current_position,
+            backend=input_part.backend,
         )
 
         # Add to registry

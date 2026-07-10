@@ -18,7 +18,7 @@
 - ✅ Tier 2 geometric contracts for all assembly examples
 - ✅ PCB standoff assembly example (`examples/pcb_standoff_assembly.yaml`)
 
-**Current test suite:** 1405 pass, 2 skip, 1 xfail, 0 fail
+**Current test suite:** broad parser, correctness, DAG, visual, and integration coverage.
 
 ---
 

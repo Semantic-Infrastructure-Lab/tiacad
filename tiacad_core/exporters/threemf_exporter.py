@@ -17,6 +17,7 @@ This exporter leverages TiaCAD's color system to create production-ready
 import locale
 import logging
 from typing import Dict, List, Tuple, Optional
+from ..backend_support import tessellate_part
 
 logger = logging.getLogger(__name__)
 
@@ -172,28 +173,23 @@ class ThreeMFExporter:
         mesh_object = model.AddMeshObject()
         mesh_object.SetName(part_name)
 
-        # Get mesh from CadQuery geometry using built-in tessellate()
+        # Get mesh using the part backend when available.
         try:
-            # Get CadQuery shape
-            shape = part.geometry.val()
+            vertices_xyz, triangle_indices = tessellate_part(part, 0.1)
 
-            # Tessellate with tolerance (smaller = finer mesh)
-            # 0.1 is a good balance between quality and file size
-            cq_vertices, cq_triangles = shape.tessellate(0.1)
-
-            # Convert CadQuery vertices to lib3mf Position objects
+            # Convert vertices to lib3mf Position objects
             vertices = []
-            for v in cq_vertices:
+            for x, y, z in vertices_xyz:
                 vertex = self.lib3mf.Position()
                 # Set coordinates individually (c_float_Array_3)
-                vertex.Coordinates[0] = float(v.x)
-                vertex.Coordinates[1] = float(v.y)
-                vertex.Coordinates[2] = float(v.z)
+                vertex.Coordinates[0] = x
+                vertex.Coordinates[1] = y
+                vertex.Coordinates[2] = z
                 vertices.append(vertex)
 
-            # Convert CadQuery triangles to lib3mf Triangle objects
+            # Convert triangle indices to lib3mf Triangle objects
             triangles = []
-            for tri in cq_triangles:
+            for tri in triangle_indices:
                 triangle = self.lib3mf.Triangle()
                 # Set indices individually (c_uint_Array_3)
                 triangle.Indices[0] = tri[0]

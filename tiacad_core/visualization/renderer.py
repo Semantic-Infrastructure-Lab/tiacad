@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
+from ..backend_support import tessellate_part
 
 logger = logging.getLogger(__name__)
 
@@ -111,12 +112,10 @@ class ModelRenderer:
             PyVista PolyData mesh
         """
         try:
-            # Get CadQuery shape and tessellate
-            shape = part.geometry.val()
-            vertices, triangles = shape.tessellate(0.1)
+            vertices, triangles = tessellate_part(part, 0.1)
 
             # Convert to numpy arrays
-            verts = np.array([[v.x, v.y, v.z] for v in vertices])
+            verts = np.array(vertices)
 
             # PyVista faces format: [n_points, p0, p1, p2, n_points, p0, p1, p2, ...]
             faces = []

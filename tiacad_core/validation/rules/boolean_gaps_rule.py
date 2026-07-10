@@ -26,14 +26,14 @@ class BooleanGapsRule(ValidationRule):
         base_part = parts_dict[base_name]
         if not hasattr(base_part, 'geometry') or base_part.geometry is None:
             return issues
-        base_bbox = self._get_bounding_box(base_part.geometry)
+        base_bbox = self._get_bounding_box(base_part)
         for add_name in add_names:
             if add_name not in parts_dict:
                 continue
             add_part = parts_dict[add_name]
             if not hasattr(add_part, 'geometry') or add_part.geometry is None:
                 continue
-            add_bbox = self._get_bounding_box(add_part.geometry)
+            add_bbox = self._get_bounding_box(add_part)
             if not self._boxes_are_close(base_bbox, add_bbox):
                 gap = self._calculate_bbox_gap(base_bbox, add_bbox)
                 issues.append(ValidationIssue(

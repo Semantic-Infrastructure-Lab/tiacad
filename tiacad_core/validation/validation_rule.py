@@ -79,19 +79,25 @@ class ValidationRule(ABC):
 
     def _get_bounding_box(self, geometry):
         """
-        Get bounding box from geometry object.
+        Get bounding box from a Part or geometry object.
 
-        Handles both CadQuery Workplane and direct Shape objects.
+        Handles:
+        - Part objects with `get_bounds()` (backend-aware)
+        - CadQuery Workplanes / Shapes
+        - Mock geometries that expose BoundingBox()
 
         Args:
-            geometry: Geometry object (Workplane or Shape)
+            geometry: Part or geometry object
 
         Returns:
-            BoundingBox object
+            BoundingBox-like object with xmin/xmax/... and xlen/ylen/zlen
 
         Raises:
             AttributeError: If geometry doesn't support bounding box
         """
+        if hasattr(geometry, 'get_bounds'):
+            bounds = geometry.get_bounds()
+            return _BoundsAdapter(bounds)
         if hasattr(geometry, 'val'):
             # CadQuery Workplane - get the shape
             return geometry.val().BoundingBox()
@@ -115,3 +121,16 @@ class ValidationRule(ABC):
             return operation.get(attr_name, default)
         else:
             return getattr(operation, attr_name, default)
+
+
+class _BoundsAdapter:
+    """Adapter that gives Part.get_bounds() dicts a BoundingBox-like surface."""
+
+    def __init__(self, bounds: dict):
+        min_corner = bounds['min']
+        max_corner = bounds['max']
+        self.xmin, self.ymin, self.zmin = min_corner
+        self.xmax, self.ymax, self.zmax = max_corner
+        self.xlen = self.xmax - self.xmin
+        self.ylen = self.ymax - self.ymin
+        self.zlen = self.zmax - self.zmin

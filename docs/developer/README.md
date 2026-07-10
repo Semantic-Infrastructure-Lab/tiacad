@@ -27,6 +27,14 @@ Comprehensive testing documentation:
 
 **Quick Reference:** [TESTING_QUICK_REFERENCE.md](TESTING_QUICK_REFERENCE.md)
 
+**[AI_DEBUG_WORKFLOW.md](AI_DEBUG_WORKFLOW.md)**
+
+Practical workflow for AI-assisted model debugging:
+- debug bundle design
+- structured geometry summaries
+- build traces and diffs
+- trust-render integration for iterative review
+
 ### Migration and Compatibility
 **[MIGRATION_GUIDE_V3.md](MIGRATION_GUIDE_V3.md)**
 
@@ -105,7 +113,7 @@ All contributions should include tests:
 1. **Design:** Review architecture docs, consider existing patterns
 2. **Test:** Write tests first (TDD) or alongside implementation
 3. **Implement:** Follow code organization principles
-4. **Document:** Update YAML_REFERENCE.md, add examples
+4. **Document:** Update `docs/user/YAML_REFERENCE.md`, add examples
 5. **Validate:** Run full test suite, check code quality
 6. **Review:** Submit PR with tests, docs, and examples
 
@@ -113,7 +121,7 @@ All contributions should include tests:
 
 - Use `tiacad build <file> --verbose` for detailed output
 - Check validation errors (provide line numbers)
-- Run specific test: `pytest tests/test_specific.py::test_function`
+- Run specific test: `pytest tiacad_core/tests/test_specific.py::test_function`
 - Use visual regression tests for geometry validation
 
 ### Running Tests
@@ -123,13 +131,13 @@ All contributions should include tests:
 pytest
 
 # Specific module
-pytest tests/test_parser/
+pytest tiacad_core/tests/test_parser/
 
 # With coverage
 pytest --cov=tiacad_core --cov-report=html
 
 # Quick smoke test
-pytest tests/test_integration.py -k "simple"
+pytest tiacad_core/tests/test_parser/test_tiacad_parser.py -k "simple"
 ```
 
 ---

@@ -1,4 +1,4 @@
-schema_version: "2.0"
+schema_version: "3.0"
 # TRUST: Two boxes side by side along X. No overlap, 20mm gap between them.
 # Raw box is 30wide×20deep×20tall.
 # left: translated to X=-25  → occupies X=-40 to X=-10
@@ -10,7 +10,11 @@ schema_version: "2.0"
 
 metadata:
   name: side_by_side
-  description: Two boxes side by side — verifies X positioning and separation
+  description: >
+    Two identical boxes (30×20×20) translated ±25 along X, 20mm gap between.
+    Trust check: top (XY) = two equal rectangles with clear gap between them.
+    Front (XZ) = two equal squares side by side with gap. Side (YZ) = single
+    rectangle (boxes share the same Y/Z extent). Both boxes same size, same height.
 
 parts:
   box_raw:

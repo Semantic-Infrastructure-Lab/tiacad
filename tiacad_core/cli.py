@@ -13,11 +13,14 @@ Version: 3.1.1
 """
 
 import argparse
+import json
 import sys
 import tempfile
 import traceback
 from pathlib import Path
 import time
+
+from . import __version__
 
 # Color codes for terminal output
 class Colors:
@@ -117,6 +120,121 @@ def _show_dep_graph(args, doc, input_file: Path) -> None:
         print()
 
 
+def _resolve_build_output(input_file: Path, output_arg: str | None) -> Path | None:
+    """Resolve and validate the build output path."""
+    output_file = Path(output_arg) if output_arg else input_file.with_suffix('.3mf')
+    output_ext = output_file.suffix.lower()
+    if output_ext not in ['.stl', '.3mf', '.step']:
+        print_error(f"Unsupported output format: {output_ext}")
+        print_info("Supported formats: .stl, .3mf, .step")
+        return None
+    return output_file
+
+
+def _export_document(doc, output_file: Path, part_name: str | None) -> None:
+    """Export a parsed document to the requested format."""
+    output_ext = output_file.suffix.lower()
+    if output_ext == '.stl':
+        doc.export_stl(str(output_file), part_name=part_name)
+    elif output_ext == '.3mf':
+        doc.export_3mf(str(output_file), part_name=part_name)
+    elif output_ext == '.step':
+        doc.export_step(str(output_file), part_name=part_name)
+
+
+def _print_build_stats(doc) -> None:
+    """Print post-build document statistics."""
+    print_header("\n📊 Statistics:")
+    print(f"  Parts: {len(doc.parts.list_parts())}")
+    print(f"  Parameters: {len(doc.parameters)}")
+    print(f"  Operations: {len(doc.operations)}")
+
+
+def _print_build_success(output_file: Path, parse_time: float, export_time: float, total_time: float) -> None:
+    """Print a successful build summary."""
+    print_success(f"Parsed in {parse_time:.2f}s")
+    print_success(f"Exported in {export_time:.2f}s")
+    print_success(f"Total time: {total_time:.2f}s")
+    print_success(f"Output: {output_file}")
+
+
+def _print_build_failure(error: Exception, doc, verbose: bool) -> None:
+    """Print build failure output consistently."""
+    print_error(f"Build failed: {str(error)}")
+
+    if hasattr(error, 'with_context') and doc and hasattr(doc, 'yaml_string') and doc.yaml_string:
+        print()
+        print(error.with_context(doc.yaml_string))
+
+    if verbose:
+        print("\n" + Colors.GRAY + "Traceback:" + Colors.RESET)
+        traceback.print_exc()
+
+
+def _resolve_watch_export_path(export_arg: str | None) -> Path | None:
+    """Resolve and validate the optional watch auto-export path."""
+    if not export_arg:
+        return None
+
+    export_path = Path(export_arg)
+    ext = export_path.suffix.lower()
+    if ext not in ('.stl', '.3mf', '.step'):
+        print_error(f"Unsupported export format: {ext}  (use .stl, .3mf, or .step)")
+        return None
+    return export_path
+
+
+def _format_watch_rebuild_line(result) -> str:
+    """Format one watch rebuild status line."""
+    ts = time.strftime("%H:%M:%S")
+    tag = "initial" if result.is_initial else "changed"
+
+    if result.ok:
+        cache_str = (
+            f"{result.rebuilt} rebuilt, {result.cached} cached"
+            if result.cached > 0
+            else f"{result.rebuilt} rebuilt"
+        )
+        export_str = (
+            f"  → {Colors.CYAN}{Path(result.exported_path).name}{Colors.RESET}"
+            if result.exported_path else ""
+        )
+        return (
+            f"  {Colors.GRAY}[{ts}]{Colors.RESET}"
+            f"  {tag:<9}"
+            f"  {Colors.GREEN}✓{Colors.RESET}"
+            f"  {result.rebuild_ms:>6.0f}ms"
+            f"  {Colors.GRAY}{cache_str}{Colors.RESET}"
+            f"{export_str}"
+        )
+
+    return (
+        f"  {Colors.GRAY}[{ts}]{Colors.RESET}"
+        f"  {tag:<9}"
+        f"  {Colors.RED}✗{Colors.RESET}"
+        f"  {Colors.RED}{result.error}{Colors.RESET}"
+    )
+
+
+def _print_watch_start(input_file: Path, export_path: Path | None) -> None:
+    """Print watch startup information."""
+    print_info(
+        f"Watching {Colors.BOLD}{input_file.name}{Colors.RESET}"
+        f"  (Ctrl+C to stop)"
+    )
+    print()
+    if export_path:
+        print_info(f"Auto-export → {Colors.CYAN}{export_path}{Colors.RESET}")
+
+
+def _make_watch_rebuild_callback():
+    """Create the CLI rebuild callback for watch mode."""
+    def on_rebuild(result) -> None:
+        print(_format_watch_rebuild_line(result))
+
+    return on_rebuild
+
+
 def cmd_build(args):
     """Build a TiaCAD YAML file to 3MF/STL/STEP (defaults to 3MF)"""
     from .parser.tiacad_parser import TiaCADParser
@@ -127,11 +245,8 @@ def cmd_build(args):
         print_error(f"File not found: {input_file}")
         return 1
 
-    output_file = Path(args.output) if args.output else input_file.with_suffix('.3mf')
-    output_ext = output_file.suffix.lower()
-    if output_ext not in ['.stl', '.3mf', '.step']:
-        print_error(f"Unsupported output format: {output_ext}")
-        print_info("Supported formats: .stl, .3mf, .step")
+    output_file = _resolve_build_output(input_file, args.output)
+    if output_file is None:
         return 1
 
     doc = None
@@ -141,48 +256,25 @@ def cmd_build(args):
         start_time = time.time()
 
         doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema, build_graph=build_graph)
-
         parse_time = time.time() - start_time
-        print_success(f"Parsed in {parse_time:.2f}s")
 
         _show_dep_graph(args, doc, input_file)
 
         print_info(f"Exporting to {Colors.CYAN}{output_file}{Colors.RESET}")
         export_start = time.time()
-
-        if output_ext == '.stl':
-            doc.export_stl(str(output_file), part_name=args.part)
-        elif output_ext == '.3mf':
-            doc.export_3mf(str(output_file), part_name=args.part)
-        elif output_ext == '.step':
-            doc.export_step(str(output_file), part_name=args.part)
-
+        _export_document(doc, output_file, args.part)
         export_time = time.time() - export_start
-        total_time = time.time() - start_time
 
-        print_success(f"Exported in {export_time:.2f}s")
-        print_success(f"Total time: {total_time:.2f}s")
-        print_success(f"Output: {output_file}")
+        total_time = time.time() - start_time
+        _print_build_success(output_file, parse_time, export_time, total_time)
 
         if args.stats:
-            print_header("\n📊 Statistics:")
-            print(f"  Parts: {len(doc.parts.list_parts())}")
-            print(f"  Parameters: {len(doc.parameters)}")
-            print(f"  Operations: {len(doc.operations)}")
+            _print_build_stats(doc)
 
         return 0
 
     except Exception as e:
-        print_error(f"Build failed: {str(e)}")
-
-        if hasattr(e, 'with_context') and doc and hasattr(doc, 'yaml_string') and doc.yaml_string:
-            print()
-            print(e.with_context(doc.yaml_string))
-
-        if args.verbose:
-            print("\n" + Colors.GRAY + "Traceback:" + Colors.RESET)
-            traceback.print_exc()
-
+        _print_build_failure(e, doc, args.verbose)
         return 1
 
 
@@ -257,42 +349,7 @@ def cmd_info(args):
 
     try:
         doc = TiaCADParser.parse_file(str(input_file))
-
-        print_header(f"\n📄 {input_file.name}")
-        print()
-
-        if doc.metadata:
-            print_header("Metadata:")
-            for key, value in doc.metadata.items():
-                print(f"  {Colors.CYAN}{key}:{Colors.RESET} {value}")
-            print()
-
-        if doc.parameters:
-            print_header(f"Parameters ({len(doc.parameters)}):")
-            for name, value in doc.parameters.items():
-                print(f"  {Colors.CYAN}{name}:{Colors.RESET} {value}")
-            print()
-
-        parts = doc.parts.list_parts()
-        print_header(f"Parts ({len(parts)}):")
-        for part_name in parts:
-            part = doc.parts.get(part_name)
-            prim_type = part.metadata.get('primitive_type', 'unknown')
-            print(f"  {Colors.GREEN}•{Colors.RESET} {part_name} ({prim_type})")
-        print()
-
-        if doc.operations:
-            print_header(f"Operations ({len(doc.operations)}):")
-            for op_name, op_def in doc.operations.items():
-                op_type = op_def.get('type', 'unknown')
-                print(f"  {Colors.YELLOW}•{Colors.RESET} {op_name} ({op_type})")
-            print()
-
-        print_header("Statistics:")
-        print(f"  Total parts: {len(parts)}")
-        print(f"  Parameters: {len(doc.parameters)}")
-        print(f"  Operations: {len(doc.operations)}")
-
+        _print_info_report(input_file, doc)
         return 0
 
     except Exception as e:
@@ -306,13 +363,284 @@ def _pick_part_to_validate(args, doc) -> str:
     """Determine which part to validate: explicit arg, last operation, or first part."""
     if args.part:
         return args.part
+    part_name = _get_default_part_name(doc)
+    if part_name is None:
+        print_error("No parts found in document")
+        return None
+    return part_name
+
+
+def _get_default_part_name(doc):
+    """Pick the default/final part for single-part inspection commands."""
     if doc.operations:
         return list(doc.operations.keys())[-1]
     parts = doc.parts.list_parts()
     if not parts:
-        print_error("No parts found in document")
         return None
     return parts[0]
+
+
+def _visible_parts(doc):
+    """Return user-visible parts, excluding internal placeholders."""
+    return [part_name for part_name in doc.parts.list_parts() if not part_name.startswith('_')]
+
+
+def _print_key_value_section(title: str, items) -> None:
+    """Print a simple key/value section when items are present."""
+    if not items:
+        return
+    print_header(title)
+    for key, value in items:
+        print(f"  {Colors.CYAN}{key}:{Colors.RESET} {value}")
+    print()
+
+
+def _print_part_section(doc) -> list[str]:
+    """Print the parts section and return the visible part names."""
+    parts = _visible_parts(doc)
+    print_header(f"Parts ({len(parts)}):")
+    for part_name in parts:
+        part = doc.parts.get(part_name)
+        print(
+            f"  {Colors.GREEN}•{Colors.RESET} "
+            f"{part_name} ({_get_part_display_type(part)})"
+        )
+    print()
+    return parts
+
+
+def _print_operation_section(doc) -> None:
+    """Print the operations section when operations are present."""
+    if not doc.operations:
+        return
+    print_header(f"Operations ({len(doc.operations)}):")
+    for op_name, op_def in doc.operations.items():
+        op_type = op_def.get('type', 'unknown')
+        print(f"  {Colors.YELLOW}•{Colors.RESET} {op_name} ({op_type})")
+    print()
+
+
+def _print_info_statistics(doc, visible_part_names: list[str]) -> None:
+    """Print aggregate info statistics for a parsed document."""
+    print_header("Statistics:")
+    print(f"  Total parts: {len(visible_part_names)}")
+    print(f"  Parameters: {len(doc.parameters)}")
+    print(f"  Operations: {len(doc.operations)}")
+
+
+def _print_info_report(input_file: Path, doc) -> None:
+    """Print the full `tiacad info` report for a parsed document."""
+    print_header(f"\n📄 {input_file.name}")
+    print()
+    _print_key_value_section("Metadata:", doc.metadata.items())
+    _print_key_value_section(
+        f"Parameters ({len(doc.parameters)}):",
+        doc.parameters.items(),
+    )
+    visible_part_names = _print_part_section(doc)
+    _print_operation_section(doc)
+    _print_info_statistics(doc, visible_part_names)
+
+
+def _format_parameter_summary(parameters: dict) -> str:
+    """Format resolved parameters for compact CLI display."""
+    pairs = [f"{Colors.CYAN}{key}{Colors.RESET}={value}" for key, value in parameters.items()]
+    return "  " + "  ".join(pairs)
+
+
+def _get_part_display_type(part) -> str:
+    """Return the best available type label for a part."""
+    return (
+        part.metadata.get('primitive_type')
+        or part.metadata.get('operation_type')
+        or part.metadata.get('source')
+        or '?'
+    )
+
+
+def _measure_part_dimensions(part):
+    """Measure a part and return width/height/depth/volume."""
+    from .testing.dimensions import get_dimensions
+
+    dims = get_dimensions(part)
+    return {
+        'width': dims['width'],
+        'height': dims['height'],
+        'depth': dims['depth'],
+        'volume': dims['volume'],
+    }
+
+
+def _build_check_rows(doc):
+    """Collect per-part rows for `tiacad check`."""
+    from .testing.dimensions import DimensionError
+
+    final_part_name = _get_default_part_name(doc)
+    rows = []
+    errors = []
+
+    for part_name in _visible_parts(doc):
+        part = doc.parts.get(part_name)
+        row = {
+            'name': part_name,
+            'type': _get_part_display_type(part),
+            'is_final': part_name == final_part_name,
+            'measurement': None,
+            'error': None,
+        }
+
+        try:
+            row['measurement'] = _measure_part_dimensions(part)
+        except DimensionError as e:
+            row['error'] = str(e)
+            errors.append((part_name, str(e)))
+
+        rows.append(row)
+
+    return rows, errors
+
+
+def _print_check_rows(rows) -> None:
+    """Print the per-part table for `tiacad check`."""
+    col_w = max((len(row['name']) for row in rows), default=8)
+    col_w = max(col_w, 8)
+
+    print_header(f"Parts ({len(rows)}):")
+    print(f"  {'NAME':<{col_w}}  {'TYPE':<8}  {'W × H × D (mm)':<30}  VOLUME (mm³)")
+    print(f"  {'─'*col_w}  {'─'*8}  {'─'*30}  {'─'*14}")
+
+    for row in rows:
+        star = f"{Colors.YELLOW}★{Colors.RESET}" if row['is_final'] else " "
+        pad = ' ' * (col_w - len(row['name']))
+        if row['is_final']:
+            name_col = f"{Colors.BOLD}{Colors.GREEN}{row['name']}{Colors.RESET}"
+        else:
+            name_col = f"{Colors.GREEN}{row['name']}{Colors.RESET}"
+
+        if row['error']:
+            print(
+                f"  {Colors.RED}{row['name']}{Colors.RESET}{pad}  "
+                f"{star} {Colors.GRAY}{row['type']:<8}{Colors.RESET}  "
+                f"{Colors.RED}ERROR: {row['error']}{Colors.RESET}"
+            )
+            continue
+
+        measurement = row['measurement']
+        dim_str = (
+            f"{measurement['width']:.1f} × "
+            f"{measurement['height']:.1f} × "
+            f"{measurement['depth']:.1f}"
+        )
+        vol_str = f"{measurement['volume']:>14,.1f}"
+        print(
+            f"  {name_col}{pad}  {star} {Colors.GRAY}{row['type']:<8}{Colors.RESET}  "
+            f"{dim_str:<30}  {vol_str}"
+        )
+
+
+def _empty_audit_result(input_file: Path) -> dict:
+    """Create a default audit result record."""
+    return {
+        'name': input_file.name,
+        'status': 'ok',
+        'dims': None,
+        'volume': None,
+        'parts_count': 0,
+        'final_part': None,
+        'issues': [],
+        'error': None,
+        'elapsed': 0.0,
+    }
+
+
+def _measure_audit_final_part(doc, result: dict) -> None:
+    """Populate audit measurements and warnings for the final/default part."""
+    from .testing.dimensions import DimensionError
+
+    final_name = _get_default_part_name(doc)
+    result['final_part'] = final_name
+
+    if final_name is None:
+        return
+
+    part = doc.parts.get(final_name)
+    try:
+        measurement = _measure_part_dimensions(part)
+        result['dims'] = (
+            measurement['width'],
+            measurement['height'],
+            measurement['depth'],
+        )
+        result['volume'] = measurement['volume']
+        if measurement['volume'] <= 0:
+            result['issues'].append(f"zero/negative volume: {measurement['volume']:.1f}")
+            result['status'] = 'warn'
+    except DimensionError as e:
+        result['issues'].append(f"measure failed: {e}")
+        result['status'] = 'warn'
+
+
+def _format_audit_dims(result: dict) -> str:
+    """Format the audit dimensions/error column."""
+    if result['dims']:
+        width, height, depth = result['dims']
+        return f"{width:.1f} × {height:.1f} × {depth:.1f}"
+    if result['error']:
+        return result['error'][:30]
+    return '-'
+
+
+def _format_audit_status(status: str) -> str:
+    """Format a colored audit status label."""
+    if status == 'ok':
+        return f"{Colors.GREEN}✓ OK   {Colors.RESET}"
+    if status == 'warn':
+        return f"{Colors.YELLOW}⚠ WARN {Colors.RESET}"
+    return f"{Colors.RED}✗ FAIL {Colors.RESET}"
+
+
+def _print_audit_results(results) -> tuple[int, int, int]:
+    """Print the audit table and return ok/warn/fail counts."""
+    col_w = max((len(result['name']) for result in results), default=12)
+    col_w = max(col_w, 12)
+
+    print(f"  {'FILE':<{col_w}}  {'PARTS':>5}  {'STATUS':<7}  {'DIMS W×H×D (mm)':<32}  {'VOLUME (mm³)':>14}  TIME")
+    print(f"  {'─'*col_w}  {'─'*5}  {'─'*7}  {'─'*32}  {'─'*14}  {'─'*6}")
+
+    ok_count = warn_count = fail_count = 0
+    for result in results:
+        if result['status'] == 'ok':
+            ok_count += 1
+        elif result['status'] == 'warn':
+            warn_count += 1
+        else:
+            fail_count += 1
+
+        parts_str = str(result['parts_count']) if result['parts_count'] else '-'
+        elapsed_str = f"{result['elapsed']:.1f}s"
+        vol_str = f"{result['volume']:>14,.1f}" if result['volume'] is not None else f"{'—':>14}"
+
+        print(
+            f"  {result['name']:<{col_w}}  {parts_str:>5}  {_format_audit_status(result['status'])}  "
+            f"{_format_audit_dims(result):<32}  {vol_str}  {elapsed_str}"
+        )
+
+        for issue in result['issues']:
+            print(f"  {' '*(col_w+2)}  {Colors.YELLOW}└─ {issue}{Colors.RESET}")
+
+    return ok_count, warn_count, fail_count
+
+
+def _print_audit_summary(ok_count: int, warn_count: int, fail_count: int, total_files: int, total_elapsed: float) -> None:
+    """Print the audit summary block."""
+    print()
+    print_header("Summary:")
+    print(f"  {Colors.GREEN}✓ OK:   {ok_count}{Colors.RESET}")
+    if warn_count:
+        print(f"  {Colors.YELLOW}⚠ WARN: {warn_count}{Colors.RESET}")
+    if fail_count:
+        print(f"  {Colors.RED}✗ FAIL: {fail_count}{Colors.RESET}")
+    print(f"  Total: {total_files} files  ({total_elapsed:.1f}s)")
 
 
 def _collect_geometry_issues(stats: dict, components, args) -> list:
@@ -379,6 +707,7 @@ def cmd_validate_geometry(args):
     - Positive volumes
     - No degenerate faces
     """
+    from .backend_support import require_cadquery_part
     from .parser.tiacad_parser import TiaCADParser
 
     try:
@@ -407,6 +736,7 @@ def cmd_validate_geometry(args):
 
         print_info(f"Validating part: {Colors.CYAN}{part_name}{Colors.RESET}")
         part = doc.parts.get(part_name)
+        require_cadquery_part(part, "Geometry validation")
 
         with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as tmp:
             tmp_path = Path(tmp.name)
@@ -448,7 +778,6 @@ def cmd_check(args):
       - Did the revolve produce positive volume?
     """
     from .parser.tiacad_parser import TiaCADParser
-    from .testing.dimensions import get_dimensions, DimensionError
 
     input_file = Path(args.input)
     if not input_file.exists():
@@ -465,68 +794,16 @@ def cmd_check(args):
 
         if doc.parameters:
             print_header(f"Parameters ({len(doc.parameters)}):")
-            pairs = [f"{Colors.CYAN}{k}{Colors.RESET}={v}" for k, v in doc.parameters.items()]
-            # Wrap at ~80 chars
-            line = "  "
-            for p in pairs:
-                line += p + "  "
-            print(line.rstrip())
+            print(_format_parameter_summary(doc.parameters))
             print()
 
-        # Identify the "final" part (last operation result)
-        final_part_name = None
-        if doc.operations:
-            final_part_name = list(doc.operations.keys())[-1]
-
-        parts = doc.parts.list_parts()
-        if not parts:
+        rows, errors = _build_check_rows(doc)
+        if not rows:
             print_warning("No parts found in document")
             return 0
 
-        # Column widths (exclude internal _ parts)
-        visible_parts = [p for p in parts if not p.startswith('_')]
-        max_name = max((len(p) for p in visible_parts), default=8)
-        col_w = max(max_name, 8)
-
-        print_header(f"Parts ({len(visible_parts)}):")
-        print(f"  {'NAME':<{col_w}}  {'TYPE':<8}  {'W × H × D (mm)':<30}  VOLUME (mm³)")
-        print(f"  {'─'*col_w}  {'─'*8}  {'─'*30}  {'─'*14}")
-
-        errors = []
         build_start = time.time()
-
-        for part_name in parts:
-            if part_name.startswith('_'):
-                continue  # skip internal placeholder parts
-            part = doc.parts.get(part_name)
-            prim_type = (
-                part.metadata.get('primitive_type')
-                or part.metadata.get('operation_type')
-                or part.metadata.get('source')
-                or '?'
-            )
-            is_final = part_name == final_part_name
-
-            try:
-                dims = get_dimensions(part)
-                w, h, d = dims['width'], dims['height'], dims['depth']
-                vol = dims['volume']
-                dim_str = f"{w:.1f} × {h:.1f} × {d:.1f}"
-                vol_str = f"{vol:>14,.1f}"
-
-                star = f"{Colors.YELLOW}★{Colors.RESET}" if is_final else " "
-                pad = ' ' * (col_w - len(part_name))
-                if is_final:
-                    name_col = f"{Colors.BOLD}{Colors.GREEN}{part_name}{Colors.RESET}"
-                else:
-                    name_col = f"{Colors.GREEN}{part_name}{Colors.RESET}"
-                print(f"  {name_col}{pad}  {star} {Colors.GRAY}{prim_type:<8}{Colors.RESET}  {dim_str:<30}  {vol_str}")
-
-            except DimensionError as e:
-                errors.append((part_name, str(e)))
-                star = "★" if is_final else " "
-                pad = ' ' * (col_w - len(part_name))
-                print(f"  {Colors.RED}{part_name}{Colors.RESET}{pad}  {star} {Colors.GRAY}{prim_type:<8}{Colors.RESET}  {Colors.RED}ERROR: {e}{Colors.RESET}")
+        _print_check_rows(rows)
 
         build_time = time.time() - build_start
         print()
@@ -537,7 +814,7 @@ def cmd_check(args):
                 print(f"  {Colors.RED}└─ {name}:{Colors.RESET} {msg}")
             return 1
         else:
-            n = len(visible_parts)
+            n = len(rows)
             print_success(
                 f"All {n} part{'s' if n != 1 else ''} built  "
                 f"(parse: {parse_time:.2f}s  build: {build_time:.2f}s)"
@@ -558,51 +835,14 @@ def _audit_one_file(input_file: Path, verbose: bool):
           final_part, error, elapsed.
     """
     from .parser.tiacad_parser import TiaCADParser
-    from .testing.dimensions import get_dimensions, DimensionError
 
-    result = {
-        'name': input_file.name,
-        'status': 'ok',
-        'dims': None,
-        'volume': None,
-        'parts_count': 0,
-        'final_part': None,
-        'issues': [],
-        'error': None,
-        'elapsed': 0.0,
-    }
+    result = _empty_audit_result(input_file)
 
     try:
         t0 = time.time()
         doc = TiaCADParser.parse_file(str(input_file))
-
-        parts = doc.parts.list_parts()
-        result['parts_count'] = len(parts)
-
-        # Pick final part
-        final_name = None
-        if doc.operations:
-            final_name = list(doc.operations.keys())[-1]
-        elif parts:
-            final_name = parts[0]
-
-        result['final_part'] = final_name
-
-        if final_name:
-            part = doc.parts.get(final_name)
-            try:
-                dims = get_dimensions(part)
-                result['dims'] = (dims['width'], dims['height'], dims['depth'])
-                result['volume'] = dims['volume']
-
-                if dims['volume'] <= 0:
-                    result['issues'].append(f"zero/negative volume: {dims['volume']:.1f}")
-                    result['status'] = 'warn'
-
-            except DimensionError as e:
-                result['issues'].append(f"measure failed: {e}")
-                result['status'] = 'warn'
-
+        result['parts_count'] = len(doc.parts.list_parts())
+        _measure_audit_final_part(doc, result)
         result['elapsed'] = time.time() - t0
 
     except Exception as e:
@@ -646,59 +886,8 @@ def cmd_audit(args):
         print(f"\r{' ' * 60}\r", end='')  # clear progress line
 
     total_elapsed = time.time() - total_start
-
-    # Column widths
-    max_name = max(len(r['name']) for r in results)
-    col_w = max(max_name, 12)
-
-    # Header
-    print(f"  {'FILE':<{col_w}}  {'PARTS':>5}  {'STATUS':<7}  {'DIMS W×H×D (mm)':<32}  {'VOLUME (mm³)':>14}  TIME")
-    print(f"  {'─'*col_w}  {'─'*5}  {'─'*7}  {'─'*32}  {'─'*14}  {'─'*6}")
-
-    ok_count = warn_count = fail_count = 0
-
-    for r in results:
-        name = r['name']
-        parts_str = str(r['parts_count']) if r['parts_count'] else '-'
-        elapsed_str = f"{r['elapsed']:.1f}s"
-
-        if r['status'] == 'ok':
-            ok_count += 1
-            status_str = f"{Colors.GREEN}✓ OK   {Colors.RESET}"
-        elif r['status'] == 'warn':
-            warn_count += 1
-            status_str = f"{Colors.YELLOW}⚠ WARN {Colors.RESET}"
-        else:
-            fail_count += 1
-            status_str = f"{Colors.RED}✗ FAIL {Colors.RESET}"
-
-        if r['dims']:
-            w, h, d = r['dims']
-            dims_str = f"{w:.1f} × {h:.1f} × {d:.1f}"
-        elif r['error']:
-            # Truncate error to fit column
-            dims_str = r['error'][:30]
-        else:
-            dims_str = '-'
-
-        vol_str = f"{r['volume']:>14,.1f}" if r['volume'] is not None else f"{'—':>14}"
-
-        print(
-            f"  {name:<{col_w}}  {parts_str:>5}  {status_str}  "
-            f"{dims_str:<32}  {vol_str}  {elapsed_str}"
-        )
-
-        for issue in r['issues']:
-            print(f"  {' '*(col_w+2)}  {Colors.YELLOW}└─ {issue}{Colors.RESET}")
-
-    print()
-    print_header("Summary:")
-    print(f"  {Colors.GREEN}✓ OK:   {ok_count}{Colors.RESET}")
-    if warn_count:
-        print(f"  {Colors.YELLOW}⚠ WARN: {warn_count}{Colors.RESET}")
-    if fail_count:
-        print(f"  {Colors.RED}✗ FAIL: {fail_count}{Colors.RESET}")
-    print(f"  Total: {len(files)} files  ({total_elapsed:.1f}s)")
+    ok_count, warn_count, fail_count = _print_audit_results(results)
+    _print_audit_summary(ok_count, warn_count, fail_count, len(files), total_elapsed)
 
     return 0 if fail_count == 0 else 1
 
@@ -714,55 +903,19 @@ def cmd_watch(args):
       # [14:32:01] initial   ✓  1842ms  1 rebuilt, 0 cached
       # [14:32:07] changed   ✓   112ms  1 rebuilt, 3 cached
     """
-    from .watcher import FileWatcher, WatchBuildResult
+    from .watcher import FileWatcher
 
     input_file = Path(args.input)
     if not input_file.exists():
         print_error(f"File not found: {input_file}")
         return 1
 
-    print_info(
-        f"Watching {Colors.BOLD}{input_file.name}{Colors.RESET}"
-        f"  (Ctrl+C to stop)"
-    )
-    print()
+    export_path = _resolve_watch_export_path(args.export)
+    if args.export and export_path is None:
+        return 1
 
-    export_path = Path(args.export) if args.export else None
-    if export_path:
-        ext = export_path.suffix.lower()
-        if ext not in ('.stl', '.3mf', '.step'):
-            print_error(f"Unsupported export format: {ext}  (use .stl, .3mf, or .step)")
-            return 1
-        print_info(f"Auto-export → {Colors.CYAN}{export_path}{Colors.RESET}")
-
-    def on_rebuild(result: WatchBuildResult) -> None:
-        ts = time.strftime("%H:%M:%S")
-        tag = "initial" if result.is_initial else "changed"
-        if result.ok:
-            cache_str = (
-                f"{result.rebuilt} rebuilt, {result.cached} cached"
-                if result.cached > 0
-                else f"{result.rebuilt} rebuilt"
-            )
-            export_str = (
-                f"  → {Colors.CYAN}{Path(result.exported_path).name}{Colors.RESET}"
-                if result.exported_path else ""
-            )
-            print(
-                f"  {Colors.GRAY}[{ts}]{Colors.RESET}"
-                f"  {tag:<9}"
-                f"  {Colors.GREEN}✓{Colors.RESET}"
-                f"  {result.rebuild_ms:>6.0f}ms"
-                f"  {Colors.GRAY}{cache_str}{Colors.RESET}"
-                f"{export_str}"
-            )
-        else:
-            print(
-                f"  {Colors.GRAY}[{ts}]{Colors.RESET}"
-                f"  {tag:<9}"
-                f"  {Colors.RED}✗{Colors.RESET}"
-                f"  {Colors.RED}{result.error}{Colors.RESET}"
-            )
+    _print_watch_start(input_file, export_path)
+    on_rebuild = _make_watch_rebuild_callback()
 
     watcher = FileWatcher(input_file, on_rebuild=on_rebuild, export_path=export_path)
     try:
@@ -773,6 +926,77 @@ def cmd_watch(args):
     print()
     print_info("Stopped.")
     return 0
+
+
+def _resolve_debug_bundle_path(input_file: Path, bundle_arg: str | None) -> Path:
+    """Resolve the bundle output directory for `tiacad debug`."""
+    from .debug_bundle import default_debug_bundle_dir
+
+    return Path(bundle_arg).resolve() if bundle_arg else default_debug_bundle_dir(input_file).resolve()
+
+
+def _print_debug_bundle_summary(manifest: dict, bundle_dir: Path) -> None:
+    """Print a concise human summary for a completed debug bundle."""
+    summary = manifest['summary']
+    print_success(f"Debug bundle written to {bundle_dir}")
+    print_info(
+        f"Parts: {summary['parts_total']} total, "
+        f"{summary['visible_parts_total']} visible, "
+        f"{summary['operations_total']} operations"
+    )
+    print_info(f"Default part: {summary['default_part'] or '-'}")
+
+    validation = summary['validation']
+    status = "passed" if validation['passed'] else "failed"
+    print_info(
+        "Validation "
+        f"{status}: {validation['error_count']} errors, "
+        f"{validation['warning_count']} warnings, "
+        f"{validation['info_count']} info"
+    )
+
+    trust_output = manifest['outputs']['final_trust']
+    if trust_output:
+        print_info(f"Trust render: {Colors.CYAN}{trust_output}{Colors.RESET}")
+    else:
+        print_warning("Trust render unavailable; see trust_render_manifest.json")
+
+    compare = summary.get('compare', {})
+    if compare.get('enabled'):
+        print_info(
+            f"Compare: {compare['changed_parts_total']} changed parts, "
+            f"{compare['changed_operations_total']} changed operations"
+        )
+
+
+def cmd_debug(args):
+    """Build a machine-readable debug bundle for AI/debug workflows."""
+    from .debug_bundle import create_debug_bundle
+
+    input_file = Path(args.input)
+    if not input_file.exists():
+        print_error(f"File not found: {input_file}")
+        return 1
+
+    bundle_dir = _resolve_debug_bundle_path(input_file, args.bundle)
+
+    try:
+        manifest = create_debug_bundle(
+            input_file,
+            bundle_dir=bundle_dir,
+            validate_schema=args.validate_schema,
+            include_trust_render=not args.no_trust_render,
+            compare_bundle_dir=args.compare,
+        )
+        _print_debug_bundle_summary(manifest, bundle_dir)
+        if args.json:
+            print(json.dumps(manifest, indent=2, sort_keys=True))
+        return 0
+    except Exception as e:
+        print_error(f"Debug bundle failed: {str(e)}")
+        if args.verbose:
+            traceback.print_exc()
+        return 1
 
 
 def create_parser():
@@ -788,6 +1012,7 @@ Examples:
   tiacad build examples/bracket.yaml -o bracket.step  # CAD exchange format
   tiacad validate examples/*.yaml
   tiacad info examples/bracket.yaml
+  tiacad debug examples/bracket.yaml --bundle out/
 
 Note: 3MF is the recommended format for 3D printing (multi-material, compact, modern).
       STL is supported for legacy compatibility.
@@ -796,7 +1021,7 @@ For more information: https://github.com/scottsen/tiacad
         """
     )
 
-    parser.add_argument('--version', action='version', version='TiaCAD 3.1.1')
+    parser.add_argument('--version', action='version', version=f'TiaCAD {__version__}')
     parser.add_argument('--no-color', action='store_true', help='Disable colored output')
 
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
@@ -862,6 +1087,30 @@ For more information: https://github.com/scottsen/tiacad
         help='Auto-export final part to STL/3MF/STEP on each successful rebuild'
     )
     watch_parser.set_defaults(func=cmd_watch)
+
+    # Debug command
+    debug_parser = subparsers.add_parser(
+        'debug',
+        help='Build an AI/debug bundle with resolved model, summaries, validation, and trust render'
+    )
+    debug_parser.add_argument('input', help='Input YAML file')
+    debug_parser.add_argument(
+        '--bundle', '-b',
+        help='Output directory for bundle artifacts (default: INPUT stem + .tiacad-debug)'
+    )
+    debug_parser.add_argument('--json', action='store_true', help='Print manifest JSON to stdout')
+    debug_parser.add_argument('--validate-schema', action='store_true', help='Enable JSON schema validation')
+    debug_parser.add_argument(
+        '--no-trust-render',
+        action='store_true',
+        help='Skip trust-render generation in the debug bundle'
+    )
+    debug_parser.add_argument(
+        '--compare',
+        help='Compare against a previous debug bundle directory and emit compare_report.json'
+    )
+    debug_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
+    debug_parser.set_defaults(func=cmd_debug)
 
     return parser
 

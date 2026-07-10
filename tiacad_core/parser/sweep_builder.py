@@ -17,6 +17,7 @@ from ..part import Part, PartRegistry
 from ..sketch import Sketch2D
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
+from .backend_utils import get_cadquery_backend
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
@@ -164,7 +165,8 @@ class SweepBuilder:
                     'profile': profile_name,
                     'operation_type': 'sweep',
                     'path_type': 'points' if path_points else 'sketch'
-                }
+                },
+                backend=get_cadquery_backend(),
             )
             self.registry.add(part)
             logger.debug(f"Created swept part '{name}' from profile '{profile_name}'")

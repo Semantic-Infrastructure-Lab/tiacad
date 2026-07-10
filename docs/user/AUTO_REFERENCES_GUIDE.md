@@ -14,7 +14,7 @@ TiaCAD automatically generates **spatial references** (we call them **anchors**)
 - **Orientation-aware**: Anchors include direction information (surface normals) for intelligent positioning
 - **Every part gets them**: All primitives (box, cylinder, sphere, cone) automatically provide standard anchors
 
-**Visual Guide:** See [auto-generated anchor Visualization](docs/diagrams/auto-generated anchor-visualization.md) for a complete visual reference of all auto-generated anchors.
+**Visual Guide:** See [Auto-Reference Visualization](../architecture/diagrams/auto-reference-visualization.md) for a complete visual reference of all auto-generated anchors.
 
 These auto-generated anchors are available for all primitive types.
 
@@ -188,6 +188,5 @@ auto-generated anchors are cached by the `SpatialResolver` for performance. The 
 
 ## See Also
 
-- [NAMED_POINTS_GUIDE.md](NAMED_POINTS_GUIDE.md) - For custom reference points
 - [YAML_REFERENCE.md](YAML_REFERENCE.md) - Complete YAML syntax reference
-- [examples/](examples/) - Example YAML files demonstrating auto-generated anchors
+- [examples/](../../examples/) - Example YAML files demonstrating auto-generated anchors

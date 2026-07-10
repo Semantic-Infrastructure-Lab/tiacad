@@ -14,7 +14,7 @@ Version: 0.1.0-alpha (Phase 2)
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class PatternBuilderError(TiaCADError):
     """Error during pattern operations"""
-    def __init__(self, message: str, operation_name: str = None):
+    def __init__(self, message: str, operation_name: Optional[str] = None):
         super().__init__(message)
         self.operation_name = operation_name
 
@@ -150,13 +150,115 @@ class PatternBuilder:
         part_name: str,
         geometry: Any,
         metadata: Dict[str, Any],
-        position: tuple = None,
+        position: Optional[tuple] = None,
+        backend=None,
     ) -> 'Part':
         """Create a Part, add it to the registry, and return it."""
         part = Part(name=part_name, geometry=geometry, metadata=metadata,
-                    current_position=position)
+                    current_position=position, backend=backend)
         self.registry.add(part)
         return part
+
+    def _resolve_circular_axis(
+        self,
+        name: str,
+        axis: Any,
+    ) -> tuple[float, float, float]:
+        """Resolve a circular-pattern axis spec into a concrete vector."""
+        if isinstance(axis, str):
+            axis_map = {'X': (1, 0, 0), 'Y': (0, 1, 0), 'Z': (0, 0, 1)}
+            if axis not in axis_map:
+                raise PatternBuilderError(
+                    f"Circular pattern '{name}' invalid axis '{axis}'. "
+                    "Must be X, Y, Z, or [x,y,z]",
+                    operation_name=name
+                )
+            return axis_map[axis]
+
+        if isinstance(axis, list) and len(axis) == 3:
+            return tuple(axis)
+
+        raise PatternBuilderError(
+            f"Circular pattern '{name}' invalid axis: {axis}. Must be X|Y|Z or [x,y,z]",
+            operation_name=name
+        )
+
+    def _validate_circular_center(self, name: str, center: Any) -> tuple[float, float, float]:
+        """Validate and normalize a circular-pattern center point."""
+        if not isinstance(center, list) or len(center) != 3:
+            raise PatternBuilderError(
+                f"Circular pattern '{name}' center must be [x, y, z], got: {center}",
+                operation_name=name
+            )
+        return tuple(center)
+
+    def _circular_radial_offset(
+        self,
+        axis_vector: tuple[float, float, float],
+        radius: Any,
+    ) -> tuple[float, float, float] | None:
+        """Return the radial offset vector used before circular rotation."""
+        if radius is None:
+            return None
+
+        preferred_offsets = {
+            (0, 0, 1): (radius, 0, 0),
+            (0, 1, 0): (radius, 0, 0),
+            (1, 0, 0): (0, radius, 0),
+        }
+        return preferred_offsets.get(axis_vector, (radius, 0, 0))
+
+    def _translate_geometry(
+        self,
+        part: Part,
+        geometry: Any,
+        offset: tuple[float, float, float],
+    ) -> Any:
+        """Translate geometry through the part backend when available."""
+        if part.backend is not None:
+            return part.backend.translate(geometry, offset)
+        return geometry.translate(offset)
+
+    def _rotate_geometry(
+        self,
+        part: Part,
+        geometry: Any,
+        center: tuple[float, float, float],
+        axis_vector: tuple[float, float, float],
+        angle: float,
+    ) -> Any:
+        """Rotate geometry through the part backend when available."""
+        axis_end = (
+            center[0] + axis_vector[0],
+            center[1] + axis_vector[1],
+            center[2] + axis_vector[2],
+        )
+        if part.backend is not None:
+            return part.backend.rotate(
+                geometry,
+                axis_start=center,
+                axis_end=axis_end,
+                angle=angle,
+            )
+        return geometry.rotate(
+            axisStartPoint=center,
+            axisEndPoint=axis_end,
+            angleDegrees=angle,
+        )
+
+    def _build_circular_geometry(
+        self,
+        input_part: Part,
+        center: tuple[float, float, float],
+        axis_vector: tuple[float, float, float],
+        angle: float,
+        radial_offset: tuple[float, float, float] | None,
+    ) -> Any:
+        """Build the transformed geometry for one circular-pattern instance."""
+        geometry = input_part.geometry
+        if radial_offset is not None:
+            geometry = self._translate_geometry(input_part, geometry, radial_offset)
+        return self._rotate_geometry(input_part, geometry, center, axis_vector, angle)
 
     # -------------------------------------------------------------------------
 
@@ -203,7 +305,10 @@ class PatternBuilder:
             ox = start_offset[0] + spacing[0] * i
             oy = start_offset[1] + spacing[1] * i
             oz = start_offset[2] + spacing[2] * i
-            geometry = input_part.geometry.translate((ox, oy, oz))
+            if input_part.backend is not None:
+                geometry = input_part.backend.translate(input_part.geometry, (ox, oy, oz))
+            else:
+                geometry = input_part.geometry.translate((ox, oy, oz))
             metadata = copy_propagating_metadata(
                 source_metadata=input_part.metadata,
                 target_metadata={
@@ -211,7 +316,9 @@ class PatternBuilder:
                     'pattern_index': i, 'source': input_name,
                 }
             )
-            part = self._make_and_register_part(f"{name}_{i}", geometry, metadata, (ox, oy, oz))
+            part = self._make_and_register_part(
+                f"{name}_{i}", geometry, metadata, (ox, oy, oz), backend=input_part.backend
+            )
             parts.append(part)
             logger.debug(f"Linear pattern: created {part.name} at ({ox}, {oy}, {oz})")
 
@@ -250,47 +357,21 @@ class PatternBuilder:
                 operation_name=name
             )
 
-        # Parse axis string or vector
-        if isinstance(axis, str):
-            axis_map = {'X': (1, 0, 0), 'Y': (0, 1, 0), 'Z': (0, 0, 1)}
-            if axis not in axis_map:
-                raise PatternBuilderError(
-                    f"Circular pattern '{name}' invalid axis '{axis}'. Must be X, Y, Z, or [x,y,z]",
-                    operation_name=name
-                )
-            axis_vector = axis_map[axis]
-        elif isinstance(axis, list) and len(axis) == 3:
-            axis_vector = tuple(axis)
-        else:
-            raise PatternBuilderError(
-                f"Circular pattern '{name}' invalid axis: {axis}. Must be X|Y|Z or [x,y,z]",
-                operation_name=name
-            )
-
-        if not isinstance(center, list) or len(center) != 3:
-            raise PatternBuilderError(
-                f"Circular pattern '{name}' center must be [x, y, z], got: {center}",
-                operation_name=name
-            )
+        axis_vector = self._resolve_circular_axis(name, axis)
+        center_point = self._validate_circular_center(name, center)
 
         angle_step = 0 if count == 1 else (end_angle - start_angle) / count
-        # Radial offset direction: perpendicular to rotation axis
-        radial_dir = {(0, 0, 1): (radius, 0, 0), (0, 1, 0): (radius, 0, 0),
-                      (1, 0, 0): (0, radius, 0)} if radius is not None else {}
-        radial_offset = radial_dir.get(axis_vector, (radius, 0, 0)) if radius is not None else None
+        radial_offset = self._circular_radial_offset(axis_vector, radius)
 
         parts = []
         for i in range(count):
             angle = start_angle + angle_step * i
-            geometry = input_part.geometry
-            if radial_offset is not None:
-                geometry = geometry.translate(radial_offset)
-            geometry = geometry.rotate(
-                axisStartPoint=tuple(center),
-                axisEndPoint=(center[0] + axis_vector[0],
-                              center[1] + axis_vector[1],
-                              center[2] + axis_vector[2]),
-                angleDegrees=angle
+            geometry = self._build_circular_geometry(
+                input_part,
+                center_point,
+                axis_vector,
+                angle,
+                radial_offset,
             )
             metadata = copy_propagating_metadata(
                 source_metadata=input_part.metadata,
@@ -299,7 +380,9 @@ class PatternBuilder:
                     'pattern_index': i, 'source': input_name, 'angle': angle,
                 }
             )
-            part = self._make_and_register_part(f"{name}_{i}", geometry, metadata)
+            part = self._make_and_register_part(
+                f"{name}_{i}", geometry, metadata, backend=input_part.backend
+            )
             parts.append(part)
             logger.debug(f"Circular pattern: created {part.name} at angle {angle}°")
 
@@ -395,7 +478,10 @@ class PatternBuilder:
                 ox = start_offset[0] + grid_offset_x + row * spacing[0]
                 oy = start_offset[1] + grid_offset_y + col * spacing[1]
                 oz = start_offset[2] + spacing[2]
-                geometry = input_part.geometry.translate((ox, oy, oz))
+                if input_part.backend is not None:
+                    geometry = input_part.backend.translate(input_part.geometry, (ox, oy, oz))
+                else:
+                    geometry = input_part.geometry.translate((ox, oy, oz))
                 metadata = copy_propagating_metadata(
                     source_metadata=input_part.metadata,
                     target_metadata={
@@ -404,7 +490,7 @@ class PatternBuilder:
                     }
                 )
                 part = self._make_and_register_part(
-                    f"{name}_{row}_{col}", geometry, metadata, (ox, oy, oz)
+                    f"{name}_{row}_{col}", geometry, metadata, (ox, oy, oz), backend=input_part.backend
                 )
                 parts.append(part)
                 logger.debug(f"Grid pattern: created {part.name} at ({ox}, {oy}, {oz})")

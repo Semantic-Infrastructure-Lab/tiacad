@@ -42,11 +42,10 @@ from .dimensions import (
     get_surface_area,
 )
 
-from .visual_regression import (
-    VisualRegressionTester,
-    VisualDiffResult,
-    RenderConfig,
-    pytest_visual_compare,
+from .geometry_summary import (
+    summarize_part_geometry,
+    summarize_part_registry,
+    GeometrySummaryError,
 )
 
 __all__ = [
@@ -58,8 +57,37 @@ __all__ = [
     'get_dimensions',
     'get_volume',
     'get_surface_area',
+    'summarize_part_geometry',
+    'summarize_part_registry',
+    'GeometrySummaryError',
     'VisualRegressionTester',
     'VisualDiffResult',
     'RenderConfig',
     'pytest_visual_compare',
 ]
+
+
+def __getattr__(name):
+    """Lazily import heavy visual-regression helpers on demand."""
+    if name in {
+        'VisualRegressionTester',
+        'VisualDiffResult',
+        'RenderConfig',
+        'pytest_visual_compare',
+    }:
+        from .visual_regression import (
+            RenderConfig,
+            VisualDiffResult,
+            VisualRegressionTester,
+            pytest_visual_compare,
+        )
+
+        exports = {
+            'VisualRegressionTester': VisualRegressionTester,
+            'VisualDiffResult': VisualDiffResult,
+            'RenderConfig': RenderConfig,
+            'pytest_visual_compare': pytest_visual_compare,
+        }
+        return exports[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -152,17 +152,17 @@ references:
     from: beam_front_center
     offset: ['${arm_spacing / 2}', 0, 0]
 
-  # Left arm starting position (offset for length)
+  # Left arm starting position — offset by arm_thickness/2 in Y so arm overlaps beam
   left_arm_start:
     type: point
     from: left_arm_attach
-    offset: [0, '${arm_length / 2}', 0]
+    offset: [0, '${arm_thickness / 2}', 0]
 
   # Right arm starting position
   right_arm_start:
     type: point
     from: right_arm_attach
-    offset: [0, '${arm_length / 2}', 0]
+    offset: [0, '${arm_thickness / 2}', 0]
 
   # Bracket positions
   left_bracket_pos:
@@ -316,7 +316,7 @@ operations:
       - translate:
           to:
             from: left_arm_start
-            offset: [0, '${grip_spacing}', 0]
+            offset: [0, 0, '${grip_spacing}']
 
   left_grip_2:
     type: transform
@@ -329,7 +329,7 @@ operations:
       - translate:
           to:
             from: left_arm_start
-            offset: [0, '${-grip_spacing}', 0]
+            offset: [0, 0, '${-grip_spacing}']
 
   right_grip_1:
     type: transform
@@ -342,7 +342,7 @@ operations:
       - translate:
           to:
             from: right_arm_start
-            offset: [0, '${grip_spacing}', 0]
+            offset: [0, 0, '${grip_spacing}']
 
   right_grip_2:
     type: transform
@@ -355,7 +355,7 @@ operations:
       - translate:
           to:
             from: right_arm_start
-            offset: [0, '${-grip_spacing}', 0]
+            offset: [0, 0, '${-grip_spacing}']
 
   # ═══════════════════════════════════════════════════════
   # STEP 6: UNITE ALL SOLID PARTS

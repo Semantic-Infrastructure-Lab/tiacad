@@ -92,7 +92,7 @@ The schema is located at: `tiacad-schema.json` in the project root.
 The schema validates:
 
 **Top-level sections:**
-- `schema_version` - Must be "2.0"
+- `schema_version` - Must be "3.0"
 - `metadata` - Design metadata (name, author, etc.)
 - `parameters` - Parametric variables
 - `colors` - Color palette
@@ -214,7 +214,7 @@ parts:
 ### Valid Complete YAML
 
 ```yaml
-schema_version: "2.0"
+schema_version: "3.0"
 
 metadata:
   name: Example Design
@@ -404,14 +404,14 @@ If you're adding new primitives or operations, update `tiacad-schema.json`:
 
 ## Related Documentation
 
-- [YAML Reference](../YAML_REFERENCE.md) - Complete YAML syntax guide
-- [Tutorial](../TUTORIAL.md) - Getting started with TiaCAD
-- [YAML Schema Spec](../docs/projects/tiacad/reference/TIACAD_YAML_SCHEMA.md) - Detailed specification
+- [YAML Reference](../user/YAML_REFERENCE.md) - Complete YAML syntax guide
+- [Tutorial](../user/TUTORIAL.md) - Getting started with TiaCAD
+- [`tiacad-schema.json`](../../tiacad-schema.json) - The schema file used by TiaCAD
 
 ## Version History
 
 **v1.0 (2025-10-26)** - Initial release
-- JSON Schema for TiaCAD v2.0
+- JSON Schema for TiaCAD v3.0
 - VS Code integration
 - Optional parser validation
 - 32 comprehensive tests

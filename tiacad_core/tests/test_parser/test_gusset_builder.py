@@ -19,6 +19,7 @@ import cadquery as cq
 from tiacad_core.part import Part, PartRegistry
 from tiacad_core.parser.parameter_resolver import ParameterResolver
 from tiacad_core.parser.gusset_builder import GussetBuilder, GussetBuilderError
+from tiacad_core.geometry import CadQueryBackend
 
 
 @pytest.fixture
@@ -145,6 +146,7 @@ def test_gusset_metadata_structure(builder, registry):
     assert metadata['thickness'] == 8
     assert 'points' in metadata
     assert len(metadata['points']) == 3
+    assert isinstance(result.backend, CadQueryBackend)
 
 
 # ============================================================================

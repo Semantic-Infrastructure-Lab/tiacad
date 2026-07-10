@@ -9,6 +9,8 @@ Tests validation of common design issues:
 """
 
 import pytest
+from tiacad_core.geometry import MockBackend
+from tiacad_core.part import Part, PartRegistry
 from tiacad_core.validation.assembly_validator import (
     AssemblyValidator,
     ValidationReport,
@@ -16,6 +18,7 @@ from tiacad_core.validation.assembly_validator import (
     Severity
 )
 from tiacad_core.parser.tiacad_parser import TiaCADParser
+from tiacad_core.validation.rules.bounding_box_rule import BoundingBoxRule
 
 
 class TestValidationIssue:
@@ -243,6 +246,23 @@ class TestValidatorIntegration:
 
         # Fixed design should pass (no errors, warnings are OK)
         assert report.error_count == 0
+
+
+class TestBackendAwareValidation:
+    """Validation helpers should work with backend-aware Part objects."""
+
+    def test_bounding_box_rule_supports_mock_backend_part(self):
+        backend = MockBackend()
+        registry = PartRegistry()
+        registry.add(Part("mock_box", backend.create_box(10, 20, 30), backend=backend))
+
+        class MockDoc:
+            parts = registry
+
+        issues = BoundingBoxRule().check(MockDoc())
+        errors = [issue for issue in issues if issue.severity == Severity.WARNING]
+
+        assert errors == []
 
 
 class TestConnectivityChecks:

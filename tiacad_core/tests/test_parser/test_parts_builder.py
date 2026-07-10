@@ -10,6 +10,7 @@ import cadquery as cq
 from tiacad_core.parser.parts_builder import PartsBuilder, PartsBuilderError
 from tiacad_core.parser.parameter_resolver import ParameterResolver
 from tiacad_core.part import Part
+from tiacad_core.geometry import MockBackend, set_default_backend, reset_default_backend
 
 
 class TestBox:
@@ -145,6 +146,26 @@ class TestBox:
 
         assert 'depth' in str(exc_info.value).lower()
 
+    def test_box_uses_default_geometry_backend(self):
+        """PartsBuilder should honor the configured default backend."""
+        spec = {
+            'box': {
+                'primitive': 'box',
+                'parameters': {'width': 10, 'height': 20, 'depth': 30}
+            }
+        }
+
+        set_default_backend(MockBackend())
+        try:
+            builder = PartsBuilder(ParameterResolver({}))
+            registry = builder.build_parts(spec)
+            part = registry.get('box')
+
+            assert part.backend is builder.backend
+            assert part.geometry.shape_type == 'box'
+        finally:
+            reset_default_backend()
+
 
 class TestCylinder:
     """Test cylinder primitive building"""
@@ -250,6 +271,25 @@ class TestSphere:
         part = registry.get('ball')
         assert part is not None
         assert part.name == 'ball'
+
+
+class TestBackendBoundaries:
+    """Test explicit backend limitations in PartsBuilder."""
+
+    def test_cadquery_only_primitive_fails_with_mock_backend(self):
+        spec = {
+            'ring': {
+                'primitive': 'torus',
+                'parameters': {'major_radius': 20, 'minor_radius': 5}
+            }
+        }
+
+        builder = PartsBuilder(ParameterResolver({}), backend=MockBackend())
+
+        with pytest.raises(PartsBuilderError) as exc_info:
+            builder.build_parts(spec)
+
+        assert 'requires cadquerybackend' in str(exc_info.value).lower()
 
     def test_sphere_with_parameters(self):
         """Test sphere with parameter"""

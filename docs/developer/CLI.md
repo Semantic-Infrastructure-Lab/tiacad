@@ -1,6 +1,6 @@
 # TiaCAD Command-Line Interface
 
-**Version:** 3.1.1
+**Version:** 3.1.2
 
 The TiaCAD CLI provides a professional command-line interface for building, validating, and inspecting TiaCAD YAML files.
 
@@ -45,7 +45,7 @@ tiacad build INPUT [OPTIONS]
 - `INPUT` - Input YAML file path
 
 **Options:**
-- `-o, --output FILE` - Output file path (default: same name with .stl extension)
+- `-o, --output FILE` - Output file path (default: same name with `.3mf` extension)
 - `-p, --part NAME` - Specific part to export (default: last operation result)
 - `-s, --stats` - Show build statistics
 - `--validate-schema` - Enable JSON schema validation
@@ -59,7 +59,7 @@ tiacad build INPUT [OPTIONS]
 **Examples:**
 
 ```bash
-# Build to STL (default)
+# Build to 3MF (default)
 tiacad build examples/plate.yaml
 
 # Build to specific output file
@@ -82,10 +82,10 @@ tiacad build examples/new_design.yaml --validate-schema
 ```
 ℹ Building examples/simple_box.yaml
 ✓ Parsed in 0.00s
-ℹ Exporting to simple_box.stl
+ℹ Exporting to simple_box.3mf
 ✓ Exported in 0.00s
 ✓ Total time: 0.01s
-✓ Output: simple_box.stl
+✓ Output: simple_box.3mf
 
 📊 Statistics:
   Parts: 1
@@ -200,6 +200,66 @@ Statistics:
   Parameters: 8
   Operations: 3
 ```
+
+---
+
+### `tiacad debug` - Write AI/Debug Bundle
+
+Build a stable debug bundle for AI-assisted inspection and iterative debugging.
+
+**Usage:**
+```bash
+tiacad debug INPUT [OPTIONS]
+```
+
+**Arguments:**
+- `INPUT` - Input YAML file path
+
+**Options:**
+- `-b, --bundle DIR` - Output directory for bundle artifacts
+- `--json` - Print bundle manifest JSON to stdout
+- `--validate-schema` - Enable JSON schema validation before build
+- `--no-trust-render` - Skip trust-render generation
+- `--compare DIR` - Compare against a previous bundle and emit `compare_report.json`
+- `-v, --verbose` - Verbose output with traceback on failure
+
+**Default bundle directory:**
+- `INPUT` stem + `.tiacad-debug`
+- Example: `examples/bracket.yaml` → `examples/bracket.tiacad-debug/`
+
+**Bundle contents:**
+- `manifest.json`
+- `resolved_model.json`
+- `build_trace.json`
+- `part_summaries.json`
+- `validation_report.json`
+- `trust_render_manifest.json`
+- `final_trust.png` when trust rendering succeeds
+- `compare_report.json` when `--compare` is used
+
+**Examples:**
+
+```bash
+# Write a debug bundle next to the model
+tiacad debug examples/bracket.yaml
+
+# Write to an explicit directory
+tiacad debug examples/bracket.yaml --bundle out/debug-bracket
+
+# Print manifest JSON for an agent/tooling wrapper
+tiacad debug examples/bracket.yaml --json
+
+# Skip trust render if only structured artifacts are needed
+tiacad debug examples/bracket.yaml --no-trust-render
+
+# Compare the current model against a previous bundle
+tiacad debug examples/bracket.yaml --compare out/previous-debug
+```
+
+**Notes:**
+- The command is designed for AI/debug workflows, not normal export.
+- Trust render failures do not prevent bundle creation; inspect `trust_render_manifest.json`.
+- `part_summaries.json` contains structured geometry facts such as bounds, extents, backend identity, transform summary, and mesh counts.
 
 ---
 

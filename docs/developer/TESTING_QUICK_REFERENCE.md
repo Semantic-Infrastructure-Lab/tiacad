@@ -15,7 +15,7 @@ beth_topics:
 
 ## At a Glance
 
-**Current baseline:** 1244 pass, 3 skip, 1 xfailed
+**Current baseline:** broad parser, correctness, DAG, visualization, and integration coverage.
 
 | Suite | Tests | Runtime |
 |---|---|---|

@@ -29,12 +29,12 @@ beth_topics:
 
 ## Current State
 
-TiaCAD has **1405 passing tests** as of March 2026.
+TiaCAD has a large automated test suite spanning parser, correctness, DAG, visualization, and integration coverage.
 
 | Category | Location | Tests | Notes |
 |---|---|---|---|
 | Parser | `test_parser/` | ~520 | YAML → geometry pipeline |
-| Correctness | `test_correctness/` | ~90 | Attachment, rotation, dimensions, example contracts |
+| Correctness | `test_correctness/` | ~156 | Attachment, rotation, dimensions, example contracts, trust contracts |
 | Visual regression | `test_visual_regression.py` | 57 | Pixel-diff vs reference images — catches regressions, not original correctness |
 | DAG (incremental rebuild) | `test_dag/` | 101 | Graph, invalidation, cache, builder |
 | Testing utilities | `test_testing/` | ~40 | Tests for the test utilities themselves |
@@ -59,11 +59,12 @@ pytest tiacad_core/tests/test_dag/           # DAG tests — <1s
 | Layer | Tested | How |
 |---|---|---|
 | Primitive dimensions (box width, cylinder radius) | ✅ | `test_dimensional_accuracy.py` |
-| Boolean volume math (union, difference, intersection) | ✅ | `test_dimensional_accuracy.py` |
+| Boolean volume math (union, difference, intersection) | ✅ | `test_dimensional_accuracy.py` + `test_trust_contracts.py` |
 | Attachment distance between parts | ✅ | `test_attachment_correctness.py` |
 | Rotation angles on primitives | ✅ | `test_rotation_correctness.py` |
 | Mesh validity (watertight, no self-intersections) | ✅ | `test_geometry_validation.py` — 3 examples |
 | Visual pixel consistency vs reference images | ✅ | `test_visual_regression.py` — 49 examples |
+| Trust scenario geometry (all 20 trust YAMLs) | ✅ | `test_trust_contracts.py` — 66 tests, per-part dims + volumes + positions |
 
 ### What's missing
 
@@ -78,15 +79,17 @@ pytest tiacad_core/tests/test_dag/           # DAG tests — <1s
 
 The visual regression tests only catch *looks different from the last snapshot*. They don't know if the snapshot was correct. And for subtle errors (a 2mm mistake, a 10° rotation error), pixel diff won't catch it at typical render resolution.
 
-The `test_geometry_validation.py` covers 3 examples with `trimesh` validity checks. Zero of the 49 examples have dimension/volume assertions.
-
 ### The "snapshot of a bug" risk
 
 The 51 visual reference images were generated at some point. If a bug existed at snapshot time, the reference *is* the bug. Visual regression tests would then actively protect incorrect behavior.
 
 ### What we've done about it
 
-**Option A** (geometric contracts) is now in place — `test_correctness/test_example_contracts.py` covers all assembly examples with Tier 2 contracts. This is the primary regression net.
+**Option A** (geometric contracts) is now in place:
+- `test_correctness/test_example_contracts.py` — all assembly examples with Tier 2 contracts
+- `test_correctness/test_trust_contracts.py` — all 20 trust YAMLs with per-part dimension, volume, and positional assertions (session: rainbow-ember-0316)
+
+Together these are the primary regression net against "built but wrong" geometry.
 
 ### Remaining approaches
 

@@ -10,6 +10,7 @@ import pytest
 from tiacad_core.parser.operations_builder import OperationsBuilder, OperationsBuilderError
 from tiacad_core.parser.parameter_resolver import ParameterResolver
 from tiacad_core.parser.parts_builder import PartsBuilder
+from tiacad_core.geometry import MockBackend
 
 
 class TestTranslateOperations:
@@ -338,6 +339,25 @@ class TestMultipleOperations:
         assert result_registry.get('part2') is not None
         assert result_registry.get('part3') is not None
         assert len(result_registry) == 4  # base + 3 transformed
+
+    def test_transform_preserves_input_backend(self):
+        """Transform results should preserve the source part backend."""
+        resolver = ParameterResolver({})
+        registry = PartsBuilder(resolver, backend=MockBackend()).build_parts({
+            'base': {'primitive': 'box', 'parameters': {'width': 10, 'height': 10, 'depth': 10}}
+        })
+
+        ops_builder = OperationsBuilder(registry, resolver)
+        result_registry = ops_builder.execute_operations({
+            'shifted': {
+                'type': 'transform',
+                'input': 'base',
+                'transforms': [{'translate': [5, 0, 0]}]
+            }
+        })
+
+        shifted = result_registry.get('shifted')
+        assert shifted.backend is registry.get('base').backend
 
 
 class TestErrorHandling:

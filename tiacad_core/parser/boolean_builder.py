@@ -18,6 +18,7 @@ import re
 from typing import Dict, Any, List, Union
 import cadquery as cq
 
+from ..geometry import CadQueryBackend
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
@@ -221,6 +222,19 @@ class BooleanBuilder:
                     return self.registry.get(first)
         return None
 
+    def _require_compatible_backends(self, parts: List[Part], operation_name: str) -> None:
+        """Reject mixed-backend boolean operations until the path is intentionally designed."""
+        backend_types = {
+            CadQueryBackend if part.backend is None else type(part.backend)
+            for part in parts
+        }
+        if len(backend_types) > 1:
+            raise BooleanBuilderError(
+                f"Boolean operation '{operation_name}' uses parts from multiple backends. "
+                "Mixed-backend boolean operations are not supported.",
+                operation_name=operation_name,
+            )
+
     def execute_boolean_operation(self, name: str, spec: Dict[str, Any]):
         """
         Execute a boolean operation and add result to registry.
@@ -263,7 +277,12 @@ class BooleanBuilder:
                 target_metadata={'operation_type': 'boolean', 'boolean_op': operation}
             )
 
-            self.registry.add(Part(name=name, geometry=geometry, metadata=metadata))
+            self.registry.add(Part(
+                name=name,
+                geometry=geometry,
+                metadata=metadata,
+                backend=source_part.backend if source_part else None,
+            ))
             logger.info(f"Boolean operation '{operation}' created part '{name}'")
 
         except BooleanBuilderError:
@@ -324,12 +343,16 @@ class BooleanBuilder:
             parts.append(self.registry.get(input_name))
 
         # Start with first part's geometry
+        self._require_compatible_backends(parts, name)
         result = parts[0].geometry
 
         # Union remaining parts
         for i, part in enumerate(parts[1:], start=1):
             try:
-                result = result.union(part.geometry)
+                if parts[0].backend is not None:
+                    result = parts[0].backend.boolean_union(result, part.geometry)
+                else:
+                    result = result.union(part.geometry)
                 logger.debug(f"Union: combined part {i+1}/{len(parts)}")
             except Exception as e:
                 raise BooleanBuilderError(
@@ -411,9 +434,13 @@ class BooleanBuilder:
                 )
 
             subtract_part = self.registry.get(subtract_name)
+            self._require_compatible_backends([base_part, subtract_part], name)
 
             try:
-                result = result.cut(subtract_part.geometry)
+                if base_part.backend is not None:
+                    result = base_part.backend.boolean_difference(result, subtract_part.geometry)
+                else:
+                    result = result.cut(subtract_part.geometry)
                 logger.debug(f"Difference: subtracted part {i+1}/{len(subtract_list)}")
             except Exception as e:
                 raise BooleanBuilderError(
@@ -475,12 +502,16 @@ class BooleanBuilder:
             parts.append(self.registry.get(input_name))
 
         # Start with first part's geometry
+        self._require_compatible_backends(parts, name)
         result = parts[0].geometry
 
         # Intersect remaining parts
         for i, part in enumerate(parts[1:], start=1):
             try:
-                result = result.intersect(part.geometry)
+                if parts[0].backend is not None:
+                    result = parts[0].backend.boolean_intersection(result, part.geometry)
+                else:
+                    result = result.intersect(part.geometry)
                 logger.debug(f"Intersection: processed part {i+1}/{len(parts)}")
             except Exception as e:
                 raise BooleanBuilderError(

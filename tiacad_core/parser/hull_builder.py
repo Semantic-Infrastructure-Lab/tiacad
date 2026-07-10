@@ -22,6 +22,7 @@ import numpy as np
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
+from .backend_utils import get_cadquery_backend, require_cadquery_input_part
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,8 @@ class HullBuilder:
             name=name,
             geometry=input_part.geometry,
             metadata=metadata,
-            current_position=input_part.current_position
+            current_position=input_part.current_position,
+            backend=input_part.backend,
         )
         self.registry.add(result_part)
         logger.info(f"Hull operation '{name}' with single input - returning input unchanged")
@@ -113,6 +115,7 @@ class HullBuilder:
         """Extract and aggregate vertices from all input parts."""
         all_vertices = []
         for part in input_parts:
+            require_cadquery_input_part(part, 'Hull operation', part.name)
             vertices = self._extract_vertices(part.geometry)
             all_vertices.extend(vertices)
             logger.debug(f"Extracted {len(vertices)} vertices from {part.name}")
@@ -159,7 +162,8 @@ class HullBuilder:
             name=name,
             geometry=hull_geometry,
             metadata=metadata,
-            current_position=(0, 0, 0)
+            current_position=(0, 0, 0),
+            backend=get_cadquery_backend(),
         )
         self.registry.add(result_part)
         logger.info(f"Created hull part '{name}' from {len(input_parts)} inputs")

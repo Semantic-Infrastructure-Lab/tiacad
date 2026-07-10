@@ -1,0 +1,45 @@
+schema_version: "3.0"
+
+metadata:
+  name: Revolve 90° Trust
+  description: >
+    Rectangle (X=0..40, Z=0..15) in XZ plane revolved 90° around world X axis.
+    Produces a quarter-cylinder wedge: radius=15, length=40.
+    Volume must equal exactly one quarter the 360° revolve.
+    Trust check: front (XZ) = rectangle 40×30.
+    Side (YZ) = quarter-circle wedge (90° pie slice, r=15).
+    Isometric = wedge shape, two flat faces at 90° to each other.
+  version: 1.0
+  author: TIA
+
+sketches:
+  cyl_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - [0,  0]
+          - [40, 0]
+          - [40, 15]
+          - [0,  15]
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  quarter_cyl:
+    type: revolve
+    sketch: cyl_profile
+    axis: X
+    angle: 90
+
+export:
+  default_part: quarter_cyl

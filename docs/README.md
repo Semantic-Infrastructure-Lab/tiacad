@@ -21,6 +21,7 @@ Complete documentation for TiaCAD - declarative parametric CAD in YAML.
 - **[CLI Documentation](developer/CLI.md)** - Command-line interface reference
 - **[Testing Guide](developer/TESTING_GUIDE.md)** - How to write and run tests
 - **[Testing Quick Reference](developer/TESTING_QUICK_REFERENCE.md)** - Testing cheat sheet
+- **[AI Debug Workflow](developer/AI_DEBUG_WORKFLOW.md)** - Practical AI-assisted model debug and validation workflow
 - **[Migration Guide v3](developer/MIGRATION_GUIDE_V3.md)** - Upgrading from v2 to v3
 - **[Schema Validation](developer/SCHEMA_VALIDATION.md)** - YAML schema validation details
 - **[Terminology Guide](developer/TERMINOLOGY_GUIDE.md)** - Canonical terminology reference
@@ -28,7 +29,10 @@ Complete documentation for TiaCAD - declarative parametric CAD in YAML.
 ### 🏗️ [Architecture Documentation](architecture/)
 **System design and technical decisions**
 
-- **[CGA v5.0 Architecture Spec](architecture/CGA_V5_ARCHITECTURE_SPEC.md)** - Conformal Geometric Algebra integration (future)
+- **[Open Issues and Architecture Debt 2026-04-18](architecture/OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md)** - current open issues, contract drift, and remaining architecture debt
+- **[Architecture Review 2026-04-18](architecture/ARCHITECTURE_REVIEW_2026-04-18.md)** - Current architecture/code quality review and remediation tracking
+- **[Architecture Next Steps](architecture/ARCHITECTURE_NEXT_STEPS.md)** - Canonical near-term architecture plan
+- **[CGA v5.0 Future Vision](architecture/CGA_V5_FUTURE_VISION.md)** - Conformal Geometric Algebra integration (future)
 - **[Architecture Decision v3](architecture/ARCHITECTURE_DECISION_V3.md)** - v3.0 design decisions
 - **[Clean Architecture Proposal](architecture/CLEAN_ARCHITECTURE_PROPOSAL.md)** - Code organization principles
 - **[Sketch Abstraction Design](architecture/SKETCH_ABSTRACTION_DESIGN.md)** - Sketch system design

@@ -1,4 +1,4 @@
-schema_version: "2.0"
+schema_version: "3.0"
 # TRUST: Flat plate with a cylinder standing centered on top.
 # plate:  80×60×5, centered at origin → top face at Z=+2.5
 # post_raw: radius=10, height=25, at origin → Z=-12.5 to +12.5
@@ -11,7 +11,11 @@ schema_version: "2.0"
 
 metadata:
   name: cylinder_on_plate
-  description: Plate with upright centered cylinder — verifies XY centering and Z stacking
+  description: >
+    Flat plate (80×60×5) with cylinder (r=10, h=25) standing centered on top.
+    Trust check: top (XY) = circle centered on rectangle, no offset.
+    Front (XZ) = wide flat plate with narrow tall cylinder rising from center.
+    Side (YZ) = plate 60 wide, cylinder only 20 wide — plate extends both sides.
 
 parts:
   plate:

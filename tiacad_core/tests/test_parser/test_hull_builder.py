@@ -21,6 +21,7 @@ import numpy as np
 from tiacad_core.parser.hull_builder import HullBuilder, HullBuilderError
 from tiacad_core.parser.parameter_resolver import ParameterResolver
 from tiacad_core.part import Part, PartRegistry
+from tiacad_core.geometry import MockBackend, CadQueryBackend
 
 
 # ============================================================================
@@ -247,6 +248,17 @@ def test_hull_single_input_preserves_metadata(builder, registry):
     assert result.metadata['color'] == '#FF0000'
 
 
+def test_hull_single_input_preserves_backend(builder, registry):
+    """Single-input hull should preserve the source backend on passthrough."""
+    sphere = registry.get('sphere1')
+    sphere.backend = CadQueryBackend()
+
+    builder.execute_hull_operation('single_backend', {'inputs': ['sphere1']})
+
+    result = registry.get('single_backend')
+    assert result.backend is sphere.backend
+
+
 # ============================================================================
 # Error Handling Tests (6 tests)
 # ============================================================================
@@ -296,6 +308,21 @@ def test_hull_nonexistent_part(builder, registry):
 
     assert "not found" in str(exc_info.value).lower()
     assert "nonexistent_part" in str(exc_info.value)
+
+
+def test_hull_rejects_non_cadquery_inputs(resolver):
+    """Multi-input hull should fail clearly on non-CadQuery-backed parts."""
+    backend = MockBackend()
+    registry = PartRegistry()
+    registry.add(Part("box1", backend.create_box(10, 10, 10), backend=backend))
+    registry.add(Part("box2", backend.create_box(10, 10, 10), backend=backend))
+
+    builder = HullBuilder(registry, resolver)
+
+    with pytest.raises(HullBuilderError) as exc_info:
+        builder.execute_hull_operation('bad_hull', {'inputs': ['box1', 'box2']})
+
+    assert 'cadquery-compatible input part' in str(exc_info.value).lower()
 
 
 def test_hull_with_parameters(registry):

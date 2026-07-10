@@ -22,6 +22,7 @@ from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
 from ..selector_resolver import SelectorResolver
+from .backend_utils import get_cadquery_backend
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +151,8 @@ class GussetBuilder:
             name=name,
             geometry=geometry,
             metadata=metadata,
-            current_position=(0, 0, 0)
+            current_position=(0, 0, 0),
+            backend=get_cadquery_backend(),
         )
 
         # Add to registry

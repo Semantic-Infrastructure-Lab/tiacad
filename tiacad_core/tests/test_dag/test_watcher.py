@@ -15,6 +15,8 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from tiacad_core.geometry import MockBackend
+from tiacad_core.part import Part, PartRegistry
 from tiacad_core.watcher import FileWatcher, WatchBuildResult
 
 
@@ -104,6 +106,92 @@ class TestWatchBuildResult:
 
 class TestFileWatcherEventLoop:
     """Test watcher event-loop behaviour using a mocked _rebuild."""
+
+    def test_resolve_watch_paths_includes_nested_local_imports(self, tmp_path):
+        child = tmp_path / "child.yaml"
+        child.write_text(_SIMPLE_YAML)
+
+        parent = tmp_path / "parent.yaml"
+        parent.write_text(
+            """
+imports:
+  - path: ./child.yaml
+    as: child
+"""
+        )
+
+        root = tmp_path / "root.yaml"
+        root.write_text(
+            """
+imports:
+  - path: ./parent.yaml
+    as: parent
+
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 5
+"""
+        )
+
+        watcher = FileWatcher(root, on_rebuild=lambda r: None)
+        watch_paths = watcher._resolve_watch_paths()
+
+        assert root.resolve() in watch_paths
+        assert parent.resolve() in watch_paths
+        assert child.resolve() in watch_paths
+
+    def test_resolve_watch_paths_excludes_github_imports(self, tmp_path):
+        root = tmp_path / "root.yaml"
+        root.write_text(
+            """
+imports:
+  - path: github:user/repo/component.yaml
+    as: remote
+
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 5
+"""
+        )
+
+        watcher = FileWatcher(root, on_rebuild=lambda r: None)
+        assert watcher._resolve_watch_paths() == {root.resolve()}
+
+    def test_export_uses_document_default_part_contract_for_3mf(self, tmp_path):
+        root = tmp_path / "root.yaml"
+        root.write_text(_SIMPLE_YAML)
+        watcher = FileWatcher(root, on_rebuild=lambda r: None, export_path=tmp_path / "out.3mf")
+
+        backend = MockBackend()
+        registry = PartRegistry()
+        registry.add(Part("base", backend.create_box(10, 10, 10), backend=backend))
+        registry.add(Part("final", backend.create_box(5, 5, 5), backend=backend))
+
+        class FakeDoc:
+            def __init__(self):
+                self.parts = registry
+                self.operations = {"final": {"type": "transform"}}
+                self.export_config = {"default_part": "base"}
+                self.calls = []
+
+            def export_3mf(self, output_path, part_name=None):
+                self.calls.append((output_path, part_name))
+
+        doc = FakeDoc()
+        result = WatchBuildResult()
+
+        watcher._export(doc, result)
+
+        assert doc.calls == [(str(tmp_path / "out.3mf"), "base")]
+        assert result.exported_path == str(tmp_path / "out.3mf")
 
     def _make_mock_rebuild(self, rebuilt=1, cached=0, total_parts=1, error=None):
         def fake_rebuild(self_watcher, is_initial=False):
@@ -242,6 +330,54 @@ class TestFileWatcherEventLoop:
 
         assert results[0].ok is False
         assert "parse failure" in results[0].error
+
+    def test_file_change_in_imported_component_triggers_rebuild(self, tmp_path):
+        child = tmp_path / "child.yaml"
+        child.write_text(_SIMPLE_YAML)
+
+        root = tmp_path / "root.yaml"
+        root.write_text(
+            """
+imports:
+  - path: ./child.yaml
+    as: child
+
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 5
+"""
+        )
+
+        results = []
+        watcher = FileWatcher(root, on_rebuild=results.append, debounce=0.02)
+        done = threading.Event()
+
+        original = self._make_mock_rebuild()
+
+        def tracking_rebuild(self_w, is_initial=False):
+            original(self_w, is_initial=is_initial)
+            if not is_initial:
+                done.set()
+                watcher.stop()
+
+        with patch.object(FileWatcher, "_rebuild", tracking_rebuild):
+            t = threading.Thread(target=watcher.start, daemon=True)
+            t.start()
+
+            time.sleep(0.2)
+            child.touch()
+
+            done.wait(timeout=10)
+            watcher.stop()
+            t.join(timeout=5)
+
+        assert len(results) >= 2
+        assert results[0].is_initial is True
+        assert results[1].is_initial is False
 
 
 # ---------------------------------------------------------------------------

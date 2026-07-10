@@ -11,7 +11,7 @@ metadata:
 parameters:
   # Wall plate dimensions
   plate_w: 100
-  plate_h: 80
+  plate_h: 100   # was 80 — arms start at Y≈44 (after 10° tilt), plate front must reach there
   plate_t: 12
 
   # Support beam

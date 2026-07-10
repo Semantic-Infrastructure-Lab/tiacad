@@ -1,4 +1,4 @@
-schema_version: "2.0"
+schema_version: "3.0"
 # TRUST: Single box, 50×30×20mm, centered at origin.
 # Expect: Red box. Width (X) is widest, depth (Y) medium, height (Z) shortest.
 # Front view: 50 wide × 20 tall. Top view: 50 × 30 rectangle.

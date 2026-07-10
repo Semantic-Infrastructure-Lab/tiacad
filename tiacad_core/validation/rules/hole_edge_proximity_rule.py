@@ -67,7 +67,7 @@ class HoleEdgeProximityRule(ValidationRule):
         if not self._has_valid_geometry(base_part):
             return issues
 
-        base_bbox = self._get_bounding_box(base_part.geometry)
+        base_bbox = self._get_bounding_box(base_part)
 
         # Check each hole
         for hole_name in subtract_list:
@@ -105,7 +105,7 @@ class HoleEdgeProximityRule(ValidationRule):
         if not self._has_valid_geometry(hole_part):
             return issues
 
-        hole_bbox = self._get_bounding_box(hole_part.geometry)
+        hole_bbox = self._get_bounding_box(hole_part)
 
         # Calculate hole properties
         hole_center = self._calculate_bbox_center(hole_bbox)

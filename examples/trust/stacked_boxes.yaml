@@ -1,4 +1,4 @@
-schema_version: "2.0"
+schema_version: "3.0"
 # TRUST: Two boxes stacked along Z. Red box on bottom, blue box on top. Flush, no gap.
 #
 # bottom: 60×40×20, centered at origin → Z=-10 to Z=+10
@@ -11,7 +11,11 @@ schema_version: "2.0"
 
 metadata:
   name: stacked_boxes
-  description: Two boxes stacked — verifies Z positioning and flush contact
+  description: >
+    Red box (60×40×20) at bottom, blue smaller box (40×30×15) sitting flush on top.
+    Trust check: front (XZ) = step profile — wide red below, narrower blue above,
+    flush contact with no gap. Top (XY) = small blue rectangle centered inside
+    larger red border visible at corners. No floating, no overlap.
 
 parts:
   bottom:

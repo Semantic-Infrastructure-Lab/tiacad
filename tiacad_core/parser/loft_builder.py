@@ -16,6 +16,7 @@ from ..part import Part, PartRegistry
 from ..sketch import Sketch2D
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
+from .backend_utils import get_cadquery_backend
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
@@ -119,7 +120,7 @@ class LoftBuilder:
             geometry = self._loft_sketches(profiles, ruled, name)
             self.registry.add(Part(name=name, geometry=geometry, metadata={
                 'source': 'loft', 'profiles': profile_names, 'operation_type': 'loft', 'ruled': ruled
-            }))
+            }, backend=get_cadquery_backend()))
             logger.debug(f"Created lofted part '{name}' from {len(profiles)} profiles")
 
         except LoftBuilderError:

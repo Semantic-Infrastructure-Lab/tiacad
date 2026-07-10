@@ -1,9 +1,9 @@
 # TiaCAD Tutorial - Getting Started
 
-**Version:** 0.2.0
+**Version:** Current
 **Difficulty:** Beginner
 **Time:** 30 minutes
-**Last Updated:** 2025-10-25
+**Status:** Stable getting-started guide
 
 ---
 
@@ -36,16 +36,14 @@ You'll need Python 3.10+ installed on your system.
 ### Install TiaCAD
 
 ```bash
-# Navigate to the TiaCAD directory
-cd /home/scottsen/src/tia/projects/tiacad
+# Navigate to the TiaCAD repository
+cd /path/to/tiacad
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Verify installation by running tests
 pytest tiacad_core/tests/ -v
-
-# You should see: 1025+ tests passed ✅
 ```
 
 ---
@@ -876,7 +874,6 @@ You're now ready to create professional parametric CAD models in YAML!
 
 ---
 
-**Version:** 0.2.0
-**Last Updated:** 2025-10-25
-**Status:** Phase 2 Complete
+**Version:** Current
+**Status:** Stable getting-started guide
 **Next:** Try the practice exercises or explore the real examples!

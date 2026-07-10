@@ -11,12 +11,15 @@ Usage:
 """
 
 import logging
-import os
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, FrozenSet, Optional
+from typing import Callable, Optional, Set
+
+import yaml
+
+from .parser.component_importer import ComponentImporter
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +80,62 @@ class FileWatcher:
         self._state = None          # IncrementalState from last successful build
         self._pending = threading.Event()
         self._stop = threading.Event()
+        self._watched_files: Set[Path] = {self.file_path}
+
+    def _resolve_watch_paths(self) -> Set[Path]:
+        """
+        Return the root YAML file plus recursively imported local/stdlib files.
+
+        GitHub imports are intentionally excluded because watch mode should track
+        author-edited local files, not remote fetch targets.
+        """
+        visited: Set[Path] = set()
+
+        def walk(path: Path) -> None:
+            resolved = path.resolve()
+            if resolved in visited or not resolved.exists():
+                return
+
+            visited.add(resolved)
+
+            try:
+                with open(resolved, encoding="utf-8") as fh:
+                    yaml_data = yaml.safe_load(fh) or {}
+            except yaml.YAMLError:
+                # Temporary syntax errors should not break watch mode. Keep watching
+                # the file that changed and let the normal rebuild path report errors.
+                return
+
+            for import_def in yaml_data.get("imports", []):
+                if not isinstance(import_def, dict):
+                    continue
+
+                path_spec = import_def.get("path")
+                if not path_spec or path_spec.startswith("github:"):
+                    continue
+
+                if path_spec.startswith("tiacad://std/"):
+                    imported = Path(ComponentImporter._resolve_stdlib(path_spec))
+                else:
+                    imported = (resolved.parent / path_spec).resolve()
+
+                if imported.exists():
+                    walk(imported)
+
+        walk(self.file_path)
+        return visited
+
+    def _refresh_watch_roots(self, observer, handler) -> None:
+        """Resubscribe the observer to parent directories of all watched files."""
+        watch_paths = self._resolve_watch_paths()
+        if watch_paths == self._watched_files:
+            return
+
+        observer.unschedule_all()
+        for parent in sorted({path.parent for path in watch_paths}):
+            observer.schedule(handler, str(parent), recursive=False)
+
+        self._watched_files = watch_paths
 
     def start(self) -> None:
         """
@@ -86,25 +145,43 @@ class FileWatcher:
         from watchdog.events import FileSystemEventHandler
         from watchdog.observers import Observer
 
-        target = self.file_path
+        watcher = self
         pending = self._pending
 
         class _Handler(FileSystemEventHandler):
-            def on_modified(self, event):
-                if not event.is_directory and Path(event.src_path).resolve() == target:
+            @staticmethod
+            def _queue_matching_file(event_path: str) -> None:
+                if Path(event_path).resolve() in watcher._watched_files:
                     pending.set()
+
+            @staticmethod
+            def _matches(event_path: str) -> bool:
+                return Path(event_path).resolve() in watcher._watched_files
+
+            def on_modified(self, event):
+                if not event.is_directory:
+                    self._queue_matching_file(event.src_path)
 
             def on_created(self, event):
                 # Atomic saves: editor writes a new file, renames over old one
-                if not event.is_directory and Path(event.src_path).resolve() == target:
+                if not event.is_directory:
+                    self.on_modified(event)
+
+            def on_moved(self, event):
+                if not event.is_directory and (
+                    self._matches(event.src_path) or self._matches(event.dest_path)
+                ):
                     pending.set()
 
         observer = Observer()
-        observer.schedule(_Handler(), str(self.file_path.parent), recursive=False)
+        handler = _Handler()
+        self._watched_files = set()
+        self._refresh_watch_roots(observer, handler)
         observer.start()
 
         try:
             self._rebuild(is_initial=True)
+            self._refresh_watch_roots(observer, handler)
             while not self._stop.is_set():
                 fired = self._pending.wait(timeout=0.5)
                 if fired:
@@ -112,6 +189,7 @@ class FileWatcher:
                     time.sleep(self.debounce)   # wait for quiet period
                     self._pending.clear()        # discard events during sleep
                     self._rebuild(is_initial=False)
+                    self._refresh_watch_roots(observer, handler)
         finally:
             observer.stop()
             observer.join()
@@ -125,17 +203,11 @@ class FileWatcher:
         Rebuild the file. Uses IncrementalState from the previous build
         so unchanged parts are served from cache rather than re-computed.
         """
-        import yaml
-
         from .dag.incremental_builder import IncrementalBuilder
-        from .parser.color_parser import ColorParser
         from .parser.operations_builder import OperationsBuilder
-        from .parser.parameter_resolver import ParameterResolver
+        from .parser.parse_pipeline import normalize_yaml_aliases, prepare_build_context
         from .parser.parts_builder import PartsBuilder
-        from .parser.tiacad_parser import TiaCADParser
-        from .part import PartRegistry
-        from .spatial_resolver import SpatialResolver
-
+        from .parser.tiacad_parser import TiaCADDocument
         t0 = time.monotonic()
         result = WatchBuildResult(is_initial=is_initial)
 
@@ -143,52 +215,29 @@ class FileWatcher:
             # 1. Load and normalize YAML
             with open(self.file_path) as fh:
                 yaml_data = yaml.safe_load(fh)
-            yaml_data = TiaCADParser._normalize_yaml_aliases(yaml_data)
-
-            s = TiaCADParser._extract_yaml_sections(yaml_data)
-
-            # 2. Parameters → palette → color parser → sketches (no geometry yet)
-            param_resolver = ParameterResolver(s['parameters'])
-            resolved_palette = (
-                TiaCADParser._resolve_color_palette(s['colors'], param_resolver)
-                if s['colors'] else {}
+            yaml_data = normalize_yaml_aliases(yaml_data)
+            context = prepare_build_context(
+                yaml_data,
+                load_imports=ComponentImporter.load_imports,
+                file_path=str(self.file_path),
             )
-            color_parser = ColorParser(palette=resolved_palette)
-            sketches = (
-                TiaCADParser._build_sketches_from_spec(s['sketches'], param_resolver)
-                if s['sketches'] else {}
-            )
+            sections = context.sections
 
-            # 3. Component imports → pre-populate registry
-            registry = PartRegistry()
-            if s['imports']:
-                from .parser.component_importer import ComponentImporter
-                base_dir = os.path.dirname(str(self.file_path))
-                imported = ComponentImporter.load_imports(
-                    s['imports'], base_dir, frozenset()
-                )
-                for name in imported.list_parts():
-                    registry.add(imported.get(name))
-
-            # 4. References + spatial resolver
-            resolved_refs = (
-                TiaCADParser._resolve_references(s['references'], param_resolver)
-                if s['references'] else {}
-            )
-            spatial_resolver = SpatialResolver(registry, resolved_refs)
-
-            # 5. Build fine-grained builders for IncrementalBuilder
-            parts_builder = PartsBuilder(param_resolver, color_parser)
+            # 2. Build fine-grained builders for IncrementalBuilder
+            parts_builder = PartsBuilder(context.param_resolver, context.color_parser)
             ops_builder = OperationsBuilder(
-                registry, param_resolver, sketches, spatial_resolver
+                context.registry,
+                context.param_resolver,
+                context.sketches,
+                context.spatial_resolver,
             )
 
-            # 6. Incremental build — reuses unchanged geometry from _state
+            # 3. Incremental build — reuses unchanged geometry from _state
             inc_result = IncrementalBuilder().build(
                 yaml_data=yaml_data,
-                parts_spec=s['parts'],
-                operations_spec=s['operations'],
-                registry=registry,
+                parts_spec=sections['parts'],
+                operations_spec=sections['operations'],
+                registry=context.registry,
                 parts_builder=parts_builder,
                 ops_builder=ops_builder,
                 old_state=self._state,
@@ -199,11 +248,20 @@ class FileWatcher:
             result.rebuilt = inc_result.stats.rebuilt
             result.cached = inc_result.stats.cached
             result.total_parts = len(
-                [p for p in registry.list_parts() if not p.startswith('_')]
+                [p for p in context.registry.list_parts() if not p.startswith('_')]
             )
 
             if self.export_path:
-                self._export(registry, result)
+                doc = TiaCADDocument(
+                    metadata=context.metadata,
+                    parameters=context.resolved_params,
+                    parts=context.registry,
+                    operations=sections['operations'],
+                    references=context.resolved_references,
+                    export_config=context.export_config,
+                    file_path=str(self.file_path),
+                )
+                self._export(doc, result)
 
         except Exception as exc:
             result.rebuild_ms = (time.monotonic() - t0) * 1000
@@ -212,21 +270,21 @@ class FileWatcher:
 
         self.on_rebuild(result)
 
-    def _export(self, registry, result: WatchBuildResult) -> None:
-        """Export the final built part to self.export_path after a successful rebuild."""
-        parts = [p for p in registry.list_parts() if not p.startswith('_')]
-        if not parts:
-            return
-        part = registry.get(parts[-1])
+    def _export(self, doc, result: WatchBuildResult) -> None:
+        """Export the selected build result to self.export_path after a successful rebuild."""
         ext = self.export_path.suffix.lower()
         try:
             if ext == '.stl':
-                part.geometry.val().exportStl(str(self.export_path))
+                doc.export_stl(str(self.export_path))
             elif ext == '.3mf':
-                from .exporters.threemf_exporter import ThreeMFExporter
-                ThreeMFExporter().export(registry, str(self.export_path))
+                from .parser.tiacad_parser import resolve_default_part_name
+
+                selected_part = resolve_default_part_name(
+                    doc.parts, doc.operations, doc.export_config
+                )
+                doc.export_3mf(str(self.export_path), part_name=selected_part)
             elif ext == '.step':
-                part.geometry.val().exportStep(str(self.export_path))
+                doc.export_step(str(self.export_path))
             else:
                 logger.warning("Unsupported export format: %s", ext)
                 return

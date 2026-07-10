@@ -58,7 +58,7 @@ references:
 - `{part}.face_bottom` - Bottom face center
 - `{part}.origin` - Part's origin point (0,0,0)
 
-**Visual Guide**: See [auto-generated anchor Visualization](docs/diagrams/auto-generated anchor-visualization.md) for a complete visual reference.
+**Visual Guide**: See [Auto-Reference Visualization](../architecture/diagrams/auto-reference-visualization.md) for a complete visual reference.
 
 **Think of it as**: Marking spots on a workbench with tape - "this is where the bracket goes"
 
@@ -86,7 +86,7 @@ parts:
 
 **Think of it as**: Arranging furniture in a room using a floor plan with marked positions, rather than building nested boxes.
 
-**Visual Guide**: See [Reference-Based vs Hierarchical](docs/diagrams/reference-based-vs-hierarchical.md) for a detailed comparison.
+**Visual Guide**: See [Reference-Based vs Hierarchical](../architecture/diagrams/reference-based-vs-hierarchical.md) for a detailed comparison.
 
 **Contrast**: Traditional CAD uses hierarchical assemblies (Assembly → Sub-assembly → Part)
 
@@ -102,7 +102,7 @@ parts:
 3. **Combining operations** (booleans) - Merge or subtract parts
 4. **Replication operations** (patterns) - Create multiple copies
 
-**Visual Guide**: See [Operation Categories](docs/diagrams/operation-categories.md) for detailed examples and decision tree.
+**Visual Guide**: See [Operation Categories](../architecture/diagrams/operation-categories.md) for detailed examples and decision tree.
 
 **Example**:
 ```yaml

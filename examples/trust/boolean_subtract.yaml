@@ -1,4 +1,4 @@
-schema_version: "2.0"
+schema_version: "3.0"
 # TRUST: Box with a cylindrical hole through it along Z.
 # Box: 60×60×20, centered at origin.
 # Hole: radius=12, height=30 (taller than box so it punches clean through).
@@ -10,7 +10,11 @@ schema_version: "2.0"
 
 metadata:
   name: boolean_subtract
-  description: Box with centered cylindrical hole — verifies boolean subtract
+  description: >
+    Box (60×60×20) with centered cylindrical hole subtracted (r=12, h=30).
+    Trust check: top (XY) = square with circular hole in exact center.
+    Front/side (XZ)/(YZ) = rectangle with circular cutout visible at
+    mid-height. Hole must be centered — no offset in X or Y.
 
 parts:
   plate:

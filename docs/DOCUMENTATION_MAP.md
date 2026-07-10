@@ -176,6 +176,5 @@ See [Archive Summary](archive/ARCHIVE_SUMMARY.md) for:
 
 ---
 
-**Last Updated:** 2026-03-16
-**TiaCAD Version:** 3.1.2 (+32 commits)
-**Recent Additions:** DAG_INCREMENTAL_REBUILD.md, TESTING_GUIDE.md (updated), TESTING_QUICK_REFERENCE.md
+**Status:** Active documentation map
+**Scope:** Current user, developer, architecture, and historical docs

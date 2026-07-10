@@ -7,13 +7,17 @@ Tests end-to-end parsing from YAML to TiaCADDocument.
 import pytest
 import tempfile
 import os
+from unittest.mock import patch
 
 from tiacad_core.parser.tiacad_parser import (
     TiaCADParser,
     TiaCADDocument,
     TiaCADParserError,
-    parse
+    parse,
+    resolve_default_part_name,
 )
+from tiacad_core.geometry import MockBackend
+from tiacad_core.part import Part, PartRegistry
 
 
 class TestBasicParsing:
@@ -88,6 +92,102 @@ parts:
         assert doc.metadata['version'] == '1.0'
         assert doc.metadata['author'] == 'TIA'
 
+    def test_parse_dict_honors_explicit_backend(self):
+        """Test parsing with an explicitly supplied backend."""
+        backend = MockBackend()
+
+        doc = TiaCADParser.parse_dict(
+            {
+                'parts': {
+                    'box': {
+                        'primitive': 'box',
+                        'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                    }
+                }
+            },
+            backend=backend,
+        )
+
+        assert doc.get_part('box').backend is backend
+
+    def test_numeric_schema_version_does_not_warn(self, caplog):
+        """Numeric 3.0 is accepted because the JSON schema accepts both forms."""
+        caplog.set_level("WARNING")
+
+        TiaCADParser.parse_dict({
+            'schema_version': 3.0,
+            'parts': {
+                'box': {
+                    'primitive': 'box',
+                    'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                }
+            }
+        })
+
+        assert "not explicitly supported" not in caplog.text
+
+
+class TestExportBoundaries:
+    """Test export behavior around backend boundaries."""
+
+    def test_export_stl_rejects_non_cadquery_backend(self, tmp_path):
+        backend = MockBackend()
+        registry = PartRegistry()
+        registry.add(Part("mock_box", backend.create_box(10, 10, 10), backend=backend))
+        doc = TiaCADDocument(metadata={}, parameters={}, parts=registry)
+
+        with pytest.raises(TiaCADParserError) as exc_info:
+            doc.export_stl(str(tmp_path / "bad.stl"), "mock_box")
+
+        assert "cadquery-compatible part" in str(exc_info.value).lower()
+
+    def test_export_3mf_single_part_builds_temp_registry(self, tmp_path):
+        doc = TiaCADParser.parse_dict({
+            'parts': {
+                'box': {
+                    'primitive': 'box',
+                    'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                }
+            }
+        })
+
+        captured = {}
+
+        def fake_export(parts_registry, output_path, metadata):
+            captured['parts'] = parts_registry.list_parts()
+            captured['part'] = parts_registry.get('box')
+            captured['output_path'] = output_path
+            captured['metadata'] = metadata
+
+        with patch('tiacad_core.exporters.export_3mf', side_effect=fake_export):
+            doc.export_3mf(str(tmp_path / "single.3mf"), part_name='box')
+
+        assert captured['parts'] == ['box']
+        assert captured['part'].name == 'box'
+        assert captured['part'].backend is doc.parts.get('box').backend
+
+    def test_resolve_default_part_name_prefers_export_config(self):
+        doc = TiaCADParser.parse_dict({
+            'parts': {
+                'base': {
+                    'primitive': 'box',
+                    'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                }
+            },
+            'operations': {
+                'final': {
+                    'type': 'transform',
+                    'input': 'base',
+                    'transforms': [{'translate': [5, 0, 0]}]
+                }
+            },
+            'export': {
+                'default_part': 'base'
+            }
+        })
+
+        assert resolve_default_part_name(doc.parts, doc.operations, doc.export_config) == 'base'
+
 
 class TestWithOperations:
     """Test parsing with operations"""
@@ -154,6 +254,18 @@ operations:
 
 class TestCompleteExample:
     """Test complete example with all features"""
+
+    def test_parse_text_engraved_example(self):
+        """Text engraving example should parse without backend-compatibility errors."""
+        doc = TiaCADParser.parse_file('examples/text_engraved.yaml')
+
+        assert doc.get_part('final_sign') is not None
+
+    def test_parse_text_label_example(self):
+        """Text label example should parse without backend-compatibility errors."""
+        doc = TiaCADParser.parse_file('examples/text_label.yaml')
+
+        assert doc.get_part('final_label') is not None
 
     def test_parse_simplified_guitar_hanger(self):
         """Test parsing simplified guitar hanger"""

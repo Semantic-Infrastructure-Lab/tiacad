@@ -8,6 +8,28 @@ System design, technical decisions, and architectural principles for TiaCAD.
 
 ### Core Architecture
 
+**[OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md](OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md)**
+
+Current open issues and architecture debt register:
+- active contract inconsistencies still in the repo
+- current structural hotspots and coupling hubs
+- priority order for remaining cleanup work
+
+**[ARCHITECTURE_REVIEW_2026-04-18.md](ARCHITECTURE_REVIEW_2026-04-18.md)**
+
+Current architectural review and remediation tracking:
+- separation of concerns review across the codebase
+- major design/coupling issues
+- priority remediation tracks and progress
+
+**[ARCHITECTURE_NEXT_STEPS.md](ARCHITECTURE_NEXT_STEPS.md)**
+
+Canonical near-term architecture plan:
+- What the current architecture is
+- What architectural debt matters now
+- Which improvements should happen next
+- What is out of scope for now
+
 **[ARCHITECTURE_DECISION_V3.md](ARCHITECTURE_DECISION_V3.md)**
 
 Major architectural decisions for TiaCAD v3.0:
@@ -18,7 +40,7 @@ Major architectural decisions for TiaCAD v3.0:
 
 ### Future: CGA Integration
 
-**[CGA_V5_ARCHITECTURE_SPEC.md](CGA_V5_ARCHITECTURE_SPEC.md)**
+**[CGA_V5_FUTURE_VISION.md](CGA_V5_FUTURE_VISION.md)**
 
 Proposed v5.0 architecture with Conformal Geometric Algebra:
 - CGA kernel design
@@ -73,30 +95,35 @@ Architecture diagrams and visualizations:
 
 ### For New Contributors
 
-1. **Start:** [ARCHITECTURE_DECISION_V3.md](ARCHITECTURE_DECISION_V3.md)
+1. **Start:** [ARCHITECTURE_NEXT_STEPS.md](ARCHITECTURE_NEXT_STEPS.md)
+   - Understand the current near-term architecture plan
+   - See what work is actually worth doing now
+
+2. **Foundation:** [ARCHITECTURE_DECISION_V3.md](ARCHITECTURE_DECISION_V3.md)
    - Understand current v3 design
    - Learn key architectural patterns
 
-2. **Deep Dive:** [SKETCH_ABSTRACTION_DESIGN.md](SKETCH_ABSTRACTION_DESIGN.md)
+3. **Deep Dive:** [SKETCH_ABSTRACTION_DESIGN.md](SKETCH_ABSTRACTION_DESIGN.md)
    - Core abstraction (sketches)
    - How 2D/3D geometry integrates
 
-3. **Principles:** [CLEAN_ARCHITECTURE_PROPOSAL.md](CLEAN_ARCHITECTURE_PROPOSAL.md)
+4. **Principles:** [CLEAN_ARCHITECTURE_PROPOSAL.md](CLEAN_ARCHITECTURE_PROPOSAL.md)
    - Code organization guidelines
    - Where to put new features
 
-4. **Visuals:** [diagrams/](diagrams/)
+5. **Visuals:** [diagrams/](diagrams/)
    - See architectural concepts visually
 
 ### For System Designers
 
-1. **Current State:** Architecture Decision + Sketch Design
-2. **Future Vision:** [CGA_V5_ARCHITECTURE_SPEC.md](CGA_V5_ARCHITECTURE_SPEC.md)
-3. **Conceptual:** [MENTAL_MODELS_AND_LANGUAGE.md](MENTAL_MODELS_AND_LANGUAGE.md)
+1. **Current State:** [ARCHITECTURE_NEXT_STEPS.md](ARCHITECTURE_NEXT_STEPS.md)
+2. **Foundation:** Architecture Decision + Sketch Design
+3. **Future Vision:** [CGA_V5_FUTURE_VISION.md](CGA_V5_FUTURE_VISION.md)
+4. **Conceptual:** [MENTAL_MODELS_AND_LANGUAGE.md](MENTAL_MODELS_AND_LANGUAGE.md)
 
 ### For Researchers
 
-- **CGA Integration:** [CGA_V5_ARCHITECTURE_SPEC.md](CGA_V5_ARCHITECTURE_SPEC.md)
+- **CGA Integration:** [CGA_V5_FUTURE_VISION.md](CGA_V5_FUTURE_VISION.md)
   - Full mathematical foundation
   - Constraint solving with geometric algebra
   - CAM applications

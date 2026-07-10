@@ -52,14 +52,14 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Status Updated:** 2026-02-15
 
 **Test Suite:**
-- 1405 passing, 0 failing, 2 skipped, 1 xfailed
+- Broad coverage across unit, integration, correctness, DAG, and visual workflows
 - 92%+ code coverage
 - Comprehensive coverage: unit, integration, correctness, visual regression
 
 **Components Complete:**
 - ✅ Named parameter syntax (width/height/depth for all primitives)
 - ✅ Spatial reference system (SpatialRef, Frame, SpatialResolver)
-- ✅ GeometryBackend abstraction (20 methods)
+- ✅ GeometryBackend abstraction (implemented, but only partially enforced across the build/export surface)
 - ✅ Complete YAML parser
 - ✅ All primitives (box, cylinder, sphere, cone)
 - ✅ Boolean operations (union, difference, intersection)
@@ -108,7 +108,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - IncrementalBuilder — only rebuilds changed parts
 - `tiacad watch` — auto-rebuild on file save
 - `tiacad watch --export <path>` — auto-export STL/3MF/STEP on rebuild
-- 1382 tests passing, 0 failing (up from 1062 passing, 17 failing)
+- Expanded automated coverage and major test-suite growth during the v3.1 cycle
 
 **Sessions:** enchanted-hydra-0316, ninja-xenarch-0316
 
@@ -141,24 +141,25 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 3. **Auto-Generated References** - `box.face_top`, `cylinder.axis_z` automatic
 4. **Sequential Transforms** - Clear, predictable composition rules
 5. **Rule-Based Validation** - Extensible validation architecture
-6. **Test-Driven Development** - 896 tests, 99.7% passing
+6. **Test-Driven Development** - broad automated coverage across parser, geometry, DAG, validation, and visual workflows
+6. **Pragmatic Kernel Boundary** - backend-aware where useful, explicitly CadQuery-only where necessary today
 
 ## Documentation
 
 **Primary Documentation:**
 - `README.md` - Project overview and quick start
-- `YAML_REFERENCE.md` - Complete YAML syntax guide
+- `docs/user/YAML_REFERENCE.md` - Complete YAML syntax guide
 - `RELEASE_NOTES_V3.md` - v3.0 release notes
-- `AUTO_REFERENCES_GUIDE.md` - auto-generated anchor system guide
-- `TUTORIAL.md` - User tutorial
-- `EXAMPLES_GUIDE.md` - Example gallery
+- `docs/user/AUTO_REFERENCES_GUIDE.md` - auto-generated anchor system guide
+- `docs/user/TUTORIAL.md` - User tutorial
+- `docs/user/EXAMPLES_GUIDE.md` - Example gallery
 
 **Design Documentation:**
-- `docs/ARCHITECTURE_DECISION_V3.md` - ADR for v3.0
-- `docs/CLEAN_ARCHITECTURE_PROPOSAL.md` - Architecture design
-- `docs/TIACAD_EVOLUTION_ROADMAP.md` - Strategic roadmap
-- `docs/V3_IMPLEMENTATION_STATUS.md` - Implementation tracking
-- `docs/MIGRATION_GUIDE_V3.md` - v3.0 migration guide
+- `docs/architecture/ARCHITECTURE_DECISION_V3.md` - ADR for v3.0
+- `docs/architecture/CLEAN_ARCHITECTURE_PROPOSAL.md` - Architecture design
+- `docs/archive/TIACAD_EVOLUTION_ROADMAP.md` - Strategic roadmap
+- `docs/archive/V3_IMPLEMENTATION_STATUS.md` - Implementation tracking
+- `docs/developer/MIGRATION_GUIDE_V3.md` - v3.0 migration guide
 
 **Archived Documentation:**
 - `~/Archive/tiacad/2025-11-10-v3-cleanup/` - Historical docs
@@ -170,6 +171,13 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - **FreeCAD** - Visual CAD tool
 - **build123d** - Modern Python CAD library
 
+## Architecture Notes
+
+- TiaCAD is still CadQuery-first in production.
+- `GeometryBackend` is now more real in the core build path than it was originally, but the project is not fully backend-neutral.
+- 3MF export and visualization can use backend tessellation where available.
+- STL/STEP export and several advanced operations still require CadQuery-compatible geometry.
+
 ## Success Metrics
 
 ### v3.0 Milestones (All Complete ✅)
@@ -177,7 +185,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - [x] Spatial reference system working
 - [x] CadQuery integration validated
 - [x] YAML → STL pipeline working
-- [x] 896 tests passing
+- [x] Broad automated test coverage in place
 - [x] Documentation complete
 - [x] Migration guide published
 - [x] Release notes ready
@@ -193,7 +201,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 ```
 /home/scottsen/src/projects/tiacad/
-├── tiacad_core/           # Core implementation (896 tests)
+├── tiacad_core/           # Core implementation and test suite
 │   ├── geometry/          # Backend abstraction
 │   ├── parser/            # YAML parsing
 │   ├── validation/        # Rule-based validator
@@ -202,7 +210,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 ├── examples/              # Working examples
 ├── docs/                  # Design documentation
 ├── README.md              # Primary docs
-├── YAML_REFERENCE.md      # Syntax reference
+├── docs/user/YAML_REFERENCE.md  # Syntax reference
 └── RELEASE_NOTES_V3.md    # Release notes
 ```
 
@@ -222,4 +230,4 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Project Status:** ✅ Active development — v3.1 component system + DAG complete
 **Current Focus:** Constraint Solver (Q4 2026) — see ROADMAP.md
 **Last Updated:** 2026-03-16
-**Test Suite:** 1405 passing, 0 failing
+**Test Suite:** Broad automated coverage with passing parser/DAG/validation/correctness slices

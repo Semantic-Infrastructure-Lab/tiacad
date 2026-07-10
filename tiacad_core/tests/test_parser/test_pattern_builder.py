@@ -19,6 +19,7 @@ import cadquery as cq
 from tiacad_core.parser.pattern_builder import PatternBuilder, PatternBuilderError
 from tiacad_core.parser.parameter_resolver import ParameterResolver
 from tiacad_core.part import Part, PartRegistry
+from tiacad_core.geometry import MockBackend
 
 
 # ============================================================================
@@ -261,6 +262,27 @@ def test_linear_naming(builder, registry):
     assert parts[0].metadata['pattern_type'] == 'linear'
     assert parts[0].metadata['pattern_index'] == 0
     assert parts[1].metadata['pattern_index'] == 1
+    assert parts[2].metadata['pattern_index'] == 2
+
+
+def test_pattern_preserves_backend_with_mock_backend(resolver):
+    """Pattern outputs should preserve and use the source backend when available."""
+    reg = PartRegistry()
+    backend = MockBackend()
+    reg.add(Part("box", backend.create_box(10, 10, 10), backend=backend))
+
+    builder = PatternBuilder(reg, resolver)
+    parts = builder.execute_pattern_operation('mock_row', {
+        'pattern': 'linear',
+        'input': 'box',
+        'count': 2,
+        'spacing': [5, 0, 0]
+    })
+
+    assert len(parts) == 2
+    assert parts[0].backend is backend
+    assert parts[1].backend is backend
+    assert parts[1].geometry.center == (5.0, 0.0, 0.0)
 
 
 # ============================================================================

@@ -8,8 +8,10 @@ to verify rendering quality, colors, and materials.
 import pytest
 from pathlib import Path
 import cadquery as cq
+import types
 
 from tiacad_core.part import Part, PartRegistry
+from tiacad_core.geometry import MockBackend
 from tiacad_core.visualization.renderer import (
     ModelRenderer,
     RenderError,
@@ -234,6 +236,25 @@ class TestSinglePartRendering:
                 pytest.skip("PyVista not installed")
             else:
                 raise
+
+
+def test_part_to_mesh_uses_backend_tessellation_without_pyvista():
+    """_part_to_mesh should accept tessellatable non-CadQuery parts."""
+    backend = MockBackend()
+    part = Part(name="mock_box", geometry=backend.create_box(10, 10, 10), backend=backend)
+
+    class FakePolyData:
+        def __init__(self, verts, faces):
+            self.verts = verts
+            self.faces = faces
+
+    renderer = ModelRenderer.__new__(ModelRenderer)
+    renderer.pv = types.SimpleNamespace(PolyData=FakePolyData)
+
+    mesh = renderer._part_to_mesh(part)
+
+    assert mesh.verts.shape[1] == 3
+    assert len(mesh.faces) > 0
 
     def test_render_with_edges(self, colored_box, tmp_path):
         """Render with mesh edges visible"""

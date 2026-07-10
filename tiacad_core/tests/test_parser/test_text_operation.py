@@ -15,6 +15,7 @@ import cadquery as cq
 from tiacad_core.parser.text_builder import TextBuilder, TextBuilderError
 from tiacad_core.part import Part, PartRegistry
 from tiacad_core.parser.parameter_resolver import ParameterResolver
+from tiacad_core.geometry import MockBackend, CadQueryBackend
 
 
 # Fixtures
@@ -102,6 +103,27 @@ def test_text_operation_emboss_basic(registry_with_box, param_resolver):
     assert result.metadata['operation_type'] == 'text'
     assert result.metadata['text_operation'] == 'emboss'
     assert result.metadata['depth'] == 1
+    assert isinstance(result.backend, CadQueryBackend)
+
+
+def test_text_operation_rejects_non_cadquery_input(param_resolver):
+    """Text operations should fail clearly on non-CadQuery input parts."""
+    registry = PartRegistry()
+    backend = MockBackend()
+    registry.add(Part("mock_box", backend.create_box(20, 10, 20), backend=backend))
+    builder = TextBuilder(registry, param_resolver)
+
+    with pytest.raises(TextBuilderError) as exc_info:
+        builder.execute_text_operation('bad_text', {
+            'input': 'mock_box',
+            'text': 'HELLO',
+            'face': '>Z',
+            'position': [0, 0],
+            'size': 5,
+            'depth': 1,
+        })
+
+    assert 'cadquery-compatible input part' in str(exc_info.value).lower()
 
 
 def test_text_operation_with_parameters(registry_with_box):

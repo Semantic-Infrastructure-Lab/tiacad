@@ -17,9 +17,12 @@ Design principle: EXPLICIT OVER IMPLICIT
 import math
 import logging
 from dataclasses import dataclass
-from typing import List, Dict, Any, Tuple, Union
+from typing import List, Dict, Any, Tuple, Union, Optional, TYPE_CHECKING
 
 from .utils.geometry import get_center
+
+if TYPE_CHECKING:
+    from .geometry import GeometryBackend
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +66,16 @@ class TransformTracker:
         final_geometry = tracker.get_geometry()
     """
 
-    def __init__(self, geometry):
+    def __init__(self, geometry, backend: Optional['GeometryBackend'] = None):
         """
         Initialize tracker with starting geometry
 
         Args:
             geometry: CadQuery Workplane or mock for testing
+            backend: Optional geometry backend for transforms and center queries
         """
         self._geometry = geometry
+        self.backend = backend
 
         # Extract initial position from geometry
         self.initial_position = self._get_position(geometry)
@@ -130,7 +135,10 @@ class TransformTracker:
             raise ValueError("Translate requires 'offset' parameter")
 
         # Apply translation to geometry
-        self._geometry = self._geometry.translate(tuple(offset))
+        if self.backend is not None:
+            self._geometry = self.backend.translate(self._geometry, tuple(offset))
+        else:
+            self._geometry = self._geometry.translate(tuple(offset))
 
         # Update current position
         x, y, z = self.current_position
@@ -179,11 +187,19 @@ class TransformTracker:
             for i in range(3)
         )
 
-        self._geometry = self._geometry.rotate(
-            axisStartPoint=axis_start,
-            axisEndPoint=axis_end,
-            angleDegrees=angle
-        )
+        if self.backend is not None:
+            self._geometry = self.backend.rotate(
+                self._geometry,
+                axis_start=axis_start,
+                axis_end=axis_end,
+                angle=angle,
+            )
+        else:
+            self._geometry = self._geometry.rotate(
+                axisStartPoint=axis_start,
+                axisEndPoint=axis_end,
+                angleDegrees=angle
+            )
 
         # Update current position (rotated around origin)
         self.current_position = self._rotate_point(
@@ -318,6 +334,8 @@ class TransformTracker:
             Uses shared geometry utility to avoid code duplication.
             Fixed: Previously had bare 'except' which caught system interrupts.
         """
+        if self.backend is not None:
+            return self.backend.get_center(geometry)
         return get_center(geometry)
 
     def get_geometry(self):

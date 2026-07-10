@@ -10,6 +10,7 @@ Version: 0.1.0-alpha (Phase 3)
 import pytest
 from tiacad_core.parser.tiacad_parser import TiaCADParser
 from tiacad_core.parser.operations_builder import OperationsBuilderError
+from tiacad_core.geometry import CadQueryBackend
 
 
 class TestExtrudeOperation:
@@ -44,6 +45,7 @@ class TestExtrudeOperation:
         # Verify geometry exists
         part = doc.parts.get('box')
         assert part.geometry is not None
+        assert isinstance(part.backend, CadQueryBackend)
 
     def test_extrude_with_offset(self):
         """Extrude with offset positioning"""
@@ -199,6 +201,7 @@ class TestRevolveOperation:
 
         doc = TiaCADParser.parse_dict(yaml_data)
         assert 'vase' in doc.parts.list_parts()
+        assert isinstance(doc.parts.get('vase').backend, CadQueryBackend)
 
     def test_revolve_partial_angle(self):
         """Revolve with partial angle (not full 360°)"""
@@ -307,6 +310,7 @@ class TestSweepOperation:
 
         doc = TiaCADParser.parse_dict(yaml_data)
         assert 'pipe' in doc.parts.list_parts()
+        assert isinstance(doc.parts.get('pipe').backend, CadQueryBackend)
 
     def test_sweep_curved_path(self):
         """Sweep with curved path"""
@@ -420,6 +424,7 @@ class TestLoftOperation:
 
         doc = TiaCADParser.parse_dict(yaml_data)
         assert 'transition' in doc.parts.list_parts()
+        assert isinstance(doc.parts.get('transition').backend, CadQueryBackend)
 
     def test_loft_three_profiles(self):
         """Loft between three profiles"""
