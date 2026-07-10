@@ -194,11 +194,11 @@ Suggested bundle contents:
 
 - `resolved_model.json`
 - `build_trace.json`
-- `geometry_summary.json`
-- `geometry_diff.json` when prior bundle exists
+- `part_summaries.json`
+- `compare_report.json` when prior bundle exists
 - `validation_report.json`
-- `trust_final.png`
-- `trust_changed_nodes/`
+- `trust_render_manifest.json`
+- `final_trust.png`
 
 This would be the best single addition for AI-assisted workflows.
 
@@ -208,27 +208,20 @@ Status:
 - Current bundle files:
   - `manifest.json`
   - `resolved_model.json`
+  - `build_trace.json`
   - `part_summaries.json`
   - `validation_report.json`
   - `trust_render_manifest.json`
   - `final_trust.png` when trust rendering succeeds
-
-Still missing for the fuller workflow:
-
-- `geometry_diff.json`
-- changed-node summaries
-- compare-against-previous support
-
-Updated status:
-
-- `2026-04-18`: `build_trace.json` implemented
-- `2026-04-18`: compare-against-previous support implemented via `tiacad debug --compare PREVIOUS_BUNDLE`
+  - `compare_report.json` when `--compare PREVIOUS_BUNDLE` is used
 
 Still missing for the fuller workflow:
 
 - richer node-level diffing beyond parts/operations
+- changed-node summaries
 - incremental rebuild dirty-node integration
-- automatic render diffs and changed-node trust renders
+- automatic render diffs
+- changed-node trust renders
 
 ### D. Named Reference Promotion
 
@@ -258,6 +251,46 @@ Good examples:
 
 These are much more realistic than asking AI to infer full functional intent.
 
+### F. Model-Local Contracts
+
+The next useful step is to let models declare their own reviewable intent:
+
+```yaml
+contracts:
+  final_assembly:
+    extents: {x: 100, y: 80, z: 12, tolerance: 0.2}
+    watertight: true
+    component_count: 1
+  mounting_hole:
+    diameter: 3.2
+    coaxial_with: screw.axis_z
+```
+
+This would let a future `tiacad verify` command evaluate contracts and emit:
+
+- pass/fail/warn status
+- measured values
+- expected values and tolerances
+- implicated parts/references
+- optional annotated trust render callouts
+
+Model-local contracts are especially useful for AI review because the intent
+travels with the YAML instead of living only in a Python test file.
+
+### G. Negative Trust Scenarios
+
+Keep a small set of intentionally broken trust models that must fail validation:
+
+- disconnected assembly
+- missing boolean cut
+- wrong revolve axis
+- mirrored part on the wrong side
+- imported component floating at origin
+- clearance below required minimum
+
+Positive examples prove TiaCAD can build valid models. Negative examples prove
+the validators catch real mistakes.
+
 ---
 
 ## What AI Should Receive
@@ -270,6 +303,7 @@ An agentic AI should ideally receive:
 4. changed-node summaries
 5. validation results
 6. trust render paths
+7. declared contracts when available
 
 That is enough for useful workflows like:
 
@@ -277,6 +311,7 @@ That is enough for useful workflows like:
 - explain which measurable property changed
 - propose a likely corrective edit
 - compare current build against prior successful build
+- propose missing contracts after manual review
 
 ---
 
@@ -313,10 +348,14 @@ Recommended order of work:
 4. Add `tiacad debug --bundle`
 5. Add optional stepwise trust renders
 6. Add lightweight contract assertions tied to named references
+7. Add model-local `contracts:` and `tiacad verify`
+8. Add negative trust scenarios
 
 Status:
 
 - `2026-04-18`: initial reusable summary helpers added in `tiacad_core.testing.geometry_summary`
+- `2026-04-18`: `tiacad debug` implemented with resolved model, build trace, part summaries, validation report, and trust render manifest
+- `2026-04-18`: `tiacad debug --compare PREVIOUS_BUNDLE` implemented for bundle comparison
 
 This ordering gives value early and reuses the same data across testing, watch mode, and AI workflows.
 
@@ -359,6 +398,19 @@ Every failed check should include:
 - what was measured
 - what was expected
 - what part or node caused it
+
+### Prefer contracts over conclusions
+
+Emit the measurable contract:
+
+- `opening_width_mm: {expected: [45, 55], actual: 33.4, status: "fail"}`
+
+Avoid only emitting:
+
+- "opening looks too narrow"
+
+AI can explain and suggest fixes better when the system provides measurable
+facts and lets the AI interpret them.
 
 ---
 

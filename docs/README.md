@@ -21,6 +21,7 @@ Complete documentation for TiaCAD - declarative parametric CAD in YAML.
 - **[CLI Documentation](developer/CLI.md)** - Command-line interface reference
 - **[Testing Guide](developer/TESTING_GUIDE.md)** - How to write and run tests
 - **[Testing Quick Reference](developer/TESTING_QUICK_REFERENCE.md)** - Testing cheat sheet
+- **[Model Validation Model](developer/MODEL_VALIDATION.md)** - How numeric contracts, visual review, debug bundles, and AI review fit together
 - **[AI Debug Workflow](developer/AI_DEBUG_WORKFLOW.md)** - Practical AI-assisted model debug and validation workflow
 - **[Migration Guide v3](developer/MIGRATION_GUIDE_V3.md)** - Upgrading from v2 to v3
 - **[Schema Validation](developer/SCHEMA_VALIDATION.md)** - YAML schema validation details

@@ -562,8 +562,8 @@ tiacad/
 ### Code Quality
 
 **Tools Used:**
-- **Ruff**: Modern Python linter (all checks passing ✅)
-- **Pylint**: Code quality analysis (major issues resolved ✅)
+- **Ruff**: Modern Python linter for focused and CI-ready cleanup
+- **Pylint**: Code quality analysis for deeper review when needed
 - **pytest-cov**: Coverage analysis (84% overall)
 - **mypy-ready**: TYPE_CHECKING imports for type safety
 
@@ -730,7 +730,7 @@ Every component has comprehensive tests:
 - Error case coverage (robustness)
 - Real-world use cases (practical verification)
 
-**Result:** 609 tests, 84% coverage, high confidence in correctness
+**Result:** broad parser, geometry, correctness, validation, DAG, and visual coverage.
 
 ### 4. Quality First
 
@@ -770,8 +770,10 @@ Every component has comprehensive tests:
 
 **Testing:**
 - [docs/developer/TESTING_GUIDE.md](docs/developer/TESTING_GUIDE.md) - Testing strategies
-- [docs/archive/TESTING_ROADMAP.md](docs/archive/TESTING_ROADMAP.md) - Historical test coverage plans
 - [docs/developer/TESTING_QUICK_REFERENCE.md](docs/developer/TESTING_QUICK_REFERENCE.md) - Quick test commands
+- [docs/developer/MODEL_VALIDATION.md](docs/developer/MODEL_VALIDATION.md) - Correctness evidence model for numeric, visual, and AI review
+- [docs/developer/AI_DEBUG_WORKFLOW.md](docs/developer/AI_DEBUG_WORKFLOW.md) - Debug bundles and AI-assisted review workflow
+- [docs/archive/TESTING_ROADMAP.md](docs/archive/TESTING_ROADMAP.md) - Historical test coverage plans
 
 **Project Planning:**
 - [docs/archive/TIACAD_EVOLUTION_ROADMAP.md](docs/archive/TIACAD_EVOLUTION_ROADMAP.md) - Overall project roadmap
@@ -803,22 +805,22 @@ open htmlcov/index.html
 ### Run Specific Components
 
 ```bash
-# Selector tests (31 tests, 100% coverage)
+# Selector tests
 pytest tiacad_core/tests/test_selector_resolver.py -v
 
-# Sketch operation tests (22 tests)
+# Sketch operation tests
 pytest tiacad_core/tests/test_parser/test_sketch_operations.py -v
 
-# Schema validation tests (32 tests)
+# Schema validation tests
 pytest tiacad_core/tests/test_parser/test_schema_validation.py -v
 
-# Boolean operation tests (32 tests)
+# Boolean operation tests
 pytest tiacad_core/tests/test_parser/test_boolean_builder.py -v
 
-# NEW in v3.1: Testing utilities (71 tests)
+# Testing utilities
 pytest tiacad_core/tests/test_testing/ -v
 
-# NEW in v3.1: Correctness tests (60+ tests)
+# Correctness tests
 pytest tiacad_core/tests/test_correctness/ -v
 
 # Run by category (requires pytest markers)
@@ -830,8 +832,8 @@ pytest -m dimensions  # Dimensional accuracy tests
 ### Code Quality Checks
 
 ```bash
-# Run ruff (fast linter)
-ruff check tiacad_core/
+# Run ruff on touched files or directories
+ruff check tiacad_core/parser tiacad_core/tests/test_parser
 
 # Run pylint (comprehensive analysis)
 pylint tiacad_core/ --disable=C0103,C0114,C0115,C0116
@@ -846,47 +848,25 @@ mypy tiacad_core/ --strict
 
 ### Phase Completion
 
-| Phase | Status | Components | Tests | Coverage | Pass Rate |
-|-------|--------|-----------|-------|----------|-----------|
-| Phase 1: Foundation | ✅ 100% | 6/6 | 131 tests | High | 100% |
-| Phase 2: Operations | ✅ 100% | 5/5 | 139 tests | High | 100% |
-| Phase 3: Sketch Ops | ✅ 100% | 7/7 | 124 tests | High | 100% |
-| **v3.0 Complete** | ✅ Complete | - | 502 tests | 95%+ | 100% |
-| **v3.1 Phase 1** | ✅ Complete | 3/3 | 131 tests | High | 100% |
-| **v3.1: Component+DAG** | ✅ Complete | - | 257+ tests | High | 100% |
-| **Total** | **✅ Active** | **21/21** | **1382 tests** | **92%+** | **100%** |
+| Phase | Status | Validation Focus |
+|-------|--------|------------------|
+| Phase 1: Foundation | ✅ Complete | core part, selector, transform, parameter, and sketch behavior |
+| Phase 2: Operations | ✅ Complete | parser, primitive builders, boolean/pattern/finishing behavior |
+| Phase 3: Sketch Ops | ✅ Complete | extrude, revolve, sweep, loft, schema, assembly validation, export |
+| v3.1: Testing Confidence | ✅ Complete | testing utilities, correctness contracts, visual regression |
+| v3.1: Component+DAG | ✅ Complete | imports, stdlib components, dependency graph, watch mode |
+| Current | ✅ Active | parser, correctness, DAG, validation, visual, and example coverage |
 
 ### Component Breakdown
 
-| Component | Tests | Coverage | Status | Notes |
-|-----------|-------|----------|--------|-------|
-| **Phase 1: Foundation** | | | | |
-| Part System | 19 | 99% | ✅ | Position tracking |
-| SelectorResolver | 31 | 100% | ✅ | Perfect coverage! |
-| TransformTracker | 21 | 86% | ✅ | Transform composition |
-| PointResolver | 36 | 87% | ✅ | Dot notation |
-| ParameterResolver | 33 | 95% | ✅ | Expressions |
-| Sketch System | 25 | 95% | ✅ | 2D profiles |
-| **Phase 2: Operations** | | | | |
-| YAML Parser | 16 | 84% | ✅ | End-to-end |
-| PartsBuilder | 22 | 94% | ✅ | Primitives |
-| BooleanBuilder | 32 | 93% | ✅ | Union/diff/intersect |
-| PatternBuilder | 40 | 88% | ✅ | Linear/circular/grid |
-| FinishingBuilder | 38 | 89% | ✅ | Fillet/chamfer |
-| **Phase 3: Sketch Operations** | | | | |
-| ExtrudeBuilder | 6 | 60% | ✅ | Extrude profiles |
-| RevolveBuilder | 4 | 57% | ✅ | Rotation symmetry |
-| SweepBuilder | 4 | 58% | ✅ | Path following |
-| LoftBuilder | 6 | 75% | ✅ | Profile blending |
-| SchemaValidator | 32 | 71% | ✅ | YAML validation |
-| AssemblyValidator | 19 | 70% | ✅ | Reference checking |
-| 3MF Exporter | 31 | 97% | ✅ | Manufacturing format |
-| **Quality** | | | | |
-| Error Messages | 19 | 100% | ✅ | Exception handling |
-| **v3.1: Testing Confidence** | | | | |
-| Testing Utilities | 71 | N/A | ✅ | Test helper modules |
-| Correctness Tests | 60 | N/A | ✅ | Verification tests |
-| **Total** | **740** | **87%** | **✅** | **Production-ready** |
+| Component Area | Status | Notes |
+|-----------|--------|-------|
+| Core model types | ✅ | part, selector, transform, parameter, spatial reference behavior |
+| Parser/build pipeline | ✅ | YAML parsing, parts, operations, imports, schema validation |
+| Geometry operations | ✅ | primitives, booleans, patterns, finishing, sketch operations |
+| Export and visualization | ✅ | STL/STEP/3MF surfaces, visual regression, trust rendering |
+| Correctness contracts | ✅ | dimensions, volumes, attachment, rotation, example/trust contracts |
+| Debug/review tooling | ✅ | `tiacad check`, `tiacad debug`, geometry summaries, validation reports |
 
 ### Real-World Examples
 
@@ -929,7 +909,7 @@ This is an active development project with stable core components and production
 
 **Quality Standards:**
 - **Test First**: All features require comprehensive tests
-- **Code Quality**: Pass ruff and pylint checks
+- **Code Quality**: Pass focused lint checks for touched code; keep reducing repo-wide lint debt
 - **Coverage**: Aim for >80% test coverage
 - **Documentation**: Update README and docstrings
 

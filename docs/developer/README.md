@@ -27,6 +27,16 @@ Comprehensive testing documentation:
 
 **Quick Reference:** [TESTING_QUICK_REFERENCE.md](TESTING_QUICK_REFERENCE.md)
 
+**[MODEL_VALIDATION.md](MODEL_VALIDATION.md)**
+
+Conceptual model for proving generated CAD is correct:
+- analytical contracts
+- mesh validity
+- visual review limits
+- debug bundles and deltas
+- AI review evidence
+- future `contracts:` / `tiacad verify` direction
+
 **[AI_DEBUG_WORKFLOW.md](AI_DEBUG_WORKFLOW.md)**
 
 Practical workflow for AI-assisted model debugging:
@@ -100,7 +110,7 @@ All contributions should include tests:
 ### 4. Follow Conventions
 
 - **Terminology:** Use canonical terms from [TERMINOLOGY_GUIDE.md](TERMINOLOGY_GUIDE.md)
-- **Code style:** Run `ruff check` before committing
+- **Code style:** Run focused `ruff check` on touched files before committing; repo-wide ruff cleanup is ongoing
 - **Documentation:** Update docs with code changes
 - **Examples:** Add examples for new features
 
@@ -122,7 +132,9 @@ All contributions should include tests:
 - Use `tiacad build <file> --verbose` for detailed output
 - Check validation errors (provide line numbers)
 - Run specific test: `pytest tiacad_core/tests/test_specific.py::test_function`
-- Use visual regression tests for geometry validation
+- Use `tiacad check <file>` for fast measured geometry facts
+- Use `tiacad debug <file> --bundle out/debug` for structured review artifacts
+- Use visual/trust renders as review evidence, not as the only correctness oracle
 
 ### Running Tests
 

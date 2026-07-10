@@ -9,7 +9,7 @@ beth_topics:
 
 # TiaCAD Testing — Quick Reference
 
-**Updated:** 2026-03-15 (session: metallic-shade-0315)
+**Updated:** 2026-07-09
 
 ---
 
@@ -17,15 +17,15 @@ beth_topics:
 
 **Current baseline:** broad parser, correctness, DAG, visualization, and integration coverage.
 
-| Suite | Tests | Runtime |
+| Suite | Scope | Runtime |
 |---|---|---|
-| Full suite | 1244 | ~2 min |
-| Correctness only | 68 | ~2s |
-| DAG only | 101 | <1s |
-| Visual regression | 57 | ~60s |
-| Fast (not visual) | ~1187 | ~10s |
+| Full suite | all automated coverage | ~2 min |
+| Correctness only | analytical contracts | ~2s |
+| DAG only | graph/cache/watch behavior | <1s |
+| Visual regression | pixel-diff baselines | ~60s |
+| Fast (not visual) | parser/correctness/DAG/unit coverage | ~10s |
 
-**Known gap:** Visual regression tests prove consistency, not correctness. 49 examples have no dimension/volume assertions. See [TESTING_GUIDE.md](./TESTING_GUIDE.md#correctness-gap--what-we-know) for analysis and next steps.
+**Core model:** use analytical contracts as the primary correctness oracle, visual renders as review evidence, and debug bundles for AI-assisted diagnosis. See [MODEL_VALIDATION.md](./MODEL_VALIDATION.md).
 
 ---
 
@@ -156,20 +156,26 @@ def test_bracket_with_hole():
 
 ---
 
-## Correctness Gap — Next Steps
+## Model Review Loop
 
-The examples lack dimension/volume assertions. Three approaches:
+For changed models, use this order:
 
-**A. Write geometric tests for known examples**
-Add to `test_correctness/test_example_contracts.py`. Start with 5 examples where you know the intended dimensions. This directly catches "built but wrong."
+1. Run focused parser/correctness tests.
+2. Run `tiacad check <model>` for dimensions and geometry facts.
+3. Run `tiacad debug <model> --bundle out/<name>` for AI/human review artifacts.
+4. Inspect the trust render for spatial issues not yet encoded as contracts.
+5. Promote repeated manual checks into contracts.
 
-**B. `--check` CLI flag**
-Fast manual audit: `python -m tiacad examples/foo.yaml --check` prints dimensions + validity. No test writing required. Best for development loop.
+Useful commands:
 
-**C. Audit all 49 examples**
-Run all examples, dump dimensions/volume, review for anything that looks wrong. Establishes ground truth.
+```bash
+tiacad check examples/foo.yaml
+tiacad debug examples/foo.yaml --bundle out/foo-debug
+tiacad debug examples/foo.yaml --compare out/previous-foo-debug
+python scripts/validate_examples.py
+```
 
-See [TESTING_GUIDE.md](./TESTING_GUIDE.md#correctness-gap--what-we-know) for full analysis.
+See [TESTING_GUIDE.md](./TESTING_GUIDE.md#testing-model) and [MODEL_VALIDATION.md](./MODEL_VALIDATION.md) for the full model.
 
 ---
 
@@ -184,12 +190,12 @@ tiacad_core/
 │   └── visual_regression.py   VisualRegressionTester, pytest_visual_compare
 │
 └── tests/
-    ├── test_correctness/      68 tests — attachment, rotation, dimensions, mesh validity
-    ├── test_dag/              101 tests — graph, invalidation, cache, incremental builder
-    ├── test_parser/           ~520 tests — YAML → geometry pipeline
-    ├── test_testing/          ~40 tests — tests for testing utilities
+    ├── test_correctness/      analytical contracts and mesh validity
+    ├── test_dag/              graph, invalidation, cache, incremental builder
+    ├── test_parser/           YAML → geometry pipeline
+    ├── test_testing/          tests for testing utilities
     ├── test_visualization/    renderer tests
     ├── test_validation/       validation rules
-    ├── test_visual_regression.py   pixel-diff for 49 examples
-    └── visual_references/     51 reference PNGs
+    ├── test_visual_regression.py   pixel-diff against visual references
+    └── visual_references/     reference PNGs
 ```

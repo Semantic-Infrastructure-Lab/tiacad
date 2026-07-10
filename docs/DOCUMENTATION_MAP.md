@@ -44,6 +44,8 @@
 |----------|---------|-------------|
 | [TESTING_GUIDE](developer/TESTING_GUIDE.md) | Comprehensive testing strategies | When writing or running tests |
 | [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md) | Quick test commands | When you just need the command |
+| [MODEL_VALIDATION](developer/MODEL_VALIDATION.md) | Correctness evidence model for numeric, visual, and AI review | When deciding how to prove a model is right |
+| [AI_DEBUG_WORKFLOW](developer/AI_DEBUG_WORKFLOW.md) | AI-assisted model debugging and debug bundle workflow | When reviewing model behavior with structured artifacts |
 | [DAG_INCREMENTAL_REBUILD](developer/DAG_INCREMENTAL_REBUILD.md) | Dependency graph architecture and watch mode | When working on incremental rebuild or watch |
 | [TERMINOLOGY_GUIDE](developer/TERMINOLOGY_GUIDE.md) | Canonical terminology decisions | When writing docs or code |
 | [MIGRATION_GUIDE_V3](developer/MIGRATION_GUIDE_V3.md) | Upgrading from v0.3.0 to v3.x | When migrating old YAML files |
@@ -59,6 +61,7 @@
 
 **Quick Tips:**
 - **Running tests?** → [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md)
+- **Validating model correctness?** → [MODEL_VALIDATION](developer/MODEL_VALIDATION.md)
 - **Writing docs?** → [TERMINOLOGY_GUIDE](developer/TERMINOLOGY_GUIDE.md)
 - **Contributing code?** → [TESTING_GUIDE](developer/TESTING_GUIDE.md)
 - **Upgrading YAML?** → [MIGRATION_GUIDE_V3](developer/MIGRATION_GUIDE_V3.md)
@@ -136,26 +139,22 @@ See [Archive Summary](archive/ARCHIVE_SUMMARY.md) for:
 **Run tests:**
 1. Quick commands: [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md)
 2. Detailed guide: [TESTING_GUIDE](developer/TESTING_GUIDE.md)
+3. Correctness model: [MODEL_VALIDATION](developer/MODEL_VALIDATION.md)
 
 **Use the CLI:**
 1. See [CLI](developer/CLI.md) for complete reference
 
 ---
 
-## 📈 Documentation Statistics
+## 📈 Documentation Priorities
 
-- **Total Documents:** 31 markdown files (~14,300 lines)
-- **User Docs:** 6 files (5,001 lines)
-- **Developer Docs:** 9 files (4,152 lines) - includes quality audits
-- **Architecture:** 8 files (3,949 lines) - includes SIL integration
-- **Archive:** 8 files (5,256 lines)
-
-**Most Important Documents (by usage):**
+**Most important documents by usage:**
 1. [Main README](../README.md) - Start here
 2. [SIL_INTEGRATION](SIL_INTEGRATION.md) - ⭐ NEW: Understanding SIL principles
 3. [TUTORIAL](user/TUTORIAL.md) - Learn by doing
 4. [YAML_REFERENCE](user/YAML_REFERENCE.md) - Syntax lookup
 5. [TESTING_GUIDE](developer/TESTING_GUIDE.md) - For contributors
+6. [MODEL_VALIDATION](developer/MODEL_VALIDATION.md) - For correctness and AI review
 
 ---
 

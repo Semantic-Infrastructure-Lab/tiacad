@@ -10,7 +10,7 @@ beth_topics:
 
 # TiaCAD Testing Guide
 
-**Updated:** 2026-03-15 (session: metallic-shade-0315)
+**Updated:** 2026-07-09
 **Status:** Active
 
 ---
@@ -18,12 +18,13 @@ beth_topics:
 ## Table of Contents
 
 1. [Current State](#current-state)
-2. [Correctness Gap — What We Know](#correctness-gap--what-we-know)
-3. [Running Tests](#running-tests)
-4. [Test Categories](#test-categories)
-5. [Testing Utilities](#testing-utilities)
-6. [Writing New Tests](#writing-new-tests)
-7. [Troubleshooting](#troubleshooting)
+2. [Testing Model](#testing-model)
+3. [Correctness Gap — What We Know](#correctness-gap--what-we-know)
+4. [Running Tests](#running-tests)
+5. [Test Categories](#test-categories)
+6. [Testing Utilities](#testing-utilities)
+7. [Writing New Tests](#writing-new-tests)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -31,15 +32,15 @@ beth_topics:
 
 TiaCAD has a large automated test suite spanning parser, correctness, DAG, visualization, and integration coverage.
 
-| Category | Location | Tests | Notes |
+| Category | Location | Scope | Notes |
 |---|---|---|---|
-| Parser | `test_parser/` | ~520 | YAML → geometry pipeline |
-| Correctness | `test_correctness/` | ~156 | Attachment, rotation, dimensions, example contracts, trust contracts |
-| Visual regression | `test_visual_regression.py` | 57 | Pixel-diff vs reference images — catches regressions, not original correctness |
-| DAG (incremental rebuild) | `test_dag/` | 101 | Graph, invalidation, cache, builder |
-| Testing utilities | `test_testing/` | ~40 | Tests for the test utilities themselves |
-| Integration | scattered | ~200 | Multi-component workflows |
-| Unit | scattered | ~400 | Backend, part, spatial, stdlib contracts, etc. |
+| Parser | `test_parser/` | broad | YAML → geometry pipeline |
+| Correctness | `test_correctness/` | broad | Attachment, rotation, dimensions, example contracts, trust contracts |
+| Visual regression | `test_visual_regression.py` | broad | Pixel-diff vs reference images — catches regressions, not original correctness |
+| DAG (incremental rebuild) | `test_dag/` | focused | Graph, invalidation, cache, builder |
+| Testing utilities | `test_testing/` | focused | Tests for the test utilities themselves |
+| Integration | scattered | broad | Multi-component workflows |
+| Unit | scattered | broad | Backend, part, spatial, stdlib contracts, etc. |
 
 ```bash
 pytest                          # full suite — ~2 min
@@ -47,6 +48,21 @@ pytest tiacad_core/tests/test_correctness/   # geometric correctness — ~2s
 pytest -m visual                # visual regression — ~60s
 pytest tiacad_core/tests/test_dag/           # DAG tests — <1s
 ```
+
+---
+
+## Testing Model
+
+TiaCAD validates generated models through multiple independent evidence layers:
+
+1. **Schema and parser checks** verify that YAML is structurally valid and follows supported syntax.
+2. **Analytical contracts** verify dimensions, volumes, positions, symmetry, and operation-specific math.
+3. **Mesh validity checks** verify that exported/tessellated geometry is usable enough for downstream workflows.
+4. **Visual review artifacts** help humans and AI catch spatial mistakes that are not yet encoded as contracts.
+5. **Debug bundles and deltas** explain what changed between builds and where a regression was introduced.
+
+The canonical model is documented in [MODEL_VALIDATION.md](MODEL_VALIDATION.md). The short version:
+visual regression is useful, but it is not the oracle. If expected behavior can be stated as a measured fact, prefer a contract.
 
 ---
 
@@ -62,22 +78,20 @@ pytest tiacad_core/tests/test_dag/           # DAG tests — <1s
 | Boolean volume math (union, difference, intersection) | ✅ | `test_dimensional_accuracy.py` + `test_trust_contracts.py` |
 | Attachment distance between parts | ✅ | `test_attachment_correctness.py` |
 | Rotation angles on primitives | ✅ | `test_rotation_correctness.py` |
-| Mesh validity (watertight, no self-intersections) | ✅ | `test_geometry_validation.py` — 3 examples |
-| Visual pixel consistency vs reference images | ✅ | `test_visual_regression.py` — 49 examples |
-| Trust scenario geometry (all 20 trust YAMLs) | ✅ | `test_trust_contracts.py` — 66 tests, per-part dims + volumes + positions |
+| Mesh validity (watertight, no self-intersections) | ✅ | `test_geometry_validation.py` and geometry summaries |
+| Visual pixel consistency vs reference images | ✅ | `test_visual_regression.py` |
+| Trust scenario geometry | ✅ | `test_trust_contracts.py` — per-part dims + volumes + positions |
 
-### What's missing
+### What visual regression still cannot prove
 
-**End-to-end geometric contracts on example files.**
-
-49 example YAML files exist. The visual regression tests prove they "render the same as before" — but they cannot catch:
+The visual regression tests prove that rendered output is consistent with a reference image. They cannot prove the reference image was correct, and they cannot reliably catch:
 
 - A part built with **wrong dimensions** (a 50mm box instead of 100mm)
 - **Misplaced geometry** — a hole that ended up in the wrong position
 - A **boolean that silently failed** and left the solid untouched
 - An **assembly with correct-shaped parts in wrong relative positions**
 
-The visual regression tests only catch *looks different from the last snapshot*. They don't know if the snapshot was correct. And for subtle errors (a 2mm mistake, a 10° rotation error), pixel diff won't catch it at typical render resolution.
+Visual tests only catch *looks different from the last snapshot*. For subtle errors (a 2mm mistake, a 10° rotation error), pixel diff may not catch it at typical render resolution.
 
 ### The "snapshot of a bug" risk
 
@@ -85,7 +99,7 @@ The 51 visual reference images were generated at some point. If a bug existed at
 
 ### What we've done about it
 
-**Option A** (geometric contracts) is now in place:
+Geometric contracts are now in place for the most important correctness paths:
 - `test_correctness/test_example_contracts.py` — all assembly examples with Tier 2 contracts
 - `test_correctness/test_trust_contracts.py` — all 20 trust YAMLs with per-part dimension, volume, and positional assertions (session: rainbow-ember-0316)
 
@@ -93,7 +107,7 @@ Together these are the primary regression net against "built but wrong" geometry
 
 ### Remaining approaches
 
-**Option A — Geometric tests on key examples (highest value)**
+**A. Add or improve geometric contracts where intent is clear**
 
 For each important example, assert what the geometry should measure:
 ```python
@@ -106,44 +120,31 @@ assert dims["height"] == pytest.approx(40.0, abs=0.1)
 # Hole present: volume less than solid bounding box
 assert get_volume(part) < 80 * 40 * 10
 ```
-Start with 5–10 examples where you know the intended dimensions. This catches "built but wrong" directly.
+This catches "built but wrong" directly. When a manual review finds a meaningful expected value, promote it into a test.
 
-**Option B — `--check` CLI flag (fast manual loop)**
+**B. Use `tiacad check` and `tiacad debug` for fast manual and AI-assisted review**
 
 ```bash
-python -m tiacad examples/bracket_with_hole.yaml --check
+tiacad check examples/bracket_with_hole.yaml
 # ✓ Geometry valid (watertight, 1 component)
 # ✓ Dimensions: 80.0 × 40.0 × 10.0 mm
 # ✓ Volume: 28,450 mm³
 # ✓ Parts in registry: final, base, hole_cyl
+
+tiacad debug examples/bracket_with_hole.yaml --bundle out/debug-bracket
 ```
-No test writing needed. Run this after any YAML change to see "does this look sane?" within 2 seconds. Highest value per hour for catching regressions during development.
+No test writing needed. Use this after YAML changes to inspect measured facts, validation reports, build traces, and trust renders.
 
-**Option C — Audit all examples (ground truth establishment)**
+**C. Audit examples with structured summaries**
 
-Run all 49 examples, print dimensions + validity + volume for each, review together:
+Run the example validator or generate debug bundles for changed examples:
 ```bash
-python -c "
-from tiacad_core.parser import TiaCADParser
-from tiacad_core.testing.dimensions import get_dimensions, get_volume
-import os, glob
-
-for f in sorted(glob.glob('examples/*.yaml')):
-    try:
-        doc = TiaCADParser().parse_file(f)
-        asm = doc.get_assembly()
-        from tiacad_core.part import Part
-        from tiacad_core.geometry import CadQueryBackend
-        p = Part('tmp', asm, {}, CadQueryBackend())
-        d = get_dimensions(p)
-        print(f'{os.path.basename(f)}: {d[\"width\"]:.1f}×{d[\"height\"]:.1f}×{d[\"depth\"]:.1f} vol={get_volume(p):.0f}')
-    except Exception as e:
-        print(f'{os.path.basename(f)}: ERROR {e}')
-"
+python scripts/validate_examples.py
+tiacad debug examples/awesome_guitar_hanger.yaml --bundle out/hanger-debug
 ```
-This establishes ground truth for what each example actually produces, so you can tell if something changed.
+This gives reviewers a measured baseline for what the examples currently produce.
 
-**Option D — Trust renderer (human + AI visual verification)**
+**D. Use the trust renderer as a human + AI visual review layer**
 
 The trust renderer is a multi-view colored rendering tool for visually confirming that TiaCAD operations produce the expected 3D structure. It renders each part in a distinct color with 4 viewpoints (isometric, front, top, side), an axis indicator, and a color legend — producing a single PNG you (or AI) can inspect and say "yep, that's right."
 
@@ -158,6 +159,17 @@ This is especially useful for:
 - AI-assisted review — show the render and ask "is the blue cylinder centered on top of the red plate?"
 
 The trust renderer lives in `tiacad_core/visual/trust_renderer.py`. Curated trust scenarios are in `examples/trust/`.
+
+### Future validation improvements
+
+The highest-value next steps are:
+
+- model-local `contracts:` in YAML
+- a `tiacad verify` command that evaluates those contracts
+- reference-based measurements between anchors/faces/axes
+- before/after operation summaries in debug bundles
+- annotated trust renders with failed contract callouts
+- intentionally broken negative trust scenarios
 
 ---
 
@@ -218,24 +230,24 @@ pytest tiacad_core/tests/test_testing/
 
 ```
 tiacad_core/tests/
-├── test_correctness/        # geometric correctness (68 tests)
+├── test_correctness/        # geometric correctness
 │   ├── test_attachment_correctness.py   — part positioning
 │   ├── test_dimensional_accuracy.py     — dimensions, volume, surface area
 │   ├── test_geometry_validation.py      — mesh validity via trimesh
 │   └── test_rotation_correctness.py     — rotation angles, normals
-├── test_dag/                # DAG + incremental rebuild (101 tests)
+├── test_dag/                # DAG + incremental rebuild
 │   ├── test_graph_builder.py
 │   ├── test_model_graph.py
 │   ├── test_invalidation_tracker.py
 │   ├── test_build_cache.py
 │   ├── test_incremental_builder.py
 │   └── test_visualizer.py
-├── test_parser/             # YAML → geometry pipeline (~520 tests)
-├── test_testing/            # tests for testing utilities (~40 tests)
+├── test_parser/             # YAML → geometry pipeline
+├── test_testing/            # tests for testing utilities
 ├── test_visualization/      # renderer tests
 ├── test_validation/         # validation rules
 ├── test_visual_regression.py  — pixel-diff for all examples
-└── visual_references/       — 51 reference PNGs
+└── visual_references/       — visual reference PNGs
 ```
 
 ---
