@@ -353,12 +353,27 @@ between a standoff and its screw). Migrating the existing hand-written
 Tier-2 pytest classes to `expect:` blocks, and building out the T0/T1 ladder
 corpus, are still open (the rest of Phase 2).
 
-**Bug found via this tooling, not yet fixed:**
-`examples/mounting_plate_with_bolt_circle.yaml`'s boolean difference produces
-3 disconnected components instead of 1 (`tiacad validate-geometry` confirms:
-48/252/252-vertex islands) — a real unprintable-geometry bug the old
-per-example-test-only approach never caught. Deliberately not encoded as an
-`expect:` contract, since that would enshrine the bug as "expected."
+**Bug found via this tooling, fixed 2026-07-10:**
+`examples/mounting_plate_with_bolt_circle.yaml`'s boolean difference produced
+3 disconnected components instead of 1 (48/252/252-vertex islands) — a real
+unprintable-geometry bug the old per-example-test-only approach never caught.
+Root cause: `bolt_hole`/`center_hole` are cylinders (default axis Z), but the
+box primitive maps `width->X, depth->Y, height->Z`, so this plate's actual
+thin dimension is Y, not Z. The circular pattern rotated hole copies around
+`axis: Z`, which only translates a Z-cylinder's position in the XY-plane
+without reorienting it — so only 2 of 6 holes ever lined up with the Y-thin
+face at all, and even those didn't reach the Y faces (radius 3.25 < half-
+thickness 4mm), leaving them as fully enclosed internal cavities that mesh
+out as extra disconnected shells. Fix: rotate `bolt_hole`/`center_hole` 90°
+about X (via an `operations: transform`) before patterning, so their axis
+runs along Y, and pattern around `axis: Y` instead of `Z`. The same bug
+(plus a matching `edges: {direction: Z}` on the fillet, which should target
+Y — the true thickness edges) existed in `examples/rounded_mounting_plate.yaml`
+and got the identical fix. Both now build as a single watertight component and
+have `expect:` contracts seeded (`components: 1`) so this can't silently
+regress. The plate's box parameters themselves were correct all along — the
+pre-existing `test_bounding_box` tests (`dims["height"] == 8.0`, i.e. Y-extent)
+were right and did not need to change; the fix lives entirely in `operations:`.
 
 ### 4.2 — Property-based invariant tests with Hypothesis *(stronger)*
 

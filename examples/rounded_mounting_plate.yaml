@@ -51,13 +51,35 @@ parts:
     origin: center
 
 operations:
+  # Bolt/center holes are Z-axis cylinders by default, but the plate's thin
+  # dimension is Y (width->X, depth->Y, height->Z per box primitive
+  # semantics). Rotate 90 deg about X so the holes actually pierce the
+  # plate's thickness instead of running parallel to it.
+  bolt_hole_oriented:
+    type: transform
+    input: bolt_hole
+    transforms:
+      - rotate:
+          angle: 90
+          axis: X
+          origin: [0, 0, 0]
+
+  center_hole_oriented:
+    type: transform
+    input: center_hole
+    transforms:
+      - rotate:
+          angle: 90
+          axis: X
+          origin: [0, 0, 0]
+
   # Create bolt circle pattern
   bolt_circle:
     type: pattern
     pattern: circular
-    input: bolt_hole
+    input: bolt_hole_oriented
     count: '${bolt_count}'
-    axis: Z
+    axis: Y
     center: [0, 0, 0]
     radius: '${bolt_circle_diameter / 2}'
 
@@ -67,7 +89,7 @@ operations:
     operation: difference
     base: plate
     subtract:
-      - center_hole
+      - center_hole_oriented
       - bolt_circle_0
       - bolt_circle_1
       - bolt_circle_2
@@ -76,13 +98,21 @@ operations:
       - bolt_circle_5
 
   # Fillet the 4 outer vertical corner edges (safe on complex geometry with holes)
+  # Vertical == the plate's thickness direction, which is Y (see note above).
   plate_finished:
     type: finishing
     finish: fillet
     input: plate_with_holes
     radius: '${edge_fillet_radius}'
     edges:
-      direction: Z
+      direction: Y
 
 export:
   default_part: plate_finished
+
+expect:
+  final: plate_finished
+  volume: 167612.229
+  bbox: [150.0, 8.0, 150.0]
+  watertight: true
+  components: 1

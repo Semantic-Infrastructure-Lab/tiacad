@@ -27,8 +27,24 @@ Seeded first two reviewed contracts: `examples/simple_guitar_hanger.yaml` (Tier 
 `examples/pcb_standoff_assembly.yaml` (Tier 4, with a `coaxial` relation). Building this
 tooling surfaced a real bug it wasn't even designed to look for:
 `examples/mounting_plate_with_bolt_circle.yaml`'s boolean difference produces 3 disconnected
-mesh components instead of 1 (confirmed via `tiacad validate-geometry`) — not yet fixed,
-deliberately not encoded as a contract.
+mesh components instead of 1 (confirmed via `tiacad validate-geometry`) — see below, now
+fixed.
+
+#### `mounting_plate_with_bolt_circle.yaml` / `rounded_mounting_plate.yaml` — bolt holes now actually pierce the plate
+
+Both files produced 3 disconnected mesh components instead of 1: the bolt/center holes are
+cylinders (default axis Z) patterned circularly around `axis: Z`, but the plate's actual thin
+dimension is Y (box primitive maps `width->X, depth->Y, height->Z`). Rotating hole copies
+around Z only translates a Z-cylinder's position in the XY-plane without reorienting it, so
+only 2 of 6 holes ever lined up with the Y-thin face — and even those didn't reach the Y
+faces (hole radius 3.25mm < plate half-thickness 4mm), leaving them as fully enclosed internal
+cavities that mesh out as extra disconnected shells. Fixed by rotating the hole primitives 90°
+about X before patterning (so their axis runs along Y) and patterning around `axis: Y` instead
+of `Z`; `rounded_mounting_plate.yaml`'s fillet `edges: direction` also moved from `Z` to `Y` to
+match (it was targeting the wrong, non-thin edges as "vertical corners"). Both examples now
+build as a single watertight component and carry `expect:` contracts (`components: 1`) to
+guard against regression. The plate's own box parameters were correct all along — the fix is
+entirely in `operations:`, not the primitive dimensions.
 
 #### Boolean-effect assertions (`BooleanEffectRule`)
 
