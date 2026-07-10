@@ -333,6 +333,33 @@ tester patience. The model becomes the single source of truth for its own
 correctness. **Effort:** medium (schema addition + one parser hook + one test +
 CLI flag). This is the keystone — most other tiers ride on it.
 
+**Shipped 2026-07-10:** `expect:` is now a real schema block (`tiacad-schema.json`),
+threaded through the parser onto `TiaCADDocument.expect`, and checked by
+`tiacad_core/testing/contracts.py::check_contract()` — volume, bbox,
+watertight, component count, and `relations:` (`flush`/`coaxial`, resolved via
+the existing `SpatialResolver` dot-notation face/axis lookups). One generic
+parametrized test, `test_correctness/test_embedded_contracts.py`, discovers
+every example with an `expect:` block and checks it — confirmed working
+end-to-end with synthetic flush/coaxial fixtures before rollout. `tiacad check
+--contract` and `tiacad audit --write-contract` are live (the latter seeds a
+contract from a build for human review; it does not write to the file). This
+also closes G4: the dead `validation:` schema block (unused by any parser
+code) is deleted, superseded by `expect:`.
+
+Seeded two real examples as the first reviewed contracts:
+`examples/simple_guitar_hanger.yaml` (Tier 1: volume/bbox/watertight/components)
+and `examples/pcb_standoff_assembly.yaml` (Tier 4: adds a `coaxial` relation
+between a standoff and its screw). Migrating the existing hand-written
+Tier-2 pytest classes to `expect:` blocks, and building out the T0/T1 ladder
+corpus, are still open (the rest of Phase 2).
+
+**Bug found via this tooling, not yet fixed:**
+`examples/mounting_plate_with_bolt_circle.yaml`'s boolean difference produces
+3 disconnected components instead of 1 (`tiacad validate-geometry` confirms:
+48/252/252-vertex islands) — a real unprintable-geometry bug the old
+per-example-test-only approach never caught. Deliberately not encoded as an
+`expect:` contract, since that would enshrine the bug as "expected."
+
 ### 4.2 — Property-based invariant tests with Hypothesis *(stronger)*
 
 **Problem (G1):** hand-picked cases test six sizes; bugs hide in the other

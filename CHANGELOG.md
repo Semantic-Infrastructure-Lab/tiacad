@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2026-07-10
 
+#### Embedded `expect:` contracts (VALIDATION_STRENGTHENING.md section 4.1)
+
+The keystone of `docs/developer/VALIDATION_STRENGTHENING.md`: a model can now declare its
+own ground-truth contract inline (`expect: {volume, bbox, watertight, components,
+relations}`) instead of needing a hand-written pytest class. One generic parametrized test,
+`test_correctness/test_embedded_contracts.py`, discovers and checks every example that
+declares an `expect:` block — `tiacad_core/testing/contracts.py::check_contract()` does the
+work, including `flush`/`coaxial` relation checks between named parts built on the existing
+`SpatialResolver` dot-notation face/axis lookups (e.g. `standoff.axis_z` coaxial with
+`screw.axis_z`). `tiacad check --contract` and `tiacad audit --write-contract` expose the
+same engine on the CLI — the latter seeds a contract from a current build for human review,
+never auto-writing to the file. Also closes G4: the dead, unused `validation:` schema block
+is deleted, superseded by `expect:`.
+
+Seeded first two reviewed contracts: `examples/simple_guitar_hanger.yaml` (Tier 1) and
+`examples/pcb_standoff_assembly.yaml` (Tier 4, with a `coaxial` relation). Building this
+tooling surfaced a real bug it wasn't even designed to look for:
+`examples/mounting_plate_with_bolt_circle.yaml`'s boolean difference produces 3 disconnected
+mesh components instead of 1 (confirmed via `tiacad validate-geometry`) — not yet fixed,
+deliberately not encoded as a contract.
+
 #### Boolean-effect assertions (`BooleanEffectRule`)
 
 Closes the systemic validation gap identified by the `awesome_guitar_hanger` mounting-hole

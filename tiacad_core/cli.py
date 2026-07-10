@@ -776,6 +776,10 @@ def cmd_check(args):
       - Did my boolean subtract actually remove material?
       - Is this box really 80mm wide?
       - Did the revolve produce positive volume?
+
+    With --contract: also check the file's embedded expect: block (if any)
+    against the actual built geometry (see docs/developer/VALIDATION_STRENGTHENING.md
+    section 4.1).
     """
     from .parser.tiacad_parser import TiaCADParser
 
@@ -791,6 +795,20 @@ def cmd_check(args):
         start_time = time.time()
         doc = TiaCADParser.parse_file(str(input_file))
         parse_time = time.time() - start_time
+
+        if getattr(args, 'contract', False):
+            from .testing.contracts import ContractError, check_contract
+            print()
+            try:
+                result = check_contract(doc)
+            except ContractError as e:
+                print_error(f"Contract check: {e}")
+                return 1
+            if result.ok:
+                print_success(result.summary())
+            else:
+                print_error(result.summary())
+                return 1
 
         if doc.parameters:
             print_header(f"Parameters ({len(doc.parameters)}):")
@@ -854,6 +872,31 @@ def _audit_one_file(input_file: Path, verbose: bool):
     return result
 
 
+def _cmd_audit_write_contract(files, verbose: bool) -> int:
+    """Seed an expect: block per file from its current build (for --write-contract)."""
+    from .parser.tiacad_parser import TiaCADParser
+    from .testing.contracts import write_contract_yaml
+
+    fail_count = 0
+    for f in files:
+        print_header(f"\n📄 {f.name}")
+        try:
+            doc = TiaCADParser.parse_file(str(f))
+            print(write_contract_yaml(doc))
+        except Exception as e:
+            fail_count += 1
+            print_error(f"Failed to build: {e}")
+            if verbose:
+                traceback.print_exc()
+
+    print()
+    if fail_count:
+        print_error(f"{fail_count}/{len(files)} file(s) failed to build")
+        return 1
+    print_success(f"Seeded contracts for {len(files)} file(s) — review before pasting into the model file")
+    return 0
+
+
 def cmd_audit(args):
     """
     Audit multiple TiaCAD files: build each, report dimensions and volume of
@@ -861,6 +904,11 @@ def cmd_audit(args):
 
     Designed for establishing ground truth across all examples:
       tiacad audit examples/*.yaml
+
+    With --write-contract: instead of the audit table, seed an expect:
+    YAML block from each file's current build for a human to review and
+    paste into the file (see docs/developer/VALIDATION_STRENGTHENING.md
+    section 4.1). Does not modify any file.
     """
     files = _resolve_file_list(args.files)
     if not files:
@@ -869,6 +917,9 @@ def cmd_audit(args):
 
     # Sort for stable output
     files = sorted(files, key=lambda p: p.name)
+
+    if getattr(args, 'write_contract', False):
+        return _cmd_audit_write_contract(files, args.verbose)
 
     print_header(f"Auditing {len(files)} file(s)...\n")
 
@@ -1065,6 +1116,10 @@ For more information: https://github.com/scottsen/tiacad
     )
     check_parser.add_argument('input', help='Input YAML file')
     check_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback on error')
+    check_parser.add_argument(
+        '--contract', action='store_true',
+        help="Also check the file's embedded expect: block against the built geometry"
+    )
     check_parser.set_defaults(func=cmd_check)
 
     # Audit command
@@ -1074,6 +1129,10 @@ For more information: https://github.com/scottsen/tiacad
     )
     audit_parser.add_argument('files', nargs='+', help='YAML file(s) to audit (supports glob patterns)')
     audit_parser.add_argument('-v', '--verbose', action='store_true', help='Show full tracebacks on failure')
+    audit_parser.add_argument(
+        '--write-contract', action='store_true',
+        help='Seed an expect: block per file from its current build, for human review (does not modify files)'
+    )
     audit_parser.set_defaults(func=cmd_audit)
 
     # Watch command

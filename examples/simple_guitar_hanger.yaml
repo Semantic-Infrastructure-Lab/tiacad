@@ -107,3 +107,12 @@ operations:
 
 export:
   default_part: hanger
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: hanger
+  volume: 218561.754
+  bbox: [100.0, 116.488, 79.435]
+  watertight: true
+  components: 1

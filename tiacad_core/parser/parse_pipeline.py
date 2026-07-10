@@ -116,6 +116,7 @@ def extract_yaml_sections(yaml_data: Dict[str, Any]) -> Dict[str, Any]:
         'sketches': yaml_data.get('sketches', {}),
         'operations': yaml_data.get('operations', {}),
         'export': yaml_data.get('export', {}),
+        'expect': yaml_data.get('expect', {}),
     }
 
 
@@ -280,6 +281,7 @@ def parse_tiacad_dict(
             operations=operations_spec,
             references=context.resolved_references,
             export_config=context.export_config,
+            expect=sections['expect'],
             line_tracker=line_tracker,
             yaml_string=yaml_string,
             file_path=file_path,

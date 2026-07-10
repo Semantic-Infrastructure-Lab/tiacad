@@ -814,37 +814,79 @@
         }
       }
     },
-    "validation": {
-      "type": "array",
-      "description": "Validation rules",
-      "items": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "clearance_check",
-              "bounds_check",
-              "thickness_check",
-              "intersection_check"
-            ]
-          },
-          "parts": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "min_clearance": {
-            "type": "number"
-          },
-          "min_thickness": {
-            "type": "number"
-          },
-          "bounds": {
-            "type": "object"
+    "expect": {
+      "type": "object",
+      "description": "Embedded ground-truth contract for this model. Checked by `tiacad check --contract` and the generic test_embedded_contracts.py test — the model becomes the single source of truth for its own correctness. See docs/developer/VALIDATION_STRENGTHENING.md section 4.1.",
+      "properties": {
+        "final": {
+          "type": "string",
+          "description": "Part name whose contract is authoritative (default: same resolution as export/assembly — last operation, else first part)"
+        },
+        "volume": {
+          "type": "number",
+          "description": "Expected volume in mm^3"
+        },
+        "bbox": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "Expected axis-aligned bounding box [width, height, depth]"
+        },
+        "watertight": {
+          "type": "boolean",
+          "description": "Expected watertight/manifold state"
+        },
+        "components": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Expected number of connected components"
+        },
+        "relations": {
+          "type": "array",
+          "description": "Relational contracts between named parts (Tier 4 — assemblies)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "flush": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "Two face references (e.g. 'top.face_bottom') expected to be coplanar with opposed normals"
+              },
+              "coaxial": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "Two axis references (e.g. 'screw.axis_z') expected to share the same line"
+              },
+              "gap": {
+                "type": "number",
+                "description": "Expected gap along the normal for a flush relation (default 0)"
+              }
+            },
+            "additionalProperties": false
           }
         },
-        "required": ["type"]
-      }
+        "tol": {
+          "type": "object",
+          "description": "Tolerances for contract comparisons",
+          "properties": {
+            "length": {
+              "type": "number",
+              "description": "Absolute tolerance (mm) for bbox/gap/coaxial comparisons"
+            },
+            "volume": {
+              "type": "number",
+              "description": "Absolute tolerance (mm^3) for volume comparison"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["parts"],

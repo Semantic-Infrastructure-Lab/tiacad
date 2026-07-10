@@ -167,3 +167,16 @@ operations:
 export:
   # Export the base plate. Run `tiacad check` to see all assembly parts and dimensions.
   default_part: plate
+
+# Reviewed ground-truth contract for one standoff (seeded via
+# `tiacad audit --write-contract`, see docs/developer/VALIDATION_STRENGTHENING.md
+# section 4.1). Also asserts the screw is coaxial with its standoff — a Tier 4
+# relational check, not just dimensions.
+expect:
+  final: standoff_fl
+  volume: 202.319
+  bbox: [6.0, 6.0, 10.0]
+  watertight: true
+  components: 1
+  relations:
+    - coaxial: [standoff_fl.axis_z, screw_fl.axis_z]

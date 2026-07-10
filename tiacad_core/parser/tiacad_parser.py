@@ -62,6 +62,7 @@ class TiaCADDocument:
                  operations: Optional[Dict[str, Any]] = None,
                  references: Optional[Dict[str, Any]] = None,
                  export_config: Optional[Dict[str, Any]] = None,
+                 expect: Optional[Dict[str, Any]] = None,
                  line_tracker: Optional[LineTracker] = None,
                  yaml_string: Optional[str] = None,
                  file_path: Optional[str] = None,
@@ -76,6 +77,7 @@ class TiaCADDocument:
             operations: Optional operations spec for reference
             references: Optional spatial references dictionary (name -> spec)
             export_config: Optional export configuration (default_part, formats, etc.)
+            expect: Optional embedded ground-truth contract (see testing/contracts.py)
             line_tracker: Optional YAML line tracker for error reporting
             yaml_string: Optional original YAML string for error context
             file_path: Optional file path for error messages
@@ -87,6 +89,7 @@ class TiaCADDocument:
         self.operations = operations or {}
         self.references = references or {}
         self.export_config = export_config or {}
+        self.expect = expect or {}
         self.line_tracker = line_tracker
         self.yaml_string = yaml_string
         self.file_path = file_path
