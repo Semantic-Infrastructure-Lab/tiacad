@@ -179,23 +179,23 @@ references:
   left_screw_pos:
     type: point
     from: mounting_plate.center  # 🎯 auto-generated anchor!
-    offset: ['${-screw_spacing / 2}', 0, '${plate_height/2 - screw_offset_from_top}']
+    offset: ['${-screw_spacing / 2}', '${plate_height/2 - screw_offset_from_top}', 0]
 
   right_screw_pos:
     type: point
     from: mounting_plate.center  # 🎯 auto-generated anchor!
-    offset: ['${screw_spacing / 2}', 0, '${plate_height/2 - screw_offset_from_top}']
+    offset: ['${screw_spacing / 2}', '${plate_height/2 - screw_offset_from_top}', 0]
 
-  # Countersink positions (front face)
+  # Countersink positions (top face — recessed from the plate's flat surface)
   left_countersink_pos:
     type: point
-    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
-    offset: ['${-screw_spacing / 2}', '${-countersink_depth / 2}', '${plate_height/2 - screw_offset_from_top}']
+    from: mounting_plate.face_top  # 🎯 auto-generated anchor!
+    offset: ['${plate_height/2 - screw_offset_from_top}', '${screw_spacing / 2}', '${-countersink_depth / 2}']
 
   right_countersink_pos:
     type: point
-    from: mounting_plate.face_front  # 🎯 auto-generated anchor!
-    offset: ['${screw_spacing / 2}', '${-countersink_depth / 2}', '${plate_height/2 - screw_offset_from_top}']
+    from: mounting_plate.face_top  # 🎯 auto-generated anchor!
+    offset: ['${plate_height/2 - screw_offset_from_top}', '${-screw_spacing / 2}', '${-countersink_depth / 2}']
 
 operations:
   # ═══════════════════════════════════════════════════════

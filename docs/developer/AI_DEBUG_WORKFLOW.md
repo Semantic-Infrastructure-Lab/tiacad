@@ -53,9 +53,21 @@ The second form is far more tractable.
 
 ---
 
-## Recommended Debug Artifacts
+## Debug Bundle Artifacts
 
-For AI-assisted debugging, TiaCAD should emit a compact, machine-readable bundle per build.
+For AI-assisted debugging, TiaCAD emits a compact, machine-readable bundle per build via
+`tiacad debug model.yaml --bundle out/`:
+
+- `manifest.json`
+- `resolved_model.json`
+- `build_trace.json`
+- `part_summaries.json`
+- `validation_report.json`
+- `trust_render_manifest.json`
+- `final_trust.png` when trust rendering succeeds
+- `compare_report.json` when `--compare PREVIOUS_BUNDLE` is used
+
+This is the preferred input packet for AI-assisted review — see [MODEL_VALIDATION.md](MODEL_VALIDATION.md#ai-review-rules).
 
 ### 1. Resolved Model Snapshot
 
@@ -152,108 +164,15 @@ Prefer JSON output over plain console text.
 
 ---
 
-## Most Valuable Near-Term Improvements
+## Roadmap: Not Yet Implemented
 
-These are the highest-leverage additions for TiaCAD.
+Reusable geometry summaries and the debug bundle command (above) are shipped —
+see [CHANGELOG.md](../../CHANGELOG.md) for that history. Highest-leverage remaining work,
+roughly in priority order:
 
-### A. Stepwise Geometry Summaries
+### 1. Model-Local Contracts
 
-Implement a reusable summary function for any `Part`:
-
-- `bounds`
-- `center`
-- `volume`
-- `surface_area`
-- `component_count`
-- `reference_normals`
-
-This supports tests, validation, watch mode, and debug bundles.
-
-### B. Build Diff Support
-
-The DAG and incremental build system already know which nodes changed.
-
-Expose that as a debug artifact:
-
-- dirty nodes
-- rebuilt nodes
-- cached nodes
-- first node whose output summary changed
-
-This gives AI a natural fault-localization path.
-
-### C. Debug Bundle Command
-
-Add a command such as:
-
-```bash
-tiacad debug model.yaml --bundle out/
-```
-
-Suggested bundle contents:
-
-- `resolved_model.json`
-- `build_trace.json`
-- `part_summaries.json`
-- `compare_report.json` when prior bundle exists
-- `validation_report.json`
-- `trust_render_manifest.json`
-- `final_trust.png`
-
-This would be the best single addition for AI-assisted workflows.
-
-Status:
-
-- `2026-04-18`: MVP implemented as `tiacad debug`
-- Current bundle files:
-  - `manifest.json`
-  - `resolved_model.json`
-  - `build_trace.json`
-  - `part_summaries.json`
-  - `validation_report.json`
-  - `trust_render_manifest.json`
-  - `final_trust.png` when trust rendering succeeds
-  - `compare_report.json` when `--compare PREVIOUS_BUNDLE` is used
-
-Still missing for the fuller workflow:
-
-- richer node-level diffing beyond parts/operations
-- changed-node summaries
-- incremental rebuild dirty-node integration
-- automatic render diffs
-- changed-node trust renders
-
-### D. Named Reference Promotion
-
-Encourage models to expose stable, meaningful named references.
-
-Examples:
-
-- `left_arm_tip`
-- `neck_slot_center`
-- `beam_axis`
-- `mount_plate_top`
-
-AI and tests both work better when important geometry has stable names.
-
-### E. Lightweight Contracts
-
-Support small assertions that are easy to evaluate and explain.
-
-Good examples:
-
-- part dimensions in range
-- opening width in range
-- parts aligned on an axis
-- final assembly has one connected component
-- selected face normal within angle tolerance
-- left/right features symmetric within tolerance
-
-These are much more realistic than asking AI to infer full functional intent.
-
-### F. Model-Local Contracts
-
-The next useful step is to let models declare their own reviewable intent:
+Let models declare their own reviewable intent directly in YAML:
 
 ```yaml
 contracts:
@@ -275,9 +194,10 @@ This would let a future `tiacad verify` command evaluate contracts and emit:
 - optional annotated trust render callouts
 
 Model-local contracts are especially useful for AI review because the intent
-travels with the YAML instead of living only in a Python test file.
+travels with the YAML instead of living only in a Python test file. This is the
+single highest-value next step — see [MODEL_VALIDATION.md](MODEL_VALIDATION.md#best-next-improvements).
 
-### G. Negative Trust Scenarios
+### 2. Negative Trust Scenarios
 
 Keep a small set of intentionally broken trust models that must fail validation:
 
@@ -289,7 +209,45 @@ Keep a small set of intentionally broken trust models that must fail validation:
 - clearance below required minimum
 
 Positive examples prove TiaCAD can build valid models. Negative examples prove
-the validators catch real mistakes.
+the validators catch real mistakes — nothing today proves that.
+
+### 3. Lightweight Contracts (pre-YAML)
+
+Support small assertions that are easy to evaluate and explain, as a stepping
+stone before full model-local contracts:
+
+- part dimensions in range
+- opening width in range
+- parts aligned on an axis
+- final assembly has one connected component
+- selected face normal within angle tolerance
+- left/right features symmetric within tolerance
+
+These are much more realistic than asking AI to infer full functional intent.
+
+### 4. Named Reference Promotion
+
+Encourage models to expose stable, meaningful named references:
+
+- `left_arm_tip`
+- `neck_slot_center`
+- `beam_axis`
+- `mount_plate_top`
+
+AI and tests both work better when important geometry has stable names.
+
+### 5. Build Diff Support
+
+The DAG and incremental build system already know which nodes changed. Expose
+that as a debug artifact:
+
+- dirty nodes
+- rebuilt nodes
+- cached nodes
+- first node whose output summary changed
+
+This gives AI a natural fault-localization path, and would let `compare_report.json`
+report richer node-level diffs than parts/operations alone.
 
 ---
 
@@ -335,29 +293,6 @@ TiaCAD should make this workflow possible:
    - what to inspect next
 
 Without these artifacts, the AI is forced to reason from the final shape alone.
-
----
-
-## Implementation Order
-
-Recommended order of work:
-
-1. Add reusable geometry-summary helpers for `Part`
-2. Add JSON validation/report output
-3. Expose incremental rebuild node-change metadata
-4. Add `tiacad debug --bundle`
-5. Add optional stepwise trust renders
-6. Add lightweight contract assertions tied to named references
-7. Add model-local `contracts:` and `tiacad verify`
-8. Add negative trust scenarios
-
-Status:
-
-- `2026-04-18`: initial reusable summary helpers added in `tiacad_core.testing.geometry_summary`
-- `2026-04-18`: `tiacad debug` implemented with resolved model, build trace, part summaries, validation report, and trust render manifest
-- `2026-04-18`: `tiacad debug --compare PREVIOUS_BUNDLE` implemented for bundle comparison
-
-This ordering gives value early and reuses the same data across testing, watch mode, and AI workflows.
 
 ---
 

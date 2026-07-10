@@ -53,16 +53,10 @@ pytest tiacad_core/tests/test_dag/           # DAG tests — <1s
 
 ## Testing Model
 
-TiaCAD validates generated models through multiple independent evidence layers:
-
-1. **Schema and parser checks** verify that YAML is structurally valid and follows supported syntax.
-2. **Analytical contracts** verify dimensions, volumes, positions, symmetry, and operation-specific math.
-3. **Mesh validity checks** verify that exported/tessellated geometry is usable enough for downstream workflows.
-4. **Visual review artifacts** help humans and AI catch spatial mistakes that are not yet encoded as contracts.
-5. **Debug bundles and deltas** explain what changed between builds and where a regression was introduced.
-
-The canonical model is documented in [MODEL_VALIDATION.md](MODEL_VALIDATION.md). The short version:
-visual regression is useful, but it is not the oracle. If expected behavior can be stated as a measured fact, prefer a contract.
+The canonical evidence model — schema → analytical contracts → mesh validity → visual
+review → debug bundles/deltas — is documented in [MODEL_VALIDATION.md](MODEL_VALIDATION.md).
+The short version: visual regression is useful, but it is not the oracle. If expected
+behavior can be stated as a measured fact, prefer a contract.
 
 ---
 
@@ -146,7 +140,9 @@ This gives reviewers a measured baseline for what the examples currently produce
 
 **D. Use the trust renderer as a human + AI visual review layer**
 
-The trust renderer is a multi-view colored rendering tool for visually confirming that TiaCAD operations produce the expected 3D structure. It renders each part in a distinct color with 4 viewpoints (isometric, front, top, side), an axis indicator, and a color legend — producing a single PNG you (or AI) can inspect and say "yep, that's right."
+The trust renderer is a multi-view colored rendering tool for visually confirming that TiaCAD operations produce the expected 3D structure. It renders each part in a distinct color across 8 viewpoints in a 2×4 grid — two opposite isometrics (so no side or back face is hidden from both), an X-Ray pass for internal/occluded features, and Top/Front/Rear/Side/Bottom orthographics with dimension overlays — plus an axis indicator and a color legend, producing a single PNG you (or AI) can inspect and say "yep, that's right." The opposite-diagonal isometrics matter for review: a part mirrored to the wrong side or a feature on a back face is invisible from a single angle but shows up here.
+
+For assemblies fused into one solid by union, the renderer decomposes the final part along its operation DAG and colors each component distinctly (subtracted parts appear as translucent-red voids in the X-Ray panel). Without this, a fused assembly renders as one flat-colored blob where you can judge the silhouette but not whether the parts are actually connected or correctly placed — the exact class of error visual review is supposed to catch. This makes left/right symmetry, part connectivity, and misplacement directly inspectable per-component.
 
 ```bash
 python scripts/trust_render.py examples/trust/stacked_boxes.yaml
@@ -379,3 +375,14 @@ This is the "snapshot of a bug" problem — the reference captured incorrect geo
 pytest --cov=tiacad_core --cov-report=html
 open htmlcov/index.html
 ```
+
+**Inspecting a model interactively (rotate/zoom/pan), not just the static trust render:**
+```bash
+tiacad build examples/your_model.yaml -o /tmp/model.stl
+f3d /tmp/model.stl   # apt install f3d if missing; left-drag orbit, scroll zoom, right-drag pan
+```
+`pyvista`'s built-in `Plotter.export_html()` is **broken** in this environment — the
+`trame_vtk` package's bundled `static_viewer.html` template is corrupted (it's a cached
+"404 | VTK.js" doc page, not the real viewer), so it silently writes a useless HTML file
+instead of raising. `pip install --force-reinstall trame_vtk` may fix it if that path is
+ever needed; `f3d` is the reliable local alternative in the meantime.

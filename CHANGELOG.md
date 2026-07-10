@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2026-07-09
+
+#### Trust renderer: 8-panel grid with opposite-diagonal isometrics (restores rear coverage)
+
+The trust render went from 6 panels (one isometric + X-Ray at the *same* angle) to 8
+(2×4). Two isometrics now view from opposite diagonals (front-right-top and back-left-top),
+plus a new Rear orthographic. Previously the rear iso added in `5fd8d05` had been silently
+replaced by X-Ray at the front angle, leaving back faces and one side invisible from every
+panel — a part mirrored to the wrong side or a back-face feature could pass visual review
+unseen. All 24 `trust_output/*.png` regenerated. Render width 1800→2200 to keep 4 columns
+legible. (`tiacad_core/visual/trust_renderer.py`)
+
+#### Trust renderer: composite assemblies decompose into per-component colors
+
+When the final part is a union of multiple components (a printable assembly fused into one
+solid), the renderer now walks the operation DAG and draws each additive component in its
+own color, with subtracted parts shown as translucent-red voids in the X-Ray panel. Before,
+a fused assembly rendered as one flat-colored blob — you could judge its silhouette but not
+whether parts were actually connected or correctly placed. Metadata colors are ignored for
+decomposition (assembly parts frequently share one color). Activates only for 2+ additive
+components; single primitives, finishing ops, patterns, and already-separate multi-part
+scenes keep the existing single-render path. Shaded panels are now fully opaque (was 0.97)
+so overlapping components read crisply; X-Ray carries see-through duty.
+
+### Fixed - 2026-07-09
+
+#### `awesome_guitar_hanger.yaml` — mounting screw holes now actually pierce the plate
+
+The four screw-hole `difference` cuts subtracted from empty air (shafts floated
+9mm above the plate, countersinks landed 20-30mm off its edge) — an axis-mapping
+error where the vertical positioning value went into the wrong offset component,
+and 1,599 passing tests never noticed because contracts check volume ranges, not
+hole presence. Shaft offsets now swap Y/Z so the vertical value follows the plate
+face; countersinks retarget from `face_front` to `face_top` with the vertical
+value in the offset component that maps to that face's tangent frame. Verified
+via `Part.get_bounds()` and volume deltas (589 mm³ for the two through-holes,
+412.4 mm³ more for the two countersinks). Full root-cause writeup in
+`docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md`. The systemic gap this
+exposed — no assertion that a `difference`/`union` actually changes volume — is
+still open, tracked as the top item in `docs/developer/MODEL_VALIDATION.md`.
+
+### Added - 2026-04-18
+
+#### AI-assisted debug bundle workflow (`tiacad debug`)
+
+Implements the debug-artifact model proposed in `docs/developer/AI_DEBUG_WORKFLOW.md`:
+- `tiacad debug model.yaml --bundle out/` writes `resolved_model.json`, `build_trace.json`,
+  `part_summaries.json`, `validation_report.json`, `trust_render_manifest.json`, and
+  `final_trust.png` (when trust rendering succeeds)
+- `tiacad debug model.yaml --compare PREVIOUS_BUNDLE` adds `compare_report.json`, diffing
+  against a prior bundle
+- Reusable geometry-summary helpers added in `tiacad_core.testing.geometry_summary`
+
+Still open: richer node-level diffing beyond parts/operations, changed-node summaries,
+incremental-rebuild dirty-node integration, automatic render diffs, changed-node trust
+renders, model-local `contracts:` + `tiacad verify`, and negative trust scenarios.
+
 ### Fixed - 2026-03-17 (session: lightning-mountain-0317)
 
 #### `lego_brick_3x1.yaml` — same 3 coordinate bugs as 2x1 had (3 bodies disconnected)

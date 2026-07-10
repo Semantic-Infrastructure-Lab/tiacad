@@ -45,6 +45,7 @@
 | [TESTING_GUIDE](developer/TESTING_GUIDE.md) | Comprehensive testing strategies | When writing or running tests |
 | [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md) | Quick test commands | When you just need the command |
 | [MODEL_VALIDATION](developer/MODEL_VALIDATION.md) | Correctness evidence model for numeric, visual, and AI review | When deciding how to prove a model is right |
+| [VALIDATION_CASE_STUDY_MOUNTING_HOLES](developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md) | Worked example: a real boolean-that-did-nothing bug, how it was found, why tests missed it | When you want the validation model made concrete |
 | [AI_DEBUG_WORKFLOW](developer/AI_DEBUG_WORKFLOW.md) | AI-assisted model debugging and debug bundle workflow | When reviewing model behavior with structured artifacts |
 | [DAG_INCREMENTAL_REBUILD](developer/DAG_INCREMENTAL_REBUILD.md) | Dependency graph architecture and watch mode | When working on incremental rebuild or watch |
 | [TERMINOLOGY_GUIDE](developer/TERMINOLOGY_GUIDE.md) | Canonical terminology decisions | When writing docs or code |

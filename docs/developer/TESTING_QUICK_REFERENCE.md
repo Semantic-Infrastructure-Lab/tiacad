@@ -79,71 +79,11 @@ pytest -m "not visual and not slow"   # fast correctness loop
 
 ## Testing Utilities
 
-### Dimensions
-
-```python
-from tiacad_core.testing.dimensions import get_dimensions, get_volume, get_surface_area
-
-dims = get_dimensions(part)
-# → {"width": 80.0, "height": 40.0, "depth": 10.0, "volume": 28450, "surface_area": ...}
-
-assert dims["width"] == pytest.approx(80.0, abs=0.1)
-assert get_volume(part) < 80 * 40 * 10   # hole present
-```
-
-### Measurements
-
-```python
-from tiacad_core.testing.measurements import measure_distance, get_bounding_box_dimensions
-
-dist = measure_distance(part1, part2)                              # center-to-center
-dist = measure_distance(box, cyl, ref1="face_top", ref2="face_bottom")
-assert dist < 0.01   # touching
-
-dims = get_bounding_box_dimensions(part)
-assert abs(dims["width"] - 50.0) < 0.1
-```
-
-### Orientation
-
-```python
-from tiacad_core.testing.orientation import get_orientation_angles, get_normal_vector, parts_aligned
-
-angles = get_orientation_angles(part)    # {"roll": 0, "pitch": 45, "yaw": 90}
-normal = get_normal_vector(part, "face_top")   # [0, 0, 1]
-aligned = parts_aligned(part1, part2, axis="z", tolerance=0.01)
-```
-
-### Visual Regression
-
-```python
-from tiacad_core.testing.visual_regression import pytest_visual_compare
-
-@pytest.mark.visual
-def test_model():
-    result = pytest_visual_compare(geometry=asm, test_name="my_model", threshold=1.0)
-    assert result.passed, f"Pixel diff: {result.pixel_diff_percentage:.2f}%"
-```
-
----
-
-## Writing a Correctness Test (Template)
-
-```python
-import pytest
-from tiacad_core.parser.tiacad_parser import TiaCADParser
-from tiacad_core.testing.dimensions import get_dimensions, get_volume
-
-@pytest.mark.dimensions
-def test_bracket_with_hole():
-    """Bracket: 80×40×10mm, hole reduces volume below solid."""
-    doc = TiaCADParser().parse_file("examples/bracket_with_hole.yaml")
-    part = doc.get_part("final")
-    dims = get_dimensions(part)
-    assert dims["width"] == pytest.approx(80.0, abs=0.1)
-    assert dims["height"] == pytest.approx(40.0, abs=0.1)
-    assert get_volume(part) < 80 * 40 * 10
-```
+Import from `tiacad_core.testing.*`: `dimensions` (`get_dimensions`, `get_volume`,
+`get_surface_area`), `measurements` (`measure_distance`, `get_bounding_box_dimensions`),
+`orientation` (`get_orientation_angles`, `get_normal_vector`, `parts_aligned`),
+`visual_regression` (`pytest_visual_compare`). Full usage examples and the correctness
+test template are in [TESTING_GUIDE.md](./TESTING_GUIDE.md#testing-utilities).
 
 ### Tolerances
 

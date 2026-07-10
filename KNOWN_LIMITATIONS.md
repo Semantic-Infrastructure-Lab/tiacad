@@ -192,12 +192,46 @@ operations:
 
 ---
 
+### 6. Fixed — `awesome_guitar_hanger.yaml` mounting holes now pierce the plate
+
+**What it was:** The four screw-hole `difference` cuts subtracted from empty air — the
+mounting plate shipped with **no holes**. The shafts floated above the plate
+(`Z[16.5, 33.5]` vs plate `Z[-7.5, 7.5]`); the countersinks projected past the front
+edge (`Y[65, 75]`).
+
+**Root cause:** Axis-mapping mental-model error. The `box` primitive maps `height`→Z
+and `depth`→Y, so the parameter named `plate_height` (90) is the plate's **Y** extent
+while `plate_thickness` (15) is the **Z** thickness. The screw references put the
+vertical positioning value in the Z offset (assuming Z is the tall axis), so the holes
+landed off the plate.
+
+**Fix applied:** shaft offsets swap the Y/Z components (verified: volume drops by
+exactly two through-holes, `589 mm³ = 2 × π·2.5²·15`). Countersinks retarget from
+`face_front` to `face_top` with the vertical value in the face-tangent offset that
+maps to world Y — verified numerically (`get_bounds()`) that both countersinks now sit
+centered on the shafts' X/Y and straddle the plate's top surface (`Z[4, 8]` vs top face
+at `Z=7.5`).
+
+**Why it matters beyond one example:** 1,599 passing tests never caught it — the
+`TestGuitarHanger*` contracts check volume *ranges*, not hole presence. The systemic gap
+(no assertion that a `difference` actually removes volume) is still unbuilt — see
+[docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md](docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md)
+and [MODEL_VALIDATION.md](docs/developer/MODEL_VALIDATION.md#best-next-improvements).
+
+---
+
 ## Test Health
 
 TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.
 
 Known areas to keep an eye on:
 - Geometry regressions around boolean merges in complex examples
+- **Booleans that silently do nothing** — a `difference` whose tool misses the base, or
+  a `union` input that adds no volume, currently passes range-based contracts (the
+  `awesome_guitar_hanger` mounting-hole bug in limitation #6 above was an instance of
+  this). See
+  [MODEL_VALIDATION.md](docs/developer/MODEL_VALIDATION.md#best-next-improvements)
+  (boolean-effect assertions).
 - Visual/regression scenarios that depend on OCCT behavior
 - Example-specific limitations documented in `examples/` and the active test suite
 

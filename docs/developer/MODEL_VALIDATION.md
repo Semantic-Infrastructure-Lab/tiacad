@@ -186,6 +186,13 @@ But visual artifacts should be strengthened with overlays when possible:
 Visual regression protects against unexpected change. It does not prove the
 baseline was correct.
 
+**Visual review is weakest at absence.** A render is good at "this looks wrong" and
+bad at "something that should be here is missing" — a solid plate with no holes looks
+exactly like a correct plate. Do not rely on a picture for presence/absence
+guarantees (a hole exists, a part is connected, a cut removed material); assert those
+numerically. See [VALIDATION_CASE_STUDY_MOUNTING_HOLES.md](VALIDATION_CASE_STUDY_MOUNTING_HOLES.md),
+where a render prompted suspicion but only measured facts proved the missing holes.
+
 ---
 
 ## AI Review Rules
@@ -218,18 +225,32 @@ AI should not be asked to declare final correctness from a render alone.
 
 These are the highest-value improvements to the current validation model:
 
-1. **Model-local contracts:** allow examples and user models to declare expected
+1. **Boolean-effect assertions (highest ROI, no authoring required):** every
+   `difference` must remove volume; every `union` input must contribute volume; an
+   `intersection` must be non-empty. A subtract tool that does not intersect its
+   base, or a union input that adds nothing, is almost always a bug. TiaCAD already
+   builds every part, so it can check this automatically on every model, in CI, with
+   no per-model contract to write. This single class of check would have caught the
+   [mounting-hole bug](VALIDATION_CASE_STUDY_MOUNTING_HOLES.md) — a `difference` that
+   silently removed 0 mm³ — that 1,599 passing tests missed.
+2. **Model-local contracts:** allow examples and user models to declare expected
    dimensions, volumes, clearances, symmetry, and mesh facts in YAML.
-2. **`tiacad verify`:** evaluate model-local contracts and emit JSON plus a
+3. **`tiacad verify`:** evaluate model-local contracts and emit JSON plus a
    concise console summary.
-3. **Reference-based measurements:** measure distances, angles, and alignments
+4. **Reference-based measurements:** measure distances, angles, and alignments
    between named references such as `plate.face_top` and `shaft.axis_z`.
-4. **Stepwise summaries:** attach before/after summaries to operations in
+5. **Stepwise summaries:** attach before/after summaries to operations in
    `build_trace.json` so regressions are easier to localize.
-5. **Annotated trust renders:** render failed contracts and named references
-   directly onto review images.
-6. **Negative trust scenarios:** keep intentionally bad models that must fail
+6. **Annotated trust renders:** render failed contracts and named references
+   directly onto review images — so a picture *points at* a measured failure instead
+   of asking a human to notice it cold.
+7. **Negative trust scenarios:** keep intentionally bad models that must fail
    validation, proving validators catch real mistakes.
 
 These improvements all reinforce the same pattern: TiaCAD computes facts and
 contracts; humans and AI interpret the evidence.
+
+**Worked example:** [VALIDATION_CASE_STUDY_MOUNTING_HOLES.md](VALIDATION_CASE_STUDY_MOUNTING_HOLES.md)
+walks a real committed-example defect end to end — how it was found (render
+suspicion → numeric proof → volume-delta confirmation), why the tests missed it, and
+why boolean-effect assertions are the fix for the whole class.
