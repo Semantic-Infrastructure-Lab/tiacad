@@ -20,11 +20,7 @@ import pytest
 import tempfile
 from pathlib import Path
 
-try:
-    import trimesh
-    HAS_TRIMESH = True
-except ImportError:
-    HAS_TRIMESH = False
+import trimesh  # required dependency; ImportError here is a hard collection failure
 
 from tiacad_core.parser import TiaCADParser
 from tiacad_core.part import Part
@@ -41,9 +37,6 @@ def export_and_validate_mesh(part: Part) -> dict:
         - issues: list of strings
         - stats: dict of geometry stats
     """
-    if not HAS_TRIMESH:
-        pytest.skip("trimesh not installed")
-
     # Export to temp STL
     with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as tmp:
         tmp_path = Path(tmp.name)
@@ -92,7 +85,6 @@ def export_and_validate_mesh(part: Part) -> dict:
         tmp_path.unlink(missing_ok=True)
 
 
-@pytest.mark.skipif(not HAS_TRIMESH, reason="trimesh not installed")
 class TestSinglePartGeometry:
     """Test geometry validation for single parts"""
 
@@ -130,7 +122,6 @@ class TestSinglePartGeometry:
         assert result['stats']['watertight'] is True
 
 
-@pytest.mark.skipif(not HAS_TRIMESH, reason="trimesh not installed")
 class TestBooleanOperationGeometry:
     """Test that boolean operations produce valid unified geometry"""
 
@@ -196,7 +187,6 @@ class TestBooleanOperationGeometry:
         assert result['stats']['components'] == 1
 
 
-@pytest.mark.skipif(not HAS_TRIMESH, reason="trimesh not installed")
 class TestExampleGeometry:
     """Test that example files produce valid geometry"""
 
@@ -206,7 +196,7 @@ class TestExampleGeometry:
         yaml_path = examples_dir / "simple_guitar_hanger.yaml"
 
         if not yaml_path.exists():
-            pytest.skip(f"Example not found: {yaml_path}")
+            pytest.fail(f"Example not found: {yaml_path} — example was deleted or renamed")
 
         # Parse and build
         doc = TiaCADParser.parse_file(str(yaml_path))
@@ -238,7 +228,7 @@ class TestExampleGeometry:
         yaml_path = examples_dir / "bracket_with_hole.yaml"
 
         if not yaml_path.exists():
-            pytest.skip(f"Example not found: {yaml_path}")
+            pytest.fail(f"Example not found: {yaml_path} — example was deleted or renamed")
 
         doc = TiaCADParser.parse_file(str(yaml_path))
 
@@ -261,7 +251,7 @@ class TestExampleGeometry:
         yaml_path = examples_dir / "awesome_guitar_hanger.yaml"
 
         if not yaml_path.exists():
-            pytest.skip(f"Example not found: {yaml_path}")
+            pytest.fail(f"Example not found: {yaml_path} — example was deleted or renamed")
 
         doc = TiaCADParser.parse_file(str(yaml_path))
 

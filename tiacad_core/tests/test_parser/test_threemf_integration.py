@@ -13,15 +13,7 @@ from pathlib import Path
 import zipfile
 
 from tiacad_core.parser.tiacad_parser import TiaCADParser
-from tiacad_core.exporters.threemf_exporter import ThreeMFExportError
-
-# Skip all tests in this module if lib3mf is not available
-# We need to check if the export function can actually import lib3mf
-try:
-    # This will fail if lib3mf can't be imported inside the exporter
-    from tiacad_core.exporters.threemf_exporter import export_3mf as _test_import
-except ImportError:
-    pytest.skip("lib3mf not installed (optional dependency for 3MF export)", allow_module_level=True)
+from tiacad_core.exporters.threemf_exporter import ThreeMFExportError, export_3mf  # noqa: F401 — lib3mf is a required dependency; ImportError here is a hard collection failure
 
 
 class TestBasicYAMLTo3MF:
@@ -66,11 +58,8 @@ parts:
             # Should be valid ZIP
             assert zipfile.is_zipfile(output_path)
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
     def test_export_returns_path(self, simple_yaml, tmp_path):
         """export_3mf should return without error"""
@@ -84,11 +73,8 @@ parts:
             assert result is None
             assert output_path.exists()
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class TestColoredPartsExport:
@@ -145,11 +131,8 @@ parts:
             # File should be substantial (3 parts with colors)
             assert output_path.stat().st_size > 1000
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
     def test_palette_colors_exported(self, colored_yaml, tmp_path):
         """Palette color references should be exported"""
@@ -171,11 +154,8 @@ parts:
             doc.export_3mf(str(output_path))
             assert output_path.exists()
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class TestMaterialLibraryExport:
@@ -232,11 +212,8 @@ parts:
             assert output_path.exists()
             assert output_path.stat().st_size > 2000
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
     def test_materials_in_metadata(self, material_yaml, tmp_path):
         """Material names should be in part metadata"""
@@ -249,11 +226,8 @@ parts:
             assert aluminum.metadata['material'] == 'aluminum'
             assert 'color' in aluminum.metadata  # Should have color from material
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class TestTransparentPartsExport:
@@ -308,11 +282,8 @@ parts:
             doc.export_3mf(str(output_path))
             assert output_path.exists()
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class TestMultiMaterialExport:
@@ -415,11 +386,8 @@ parts:
                 files = zf.namelist()
                 assert len(files) > 0
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
     def test_all_color_formats_supported(self, multi_material_yaml, tmp_path):
         """All color format types should export correctly"""
@@ -449,11 +417,8 @@ parts:
             # Export all
             doc.export_3mf(str(tmp_path / "all_formats.3mf"))
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class TestMetadataExport:
@@ -501,11 +466,8 @@ parts:
             doc.export_3mf(str(output_path))
             assert output_path.exists()
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class TestExistingDemoFiles:
@@ -516,7 +478,7 @@ class TestExistingDemoFiles:
         demo_path = Path("examples/color_demo.yaml")
 
         if not demo_path.exists():
-            pytest.skip("color_demo.yaml not found")
+            pytest.fail(f"{demo_path} not found — example was deleted or renamed")
 
         output_path = tmp_path / "color_demo.3mf"
 
@@ -530,18 +492,15 @@ class TestExistingDemoFiles:
             # Should be substantial (7 parts)
             assert output_path.stat().st_size > 10000
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
     def test_multi_material_demo_export(self, tmp_path):
         """Export multi_material_demo.yaml if it exists"""
         demo_path = Path("examples/multi_material_demo.yaml")
 
         if not demo_path.exists():
-            pytest.skip("multi_material_demo.yaml not found")
+            pytest.fail(f"{demo_path} not found — example was deleted or renamed")
 
         output_path = tmp_path / "multi_material_demo.3mf"
 
@@ -552,11 +511,8 @@ class TestExistingDemoFiles:
             assert output_path.exists()
             assert output_path.stat().st_size > 10000
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class TestEdgeCases:
@@ -611,11 +567,8 @@ parts:
             # Should use default colors
             assert output_path.exists()
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
     def test_export_to_existing_file(self, tmp_path):
         """Exporting should overwrite existing file"""
@@ -650,11 +603,8 @@ parts:
             # Should be same size (or very similar)
             assert abs(first_size - second_size) < 100
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
 
 class Test3MFValidation:
@@ -692,11 +642,8 @@ parts:
                 files = zf.namelist()
                 assert len(files) > 0
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise
 
     def test_3mf_file_extension(self, tmp_path):
         """Should accept .3mf extension"""
@@ -726,8 +673,5 @@ parts:
             assert output_3mf.exists()
             assert zipfile.is_zipfile(output_3mf)
 
-        except ThreeMFExportError as e:
-            if "lib3mf" in str(e).lower():
-                pytest.skip("lib3mf not installed")
-            else:
-                raise
+        except ThreeMFExportError:
+            raise

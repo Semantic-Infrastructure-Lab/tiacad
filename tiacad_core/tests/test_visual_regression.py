@@ -48,8 +48,11 @@ def get_all_example_files() -> List[Path]:
 
     yaml_files = list(EXAMPLES_DIR.glob("*.yaml"))
 
-    # Exclude error demo (intentionally fails)
-    yaml_files = [f for f in yaml_files if "error_demo" not in f.name]
+    # Exclude examples intentionally broken for other tests (mirrors
+    # scripts/validate_examples.py EXPECTED_FAILURES) — a real parse/build
+    # failure on everything else should now fail loudly, not skip.
+    intentionally_broken = {"error_demo.yaml", "pipe_sweep.yaml", "dag_test_cycle.yaml"}
+    yaml_files = [f for f in yaml_files if f.name not in intentionally_broken]
 
     return sorted(yaml_files)
 
@@ -112,15 +115,13 @@ class TestVisualRegressionExamples:
         try:
             model = parser.parse_file(str(yaml_file))
         except Exception as e:
-            pytest.skip(f"Could not parse {yaml_file.name}: {e}")
-            return
+            pytest.fail(f"Could not parse {yaml_file.name}: {e}")
 
         # Get final assembly
         try:
             assembly = model.get_assembly()
         except Exception as e:
-            pytest.skip(f"Could not build assembly for {yaml_file.name}: {e}")
-            return
+            pytest.fail(f"Could not build assembly for {yaml_file.name}: {e}")
 
         # Visual regression test
         test_name = get_example_name(yaml_file)

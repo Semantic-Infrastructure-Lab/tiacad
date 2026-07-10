@@ -496,6 +496,21 @@ required test deps non-optional in CI (4.5). Until the safety net is guaranteed
 to *run*, every other number is unreliable. This is the cheapest, highest-value
 change in the whole plan.
 
+**Shipped 2026-07-10:** the `HAS_TRIMESH`-gated skips in
+`test_geometry_validation.py`, the module-level `lib3mf`-missing skip and its
+16 per-test `except ThreeMFExportError: skip` fallbacks in
+`test_threemf_integration.py`, and the parse/build-failure and
+missing-example skips in `test_visual_regression.py` /
+`test_threemf_integration.py` are now hard failures — all three deps
+(`trimesh`, `lib3mf`, `jsonschema`) are `pyproject.toml`/`requirements.txt`
+required dependencies, so an import failure is a broken environment, not an
+optional feature. `tests.yml` also gained an explicit import-guard step that
+fails CI immediately if any required dependency can't import, rather than
+letting it degrade silently into downstream skips. Not yet done: 4.5b (CI
+validation-gap fixes — `example-validation.yml` still only parses, and
+`visual-regression.yml` still self-generates missing references) and the rest
+of Phase 1.
+
 **Phase 1 — Foundations (days, high yield):** metamorphic suite (4.3),
 determinism gate (4.4), CI validation-gap fixes (4.5b), schema reconciliation
 (4.8). No new infrastructure; immediate strengthening.
