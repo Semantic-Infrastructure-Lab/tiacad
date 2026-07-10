@@ -1,12 +1,16 @@
 """
 Trust renderer for TiaCAD — multi-view colored renders for visual verification.
 
-Renders each part in a distinct color with 6 viewpoints (2×3 grid):
-  Row 0: Iso (shaded + feature edges), X-Ray (transparent + edges), Top (XY)
-  Row 1: Front (XZ), Side (YZ), Bottom (XY)
+Renders each part in a distinct color with 8 viewpoints (2×4 grid):
+  Row 0: Iso front (shaded + edges), Iso rear (shaded + edges), X-Ray, Top (XY)
+  Row 1: Front (XZ), Rear (XZ), Side (YZ), Bottom (XY)
+
+The two isometrics view from opposite diagonals so no side face is hidden from
+both — a part mirrored to the wrong side or a feature on a back face shows up in
+at least one view, instead of passing review unseen.
 
 Feature edges replace the old cell-count threshold — draws only real geometric
-boundaries (dihedral angle > 25°), so boxes get clean outlines and curved
+boundaries (dihedral angle > 40°), so boxes get clean outlines and curved
 surfaces get rim/silhouette edges without tessellation noise.
 
 Orthographic panels show bounding-box dimensions so you can immediately verify
@@ -14,6 +18,14 @@ Orthographic panels show bounding-box dimensions so you can immediately verify
 
 X-Ray panel renders geometry transparent so internal features, standoffs, and
 boolean cuts are visible through the shell.
+
+Composite decomposition: when the final part is a union of several components
+(a printable assembly fused into one solid), the renderer walks the operation
+DAG and draws each additive component in its own color, with subtracted parts
+shown as translucent-red voids in the X-Ray panel. Otherwise a flat single-color
+solid would hide whether the parts are actually connected or correctly placed.
+Metadata colors are ignored for these components — assembly parts often share one
+color, which would defeat the decomposition.
 
 Usage:
     from tiacad_core.visual.trust_renderer import render_trust
@@ -67,22 +79,30 @@ PART_PALETTE = [
 # Camera views: (label, position_direction, view_up, parallel_projection, mode)
 # mode: "shaded" | "xray" | "ortho"
 #
-# Row 0: isometric shaded, x-ray (same angle, transparent), top-down ortho
-# Row 1: three orthographic views with dimension overlays
+# 8 panels in a 2×4 grid. The two isometrics view from opposite diagonals
+# (front-right-top and back-left-top) so no side face is hidden from both — a
+# part mirrored to the wrong side or a feature on a back face is visible in at
+# least one. X-Ray reveals internal/occluded features at the front angle.
+#
+# Row 0 (spatial): Iso front | Iso rear | X-Ray | Top
+# Row 1 (orthographic + dims): Front | Rear | Side | Bottom
 VIEWS = [
-    ("Iso (shaded)",  ( 1.0, -1.2,  0.8), (0, 0, 1), False, "shaded"),  # row0 col0
-    ("X-Ray",         ( 1.0, -1.2,  0.8), (0, 0, 1), False, "xray"),    # row0 col1
-    ("Top      (XY)", ( 0.0,  0.0,  1.0), (0, 1, 0), True,  "ortho"),   # row0 col2
+    ("Iso (front)",   ( 1.0, -1.2,  0.8), (0, 0, 1), False, "shaded"),  # row0 col0
+    ("Iso (rear)",    (-1.0,  1.2,  0.8), (0, 0, 1), False, "shaded"),  # row0 col1
+    ("X-Ray",         ( 1.0, -1.2,  0.8), (0, 0, 1), False, "xray"),    # row0 col2
+    ("Top      (XY)", ( 0.0,  0.0,  1.0), (0, 1, 0), True,  "ortho"),   # row0 col3
     ("Front    (XZ)", ( 0.0, -1.0,  0.0), (0, 0, 1), True,  "ortho"),   # row1 col0
-    ("Side     (YZ)", ( 1.0,  0.0,  0.0), (0, 0, 1), True,  "ortho"),   # row1 col1
-    ("Bottom   (XY)", ( 0.0,  0.0, -1.0), (0, 1, 0), True,  "ortho"),   # row1 col2
+    ("Rear     (XZ)", ( 0.0,  1.0,  0.0), (0, 0, 1), True,  "ortho"),   # row1 col1
+    ("Side     (YZ)", ( 1.0,  0.0,  0.0), (0, 0, 1), True,  "ortho"),   # row1 col2
+    ("Bottom   (XY)", ( 0.0,  0.0, -1.0), (0, 1, 0), True,  "ortho"),   # row1 col3
 ]
-GRID_COLS = 3
+GRID_COLS = 4
 
 # Which two dimensions to display for each orthographic view
 _ORTHO_DIMS = {
     "Top      (XY)":  ("X", "Y"),
     "Front    (XZ)":  ("X", "Z"),
+    "Rear     (XZ)":  ("X", "Z"),
     "Side     (YZ)":  ("Y", "Z"),
     "Bottom   (XY)":  ("X", "Y"),
 }
@@ -218,6 +238,98 @@ def _collect_parts_data(doc) -> list[tuple[str, pv.PolyData, tuple]]:
     return parts_data
 
 
+def _collect_component_parts(doc) -> tuple[list, list]:
+    """
+    Walk the final part's operation DAG and split its source leaves into
+    additive (union ingredients) and subtractive (difference cutouts).
+
+    Each returned name is a part in the registry at its final position. Unions
+    are flattened to their leaves; a difference sends its base down the current
+    sign and its subtracted inputs down the flipped sign. Transforms, patterns,
+    finishing ops, intersections, and primitives are opaque leaves — their
+    registry geometry is what we draw.
+    """
+    from ..parser.tiacad_parser import resolve_default_part_name
+
+    operations = doc.operations or {}
+    try:
+        root = resolve_default_part_name(doc.parts, operations, doc.export_config)
+    except Exception:
+        return [], []
+
+    additive: list = []
+    subtractive: list = []
+    visited: set = set()
+
+    def walk(name: str, is_additive: bool) -> None:
+        if name in visited:
+            return
+        visited.add(name)
+        op = operations.get(name)
+        if op is None:
+            (additive if is_additive else subtractive).append(name)
+            return
+        if op.get("type") == "boolean":
+            operation = op.get("operation")
+            if operation == "union":
+                for inp in op.get("inputs", []):
+                    walk(inp, is_additive)
+                return
+            if operation == "difference":
+                base = op.get("base")
+                if base:
+                    walk(base, is_additive)
+                for sub in op.get("subtract", []):
+                    walk(sub, not is_additive)
+                return
+        # transform / pattern / finishing / intersection / unknown → opaque leaf
+        (additive if is_additive else subtractive).append(name)
+
+    walk(root, True)
+    return additive, subtractive
+
+
+def _build_component_data(doc, names: list, palette_offset: int = 0):
+    """Build (name, mesh, color) tuples for named parts using distinct palette
+    colors. Metadata colors are deliberately ignored — assembly parts frequently
+    share one color, which would defeat the whole point of decomposition."""
+    data = []
+    for i, name in enumerate(names):
+        if name not in doc.parts:
+            continue
+        part = doc.parts.get(name)
+        if part is None or part.geometry is None:
+            continue
+        mesh = _part_to_pyvista(part)
+        if mesh is None:
+            continue
+        color = _hex_to_rgb_float(PART_PALETTE[(palette_offset + i) % len(PART_PALETTE)])
+        data.append((name, mesh, color))
+    return data
+
+
+def _collect_render_data(doc) -> tuple[list, list]:
+    """
+    Return (solids, voids) render tuples.
+
+    When the final part is a single composite — a union/difference tree with more
+    than one additive component — decompose it: each additive component gets a
+    distinct color and each subtracted component becomes a translucent-red void
+    (shown in the X-Ray panel), so part identity AND cutouts stay visible instead
+    of collapsing into one flat-colored solid. Otherwise fall back to plain
+    visible-part rendering (already-separate multi-part scenes, single primitives).
+    """
+    visible = _collect_visible_part_names(doc)
+    if len(visible) == 1 and visible[0] in (doc.operations or {}):
+        additive, subtractive = _collect_component_parts(doc)
+        if len(additive) > 1:
+            solids = _build_component_data(doc, additive)
+            if len(solids) > 1:
+                voids = _build_component_data(doc, subtractive)
+                return solids, voids
+    return _collect_parts_data(doc), []
+
+
 def _compute_scene_metrics(parts_data, parameters: dict) -> SceneMetrics:
     """Compute scene bounds, extents, and dimension labels."""
     all_bounds = np.array([mesh.bounds for _, mesh, _ in parts_data])
@@ -248,8 +360,16 @@ def _create_plotter(width: int, height: int) -> pv.Plotter:
     return plotter
 
 
-def _add_view_meshes(plotter: pv.Plotter, parts_data, mode: str) -> None:
-    """Add all part meshes to the current subplot using the requested mode."""
+_VOID_COLOR = (0.85, 0.15, 0.15)  # translucent red for subtracted (cutout) parts
+
+
+def _add_view_meshes(plotter: pv.Plotter, parts_data, voids_data, mode: str) -> None:
+    """Add all part meshes to the current subplot using the requested mode.
+
+    Subtracted parts (voids) are drawn only in the X-Ray panel: they sit inside
+    the solid components, so opaque panels would occlude them anyway — X-Ray is
+    exactly where a cutout should read.
+    """
     for _name, mesh, color in parts_data:
         if mode == "xray":
             plotter.add_mesh(
@@ -268,7 +388,7 @@ def _add_view_meshes(plotter: pv.Plotter, parts_data, mode: str) -> None:
                 mesh,
                 color=color,
                 show_edges=False,
-                opacity=0.97,
+                opacity=1.0,
                 smooth_shading=False,
                 specular=0.3,
                 specular_power=20,
@@ -276,6 +396,19 @@ def _add_view_meshes(plotter: pv.Plotter, parts_data, mode: str) -> None:
                 diffuse=0.85,
             )
             _add_feature_edges(plotter, mesh, color=(0, 0, 0), line_width=1.5)
+
+    if mode == "xray":
+        for _name, mesh, _color in voids_data:
+            plotter.add_mesh(
+                mesh,
+                color=_VOID_COLOR,
+                opacity=0.35,
+                show_edges=False,
+                smooth_shading=False,
+                ambient=0.5,
+                diffuse=0.5,
+            )
+            _add_feature_edges(plotter, mesh, color=(0.5, 0.0, 0.0), line_width=1.2)
 
 
 def _maybe_add_view_labels(plotter: pv.Plotter, parts_data, mode: str) -> None:
@@ -325,13 +458,13 @@ def _set_view_camera(plotter: pv.Plotter, pos_dir, view_up, parallel: bool, metr
     plotter.reset_camera_clipping_range()
 
 
-def _render_view(plotter: pv.Plotter, idx: int, parts_data, metrics: SceneMetrics) -> None:
+def _render_view(plotter: pv.Plotter, idx: int, parts_data, voids_data, metrics: SceneMetrics) -> None:
     """Render one configured trust-render view into the plotter grid."""
     view_label, pos_dir, view_up, parallel, mode = VIEWS[idx]
     row, col = divmod(idx, GRID_COLS)
     plotter.subplot(row, col)
 
-    _add_view_meshes(plotter, parts_data, mode)
+    _add_view_meshes(plotter, parts_data, voids_data, mode)
     _add_axes_widget(plotter)
     _maybe_add_view_labels(plotter, parts_data, mode)
     _maybe_add_dimension_overlay(plotter, view_label, mode, metrics)
@@ -339,11 +472,11 @@ def _render_view(plotter: pv.Plotter, idx: int, parts_data, metrics: SceneMetric
     plotter.add_title(view_label, font_size=10, color="black")
 
 
-def _render_views(parts_data, metrics: SceneMetrics, width: int, height: int):
+def _render_views(parts_data, voids_data, metrics: SceneMetrics, width: int, height: int):
     """Render all configured trust-render subplots and return the screenshot array."""
     plotter = _create_plotter(width, height)
     for idx in range(len(VIEWS)):
-        _render_view(plotter, idx, parts_data, metrics)
+        _render_view(plotter, idx, parts_data, voids_data, metrics)
     screenshot = plotter.screenshot(return_img=True)
     plotter.close()
     return screenshot
@@ -379,15 +512,19 @@ def render_trust(
     doc,
     output_path: str,
     title: Optional[str] = None,
-    width: int = 1800,
+    width: int = 2200,
     height: int = 1000,
 ) -> str:
     """
-    Render a TiaCADDocument to a 6-panel trust PNG.
+    Render a TiaCADDocument to an 8-panel trust PNG.
 
     Panels:
-      Row 0: Iso shaded+edges | X-Ray transparent+edges | Top (XY)
-      Row 1: Front (XZ) +dims | Side (YZ) +dims         | Bottom (XY)
+      Row 0: Iso front (shaded+edges) | Iso rear (shaded+edges) | X-Ray | Top (XY)
+      Row 1: Front (XZ) +dims | Rear (XZ) +dims | Side (YZ) +dims | Bottom (XY)
+
+    A composite final part (multiple components fused by union) is decomposed so
+    each component renders in a distinct color, with subtracted parts shown as
+    translucent-red voids in the X-Ray panel. See `_collect_render_data`.
 
     Args:
         doc: Parsed TiaCADDocument
@@ -400,16 +537,16 @@ def render_trust(
         Absolute path to the written PNG
     """
     _maybe_start_xvfb()
-    parts_data = _collect_parts_data(doc)
+    parts_data, voids_data = _collect_render_data(doc)
 
     if not parts_data:
         raise ValueError("No renderable geometry found in document")
 
     metrics = _compute_scene_metrics(parts_data, doc.parameters)
     description = ((doc.metadata or {}).get("description") or "").strip()
-    screenshot = _render_views(parts_data, metrics, width, height)
+    screenshot = _render_views(parts_data, voids_data, metrics, width, height)
     render_img = Image.fromarray(screenshot)
-    final_img = _add_legend(render_img, parts_data, title, description, width, height)
+    final_img = _add_legend(render_img, parts_data, voids_data, title, description, width, height)
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -501,9 +638,29 @@ def _draw_description_legend(
     return y
 
 
+def _draw_voids_legend(draw: ImageDraw.ImageDraw, x0: int, y: int, voids_data: list,
+                       swatch: int, gap: int, legend_width: int) -> int:
+    """Draw the cutouts (subtracted parts) legend block and return next y."""
+    if not voids_data:
+        return y
+    y += 10
+    y = _draw_legend_separator(draw, x0, y, legend_width)
+    draw.text((x0, y), "Cutouts (X-Ray)", fill=(80, 80, 80))
+    y += 18
+    r, g, b = (int(c * 255) for c in _VOID_COLOR)
+    max_label = 22
+    for name, _mesh, _color in voids_data:
+        draw.rectangle([x0, y, x0 + swatch, y + swatch], fill=(r, g, b), outline=(0, 0, 0))
+        label = name if len(name) <= max_label else name[:max_label - 1] + "…"
+        draw.text((x0 + swatch + gap, y + 1), label, fill=(30, 30, 30))
+        y += swatch + gap
+    return y
+
+
 def _add_legend(
     render_img: Image.Image,
     parts_data: list,
+    voids_data: list,
     title: Optional[str],
     description: str,
     width: int,
@@ -520,6 +677,7 @@ def _add_legend(
 
     y = _draw_legend_title(draw, x0, y, title, legend_width)
     y, swatch, gap = _draw_parts_legend(draw, x0, y, parts_data)
+    y = _draw_voids_legend(draw, x0, y, voids_data, swatch, gap, legend_width)
     y = _draw_axes_legend(draw, x0, y, swatch, gap, legend_width)
     _draw_description_legend(draw, x0, y, description, legend_width, height)
 
