@@ -1194,6 +1194,64 @@ class TestGuitarHangerNamedPoints:
 
 
 # ---------------------------------------------------------------------------
+# Tier 2: awesome_guitar_hanger — mounting holes must actually pierce the plate
+#
+# Regression guard for the bug fixed 2026-07-09 (see
+# docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md): the screw-hole
+# `difference` cuts subtracted from empty air and 1,599 passing volume-range
+# tests never noticed, because a plate with no holes has a volume that still
+# falls inside a plausible range. These tests check hole *presence* directly —
+# via the pre/post-subtraction volume delta and bounding-box overlap — so a
+# `difference` that silently does nothing fails loudly again.
+# ---------------------------------------------------------------------------
+
+class TestAwesomeGuitarHangerHoles:
+    """
+    examples/awesome_guitar_hanger.yaml: mounting_plate spans
+    X[-60,60] Y[-45,45] Z[-7.5,7.5] (plate_width=120, plate_height=90,
+    plate_thickness=15). Screw shafts (radius 2.5, height 17) and
+    countersinks (radius 5, height 4) are subtracted from
+    structure_with_grips to produce the final awesome_guitar_hanger part.
+    """
+
+    def _parse(self):
+        return TiaCADParser.parse_file(str(EXAMPLES / "awesome_guitar_hanger.yaml"))
+
+    def test_subtraction_removes_expected_volume(self):
+        """difference removes ~1,001mm³: 2 through-holes (589mm³) + 2 countersinks (412mm³)."""
+        doc = self._parse()
+        pre = get_dimensions(doc.parts.get("structure_with_grips"))["volume"]
+        post = get_dimensions(doc.parts.get("awesome_guitar_hanger"))["volume"]
+        assert (pre - post) == pytest.approx(1_001.4, abs=5.0)
+
+    def test_screw_shafts_pierce_plate(self):
+        """Each shaft's Z extent must fully straddle the plate's Z extent (a through-hole)."""
+        doc = self._parse()
+        plate_bounds = doc.parts.get("mounting_plate").get_bounds()
+        for shaft_name in ("left_screw_shaft", "right_screw_shaft"):
+            shaft_bounds = doc.parts.get(shaft_name).get_bounds()
+            assert shaft_bounds["min"][2] < plate_bounds["min"][2], (
+                f"{shaft_name} does not pierce the plate's bottom face"
+            )
+            assert shaft_bounds["max"][2] > plate_bounds["max"][2], (
+                f"{shaft_name} does not pierce the plate's top face"
+            )
+
+    def test_countersinks_land_on_plate_top(self):
+        """Each countersink's X/Y center must fall within the plate footprint, not off its edge."""
+        doc = self._parse()
+        plate_bounds = doc.parts.get("mounting_plate").get_bounds()
+        for cs_name in ("left_countersink", "right_countersink"):
+            cs_center = doc.parts.get(cs_name).get_bounds()["center"]
+            assert plate_bounds["min"][0] < cs_center[0] < plate_bounds["max"][0], (
+                f"{cs_name} X center falls outside the plate footprint"
+            )
+            assert plate_bounds["min"][1] < cs_center[1] < plate_bounds["max"][1], (
+                f"{cs_name} Y center falls outside the plate footprint"
+            )
+
+
+# ---------------------------------------------------------------------------
 # Tier 2: week5_assembly — gear cylinder on shaft, volume from formula
 # ---------------------------------------------------------------------------
 
