@@ -1156,6 +1156,16 @@ class TestGuitarHangerNamedPoints:
       → X=100, Y=75, Z=10  (TiaCAD box: width→X, depth→Y, height→Z)
       vol = 100 × 75 × 10 = 75,000mm³
 
+    plate_with_holes: plate minus 2 screw_hole cylinders (radius=2.25, straight
+      through the 10mm plate thickness — no countersink in this example).
+      Fixed 2026-07-10 (see docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md):
+      screw positions previously put the vertical value in Z instead of Y, so the
+      holes floated above the plate and this part's volume was indistinguishable
+      from the unpierced plate — the same bug class as awesome_guitar_hanger, only
+      caught here once BooleanEffectRule started checking that a `difference`
+      actually removes volume.
+      vol = 75,000 - 2 × (π × 2.25² × 10) = 75,000 - 318.09 ≈ 74,681.9mm³
+
     beam: box(width=beam_width=75, height=beam_height=10, depth=beam_depth=10)
       → X=75, Y=10, Z=10
       vol = 75 × 10 × 10 = 7,500mm³
@@ -1173,10 +1183,23 @@ class TestGuitarHangerNamedPoints:
         assert dims["depth"] == pytest.approx(10.0, abs=TOL)    # Z: plate_depth
 
     def test_plate_volume(self):
-        """Plate vol = plate_width × plate_height × plate_depth = 75,000mm³."""
+        """plate_with_holes vol = 75,000 - 2 × through-hole volume ≈ 74,681.9mm³."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("plate_with_holes"))
-        assert dims["volume"] == pytest.approx(75_000.0, abs=VOL_TOL)
+        assert dims["volume"] == pytest.approx(74_681.9, abs=VOL_TOL)
+
+    def test_screw_holes_pierce_plate(self):
+        """Regression guard: both holes must fully straddle the plate's Z extent (the 10mm thickness)."""
+        doc = self._parse()
+        plate_bounds = doc.parts.get("plate").get_bounds()
+        for hole_name in ("left_screw_hole", "right_screw_hole"):
+            hole_bounds = doc.parts.get(hole_name).get_bounds()
+            assert hole_bounds["min"][2] < plate_bounds["min"][2], (
+                f"{hole_name} does not pierce the plate's bottom face"
+            )
+            assert hole_bounds["max"][2] > plate_bounds["max"][2], (
+                f"{hole_name} does not pierce the plate's top face"
+            )
 
     def test_beam_dimensions(self):
         """Beam: W=beam_width=75, H=beam_depth=10, D=beam_height=10."""

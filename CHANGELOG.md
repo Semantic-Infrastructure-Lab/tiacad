@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-10
+
+#### Boolean-effect assertions (`BooleanEffectRule`)
+
+Closes the systemic validation gap identified by the `awesome_guitar_hanger` mounting-hole
+bug (`docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md`): every `difference` must
+remove measurable volume from its base, every `intersection` must be non-empty, and a
+`union`'s result cannot be smaller than its largest input. Runs automatically as part of
+`AssemblyValidator` (`tiacad_core/validation/rules/boolean_effect_rule.py`) on every model,
+in CI, with no per-model contract to write — flows into `validation_report.json` via the
+existing debug-bundle pipeline for free.
+
+The rule caught a second, previously-unknown instance of the exact same bug class in
+`examples/guitar_hanger_named_points.yaml` the same session it shipped: `plate_with_holes`'s
+screw holes had the same Y/Z axis-mapping error as `awesome_guitar_hanger` and never
+actually cut the plate. Fixed alongside the rule; `TestGuitarHangerNamedPoints` gained a
+hole-piercing regression test.
+
+Also adds `TestAwesomeGuitarHangerHoles` to `test_example_contracts.py`, closing the gap
+where that example had only a generic positive-volume smoke test — nothing previously
+guarded the 2026-07-09 hole fix against silently regressing.
+
 ### Changed - 2026-07-09
 
 #### Trust renderer: 8-panel grid with opposite-diagonal isometrics (restores rear coverage)

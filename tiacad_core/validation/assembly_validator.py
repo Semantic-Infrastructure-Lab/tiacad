@@ -24,6 +24,7 @@ from .rules import (
     ParameterSanityRule,
     BoundingBoxRule,
     BooleanGapsRule,
+    BooleanEffectRule,
     FeatureBoundsRule,
     UnusedPartsRule,
 )
@@ -65,6 +66,7 @@ class AssemblyValidator:
             DisconnectedPartsRule(tolerance),
             HoleEdgeProximityRule(tolerance),
             BooleanGapsRule(tolerance),
+            BooleanEffectRule(tolerance),
             FeatureBoundsRule(tolerance),
         ]
 
@@ -166,6 +168,10 @@ class AssemblyValidator:
     def check_boolean_gaps(self, document) -> List[ValidationIssue]:
         """Legacy method - delegates to BooleanGapsRule."""
         return BooleanGapsRule(self.tolerance).check(document)
+
+    def check_boolean_effect(self, document) -> List[ValidationIssue]:
+        """Legacy method - delegates to BooleanEffectRule."""
+        return BooleanEffectRule(self.tolerance).check(document)
 
     def check_feature_bounds(self, document) -> List[ValidationIssue]:
         """Legacy method - delegates to FeatureBoundsRule."""

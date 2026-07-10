@@ -10,6 +10,7 @@ from .hole_edge_proximity_rule import HoleEdgeProximityRule
 from .parameter_sanity_rule import ParameterSanityRule
 from .bounding_box_rule import BoundingBoxRule
 from .boolean_gaps_rule import BooleanGapsRule
+from .boolean_effect_rule import BooleanEffectRule
 from .feature_bounds_rule import FeatureBoundsRule
 from .unused_parts_rule import UnusedPartsRule
 
@@ -20,6 +21,7 @@ __all__ = [
     'ParameterSanityRule',
     'BoundingBoxRule',
     'BooleanGapsRule',
+    'BooleanEffectRule',
     'FeatureBoundsRule',
     'UnusedPartsRule',
 ]

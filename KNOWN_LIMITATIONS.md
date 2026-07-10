@@ -214,9 +214,12 @@ at `Z=7.5`).
 
 **Why it matters beyond one example:** 1,599 passing tests never caught it — the
 `TestGuitarHanger*` contracts check volume *ranges*, not hole presence. The systemic gap
-(no assertion that a `difference` actually removes volume) is still unbuilt — see
+(no assertion that a `difference` actually removes volume) is now closed by
+`BooleanEffectRule` — see
 [docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md](docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md)
-and [MODEL_VALIDATION.md](docs/developer/MODEL_VALIDATION.md#best-next-improvements).
+and [MODEL_VALIDATION.md](docs/developer/MODEL_VALIDATION.md#best-next-improvements). The
+new rule caught a second, independent instance of this exact bug class in
+`guitar_hanger_named_points.yaml` the same session it shipped (also fixed).
 
 ---
 
@@ -226,12 +229,13 @@ TiaCAD has broad automated coverage for parser behavior, geometry correctness, D
 
 Known areas to keep an eye on:
 - Geometry regressions around boolean merges in complex examples
-- **Booleans that silently do nothing** — a `difference` whose tool misses the base, or
-  a `union` input that adds no volume, currently passes range-based contracts (the
-  `awesome_guitar_hanger` mounting-hole bug in limitation #6 above was an instance of
-  this). See
-  [MODEL_VALIDATION.md](docs/developer/MODEL_VALIDATION.md#best-next-improvements)
-  (boolean-effect assertions).
+- **Booleans that silently do nothing** — `BooleanEffectRule`
+  (`tiacad_core/validation/rules/boolean_effect_rule.py`, shipped 2026-07-10) now checks
+  every `difference`/`intersection`/`union` for a measurable effect on every model, with
+  no per-model contract to write. See
+  [MODEL_VALIDATION.md](docs/developer/MODEL_VALIDATION.md#best-next-improvements). Known
+  gap: the `union` check is whole-result only — an input that fully overlaps an
+  already-placed part (contributing nothing) is not flagged per-input.
 - Visual/regression scenarios that depend on OCCT behavior
 - Example-specific limitations documented in `examples/` and the active test suite
 

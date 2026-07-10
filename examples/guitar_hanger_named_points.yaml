@@ -89,19 +89,22 @@ references:
     offset: ['${arm_spacing / 2}', 0, 0]
 
   # Absolute point references (v3.0 format)
+  # plate: box(width=100, height=plate_depth=10 -> Z, depth=plate_height=75 -> Y).
+  # The vertical positioning value (screw_offset_from_top) must land in the Y
+  # component, not Z, or the holes float above the plate instead of piercing it.
   left_screw_pos:
     type: point
     value:
       - '${-screw_spacing / 2}'
-      - 0
       - '${plate_height/2 - screw_offset_from_top}'
+      - 0
 
   right_screw_pos:
     type: point
     value:
       - '${screw_spacing / 2}'
-      - 0
       - '${plate_height/2 - screw_offset_from_top}'
+      - 0
 
   # Arm positioning (offset from beam)
   left_arm_start:

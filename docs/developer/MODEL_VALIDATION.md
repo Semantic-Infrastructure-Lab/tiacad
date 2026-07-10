@@ -225,14 +225,20 @@ AI should not be asked to declare final correctness from a render alone.
 
 These are the highest-value improvements to the current validation model:
 
-1. **Boolean-effect assertions (highest ROI, no authoring required):** every
-   `difference` must remove volume; every `union` input must contribute volume; an
-   `intersection` must be non-empty. A subtract tool that does not intersect its
-   base, or a union input that adds nothing, is almost always a bug. TiaCAD already
-   builds every part, so it can check this automatically on every model, in CI, with
-   no per-model contract to write. This single class of check would have caught the
-   [mounting-hole bug](VALIDATION_CASE_STUDY_MOUNTING_HOLES.md) — a `difference` that
-   silently removed 0 mm³ — that 1,599 passing tests missed.
+1. ~~**Boolean-effect assertions**~~ **Shipped 2026-07-10:** `BooleanEffectRule`
+   (`tiacad_core/validation/rules/boolean_effect_rule.py`) checks, on every model, with
+   no per-model contract to write: every `difference` must remove measurable volume
+   from its base; every `intersection` must be non-empty; a `union`'s result cannot be
+   smaller than its largest input. Runs as part of `AssemblyValidator` — flows into
+   `validation_report.json` automatically via the existing debug-bundle pipeline. This
+   is the check that would have caught the
+   [mounting-hole bug](VALIDATION_CASE_STUDY_MOUNTING_HOLES.md) — and did in fact catch
+   a second, previously-unknown instance of the same bug class in
+   `guitar_hanger_named_points.yaml` the same session it was added (also fixed;
+   `plate_with_holes`'s screw holes were floating above the plate the same way).
+   Known gap: the `union` check is a whole-result sanity check, not per-input — a union
+   input that fully overlaps an already-placed part (contributing nothing) will not be
+   flagged. See `tiacad_core/tests/test_validation/test_boolean_effect_rule.py`.
 2. **Model-local contracts:** allow examples and user models to declare expected
    dimensions, volumes, clearances, symmetry, and mesh facts in YAML.
 3. **`tiacad verify`:** evaluate model-local contracts and emit JSON plus a

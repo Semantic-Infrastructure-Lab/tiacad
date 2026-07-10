@@ -23,6 +23,7 @@ class ValidationConstants:
 
     # Numeric thresholds
     MIN_PARTS_FOR_CONNECTIVITY_CHECK = 2  # Need at least 2 parts to check connectivity
+    MIN_SIGNIFICANT_VOLUME = 1.0  # mm³ - boolean-effect volume change below this is noise, not a real cut/overlap
 
     # Formatting
     SUMMARY_LINE_WIDTH = 70  # Character width for report summary separator
