@@ -66,6 +66,22 @@ Also adds `TestAwesomeGuitarHangerHoles` to `test_example_contracts.py`, closing
 where that example had only a generic positive-volume smoke test — nothing previously
 guarded the 2026-07-09 hole fix against silently regressing.
 
+#### Metamorphic invariant suite (VALIDATION_STRENGTHENING.md section 4.3)
+
+`test_correctness/test_metamorphic.py`: 26 self-contained geometric-relationship tests
+that need no generators and no hand-picked expected values — translate/rotate/mirror
+conservation, scale `k³`, union commutativity/idempotency, and boolean self-consistency
+(inclusion-exclusion, difference-equals-minus-intersection, disjoint-subtract-is-a-no-op).
+Run against deliberately asymmetric shapes so a bug that silently ignores a transform
+can't pass by symmetry accident. This is the systematic version of the manual audit that
+found the mounting-plate bug above — an inclusion-exclusion check would have caught that
+whole bug class automatically instead of requiring a by-hand sweep of every example.
+
+Also closed part of the G5 safety-net gap (section 4.5): `test_schema_validation.py`'s
+32 tests were silently skipped whenever `jsonschema` failed to import, even though it's a
+required dependency — converted to a hard assertion so a missing/broken dependency fails
+loudly instead of vanishing the schema-validation net with no signal.
+
 ### Changed - 2026-07-09
 
 #### Trust renderer: 8-panel grid with opposite-diagonal isometrics (restores rear coverage)

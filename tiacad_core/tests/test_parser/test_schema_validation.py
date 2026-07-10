@@ -18,11 +18,14 @@ from tiacad_core.parser.schema_validator import (
 )
 from tiacad_core.parser.tiacad_parser import TiaCADParser, TiaCADParserError
 
-
-# Skip tests if jsonschema not available
-pytestmark = pytest.mark.skipif(
-    not JSONSCHEMA_AVAILABLE,
-    reason="jsonschema not installed"
+# jsonschema is a required dependency (pyproject.toml); if it's missing, the
+# schema-validation safety net silently stopped running. That's the bug this
+# guards against — fail loudly instead of skipping. See
+# docs/developer/VALIDATION_STRENGTHENING.md section 4.5.
+assert JSONSCHEMA_AVAILABLE, (
+    "jsonschema is not importable. It is a required dependency "
+    "(pyproject.toml) — install it rather than letting this suite "
+    "silently skip."
 )
 
 

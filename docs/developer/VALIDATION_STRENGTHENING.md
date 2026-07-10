@@ -396,6 +396,16 @@ conservation, scale `k³`, union commutativity/idempotency, mirror symmetry,
 boolean self-consistency. A dozen assertions that would have caught most historic
 geometry bugs. Ship even before Hypothesis. **Effort:** low.
 
+**Shipped 2026-07-10:** `tiacad_core/tests/test_correctness/test_metamorphic.py`,
+26 tests over asymmetric box/cylinder/compound shapes (chosen so a bug that
+ignores rotation/translation entirely can't pass by symmetry accident):
+translate/rotate/mirror conservation, scale `k³` for box and cylinder, union
+commutativity/idempotency, and boolean self-consistency (inclusion-exclusion
+`|A∪B| + |A∩B| = |A| + |B|`, difference-equals-minus-intersection, and
+disjoint-subtract-is-a-no-op). Sanity-checked against a deliberately broken
+union (returning one operand unchanged) to confirm the inclusion-exclusion
+test actually fails when it should, not just when the author expects it to.
+
 ### 4.4 — Determinism gate + reviewed mesh-hash goldens *(stronger + de-flakes)*
 
 Implement Tier 2. Add a `test_determinism.py` that fails on non-reproducible
@@ -424,6 +434,18 @@ skips. A green run can mean nothing was checked.
 **Effort:** low. **Payoff:** the biggest hole in the current net closes with a
 handful of line changes. Nothing else in this plan matters if the checks can
 silently not run.
+
+**Partially shipped 2026-07-10:** `test_schema_validation.py`'s
+`skipif(not JSONSCHEMA_AVAILABLE)` (32 tests) converted to an assertion that
+fails collection outright if `jsonschema` isn't importable — it's a required
+dependency (`pyproject.toml`), so a silent skip meant the schema-validation
+net could vanish with no signal. `trimesh` was already a hard import
+(`test_geometry_validation.py`) and `"Example not found"` was already
+`pytest.fail`, not skip — both predate this pass. Still open: the CI
+import-guard step, and `lib3mf`/`pyvista` skips in the exporter/visualization
+suites (arguably legitimate — those are optional-at-runtime rendering/export
+paths, not the correctness safety net G5 is about; worth an explicit decision
+before touching them, not a mechanical sweep).
 
 ### 4.5b — Fix the CI validation gaps *(stronger, closes G3)*
 
