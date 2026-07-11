@@ -449,9 +449,15 @@ before touching them, not a mechanical sweep).
 
 ### 4.5b — Fix the CI validation gaps *(stronger, closes G3)*
 
-- **`example-validation.yml`:** replace the parse-only
-  `validate_examples.py` with `tiacad check --contract examples/**` (or run the
-  embedded-contract pytest). Parsing is not validation.
+**Update 2026-07-10: `example-validation.yml` deleted, not fixed.** It was
+also independently broken by GitHub's `actions/upload-artifact@v3`
+deprecation (hard-failed at "Set up job", before checkout, on every run) —
+so it was adding zero correctness signal *and* zero parse signal. Since the
+geometric contract suite already runs inside `tests.yml`, there is no
+standing workflow doing parse-only validation to replace. If a dedicated
+contract-gate workflow is wanted later, build it fresh on `tiacad check
+--contract examples/**`, not by resurrecting the deleted file.
+
 - **`visual-regression.yml`:** **stop auto-generating missing references in CI.**
   A missing reference should *fail* and require an intentional, reviewed
   regeneration — never a silent canonization of a fresh render.
@@ -528,7 +534,8 @@ an `expect:` block:
 
 **CI edits:**
 
-- `example-validation.yml` → contract check, not parse check.
+- ~~`example-validation.yml` → contract check, not parse check.~~ Deleted
+  2026-07-10 (was broken by upload-artifact@v3 deprecation, added no signal).
 - `visual-regression.yml` → fail (don't generate) on missing refs.
 - Add schema-conformance + schema-truth checks; make contracts a required gate.
 

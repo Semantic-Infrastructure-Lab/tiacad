@@ -32,7 +32,9 @@ def test_maybe_start_xvfb_ignores_startup_errors(monkeypatch):
     def boom():
         raise RuntimeError("xvfb unavailable")
 
-    monkeypatch.setattr("tiacad_core.visual.trust_renderer.pv.start_xvfb", boom)
+    monkeypatch.setattr(
+        "tiacad_core.visual.trust_renderer.pv.start_xvfb", boom, raising=False
+    )
     _maybe_start_xvfb()
 
 
