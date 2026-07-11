@@ -646,6 +646,6 @@ Want to improve the CLI?
 
 ---
 
-**CLI Version:** 0.1.0 (QW4 Enhanced CLI)
-**Last Updated:** 2025-10-26
+**CLI Version:** 3.1.2
+**Last Updated:** 2026-07-11
 **Author:** TIA

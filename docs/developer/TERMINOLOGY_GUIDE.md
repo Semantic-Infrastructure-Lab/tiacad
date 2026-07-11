@@ -614,7 +614,7 @@ bolts:
 
 **Document owner**: TiaCAD Core Team
 **Review cycle**: Quarterly or before major releases
-**Next review**: Before v4.0 planning (2026-Q2)
+**Next review**: Before v4.0 planning / Constraint Solver work begins (Q4 2026)
 
 ---
 

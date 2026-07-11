@@ -1,5 +1,11 @@
 # Architecture Review 2026-04-18
 
+> **Archived 2026-07-11.** Near-duplicate of `OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md`
+> from the same review pass — both cover the same findings (backend global
+> state, `OperationsBuilder` dispatch, `Part` coupling, `cli.py` size,
+> visualization split). Superseded by the re-verified "Architecture debt"
+> section in `BACKLOG.md`. Kept here for historical record.
+
 Senior-engineering review of TiaCAD focused on separation of concerns, single responsibility, reuse, and architectural clarity.
 
 ## Current Assessment

@@ -699,7 +699,7 @@ tower_b:
 3. **Understand anchors**: Read AUTO_REFERENCES_GUIDE.md
 4. **See examples**: Study examples/ directory
 5. **Reference**: Use YAML_REFERENCE.md as needed
-6. **Deep dive**: Read ARCHITECTURE_DECISION_V3.md (technical)
+6. **Deep dive**: Read docs/architecture/ARCHITECTURE_DECISION_V3.md (technical)
 
 ---
 
@@ -709,12 +709,12 @@ tower_b:
 - **A term**: Check this glossary
 - **Syntax**: See YAML_REFERENCE.md
 - **How to do something**: See TUTORIAL.md or EXAMPLES_GUIDE.md
-- **Why something works this way**: See docs/ARCHITECTURE_DECISION_V3.md
+- **Why something works this way**: See docs/architecture/ARCHITECTURE_DECISION_V3.md
 
 **If you find missing or confusing terms**: Please contribute! This glossary is a living document.
 
 ---
 
-**Last updated**: 2025-11-13
-**Version**: 1.0
+**Last updated**: 2026-07-11
+**Version**: 3.1.2
 **See also**: [YAML_REFERENCE.md](YAML_REFERENCE.md), [AUTO_REFERENCES_GUIDE.md](AUTO_REFERENCES_GUIDE.md), [TUTORIAL.md](TUTORIAL.md)

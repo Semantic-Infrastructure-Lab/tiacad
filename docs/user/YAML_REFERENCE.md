@@ -163,8 +163,10 @@ imports:
     as: my_part
 ```
 
-Fetched from `raw.githubusercontent.com/user/repo/main/...`, cached to `~/.tiacad/cache/github/`.
-**Note:** Only `main` branch is supported (no `@branch` syntax yet).
+Fetched from `raw.githubusercontent.com/user/repo/{branch}/...`, cached to
+`~/.tiacad/cache/github/{user}/{repo}/{branch}/...`. Default branch is `main`;
+override with a trailing `@branch` suffix on the file path, e.g.
+`github:user/repo/file.yaml@dev` (branch names may contain slashes).
 
 ### Local Files
 

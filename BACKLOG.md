@@ -83,7 +83,8 @@ against current code since the date given.
 `git log` / session `weightless-universe-0711`). None turned out fully stale —
 every claim has at least partial current-code support — but four had their
 framing narrowed. Originals from
-`docs/architecture/OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md`.*
+`docs/archive/OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md`
+(now archived — see "Docs hygiene" below).*
 
 **Still fully true:**
 
@@ -138,12 +139,16 @@ framing narrowed. Originals from
   `GeometryBackend` — same root cause as the differential-testing blocker
   above; worth tracking as one item, not three separate mentions across
   docs. — `KNOWN_LIMITATIONS.md` #3
-- **`docs/architecture/README.md` / `ARCHITECTURE_NEXT_STEPS.md` /
-  `OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md` overlap.** Three docs
-  all present themselves as "the" current architecture-status source: worth
-  a follow-up pass to merge into one, or clearly delineate scope (proposal
-  vs. review vs. debt register) — not attempted in the 2026-07-11 pass,
-  flagged only.
+- ~~`docs/architecture/README.md` / `ARCHITECTURE_NEXT_STEPS.md` /
+  `OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md` overlap.~~ — **resolved
+  2026-07-11**: `OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md` and its
+  same-date near-duplicate `ARCHITECTURE_REVIEW_2026-04-18.md` (both debt
+  registers covering identical findings) archived to `docs/archive/` — their
+  content is superseded by this file's own re-verified "Architecture debt"
+  section above. `ARCHITECTURE_NEXT_STEPS.md` kept as the canonical
+  forward-looking plan (genuinely distinct content: recommendations/roadmap,
+  not a debt register). `docs/architecture/README.md`, `docs/README.md`, and
+  `docs/DOCUMENTATION_MAP.md` updated to point here instead.
 - ~~Two archive-index files~~ — **done 2026-07-11**: deleted the orphaned
   `docs/archive/README.md` duplicate; `docs/archive/ARCHIVE_SUMMARY.md` is
   now the single canonical archive index (already the one

@@ -436,9 +436,9 @@ After migrating your YAML files:
    ```
 
 2. **Visual Inspection:**
-   ```bash
-   tiacad render my_design.yaml --output preview.png
-   ```
+   `tiacad render` is not implemented yet (see CLI.md's Future Enhancements).
+   For visual inspection today, build to 3MF/STL and open in a CAD viewer, or
+   use the trust-render workflow in `docs/developer/AI_DEBUG_WORKFLOW.md`.
 
 3. **Export Test:**
    ```bash
@@ -455,7 +455,7 @@ After migrating your YAML files:
 ## Need Help?
 
 - **Examples:** See `examples/` directory for v3.0 YAML files
-- **Documentation:** See `docs/V3_IMPLEMENTATION_STATUS.md` for feature details
+- **Documentation:** See `docs/archive/V3_IMPLEMENTATION_STATUS.md` for feature details
 - **Issues:** Report migration problems at https://github.com/scottsen/tiacad/issues
 
 ---

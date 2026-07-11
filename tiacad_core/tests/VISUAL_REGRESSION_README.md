@@ -273,8 +273,8 @@ Return VisualDiffResult
 
 ## Related Documentation
 
-- [TESTING_GUIDE.md](../../docs/TESTING_GUIDE.md) - Complete testing documentation
-- [TESTING_QUICK_REFERENCE.md](../../docs/TESTING_QUICK_REFERENCE.md) - Quick command reference
+- [TESTING_GUIDE.md](../../docs/developer/TESTING_GUIDE.md) - Complete testing documentation
+- [TESTING_QUICK_REFERENCE.md](../../docs/developer/TESTING_QUICK_REFERENCE.md) - Quick command reference
 - [CHANGELOG.md](../../CHANGELOG.md) - v3.1 Phase 2 changes
 
 ## Support

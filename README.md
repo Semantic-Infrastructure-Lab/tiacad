@@ -390,7 +390,7 @@ tiacad/
 │   ├── exporters/                     # 3D file export
 │   │   └── threemf_exporter.py        # 3MF format (31 tests ✅)
 │   │
-│   ├── tests/                         # 609 comprehensive tests ✅
+│   ├── tests/                         # 1,926 comprehensive tests ✅
 │   │   ├── test_parser/               # Parser tests (Phase 1-3)
 │   │   ├── test_validation/           # Validation tests
 │   │   ├── test_exporters/            # Export tests
@@ -407,7 +407,7 @@ tiacad/
 │   └── ...
 │
 ├── output/                            # Generated STL/3MF files
-├── htmlcov/                           # Coverage report (84%)
+├── htmlcov/                           # Coverage report (92%+)
 ├── docs/                              # Comprehensive documentation
 └── README.md                          # This file
 ```
@@ -564,7 +564,7 @@ tiacad/
 **Tools Used:**
 - **Ruff**: Modern Python linter for focused and CI-ready cleanup
 - **Pylint**: Code quality analysis for deeper review when needed
-- **pytest-cov**: Coverage analysis (84% overall)
+- **pytest-cov**: Coverage analysis (92%+ overall)
 - **mypy-ready**: TYPE_CHECKING imports for type safety
 
 **Quality Improvements:**
@@ -616,7 +616,7 @@ tiacad/
 - [x] Schema validation (114 tests)
 - [x] Assembly validation (19 tests)
 - [x] 3MF export (31 tests)
-- [x] Quality improvements (609 total tests, 84% coverage)
+- [x] Quality improvements (609 total tests, 84% coverage — Phase 3 snapshot; see "What's Next?" below for current counts)
 
 **Deliverable:** Complete CAD system with sketch-based modeling ✅
 
@@ -652,7 +652,6 @@ tiacad/
 - No constraint solver (manual positioning only) — next milestone Q4 2026
 - Limited export formats (STL/3MF/STEP; no DXF/G-code/SVG)
 - STL/STEP export currently requires CadQuery-compatible parts; 3MF/visualization can use backend tessellation
-- GitHub imports default to `main` branch only (no branch override syntax)
 
 **Recent Additions (Q1 2026):**
 - ✅ Component imports: local, stdlib, GitHub

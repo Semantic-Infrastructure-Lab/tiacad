@@ -74,6 +74,15 @@ This directory contains **historical planning and tracking documents** from TiaC
 
 ---
 
+### Archived 2026-07-11 (documentation-pass merge)
+
+**🔁 Near-duplicate architecture-debt reviews, both dated 2026-04-18**
+- [`OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md`](OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md) - debt register (backend global state, `OperationsBuilder` dispatch, `Part` coupling, `cli.py` size, visualization split, validation heuristics)
+- [`ARCHITECTURE_REVIEW_2026-04-18.md`](ARCHITECTURE_REVIEW_2026-04-18.md) - senior-review pass covering the same findings from the same date
+- Both superseded by `BACKLOG.md`'s "Architecture debt" section, which re-verified every claim against current code on 2026-07-11 (session `weightless-universe-0711`) and is the accurate, dated source of truth. `docs/architecture/README.md` and `ARCHITECTURE_NEXT_STEPS.md` updated to point to `BACKLOG.md` instead.
+
+---
+
 ## Why Archive These?
 
 These documents served critical roles during development:
@@ -108,8 +117,8 @@ They're archived because:
 
 ## Archive Statistics
 
-- **Total Files:** 14 markdown documents (8 from the original Nov-Dec 2025
-  archive + 6 archived 2026-07-11)
+- **Total Files:** 16 markdown documents (8 from the original Nov-Dec 2025
+  archive + 8 archived 2026-07-11)
 - **Date Range:** Nov 2, 2025 - 2026-04-18 (content dates; archiving itself
   happened on 2025-12-01 and 2026-07-11)
 - **Coverage:** v3.0 → v3.1.2 development cycle, plus the Q2-Q3 2026

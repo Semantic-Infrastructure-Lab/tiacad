@@ -64,7 +64,8 @@ if 'radius_bottom' in params or 'radius_top' in params:
 
 ### 2. Pattern Spacing
 
-**Location**: `tiacad_core/parser/pattern_builder.py::build_pattern()`
+**Location**: `tiacad_core/parser/pattern_builder.py::_execute_linear()`
+(planned as `build_pattern()`; actual shipped location drifted — see header)
 
 **Old syntax**:
 ```yaml
@@ -147,7 +148,9 @@ if isinstance(translate_spec, dict) and 'offset' in translate_spec and 'to' not 
 
 ### 4. Export List Format
 
-**Location**: `tiacad_core/parser/tiacad_parser.py::parse_dict()`
+**Location**: `tiacad_core/parser/parse_pipeline.py::build_export_config()`
+(planned as `tiacad_parser.py::parse_dict()`; actual shipped location
+drifted — see header)
 
 **Old syntax**:
 ```yaml
@@ -263,11 +266,12 @@ Or combine into a single `migrate_v31x.py` tool that handles all four patterns.
 
 ## Documentation Updates
 
-Once implemented, update:
 - [x] MIGRATION_GUIDE_V3.md - Already documents the changes
-- [ ] CHANGELOG.md - Add note about deprecation warnings in next release
-- [ ] README.md - Mention deprecation warnings if relevant
-- [ ] TESTING_GUIDE.md - How to test for deprecation warnings
+- [x] CHANGELOG.md - Unreleased entry added 2026-07-11
+- [x] TESTING_GUIDE.md - Deprecation-testing section added 2026-07-11
+- [ ] README.md - Not mentioned; optional, low priority (existing v3.1
+      syntax already documented as the only form; deprecation warnings are
+      an implementation detail for users still on old syntax)
 
 ---
 
@@ -302,6 +306,7 @@ Once implemented, update:
 
 ---
 
-**Status**: Implementation plan documented, ready for future work
-**Effort**: ~2-4 hours to implement + test all four patterns
-**Priority**: Medium (improves UX, but not critical since examples are fixed)
+**Status**: ✅ Implemented 2026-07-11 (session `weightless-universe-0711`) —
+see header. Kept as the implementation record; the `## Deprecated Patterns`
+sections below describe the shipped behavior (two locations drifted from the
+original plan, noted in the header).

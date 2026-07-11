@@ -119,6 +119,7 @@ See [Archive Summary](archive/ARCHIVE_SUMMARY.md) for the full inventory. Notabl
 - `PROJECT_REVIEW_2026-04-17.md`, `CODE_REVIEW_FOLLOWUPS_2026-04-18.md` — closed-out point-in-time reviews
 - `DOCUMENTATION_CONSOLIDATION_PLAN.md` — its own proposal (create ROADMAP.md + KNOWN_LIMITATIONS.md) already executed
 - `SKIPPED_TESTS_AUDIT.md`, `CODE_QUALITY_SUMMARY.md` — retired 2026-07-11; superseded by Phase-0 skip→hard-failure work
+- `OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md`, `ARCHITECTURE_REVIEW_2026-04-18.md` — retired 2026-07-11; near-duplicate architecture-debt reviews from the same date, superseded by `BACKLOG.md`'s re-verified "Architecture debt" section
 - v3.0 & v3.1 implementation status, testing strategy/execution plans, strategic roadmaps, known-issues analysis (all historical)
 
 ⚠️ **Note:** These documents are **historical**. For current information, see [ROADMAP](../ROADMAP.md) and [KNOWN_LIMITATIONS](../KNOWN_LIMITATIONS.md).

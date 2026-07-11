@@ -5,7 +5,7 @@ status: active
 phase: v3-complete
 priority: high
 started: 2024-10-18
-last_active: 2026-03-16
+last_active: 2026-07-11
 lead_sessions:
   - fafecoha-1103
   - magical-altar-1103
@@ -239,5 +239,5 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 **Project Status:** ✅ Active development — v3.1 component system + DAG complete
 **Current Focus:** Constraint Solver (Q4 2026) — see ROADMAP.md
-**Last Updated:** 2026-03-16
+**Last Updated:** 2026-07-11
 **Test Suite:** Broad automated coverage with passing parser/DAG/validation/correctness slices

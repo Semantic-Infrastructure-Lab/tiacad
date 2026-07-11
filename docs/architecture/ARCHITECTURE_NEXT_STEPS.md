@@ -241,7 +241,10 @@ Only after the earlier phases are in place should the project revisit larger que
 - [ARCHITECTURE_DECISION_V3.md](ARCHITECTURE_DECISION_V3.md): explains the current architectural foundation
 - [CLEAN_ARCHITECTURE_PROPOSAL.md](CLEAN_ARCHITECTURE_PROPOSAL.md): explains design intent and separation-of-concerns ideas
 - [KNOWN_LIMITATIONS.md](../../KNOWN_LIMITATIONS.md): states active product and architectural limitations
-- [../archive/PROJECT_REVIEW_2026-04-17.md](../archive/PROJECT_REVIEW_2026-04-17.md): captures the most recent practical architecture findings
+- [BACKLOG.md](../../BACKLOG.md) — "Architecture debt" section: current open
+  issues and coupling hubs, re-verified against code 2026-07-11 (supersedes
+  the archived `OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md` and
+  `ARCHITECTURE_REVIEW_2026-04-18.md`, both now in `docs/archive/`)
 - [CGA_V5_FUTURE_VISION.md](CGA_V5_FUTURE_VISION.md): long-term research vision, not the current execution plan
 
 ---

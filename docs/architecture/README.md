@@ -8,19 +8,15 @@ System design, technical decisions, and architectural principles for TiaCAD.
 
 ### Core Architecture
 
-**[OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md](OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md)**
+**[BACKLOG.md](../../BACKLOG.md) — "Architecture debt" section**
 
-Current open issues and architecture debt register:
-- active contract inconsistencies still in the repo
+The current open-issues / architecture-debt register. Re-verified against
+current code on 2026-07-11 — supersedes the two 2026-04-18 review docs
+(`OPEN_ISSUES_AND_ARCHITECTURE_DEBT_2026-04-18.md`,
+`ARCHITECTURE_REVIEW_2026-04-18.md`), which covered the same ground and are
+now archived under [`docs/archive/`](../archive/ARCHIVE_SUMMARY.md):
 - current structural hotspots and coupling hubs
 - priority order for remaining cleanup work
-
-**[ARCHITECTURE_REVIEW_2026-04-18.md](ARCHITECTURE_REVIEW_2026-04-18.md)**
-
-Current architectural review and remediation tracking:
-- separation of concerns review across the codebase
-- major design/coupling issues
-- priority remediation tracks and progress
 
 **[ARCHITECTURE_NEXT_STEPS.md](ARCHITECTURE_NEXT_STEPS.md)**
 

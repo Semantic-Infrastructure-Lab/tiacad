@@ -16,6 +16,10 @@ A real defect found in a committed example (`examples/awesome_guitar_hanger.yaml
 used here as the canonical worked example for the ideas in
 [MODEL_VALIDATION.md](MODEL_VALIDATION.md) and [AI_DEBUG_WORKFLOW.md](AI_DEBUG_WORKFLOW.md).
 
+**Note:** test counts below (1,599) are a point-in-time snapshot from when this
+bug was found — the suite has since grown to 1,926 tests. The finding and
+methodology are unaffected; don't read 1,599 as the current count.
+
 **One-line summary:** the guitar hanger's four screw-hole cuts subtract from empty
 air — the mounting plate ships with no holes, the `difference` operations remove
 (almost) nothing, and **1,599 passing tests never noticed.**

@@ -1,5 +1,11 @@
 # Open Issues And Architecture Debt 2026-04-18
 
+> **Archived 2026-07-11.** All 8 debt claims in this doc were re-verified
+> against current code in session `weightless-universe-0711` and the accurate,
+> dated results now live in `BACKLOG.md`'s "Architecture debt" section — that
+> is the current source of truth, not this document. Kept here for historical
+> record of the 2026-04-18 review pass.
+
 Current-state review of open issues and architectural debt in TiaCAD.
 
 This document is intentionally narrower than the broader architecture review docs. It focuses on what still looks open now, based on the current codebase, current docs, current example behavior, and a fresh Reveal pass.

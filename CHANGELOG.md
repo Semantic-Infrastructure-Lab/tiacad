@@ -1526,7 +1526,7 @@ nested imports, error cases (missing file, missing fields, circular imports, nam
 - YAML syntax breaking changes (see MIGRATION_GUIDE_V3.md)
 
 ### Migration
-- See [MIGRATION_GUIDE_V3.md](MIGRATION_GUIDE_V3.md) for complete migration guide
+- See [MIGRATION_GUIDE_V3.md](docs/developer/MIGRATION_GUIDE_V3.md) for complete migration guide
 - See [RELEASE_NOTES_V3.md](RELEASE_NOTES_V3.md) for detailed changes
 
 ---

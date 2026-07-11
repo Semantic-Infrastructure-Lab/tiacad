@@ -25,7 +25,7 @@ Q2-Q3 spent hardening the test/validation infrastructure those milestones sit on
 - ✅ Tier 2 geometric contracts for all assembly examples
 - ✅ PCB standoff assembly example (`examples/pcb_standoff_assembly.yaml`)
 
-**Current test suite:** 1,904 tests (1,840 non-visual passing, 0 failing; 67 visual passing).
+**Current test suite:** 1,926 tests (1,859 non-visual passing, 0 failing; 67 visual passing).
 
 ---
 
@@ -137,7 +137,7 @@ Y/Z offset swap, all 8 fastener components' heads floating off their shafts,
 message-less negative-dimension kernel errors, silently-dropped duplicate YAML
 keys. See `KNOWN_LIMITATIONS.md` #7 and #9-#12 for details on each.
 
-**Test suite:** 1,588 (start of Q2) → 1,904 total (1,840 non-visual passing,
+**Test suite:** 1,588 (start of Q2) → 1,926 total (1,859 non-visual passing,
 0 failing; 67 visual passing).
 
 **Sessions:** the confidence-ladder work spanned multiple sessions in

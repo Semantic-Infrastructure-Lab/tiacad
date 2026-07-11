@@ -21,7 +21,7 @@ Status: proposal · Author session: project-validation-review · Date: 2026-07-1
 
 ## TL;DR
 
-TiaCAD has a large, healthy test suite (~1405 passing), but most of it proves the
+TiaCAD has a large, healthy test suite (~1,859 non-visual passing, 1,926 total as of 2026-07-11), but most of it proves the
 wrong thing. Visual regression proves *"looks the same as last time."* The volume
 sanity tier proves *"something was built."* Neither proves *"this is the geometry
 the YAML actually asked for."* That is the **oracle problem**, and it is the single
@@ -816,7 +816,9 @@ an `expect:` block:
 
 **Housekeeping:**
 
-- Implement or delete the `validation:` schema block; fix `schema_version` drift.
+- ~~Implement or delete the `validation:` schema block; fix `schema_version`
+  drift.~~ Done: schema block confirmed nonexistent 2026-07-11 (superseded by
+  `expect:`); `schema_version` drift fixed 2026-07-10, verified 2026-07-11.
   ~~Unify the two pytest configs into one.~~ Done 2026-07-10: a legacy
   `pytest.ini` was silently shadowing `[tool.pytest.ini_options]` in
   `pyproject.toml` (pytest.ini wins when both exist), so the pyproject block —

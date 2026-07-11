@@ -94,15 +94,20 @@ The schema validates:
 **Top-level sections:**
 - `schema_version` - Must be "3.0"
 - `metadata` - Design metadata (name, author, etc.)
+- `name`, `description` - Design name/description
+- `anchors` - Named spatial anchors
+- `imports` - Local/stdlib/GitHub component imports
 - `parameters` - Parametric variables
 - `colors` - Color palette
 - `materials` - Custom materials
+- `references` - Named spatial references
+- `sketches` - 2D sketch definitions
 - `parts` - Part definitions (required)
 - `operations` - Operations (transforms, booleans, patterns)
 - `finishing` - Finishing operations (fillets, chamfers)
 - `export` - Export configuration
 - `variants` - Design variants
-- `validation` - Validation rules
+- `expect` - Correctness contracts (spatial relations, manifold checks — see MODEL_VALIDATION.md)
 
 **Primitives:**
 - `box` - Requires `size: [width, height, depth]`
