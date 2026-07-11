@@ -433,17 +433,74 @@ class TestExport:
         assert len(errors) > 0
 
 
-# Integration test with real example file
-def test_example_file_validates():
-    """Real example file passes schema validation"""
-    import os
-    example_path = os.path.join(
-        os.path.dirname(__file__),
-        "..", "..", "..",
-        "examples", "rounded_mounting_plate.yaml"
+# ---------------------------------------------------------------------------
+# Schema-truth gate (VALIDATION_STRENGTHENING.md section 4.8)
+#
+# Every committed example must validate against tiacad-schema.json. The examples
+# are the reviewed corpus of real, building models, so a schema that rejects one
+# of them is *lying* — the schema is wrong, not the model. This gate is what
+# keeps the schema honest as the parser grows: add a new construct to the parser
+# and an example that uses it, and the schema must be widened to match or CI
+# fails here. Previously this was a single non-asserting smoke test over one
+# file; it now covers the whole examples/ tree and asserts zero errors.
+# ---------------------------------------------------------------------------
+
+import glob
+import os
+
+_EXAMPLES_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "examples")
+)
+
+
+def discover_example_files():
+    """All example .yaml files, sorted for stable parametrization ids."""
+    return sorted(glob.glob(os.path.join(_EXAMPLES_DIR, "**", "*.yaml"), recursive=True))
+
+
+def _example_id(path):
+    return os.path.relpath(path, _EXAMPLES_DIR)
+
+
+_EXAMPLE_FILES = discover_example_files()
+
+
+def test_examples_directory_is_discoverable():
+    """The example corpus exists and is non-empty.
+
+    If discovery silently returns nothing, the parametrized gate below would
+    vacuously pass with zero cases — a green run that checked nothing. Fail
+    loudly instead. See VALIDATION_STRENGTHENING.md section 4.5.
+    """
+    assert _EXAMPLE_FILES, (
+        f"No example .yaml files found under {_EXAMPLES_DIR!r}. The schema-truth "
+        "gate would otherwise pass without validating anything."
     )
 
-    if os.path.exists(example_path):
-        result = validate_yaml_file(example_path, strict=False)
-        # Should pass or at least not crash
-        assert isinstance(result, bool)
+
+@pytest.mark.parametrize("example_path", _EXAMPLE_FILES, ids=_example_id)
+def test_every_example_validates_against_schema(example_path):
+    """Every committed example passes schema validation with zero errors.
+
+    A failure here means the schema and the parser disagree about what a valid
+    model looks like. Because the example builds (it's in the reviewed corpus),
+    the schema is the thing that's wrong: widen tiacad-schema.json to accept the
+    real construct rather than editing the example to appease a stale schema.
+    """
+    import yaml
+
+    with open(example_path) as fh:
+        data = yaml.safe_load(fh)
+
+    # A handful of docs (component fragments) may not be top-level design dicts;
+    # schema validation only applies to full design documents.
+    if not isinstance(data, dict):
+        pytest.skip(f"{_example_id(example_path)} is not a design document")
+
+    validator = SchemaValidator()
+    errors = validator.validate(data)
+    assert not errors, (
+        f"{_example_id(example_path)} failed schema validation. The schema is "
+        f"lying about a construct this example uses — widen tiacad-schema.json "
+        f"to match parser reality. Errors:\n  " + "\n  ".join(errors)
+    )

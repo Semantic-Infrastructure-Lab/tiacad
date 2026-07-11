@@ -389,6 +389,39 @@ volume/area/bbox, then transform-conservation, then boolean inclusion–exclusio
 a minimal reproducer automatically. Directly kills the snapshot-of-a-bug risk for
 everything it covers. **Effort:** low–medium; high early yield.
 
+**Shipped 2026-07-10 — and it immediately found a real bug.**
+`tiacad_core/tests/test_correctness/test_property_based.py` (18 property tests)
+builds each primitive through the real user path (`ParameterResolver` →
+`PartsBuilder` → `CadQueryBackend`) and checks the Tier-0/1 analytic oracles
+over machine-generated parameters: box/cylinder/sphere/cone/frustum/torus
+volume, bounding-box extents (including the `width→X, depth→Y, height→Z` box
+mapping that caused the §4.1 disconnected-components bug), and box/cylinder/
+sphere surface area; plus translate/rotate volume-invariance, uniform-scale
+`k³`, and boolean inclusion-exclusion over generated overlapping pairs. Every
+test runs under `@settings(derandomize=True, deadline=None)` — Hypothesis
+generates the *same* examples every run, so a failure reproduces bit-for-bit in
+CI and the suite can't flake on RNG, while the deadline is lifted for slow OCCT
+solid construction. Confirmed non-vacuous two ways: a deliberately wrong box
+axis-mapping assertion is correctly rejected, and —
+
+**Bug found and fixed 2026-07-10 (zero-volume torus):** the very first torus
+property run reported `volume = 0.0`. The `torus` primitive
+(`parts_builder.py::_build_torus`) built its solid by revolving a circle profile
+360° about an axis that lay *in the profile's own plane*
+(`Workplane("XZ").center(R,0).circle(r).revolve(360,(0,0,0),(0,0,1))`); on the
+OCP 7.9 / CadQuery 2.8 kernel that produces a **degenerate zero-volume solid**
+(bounding box collapses to the flat 2D profile). It had been broken for the
+entire life of the primitive and no test noticed, because the only torus test
+asserted `part is not None` — the exact "snapshot of nothing" this section warns
+about. Fixed by building the torus with the kernel's direct
+`cq.Solid.makeTorus(R, r)` (exact, orientation-stable: donut flat on XY, hole
+along +Z), and strengthened `test_parts_builder.py::test_simple_torus` to assert
+the Pappus volume `2π²Rr²` and the `2(R+r) × 2(R+r) × 2r` bounding box so it
+can't silently regress. `hypothesis` added to `requirements.txt` /
+`pyproject.toml` and to the CI import-guard (a required test dep must hard-fail
+if missing, not silently skip — §4.5). Full non-visual suite 1701 passed (was
+1601: +82 schema gate, +18 property tests), visual suite 67 passed.
+
 ### 4.3 — Metamorphic suite *(stronger)*
 
 The self-contained subset of 4.2 that needs *no* generators: translate/rotate
@@ -412,6 +445,28 @@ Implement Tier 2. Add a `test_determinism.py` that fails on non-reproducible
 builds, and a small `golden_hashes.json` that is *only* updated by an explicit,
 reviewed command. This both hardens correctness and stabilizes every other
 golden-based test. **Effort:** low.
+
+**Shipped 2026-07-10:** `tiacad_core/testing/determinism.py` builds a model
+from scratch via `TiaCADParser.parse_file` and captures volume, bounding box,
+and a SHA-256 mesh hash (raw exported-STL bytes, deliberately not
+canonicalized — canonicalizing would hide the exact tessellation drift this
+gate exists to catch). `test_correctness/test_determinism.py` runs two
+checks over every model with an `expect:` block (the existing embedded-
+contracts corpus, reused per this section's original suggestion): (1)
+self-consistency — build the same model 3× in one run and assert every build
+agrees exactly, no golden file required, catches non-determinism the moment
+it's introduced; (2) golden comparison — one build checked against the
+reviewed `tiacad_core/tests/test_correctness/golden_hashes.json`, catching
+drift across sessions or CadQuery/OCCT kernel upgrades that self-consistency
+alone can't see. A missing golden entry is a hard failure, not a skip,
+consistent with §4.5. Goldens are regenerated only by the explicit
+`scripts/update_determinism_goldens.py` (mirrors the existing
+`UPDATE_VISUAL_REFERENCES` pattern) — never by the test suite itself.
+Verified the gate actually detects drift (not just passing vacuously) with a
+standalone negative check against `check_against_golden`. All 6 corpus
+models build bit-identical mesh hashes across repeated builds on this
+machine's stack (CadQuery 2.8.0 / OCP 7.9.3.1.1, Python 3.12) — 13 new tests,
+full non-visual suite now 1601 passed (was 1588), 0 failed.
 
 ### 4.5 — Turn skips into failures; make the safety net non-optional *(stronger, closes G5 — do this first)*
 
@@ -542,6 +597,37 @@ test that the schema itself matches reality: implement or delete the `validation
 block, reconcile `schema_version`, and collapse the two pytest configs into one.
 A schema that lies is worse than no schema. **Effort:** low.
 
+**Shipped 2026-07-10:** the schema was lying about a lot. A parametrized gate,
+`test_schema_validation.py::test_every_example_validates_against_schema`,
+discovers every `.yaml` under `examples/` (82 files) and asserts each validates
+against `tiacad-schema.json` with zero errors — guarded by
+`test_examples_directory_is_discoverable` so an empty glob can't make it pass
+vacuously (§4.5 discipline). Standing this gate up surfaced **27 of 82
+committed, building examples failing schema validation** — every one a case
+where the schema was stricter than the parser, confirmed by building each
+failing example first (the model is the reviewed ground truth; the schema was
+wrong, not the model). Reconciled `tiacad-schema.json` to parser reality across
+every failing construct: added the missing top-level keys `name` /
+`description` / `anchors` / `imports`; widened `export.formats` items to accept
+bare format strings (not only `{type,path}` objects); `operations.edges` to
+accept a keyword string (`"all"`) as well as an object selector; rotate
+`origin` and the new rotate `around` to accept a named-reference string / inline
+axis object (and required `angle` + *either* `axis` or `around` instead of
+mandating `axis`); part `color` to accept `{r,g,b(,a)}` and `{h,s,l(,a)}`
+objects; part `size` to accept a scalar (text font size); `colors` palette
+entries to accept rich `{value,description,metalness,roughness}` objects;
+`materials.color` to accept an `[r,g,b(,a)]` array; a two-point `{type:axis,
+from,to}` reference; and `translate` to accept a sequence of vectors. All 82
+examples now validate; the 32 pre-existing negative tests (`test_invalid_*`)
+still reject bad input, so the schema stayed *discriminating*, not a rubber
+stamp. `validation:` block was already deleted (§4.1) — confirmed absent.
+`schema_version` is consistent: the enum is `3.0`, every example declares `3.0`,
+and the new gate enforces it going forward (legacy `2.0` remains parser-accepted
+only in old inline test fixtures, which aren't part of the schema-validated
+corpus). The dual pytest config was already collapsed (`pytest.ini` removed
+2026-07-10; `[tool.pytest.ini_options]` in `pyproject.toml` is now the single
+source). Full parser + correctness suites green after the change (1065 passed).
+
 ### 4.9 — Canonical golden STEP set (last, and small)
 
 For ~5 anchor models, commit a STEP export as an exact-geometry baseline,
@@ -653,14 +739,16 @@ validation-gap fixes — `example-validation.yml` still only parses, and
 `visual-regression.yml` still self-generates missing references) and the rest
 of Phase 1.
 
-**Phase 1 — Foundations (days, high yield):** metamorphic suite (4.3),
-determinism gate (4.4), CI validation-gap fixes (4.5b), schema reconciliation
-(4.8). No new infrastructure; immediate strengthening.
+**Phase 1 — Foundations (days, high yield):** metamorphic suite (4.3, shipped),
+determinism gate (4.4, shipped), CI validation-gap fixes (4.5b, shipped),
+schema reconciliation (4.8, shipped 2026-07-10). **Phase 1 complete.** No new
+infrastructure; immediate strengthening.
 
-**Phase 2 — The keystone (1–2 weeks):** embedded `expect:` contracts (4.1) +
-Hypothesis property tests (4.2). Migrate the existing Tier-2 pytest classes to
-`expect:` blocks; build the T0/T1 ladder corpus. After this, *adding a validated
-model is trivial*, which is the "easier" half of the mandate.
+**Phase 2 — The keystone (1–2 weeks):** embedded `expect:` contracts (4.1,
+shipped) + Hypothesis property tests (4.2, shipped 2026-07-10). Still open:
+migrate the existing Tier-2 pytest classes to `expect:` blocks and build the
+T0/T1 ladder corpus. After that, *adding a validated model is trivial*, which is
+the "easier" half of the mandate.
 
 **Phase 3 — Depth (as needed):** connectivity gate (4.6), trust-gallery sign-off
 (4.7), composite/assembly ladder (Tiers 3–4), golden STEP set (4.9).

@@ -372,13 +372,21 @@ class TestTorus:
     """Test torus primitive building"""
 
     def test_simple_torus(self):
-        """Test building a torus"""
+        """Test building a torus.
+
+        Asserts the geometry is a real, non-degenerate solid — not just that the
+        Part exists. The previous `assert part is not None` let a zero-volume
+        degenerate torus (broken revolve on the OCP 7.9 kernel) pass unnoticed.
+        """
+        import math
+
         params = {}
+        major, minor = 20, 5
         spec = {
             'ring': {
                 'primitive': 'torus',
-                'major_radius': 20,
-                'minor_radius': 5
+                'major_radius': major,
+                'minor_radius': minor
             }
         }
 
@@ -388,6 +396,20 @@ class TestTorus:
 
         part = registry.get('ring')
         assert part is not None
+
+        # Pappus volume of a torus: 2 * pi^2 * R * r^2
+        volume = part.geometry.val().Volume()
+        expected = 2 * math.pi**2 * major * minor**2
+        assert abs(volume - expected) < expected * 0.01, (
+            f"torus volume {volume:.2f} != expected {expected:.2f} — a broken "
+            f"torus primitive (degenerate/zero-volume solid) would trip here"
+        )
+
+        # Donut lies flat on XY, hole along Z: extents 2(R+r), 2(R+r), 2r
+        bb = part.geometry.val().BoundingBox()
+        assert abs(bb.xlen - 2 * (major + minor)) < 0.1
+        assert abs(bb.ylen - 2 * (major + minor)) < 0.1
+        assert abs(bb.zlen - 2 * minor) < 0.1
 
 
 class TestMultipleParts:

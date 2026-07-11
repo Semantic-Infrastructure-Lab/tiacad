@@ -7,7 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-07-10
+
+#### Zero-volume torus primitive
+
+The `torus` primitive produced a **degenerate zero-volume solid** on the CadQuery 2.8 /
+OCP 7.9 kernel — `_build_torus` revolved a profile 360° about an axis lying in the
+profile's own plane, which the kernel collapses to the flat 2D profile. Latent for the
+life of the primitive because the only torus test asserted `part is not None`. Found by
+the new property-based suite (section 4.2); fixed by using `cq.Solid.makeTorus` directly,
+and `test_simple_torus` now asserts the Pappus volume and bounding box.
+
 ### Added - 2026-07-10
+
+#### Property-based correctness tests (VALIDATION_STRENGTHENING.md section 4.2)
+
+`test_correctness/test_property_based.py`: 18 Hypothesis property tests that check the
+Tier-0/1 analytic oracles (volume, bounding box, surface area) over machine-generated
+parameters for every primitive, plus translate/rotate volume-invariance, uniform-scale
+`k³`, and boolean inclusion-exclusion. Runs `derandomize=True` so examples reproduce
+bit-for-bit in CI. This suite immediately found a real, long-latent bug (see Fixed).
+`hypothesis` added to `requirements.txt`/`pyproject.toml` and the CI import-guard.
+
+#### Schema truth reconciliation (VALIDATION_STRENGTHENING.md section 4.8)
+
+`test_schema_validation.py` now validates **every** example under `examples/` against
+`tiacad-schema.json` (parametrized, 82 files), guarded against vacuous discovery. Standing
+this gate up surfaced 27 committed-but-schema-invalid examples — all cases where the schema
+was stricter than the parser. Reconciled the schema to parser reality (top-level
+`name`/`description`/`anchors`/`imports`; string-or-object `export.formats`, `edges`, rotate
+`around`; `{r,g,b}`/`{h,s,l}` colors; scalar text `size`; two-point axis refs; vector-list
+`translate`; rich palette entries) while keeping all 32 negative tests rejecting bad input.
+
+#### Determinism gate (VALIDATION_STRENGTHENING.md section 4.4)
+
+`test_correctness/test_determinism.py`: proves the same YAML always produces the same
+geometry. Two checks over the `expect:` corpus — self-consistency (build each model 3×
+in one run, assert volume/bbox/mesh-hash agree exactly, no golden file needed) and a
+golden comparison against a small, reviewed `golden_hashes.json` that catches drift
+across sessions or CadQuery/OCCT kernel upgrades. `tiacad_core/testing/determinism.py`
+hashes the raw exported-STL bytes (not canonicalized — canonicalizing would hide the
+tessellation drift this gate exists to catch). Goldens are regenerated only by the
+explicit, human-run `scripts/update_determinism_goldens.py`, mirroring the existing
+`UPDATE_VISUAL_REFERENCES` pattern — never by the test suite itself. All 6 corpus models
+build bit-identical mesh hashes across repeated builds on CadQuery 2.8.0 / OCP 7.9.3.1.1
+(Python 3.12).
 
 #### Embedded `expect:` contracts (VALIDATION_STRENGTHENING.md section 4.1)
 

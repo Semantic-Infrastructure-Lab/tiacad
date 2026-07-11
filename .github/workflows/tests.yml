@@ -56,7 +56,7 @@ jobs:
       run: |
         python -c "
         import importlib, sys
-        required = ['trimesh', 'lib3mf', 'jsonschema', 'pyvista', 'cadquery']
+        required = ['trimesh', 'lib3mf', 'jsonschema', 'pyvista', 'cadquery', 'hypothesis']
         missing = []
         for mod in required:
             try:

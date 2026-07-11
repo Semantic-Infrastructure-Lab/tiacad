@@ -339,14 +339,16 @@ class PartsBuilder:
         major_radius = params['major_radius']  # Distance from center to tube center
         minor_radius = params['minor_radius']  # Tube radius
 
-        # Create torus using revolve
-        # Draw circle at (major_radius, 0) with radius minor_radius, then revolve around Z
-        torus = (cq.Workplane("XZ")
-                 .center(major_radius, 0)
-                 .circle(minor_radius)
-                 .revolve(360, (0, 0, 0), (0, 0, 1)))
-
-        return torus
+        # Build the torus via the kernel's direct makeTorus primitive rather than
+        # revolving a profile. The old `Workplane("XZ").center(R,0).circle(r)
+        # .revolve(360, (0,0,0), (0,0,1))` idiom silently produced a *zero-volume*
+        # degenerate solid on the OCP 7.9 / CadQuery 2.8 kernel (the revolve axis
+        # lay in the profile plane) — the only torus test asserted `is not None`,
+        # so it went unnoticed. makeTorus is exact and orientation-stable: the
+        # donut lies flat on XY with its hole along +Z (bbox
+        # 2(R+r) x 2(R+r) x 2r), the orientation the revolve was meant to produce.
+        torus_solid = cq.Solid.makeTorus(major_radius, minor_radius)
+        return cq.Workplane("XY").newObject([torus_solid])
 
     def _build_polygon(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
         """

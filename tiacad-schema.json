@@ -18,6 +18,32 @@
       "description": "Optional metadata about the design",
       "additionalProperties": true
     },
+    "name": {
+      "type": "string",
+      "description": "Optional top-level design name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional top-level design description"
+    },
+    "anchors": {
+      "type": "object",
+      "description": "Named spatial anchors (alias for 'references'; both are accepted)",
+      "additionalProperties": { "type": "object" }
+    },
+    "imports": {
+      "type": "array",
+      "description": "Component imports (reference-based composition)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string", "description": "Path to the component .yaml" },
+          "as": { "type": "string", "description": "Local alias for the imported component" },
+          "parameters": { "type": "object", "description": "Parameter overrides passed to the import" }
+        },
+        "required": ["path"]
+      }
+    },
     "parameters": {
       "type": "object",
       "description": "Parametric design variables",
@@ -36,7 +62,19 @@
       "additionalProperties": {
         "oneOf": [
           { "type": "string" },
-          { "type": "array", "items": { "type": "number" } }
+          { "type": "array", "items": { "type": "number" } },
+          {
+            "type": "object",
+            "description": "Rich palette entry with a color value plus optional appearance fields",
+            "properties": {
+              "value": { "type": "string", "description": "Color value (name or hex)" },
+              "description": { "type": "string" },
+              "metalness": { "type": "number", "minimum": 0, "maximum": 1 },
+              "metallic": { "type": "number", "minimum": 0, "maximum": 1 },
+              "roughness": { "type": "number", "minimum": 0, "maximum": 1 }
+            },
+            "required": ["value"]
+          }
         ]
       }
     },
@@ -46,7 +84,12 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "color": { "type": "string" },
+          "color": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 4 }
+            ]
+          },
           "metallic": { "type": "number", "minimum": 0, "maximum": 1 },
           "roughness": { "type": "number", "minimum": 0, "maximum": 1 },
           "density": { "type": "number" }
@@ -127,6 +170,29 @@
               }
             },
             "required": ["type", "part", "direction"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Axis reference defined by two points",
+            "properties": {
+              "type": { "type": "string", "enum": ["axis"] },
+              "from": {
+                "type": "array",
+                "items": { "type": ["number", "string"] },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Axis start point [x, y, z]"
+              },
+              "to": {
+                "type": "array",
+                "items": { "type": ["number", "string"] },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Axis end point [x, y, z]"
+              }
+            },
+            "required": ["type", "from", "to"],
             "additionalProperties": false
           },
           {
@@ -216,6 +282,16 @@
                 "description": "Direct coordinate [x, y, z]"
               },
               {
+                "type": "array",
+                "description": "Sequence of translation vectors, each [x, y, z]",
+                "items": {
+                  "type": "array",
+                  "items": { "type": ["number", "string"] },
+                  "minItems": 3,
+                  "maxItems": 3
+                }
+              },
+              {
                 "type": "object",
                 "description": "Translate with 'to' target",
                 "properties": {
@@ -258,9 +334,10 @@
             ]
           },
           "size": {
-            "description": "Box dimensions [width, height, depth]",
+            "description": "Box dimensions [width, height, depth], or scalar font size for text primitives",
             "oneOf": [
               { "type": "array", "items": { "type": ["number", "string"] }, "minItems": 3, "maxItems": 3 },
+              { "type": "number" },
               { "type": "string" }
             ]
           },
@@ -324,10 +401,32 @@
             ]
           },
           "color": {
-            "description": "Part color",
+            "description": "Part color: name/hex string, [r,g,b(,a)] array, {r,g,b(,a)} object (0-255), or {h,s,l(,a)} HSL object",
             "oneOf": [
               { "type": "string" },
-              { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 4 }
+              { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 4 },
+              {
+                "type": "object",
+                "description": "RGB object (0-255)",
+                "properties": {
+                  "r": { "type": "number", "minimum": 0, "maximum": 255 },
+                  "g": { "type": "number", "minimum": 0, "maximum": 255 },
+                  "b": { "type": "number", "minimum": 0, "maximum": 255 },
+                  "a": { "type": "number" }
+                },
+                "required": ["r", "g", "b"]
+              },
+              {
+                "type": "object",
+                "description": "HSL object (h:0-360, s/l:0-100, a:0-1)",
+                "properties": {
+                  "h": { "type": "number", "minimum": 0, "maximum": 360 },
+                  "s": { "type": "number", "minimum": 0, "maximum": 100 },
+                  "l": { "type": "number", "minimum": 0, "maximum": 100 },
+                  "a": { "type": "number", "minimum": 0, "maximum": 1 }
+                },
+                "required": ["h", "s", "l"]
+              }
             ]
           },
           "material": {
@@ -485,6 +584,13 @@
                       "enum": ["X", "Y", "Z", "+X", "-X", "+Y", "-Y", "+Z", "-Z"],
                       "description": "Rotation axis"
                     },
+                    "around": {
+                      "description": "Reference to rotate around (alternative to 'axis'): a named reference string or an inline axis definition object",
+                      "oneOf": [
+                        { "type": "string" },
+                        { "type": "object" }
+                      ]
+                    },
                     "angle": {
                       "oneOf": [
                         { "type": "number" },
@@ -493,16 +599,25 @@
                       "description": "Rotation angle in degrees"
                     },
                     "origin": {
-                      "type": "array",
-                      "items": { "type": ["number", "string"] },
-                      "minItems": 3,
-                      "maxItems": 3,
-                      "description": "Optional rotation origin point (default: part origin)"
+                      "description": "Optional rotation origin: [x, y, z] point or a named reference string (default: part origin)",
+                      "oneOf": [
+                        {
+                          "type": "array",
+                          "items": { "type": ["number", "string"] },
+                          "minItems": 3,
+                          "maxItems": 3
+                        },
+                        { "type": "string" }
+                      ]
                     }
                   },
-                  "required": ["axis", "angle"],
+                  "required": ["angle"],
+                  "anyOf": [
+                    { "required": ["axis"] },
+                    { "required": ["around"] }
+                  ],
                   "additionalProperties": false,
-                  "description": "Rotation specification"
+                  "description": "Rotation specification: needs an angle plus either an axis or an 'around' reference"
                 },
                 "scale": {
                   "description": "Scale factor(s)",
@@ -610,17 +725,22 @@
             ]
           },
           "edges": {
-            "description": "Edge selection for finishing",
-            "type": "object",
-            "properties": {
-              "direction": {
-                "type": "string",
-                "enum": ["X", "Y", "Z"]
-              },
-              "selector": {
-                "type": "string"
+            "description": "Edge selection for finishing: keyword string (e.g. 'all') or an object selector",
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "properties": {
+                  "direction": {
+                    "type": "string",
+                    "enum": ["X", "Y", "Z"]
+                  },
+                  "selector": {
+                    "type": "string"
+                  }
+                }
               }
-            }
+            ]
           },
           "plane": {
             "description": "Mirror plane",
@@ -745,24 +865,32 @@
             },
             "formats": {
               "type": "array",
-              "description": "Export formats",
+              "description": "Export formats: a bare format string, or an object with type/path/part",
               "items": {
-                "type": "object",
-                "properties": {
-                  "type": {
+                "oneOf": [
+                  {
                     "type": "string",
                     "enum": ["stl", "step", "obj", "3mf"]
                   },
-                  "path": {
-                    "type": "string",
-                    "description": "Output file path"
-                  },
-                  "part": {
-                    "type": "string",
-                    "description": "Specific part to export"
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["stl", "step", "obj", "3mf"]
+                      },
+                      "path": {
+                        "type": "string",
+                        "description": "Output file path"
+                      },
+                      "part": {
+                        "type": "string",
+                        "description": "Specific part to export"
+                      }
+                    },
+                    "required": ["type"]
                   }
-                },
-                "required": ["type"]
+                ]
               }
             }
           }

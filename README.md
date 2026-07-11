@@ -382,7 +382,7 @@ tiacad/
 │   │   ├── revolve_builder.py         # Revolve operation (4 tests ✅)
 │   │   ├── sweep_builder.py           # Sweep operation (4 tests ✅)
 │   │   ├── loft_builder.py            # Loft operation (6 tests ✅)
-│   │   └── schema_validator.py        # YAML schema validation (32 tests ✅)
+│   │   └── schema_validator.py        # YAML schema validation (114 tests ✅)
 │   │
 │   ├── validation/                    # Assembly validation
 │   │   └── assembly_validator.py      # Part references (19 tests ✅)
@@ -506,7 +506,7 @@ tiacad/
 - Organic shape creation
 - Multi-profile transitions
 
-**16. SchemaValidator (32 tests ✅)**
+**16. SchemaValidator (114 tests ✅)**
 - YAML schema validation against JSON schema
 - Comprehensive error messages
 - Field-level validation
@@ -613,7 +613,7 @@ tiacad/
 - [x] Revolve operation (4 tests)
 - [x] Sweep operation (4 tests)
 - [x] Loft operation (6 tests)
-- [x] Schema validation (32 tests)
+- [x] Schema validation (114 tests)
 - [x] Assembly validation (19 tests)
 - [x] 3MF export (31 tests)
 - [x] Quality improvements (609 total tests, 84% coverage)

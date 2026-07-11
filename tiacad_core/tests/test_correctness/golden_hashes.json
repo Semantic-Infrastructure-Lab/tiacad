@@ -1,0 +1,62 @@
+{
+  "examples/mounting_plate_with_bolt_circle.yaml": {
+    "bbox": [
+      150.0,
+      8.000000000000004,
+      150.0
+    ],
+    "mesh_hash": "c87364877ec145d939763823471e20954c53f0daace2d451e2e9213dd52a4d82",
+    "part": "final_plate",
+    "volume": 168354.11603314258
+  },
+  "examples/pcb_standoff_assembly.yaml": {
+    "bbox": [
+      6.0,
+      6.0,
+      10.0
+    ],
+    "mesh_hash": "e2b431e53aaa938df3394ebc4339cb91c7290c8051bdcf87db24d93e32280ad0",
+    "part": "standoff_fl",
+    "volume": 202.31856689118257
+  },
+  "examples/rounded_mounting_plate.yaml": {
+    "bbox": [
+      150.0,
+      8.000000100000001,
+      150.0
+    ],
+    "mesh_hash": "09e9d6822a8c61c4c5f68ea2b57c4eddad8bce81c53e81c0c822755309f42e29",
+    "part": "plate_finished",
+    "volume": 167612.2285534095
+  },
+  "examples/simple_guitar_hanger.yaml": {
+    "bbox": [
+      100.0,
+      116.48787688701294,
+      79.43514299510528
+    ],
+    "mesh_hash": "e2b54e2a3277ee44984f357a1f4cb1c09d52770c2cbfe322c7ec087f6388f0cd",
+    "part": "hanger",
+    "volume": 218561.75420374598
+  },
+  "examples/trust/boolean_subtract.yaml": {
+    "bbox": [
+      60.0,
+      60.0,
+      20.0
+    ],
+    "mesh_hash": "cef6b9836e8c81a42645941c4f69e6fa8b579bba96021b5d4ec5b1d3f40ca8b3",
+    "part": "result",
+    "volume": 62952.2131576614
+  },
+  "examples/trust/circular_pattern.yaml": {
+    "bbox": [
+      100.0,
+      100.0,
+      8.0
+    ],
+    "mesh_hash": "7c6286a6144387ac68c3f80f1993d6407163a7d750e4ad5e726318de37176935",
+    "part": "final_plate",
+    "volume": 74533.62878275379
+  }
+}
