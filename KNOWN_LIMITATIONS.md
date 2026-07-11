@@ -39,7 +39,7 @@ Before limitations, here's what works great:
 
 ✅ **Project Quality:**
 - Broad automated coverage across parser, correctness, DAG, and visualization workflows
-- 92%+ code coverage
+  (see `TEST_STATUS.json` in the repo root for current pass/fail/coverage counts)
 - 3MF export with color/metadata
 - Schema validation
 

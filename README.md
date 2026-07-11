@@ -390,7 +390,7 @@ tiacad/
 │   ├── exporters/                     # 3D file export
 │   │   └── threemf_exporter.py        # 3MF format (31 tests ✅)
 │   │
-│   ├── tests/                         # 1,926 comprehensive tests ✅
+│   ├── tests/                         # Comprehensive test suite (see TEST_STATUS.json) ✅
 │   │   ├── test_parser/               # Parser tests (Phase 1-3)
 │   │   ├── test_validation/           # Validation tests
 │   │   ├── test_exporters/            # Export tests
@@ -407,7 +407,7 @@ tiacad/
 │   └── ...
 │
 ├── output/                            # Generated STL/3MF files
-├── htmlcov/                           # Coverage report (92%+)
+├── htmlcov/                           # Coverage report (see TEST_STATUS.json)
 ├── docs/                              # Comprehensive documentation
 └── README.md                          # This file
 ```
@@ -548,7 +548,7 @@ For live pass/fail/skip/coverage counts, see the CI-generated
 [`TEST_STATUS.json`](TEST_STATUS.json) — the counts below are a snapshot and
 will drift; `TEST_STATUS.json` is the source of truth.
 
-**Overall:** Broad automated coverage with 92%+ code coverage
+**Overall:** Broad automated coverage across the suite
 
 **Includes:**
 - Testing utility coverage for measurement, orientation, and dimension helpers
@@ -568,7 +568,7 @@ will drift; `TEST_STATUS.json` is the source of truth.
 **Tools Used:**
 - **Ruff**: Modern Python linter for focused and CI-ready cleanup
 - **Pylint**: Code quality analysis for deeper review when needed
-- **pytest-cov**: Coverage analysis (92%+ overall)
+- **pytest-cov**: Coverage analysis (see TEST_STATUS.json for the current overall %)
 - **mypy-ready**: TYPE_CHECKING imports for type safety
 
 **Quality Improvements:**

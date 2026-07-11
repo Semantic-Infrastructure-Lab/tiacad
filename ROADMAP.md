@@ -25,7 +25,7 @@ Q2-Q3 spent hardening the test/validation infrastructure those milestones sit on
 - ✅ Tier 2 geometric contracts for all assembly examples
 - ✅ PCB standoff assembly example (`examples/pcb_standoff_assembly.yaml`)
 
-**Current test suite:** 1,926 tests (1,859 non-visual passing, 0 failing; 67 visual passing).
+**Current test suite:** see `TEST_STATUS.json` (repo root, CI-generated) for live counts.
 
 ---
 

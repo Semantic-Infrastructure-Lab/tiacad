@@ -52,8 +52,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Status Updated:** 2026-07-11
 
 **Test Suite:**
-- 1,926 tests total (1,859 non-visual passing, 0 failing; 67 visual passing)
-- 92%+ code coverage
+- See `TEST_STATUS.json` (repo root, CI-generated) for current pass/fail/skip/coverage counts
 - Confidence-ladder validation corpus (Tiers 0/1/3/4/5) complete under
   `examples/validation/` with embedded `expect:` contracts — see ROADMAP.md
   "What Was Built (Q2-Q3 2026)"

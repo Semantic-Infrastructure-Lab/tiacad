@@ -231,7 +231,7 @@ parts:
 **TiaCAD's verification strategy:**
 
 ```
-1,926 Tests (1,859 non-visual + 67 visual, 0 failing)
+Comprehensive Test Suite (see TEST_STATUS.json for current counts)
 ├── Unit Tests (per-builder validation)
 ├── Integration Tests (full YAML → STL pipeline)
 ├── Correctness Tests (dimensional accuracy, geometry validation)
@@ -561,7 +561,7 @@ Example: "Find all designs with similar mounting patterns"
 2. ✅ **Composability** - Reference-based composition, peer parts
 3. ✅ **Clarity** - Explicit YAML, no hidden behavior
 4. ✅ **Simplicity** - Declarative over imperative
-5. ✅ **Verifiability** - 1,926 tests, deterministic geometry
+5. ✅ **Verifiability** - comprehensive test suite (see TEST_STATUS.json), deterministic geometry
 
 **TiaCAD as Layer 2 Domain Module:**
 - Specialized geometric reasoning
