@@ -369,6 +369,33 @@ example's `expect:` block and safe to trim in a focused follow-up — deferred
 here rather than rushed, since misclassifying a class as "final-only" and
 deleting real sub-part coverage would be a net loss.
 
+**Shipped 2026-07-11 (trim):** went through every Tier-2 class by hand,
+cross-checking each asserted value against its example's `expect:` block
+before deleting anything (a couple of near-misses: `TestAutoRefsCylinderAssembly`
+and `TestAnchorsDemoPlatform` *look* final-only but actually measure a
+non-exported sub-part — `shaft`/`platform` — while the file's `expect: final:`
+is a different part (`sphere_top`/`crossbar`); both were kept in full since
+`expect:` says nothing about the part they check). 14 classes were fully
+redundant and deleted outright: `TestSimpleBox`, `TestSimpleExtrude`,
+`TestBracketWithHole`, `TestTransitionLoft`, `TestFormatsDemo`,
+`TestTextOperations`, `TestChamferedBracket`, `TestPipeSweepSimple`,
+`TestBottleRevolve`, `TestMountingPlateWithBoltCircle`, `TestWeek5AlignToFace`,
+`TestWeek5Assembly`, `TestWeek5FrameBasedRotation`, `TestDagTestSimple`. 7 more
+classes were partially trimmed — the final-only methods removed, sub-part or
+cross-file methods kept: `TestAutoReferencesBoxStack.test_top_box_volume`,
+`TestV3SimpleBox.test_top_volume`, `TestLegoMath.test_2x1_volume_in_range`,
+`TestRoundedMountingPlate.test_bounding_box` (kept
+`test_volume_less_than_sharp_edge_variant` — genuinely cross-file),
+`TestLegoBrick3x1.test_bounding_box`/`test_volume_in_range` (kept
+`test_volume_larger_than_2x1` — cross-file), `TestV3BracketMount.test_bounding_box`/
+`test_volume_positive` (kept `test_volume_below_sum_of_parts` — a sum-of-
+sub-parts derived bound `expect:` has no syntax for, per this section's own
+call-out above), `TestSimpleGuitarHanger.test_width_matches_plate_width` (kept
+its two sum-of-parts/derived-bound tests for the same reason). 39 test methods
+removed total; full non-visual suite went from 1876 passed / 0 failed / 67
+deselected to 1837 passed / 0 failed / 67 deselected — an exact 39-test drop,
+no regressions.
+
 **Bug found via this tooling, fixed 2026-07-10:**
 `examples/mounting_plate_with_bolt_circle.yaml`'s boolean difference produced
 3 disconnected components instead of 1 (48/252/252-vertex islands) — a real
@@ -867,9 +894,10 @@ shipped) + Hypothesis property tests (4.2, shipped 2026-07-10) + T0/T1 ladder co
 Tier-2 pytest class — 50 models now discovered and checked by
 `test_embedded_contracts.py` (shipped 2026-07-11). *Adding a validated model is now
 trivial* — a model + five lines of `expect:`, no bespoke pytest class required —
-which was the "easier" half of the mandate. Still open, deferred rather than rushed
-(see §4.1's 2026-07-11 note): trimming the now-redundant subset of hand-written
-Tier-2 pytest classes.
+which was the "easier" half of the mandate. **Phase 2 fully complete 2026-07-11:**
+the now-redundant subset of hand-written Tier-2 pytest classes has been trimmed
+(see §4.1's 2026-07-11 "Shipped (trim)" note) — 14 classes deleted outright, 7
+more partially trimmed, 39 test methods removed, no regressions.
 
 **Phase 3 — Depth: Tier 3 and Tier 4 shipped 2026-07-11 (§5).** Connectivity gate
 (4.6, shipped 2026-07-10) + composite-part ladder corpus (Tier 3, 4 models, §5) +

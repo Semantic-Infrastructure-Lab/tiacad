@@ -131,32 +131,6 @@ TOL = 0.5  # mm tolerance for all dimensional checks
 VOL_TOL = 50  # mm³ tolerance for volume checks
 
 
-class TestSimpleBox:
-    """simple_box.yaml: width=50, height=30, depth=20 → 50×30×20, vol=30,000"""
-
-    def test_dimensions(self):
-        dims, _ = _parse_and_measure_final("simple_box.yaml")
-        # Bounding box: 50mm × 20mm × 30mm (audit confirmed)
-        assert dims["width"] == pytest.approx(50.0, abs=TOL)
-
-    def test_volume(self):
-        dims, _ = _parse_and_measure_final("simple_box.yaml")
-        assert dims["volume"] == pytest.approx(30_000.0, abs=VOL_TOL)
-
-
-class TestSimpleExtrude:
-    """simple_extrude.yaml: width=20, height=10, depth=5 → 20×10×5, vol=1,000"""
-
-    def test_dimensions(self):
-        dims, _ = _parse_and_measure_final("simple_extrude.yaml")
-        assert dims["width"] == pytest.approx(20.0, abs=TOL)
-        assert dims["height"] == pytest.approx(10.0, abs=TOL)
-
-    def test_volume(self):
-        dims, _ = _parse_and_measure_final("simple_extrude.yaml")
-        assert dims["volume"] == pytest.approx(1_000.0, abs=VOL_TOL)
-
-
 class TestAutoReferencesBoxStack:
     """auto_references_box_stack.yaml: three stacked boxes, each independently measurable."""
 
@@ -186,41 +160,6 @@ class TestAutoReferencesBoxStack:
         assert dims["height"] == pytest.approx(40.0, abs=TOL)
         assert dims["depth"] == pytest.approx(15.0, abs=TOL)
 
-    def test_top_box_volume(self):
-        doc = self._parse()
-        part = doc.parts.get("top")
-        dims = get_dimensions(part)
-        assert dims["volume"] == pytest.approx(18_000.0, abs=VOL_TOL)
-
-
-class TestBracketWithHole:
-    """bracket_with_hole.yaml: extrude with subtract — volume must be less than solid."""
-
-    def _parse(self):
-        return TiaCADParser.parse_file(str(EXAMPLES / "bracket_with_hole.yaml"))
-
-    def test_final_part_has_material_removed(self):
-        """The hole subtract must actually reduce volume below a solid bracket."""
-        doc = self._parse()
-        bracket = doc.parts.get("bracket")
-        dims = get_dimensions(bracket)
-        # bracket_width=50, bracket_height=20, bracket_depth=10 → solid = 10,000 mm³
-        solid_volume = 50 * 20 * 10
-        assert dims["volume"] < solid_volume, (
-            f"Hole subtract did not reduce volume: {dims['volume']:.1f} >= {solid_volume} mm³"
-        )
-
-    def test_final_part_volume_positive(self):
-        doc = self._parse()
-        dims = get_dimensions(doc.parts.get("bracket"))
-        assert dims["volume"] > 0
-
-    def test_final_part_volume_in_range(self):
-        """Volume should be audit-verified ~9,214 mm³ (solid - hole cylinder)."""
-        doc = self._parse()
-        dims = get_dimensions(doc.parts.get("bracket"))
-        assert dims["volume"] == pytest.approx(9_214.0, abs=100.0)
-
 
 class TestV3SimpleBox:
     """v3_simple_box.yaml: base=100×100×10 (vol=100k), top=50×50×20 (vol=50k)."""
@@ -233,33 +172,6 @@ class TestV3SimpleBox:
         dims = get_dimensions(doc.parts.get("base"))
         assert dims["volume"] == pytest.approx(100_000.0, abs=VOL_TOL)
 
-    def test_top_volume(self):
-        doc = self._parse()
-        dims = get_dimensions(doc.parts.get("top"))
-        assert dims["volume"] == pytest.approx(50_000.0, abs=VOL_TOL)
-
-
-class TestTransitionLoft:
-    """transition_loft.yaml: loft between two profiles — must produce positive volume."""
-
-    def test_volume_positive(self):
-        dims, _ = _parse_and_measure_final("transition_loft.yaml")
-        assert dims["volume"] > 0
-
-    def test_volume_in_range(self):
-        """Audit: ~5,371 mm³."""
-        dims, _ = _parse_and_measure_final("transition_loft.yaml")
-        assert dims["volume"] == pytest.approx(5_371.0, abs=200.0)
-
-
-class TestFormatsDemo:
-    """formats_demo.yaml: simple box with fillet exported in multiple formats — geometry must be correct."""
-
-    def test_volume(self):
-        dims, _ = _parse_and_measure_final("formats_demo.yaml")
-        # Filleted box: 50x50x20 = 50,000mm³ minus corner material from r=2 fillet
-        assert dims["volume"] == pytest.approx(49_598.0, abs=200.0)
-
 
 class TestLegoMath:
     """Lego bricks: 2×1 and 3×1 should have correct relative volumes."""
@@ -270,29 +182,6 @@ class TestLegoMath:
         assert dims_3x1["volume"] > dims_2x1["volume"], (
             f"3×1 brick ({dims_3x1['volume']:.0f}) should be larger than 2×1 ({dims_2x1['volume']:.0f})"
         )
-
-    def test_2x1_volume_in_range(self):
-        """Audit: ~907 mm³ (post-fix; 988 was the erroneous sum of 6 disconnected bodies)."""
-        dims, _ = _parse_and_measure_final("lego_brick_2x1.yaml")
-        assert dims["volume"] == pytest.approx(907.0, abs=50.0)
-
-
-class TestTextOperations:
-    """Text operations must actually engrave/emboss: reduce/increase volume vs solid base."""
-
-    def test_engraved_volume_below_solid(self):
-        """text_engraved.yaml: engraving removes material from base plate."""
-        dims, _ = _parse_and_measure_final("text_engraved.yaml")
-        # Base plate is 100×60×5 = 30,000 mm³. Engraving reduces volume.
-        assert dims["volume"] < 30_000.0, (
-            f"Engraving did not remove material: volume {dims['volume']:.1f} >= 30,000 mm³"
-        )
-        assert dims["volume"] > 0
-
-    def test_emboss_simple_positive_volume(self):
-        """text_operation_emboss_simple.yaml: embossing must produce geometry."""
-        dims, _ = _parse_and_measure_final("text_operation_emboss_simple.yaml")
-        assert dims["volume"] > 0
 
 
 class TestComponentImportDemo:
@@ -804,158 +693,6 @@ class TestPcbStandoffAssembly:
 
 
 # ---------------------------------------------------------------------------
-# Tier 2: chamfered_bracket — L-bracket bounding box from parameters
-# ---------------------------------------------------------------------------
-
-class TestChamferedBracket:
-    """
-    examples/chamfered_bracket.yaml: base_width=80, base_depth=80,
-    base_thickness=6, vertical_height=60, vertical_thickness=6.
-
-    Box semantics: width→X, depth→Y, height→Z.
-      base_plate:     X:0-80, Y:0-6 (depth=base_thickness), Z:0-80 (height=base_depth)
-      vertical_plate: X:0-80, Y:6-66 (depth=vertical_height, translate Y=base_thickness)
-
-    Bounding box of assembled bracket (chamfers don't move flat faces):
-      W = base_width = 80
-      H = base_thickness + vertical_height = 6 + 60 = 66
-      D = base_depth = 80
-    """
-
-    def _parse(self):
-        return TiaCADParser.parse_file(str(EXAMPLES / "chamfered_bracket.yaml"))
-
-    def test_bounding_box(self):
-        """W=base_width=80, H=base_thickness+vertical_height=66, D=base_depth=80."""
-        dims, _ = _parse_and_measure_final("chamfered_bracket.yaml")
-        assert dims["width"] == pytest.approx(80.0, abs=TOL)   # base_width
-        assert dims["height"] == pytest.approx(66.0, abs=TOL)  # base_thickness(6) + vertical_height(60)
-        assert dims["depth"] == pytest.approx(80.0, abs=TOL)   # base_depth
-
-    def test_volume_below_unchamfered_solid(self):
-        """Chamfers and holes remove material: vol < unchamfered base+vertical union."""
-        # base_plate: 80*6*80=38400, vertical_plate: 80*60*6=28800 → sum=67200
-        dims, _ = _parse_and_measure_final("chamfered_bracket.yaml")
-        assert dims["volume"] < 67200.0
-
-    def test_volume_above_lower_bound(self):
-        """After chamfers and 4 bolt holes, vol still > 64000mm³."""
-        # 4 holes ≈ 4*π*3.25²*6 ≈ 796mm³; chamfers ≈ minor material removal
-        dims, _ = _parse_and_measure_final("chamfered_bracket.yaml")
-        assert dims["volume"] > 64000.0
-
-
-# ---------------------------------------------------------------------------
-# Tier 2: pipe_sweep_simple — swept L-pipe, volume = π×r²×path_length
-# ---------------------------------------------------------------------------
-
-class TestPipeSweepSimple:
-    """
-    examples/pipe_sweep_simple.yaml: pipe_radius=5.
-    Path: [0,0,0]→[0,0,20]→[20,0,20] — two 20mm segments, total length=40mm.
-
-    Volume (exact): π × r² × L = π × 25 × 40 = 3141.593mm³
-    Bounding box:
-      W = path_X_range + radius = 20 + 5 = 25  (pipe center 0→20 in X, +radius on end)
-      H = 2 × radius = 10                        (no Y in path)
-      D = path_Z + radius = 20 + 5 = 25          (center 0→20 in Z, +radius at start)
-    """
-
-    def test_volume_matches_formula(self):
-        """π × 5² × 40 = 3141.593mm³ — sweep preserves circular cross-section area."""
-        import math
-        expected = math.pi * 5**2 * 40
-        dims, _ = _parse_and_measure_final("pipe_sweep_simple.yaml")
-        assert dims["volume"] == pytest.approx(expected, abs=1.0)
-
-    def test_bounding_box(self):
-        """W=25 (path X + radius), H=10 (2×radius), D=25 (path Z + radius)."""
-        dims, _ = _parse_and_measure_final("pipe_sweep_simple.yaml")
-        assert dims["width"] == pytest.approx(25.0, abs=TOL)
-        assert dims["height"] == pytest.approx(10.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(25.0, abs=TOL)
-
-
-# ---------------------------------------------------------------------------
-# Tier 2: bottle_revolve — 360° revolve, radially symmetric bounding box
-# ---------------------------------------------------------------------------
-
-class TestBottleRevolve:
-    """
-    examples/bottle_revolve.yaml: bottle_radius=10, bottle_height=30.
-    Full 360° revolve of profile in XZ plane around Z axis.
-
-    Bounding box (radial symmetry):
-      W = H = 2 × bottle_radius = 20  (±radius in X and Y)
-      D = bottle_height = 30           (Z axis, profile Z-extent)
-
-    Volume (Pappus theorem): 2π × centroid_x × profile_area
-      Profile polygon area = bottle_radius*(bottle_height-neck_height) + neck_radius*neck_height
-                           = 10*22 + 3*8 = 244mm²
-      centroid_x = (10*22*5 + 3*8*1.5) / 244 = 1136/244 ≈ 4.656mm
-      Volume ≈ 2π × 4.656 × 244 ≈ 7138mm³
-    """
-
-    def test_bounding_box(self):
-        """W=H=2×bottle_radius=20; D=bottle_height=30."""
-        dims, _ = _parse_and_measure_final("bottle_revolve.yaml")
-        assert dims["width"] == pytest.approx(20.0, abs=TOL)
-        assert dims["height"] == pytest.approx(20.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(30.0, abs=TOL)
-
-    def test_volume_matches_pappus(self):
-        """Volume from Pappus theorem ≈ 7138mm³."""
-        import math
-        neck_height = 8
-        bottle_height = 30
-        bottle_radius = 10
-        neck_radius = 3
-        body_area = bottle_radius * (bottle_height - neck_height)   # 10 * 22 = 220
-        neck_area = neck_radius * neck_height                        # 3 * 8 = 24
-        total_area = body_area + neck_area                           # 244
-        centroid_x = (body_area * bottle_radius / 2 + neck_area * neck_radius / 2) / total_area
-        expected = 2 * math.pi * centroid_x * total_area
-        dims, _ = _parse_and_measure_final("bottle_revolve.yaml")
-        assert dims["volume"] == pytest.approx(expected, abs=5.0)
-
-
-# ---------------------------------------------------------------------------
-# Tier 2: mounting_plate_with_bolt_circle — plate bbox from parameters
-# ---------------------------------------------------------------------------
-
-class TestMountingPlateWithBoltCircle:
-    """
-    examples/mounting_plate_with_bolt_circle.yaml:
-    plate_width=150, plate_height=150, plate_thickness=8.
-    6 bolt holes + 1 center hole cut from plate.
-
-    Box semantics: width→X, depth→Y, height→Z.
-    Plate uses width=plate_width, depth=plate_thickness, height=plate_height so:
-      W = plate_width = 150
-      H = plate_thickness = 8
-      D = plate_height = 150
-    Volume < solid plate (holes remove material).
-    """
-
-    def test_bounding_box(self):
-        """W=plate_width=150, H=plate_thickness=8, D=plate_height=150."""
-        dims, _ = _parse_and_measure_final("mounting_plate_with_bolt_circle.yaml")
-        assert dims["width"] == pytest.approx(150.0, abs=TOL)
-        assert dims["height"] == pytest.approx(8.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(150.0, abs=TOL)
-
-    def test_volume_below_solid(self):
-        """Holes reduce volume below solid plate: 150×8×150=180,000mm³."""
-        dims, _ = _parse_and_measure_final("mounting_plate_with_bolt_circle.yaml")
-        assert dims["volume"] < 180000.0
-
-    def test_volume_positive(self):
-        """Holes don't remove all material."""
-        dims, _ = _parse_and_measure_final("mounting_plate_with_bolt_circle.yaml")
-        assert dims["volume"] > 100000.0
-
-
-# ---------------------------------------------------------------------------
 # Tier 2: rounded_mounting_plate — edge fillets reduce volume vs bolt-circle variant
 # ---------------------------------------------------------------------------
 
@@ -964,13 +701,6 @@ class TestRoundedMountingPlate:
     examples/rounded_mounting_plate.yaml: same plate_width=150, plate_thickness=8.
     Adds edge_fillet_radius=2.0 on all edges → slightly less volume than non-rounded variant.
     """
-
-    def test_bounding_box(self):
-        """Same outer dimensions as non-rounded plate: W=150, H=8, D=150."""
-        dims, _ = _parse_and_measure_final("rounded_mounting_plate.yaml")
-        assert dims["width"] == pytest.approx(150.0, abs=TOL)
-        assert dims["height"] == pytest.approx(8.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(150.0, abs=TOL)
 
     def test_volume_less_than_sharp_edge_variant(self):
         """Fillets remove corner material → less volume than bolt-circle plate."""
@@ -1033,31 +763,6 @@ class TestAnchorsDemoPlatform:
 
 
 # ---------------------------------------------------------------------------
-# Tier 2: week5_align_to_face — rotation preserves volume
-# ---------------------------------------------------------------------------
-
-class TestWeek5AlignToFace:
-    """
-    examples/week5_align_to_face.yaml:
-    bracket: width=30, height=10 (→Y), depth=20 (→Z).
-    Final op = bracket_rotated (45° rotation of bracket).
-
-    Rotation does NOT change volume: 30 × 10 × 20 = 6,000mm³.
-    depth (Z extent, unaffected by rotation around Z) = height parameter = 10.
-    """
-
-    def test_volume_invariant_under_rotation(self):
-        """Rotation preserves volume: 30×10×20 = 6,000mm³."""
-        dims, _ = _parse_and_measure_final("week5_align_to_face.yaml")
-        assert dims["volume"] == pytest.approx(6000.0, abs=5.0)
-
-    def test_depth_unchanged_by_rotation(self):
-        """Z extent (depth) is unaffected by rotation about Z: depth = height param = 10."""
-        dims, _ = _parse_and_measure_final("week5_align_to_face.yaml")
-        assert dims["depth"] == pytest.approx(10.0, abs=TOL)
-
-
-# ---------------------------------------------------------------------------
 # Tier 2: lego_brick_3x1 — 3-stud brick: bbox and volume after 3x1 bug fix
 # ---------------------------------------------------------------------------
 
@@ -1082,18 +787,6 @@ class TestLegoBrick3x1:
 
     Volume ≈ 1310mm³ (watertight merged body; hollow posts = trimesh component artefact).
     """
-
-    def test_bounding_box(self):
-        """W=brick_length=24, H=brick_height=9.6, D=brick_width+stud_height−0.1≈9.6."""
-        dims, _ = _parse_and_measure_final("lego_brick_3x1.yaml")
-        assert dims["width"] == pytest.approx(24.0, abs=TOL)   # X: brick_length
-        assert dims["height"] == pytest.approx(9.6, abs=TOL)   # Y: brick_height
-        assert dims["depth"] == pytest.approx(9.6, abs=TOL)    # Z: brick_width+stud_height-0.1
-
-    def test_volume_in_range(self):
-        """Hollow brick with 3 studs and 3 posts: volume ≈ 1310mm³."""
-        dims, _ = _parse_and_measure_final("lego_brick_3x1.yaml")
-        assert dims["volume"] == pytest.approx(1310.0, abs=100.0)
 
     def test_volume_larger_than_2x1(self):
         """3×1 brick must have more volume than 2×1 (extra stud + longer body)."""
@@ -1126,23 +819,11 @@ class TestV3BracketMount:
     Volume < sum of solid parts (150×100×8 + 150×80×6 + 2×12×60×80 = 307,200mm³).
     """
 
-    def test_bounding_box(self):
-        """W=base_width=150, H=140 (base [-50,50] unioned with bracket [-90,-10]), D=arm_depth=60."""
-        dims, _ = _parse_and_measure_final("v3_bracket_mount.yaml")
-        assert dims["width"] == pytest.approx(150.0, abs=TOL)
-        assert dims["height"] == pytest.approx(140.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(60.0, abs=TOL)
-
     def test_volume_below_sum_of_parts(self):
         """Assembly has overlaps/holes: vol < base+bracket+2arms = 307,200mm³."""
         dims, _ = _parse_and_measure_final("v3_bracket_mount.yaml")
         # base: 150×100×8=120000, bracket: 150×80×6=72000, 2 arms: 2×(12×60×80)=115200
         assert dims["volume"] < 307_200.0
-
-    def test_volume_positive(self):
-        """Assembly must produce solid geometry."""
-        dims, _ = _parse_and_measure_final("v3_bracket_mount.yaml")
-        assert dims["volume"] > 0
 
 
 # ---------------------------------------------------------------------------
@@ -1164,11 +845,6 @@ class TestSimpleGuitarHanger:
       2 arms: 2 × (22 × 16 × 70) = 49,280mm³
       total = 226,880mm³ (upper bound; union with overlaps gives less)
     """
-
-    def test_width_matches_plate_width(self):
-        """X extent = plate_w = 100 (plate is widest component)."""
-        dims, _ = _parse_and_measure_final("simple_guitar_hanger.yaml")
-        assert dims["width"] == pytest.approx(100.0, abs=TOL)
 
     def test_volume_below_sum_of_parts(self):
         """Union with overlaps: vol < plate+beam+2arms = 226,880mm³."""
@@ -1311,88 +987,3 @@ class TestAwesomeGuitarHangerHoles:
             )
 
 
-# ---------------------------------------------------------------------------
-# Tier 2: week5_assembly — gear cylinder on shaft, volume from formula
-# ---------------------------------------------------------------------------
-
-class TestWeek5Assembly:
-    """
-    examples/week5_assembly.yaml: final part = rotated_gear (drive_gear rotated 45°).
-
-    drive_gear: cylinder radius=12, height=8.
-    Rotation about shaft_axis (Z-axis through [60,40,Z]) does not change shape.
-    Only geometry: the cylinder itself.
-
-    Volume = π × r² × h = π × 144 × 8 = 3619.1mm³
-    Bounding box: W = H = 2×radius = 24, D = height = 8.
-    """
-
-    def test_gear_bounding_box(self):
-        """Gear cylinder: W=H=2×radius=24, D=height=8."""
-        dims, _ = _parse_and_measure_final("week5_assembly.yaml")
-        assert dims["width"] == pytest.approx(24.0, abs=TOL)
-        assert dims["height"] == pytest.approx(24.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(8.0, abs=TOL)
-
-    def test_gear_volume_matches_formula(self):
-        """vol = π × 12² × 8 = 3619.1mm³."""
-        import math
-        dims, _ = _parse_and_measure_final("week5_assembly.yaml")
-        expected = math.pi * 12**2 * 8
-        assert dims["volume"] == pytest.approx(expected, abs=VOL_TOL)
-
-
-# ---------------------------------------------------------------------------
-# Tier 2: week5_frame_based_rotation — gear cylinder, volume from formula
-# ---------------------------------------------------------------------------
-
-class TestWeek5FrameBasedRotation:
-    """
-    examples/week5_frame_based_rotation.yaml: final part = gear_multi_rotation.
-
-    Cylinder: radius=15, height=5.
-    Volume = π × r² × h = π × 225 × 5 ≈ 3534.3mm³.
-
-    TiaCAD cylinder: height → Y axis.
-    Bounding box: W = D = 2×radius = 30, H = height = 5.
-    """
-
-    def test_bounding_box(self):
-        """W=D=2×radius=30 (X and Z), H=height=5 (Y: cylinder axis)."""
-        dims, _ = _parse_and_measure_final("week5_frame_based_rotation.yaml")
-        assert dims["width"] == pytest.approx(30.0, abs=TOL)
-        assert dims["height"] == pytest.approx(5.0, abs=TOL)   # Y: cylinder height axis
-        assert dims["depth"] == pytest.approx(30.0, abs=TOL)
-
-    def test_volume_matches_formula(self):
-        """vol = π × 15² × 5 ≈ 3534.3mm³."""
-        import math
-        dims, _ = _parse_and_measure_final("week5_frame_based_rotation.yaml")
-        expected = math.pi * 15**2 * 5
-        assert dims["volume"] == pytest.approx(expected, abs=VOL_TOL)
-
-
-# ---------------------------------------------------------------------------
-# Tier 2: dag_test_simple — stacked boxes union
-# ---------------------------------------------------------------------------
-
-class TestDagTestSimple:
-    """
-    examples/dag_test_simple.yaml: base_size=50, height=20.
-
-    base: box(width=50, depth=50, height=20) → X=50, Y=50, Z=20.
-    addon (thickness=5) is fully contained within base in Z (5 < 20).
-    Union bbox = base bbox = 50×50×20. Volume = 50×50×20 = 50,000mm³.
-    """
-
-    def test_bounding_box(self):
-        """W=H=base_size=50, D=height=20."""
-        dims, _ = _parse_and_measure_final("dag_test_simple.yaml")
-        assert dims["width"] == pytest.approx(50.0, abs=TOL)
-        assert dims["height"] == pytest.approx(50.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(20.0, abs=TOL)
-
-    def test_volume(self):
-        """vol = base_size × base_size × height = 50 × 50 × 20 = 50,000mm³."""
-        dims, _ = _parse_and_measure_final("dag_test_simple.yaml")
-        assert dims["volume"] == pytest.approx(50_000.0, abs=VOL_TOL)
