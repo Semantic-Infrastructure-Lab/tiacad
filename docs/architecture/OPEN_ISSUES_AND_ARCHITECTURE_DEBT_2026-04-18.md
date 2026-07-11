@@ -30,33 +30,27 @@ The repo is in materially better shape than it was at the start of this cleanup 
 
 The remaining debt is not “rewrite territory.” It is concentrated in a handful of seams:
 
-1. schema/version contract drift is still real
+1. ~~schema/version contract drift~~ — fixed 2026-07-10, see item #1 below
 2. backend selection is still partly ambient global state
 3. parser and watch orchestration are still heavy coordinators
 4. `OperationsBuilder`, `Part`, and `cli.py` remain central coupling hubs
 5. visualization is still split across two packages with overlapping responsibility
 6. validation is still largely heuristic and bbox-driven
 
+(Items 2-6 above not re-verified during the 2026-07-11 doc-coherence pass —
+carried forward into `BACKLOG.md` as "needs re-check," not "confirmed still true.")
+
 ## Open Issues
 
-### 1. Schema version contract is still inconsistent
+### 1. Schema version contract is still inconsistent — ✅ Fixed 2026-07-10
 
-This is still the clearest active contract issue.
-
-The parser now defaults to schema `3.0`, but a large amount of active repo content still declares `schema_version: "2.0"`:
-
-- active examples such as `examples/color_demo.yaml`, `examples/component_import_demo.yaml`, `examples/pipe_sweep.yaml`
-- trust examples under `examples/trust/`
-- stdlib/component YAML such as `tiacad_core/stdlib/hardware/*.yaml`
-- active tests such as `tiacad_core/tests/test_parser/test_color_integration.py`
-
-Impact:
-
-- parser warnings on legitimate repo-owned files
-- unclear migration status for contributors
-- continued ambiguity about what schema version is actually current
-
-This is not just documentation drift. It is a live public contract inconsistency inside the repo.
+Resolved as part of the dependency-posture/CAD-kernel modernization pass (see
+`docs/developer/VALIDATION_STRENGTHENING.md` §5 housekeeping). Verified
+2026-07-11: `grep -rl 'schema_version: "2.0"' examples/ tiacad_core/stdlib/`
+returns 0 matches; all 88 checked files now declare `schema_version: "3.0"`.
+The remaining items below (#2-6, renumbered from the original #2-9) were not
+re-verified in this pass — treat as needing a fresh check before relying on
+them, not as confirmed-current.
 
 ### 2. Backend selection still relies on process-global state
 

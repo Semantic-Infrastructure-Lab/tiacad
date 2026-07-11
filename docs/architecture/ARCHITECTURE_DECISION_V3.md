@@ -1,7 +1,7 @@
 # Architecture Decision Record: TiaCAD v3.0 Clean Architecture
 
 **Date:** 2025-11-02
-**Status:** ✅ **APPROVED - Implementation Starting**
+**Status:** ✅ **APPROVED — Implemented** (v3.0 shipped; current version v3.1.2 builds on this architecture)
 **Decision:** Adopt clean unified spatial reference architecture, breaking backward compatibility
 
 ---

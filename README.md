@@ -765,7 +765,7 @@ Every component has comprehensive tests:
 **Architecture & Design:**
 - [docs/architecture/ARCHITECTURE_DECISION_V3.md](docs/architecture/ARCHITECTURE_DECISION_V3.md) - v3.0 design rationale
 - [docs/architecture/MENTAL_MODELS_AND_LANGUAGE.md](docs/architecture/MENTAL_MODELS_AND_LANGUAGE.md) - Language design exploration
-- [docs/architecture/SKETCH_ABSTRACTION_DESIGN.md](docs/architecture/SKETCH_ABSTRACTION_DESIGN.md) - Sketch system design
+- [docs/archive/SKETCH_ABSTRACTION_DESIGN.md](docs/archive/SKETCH_ABSTRACTION_DESIGN.md) - Sketch system design
 - [docs/architecture/CLEAN_ARCHITECTURE_PROPOSAL.md](docs/architecture/CLEAN_ARCHITECTURE_PROPOSAL.md) - Architecture principles
 
 **Testing:**

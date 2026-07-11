@@ -2,7 +2,12 @@
 
 **Release Date:** 2025-11-11
 **Status:** ✅ COMPLETE - Testing Confidence Plan Phase 1
-**Version:** 3.1.0
+**Version:** 3.1.0 — historical; current version is v3.1.2, see `CHANGELOG.md`
+and `ROADMAP.md` for what shipped since. The "What's Next (v3.2)" section
+below is superseded: those items (visual regression, contact
+detection/connectivity, hole/feature detection) have since shipped, and the
+"Q2 2026" date for semantic constraints is outdated — `ROADMAP.md` now
+targets Q4 2026 for the constraint solver.
 
 ---
 

@@ -63,7 +63,7 @@ Principles for clean, maintainable code organization:
 
 ### Component Design
 
-**[SKETCH_ABSTRACTION_DESIGN.md](SKETCH_ABSTRACTION_DESIGN.md)**
+**[SKETCH_ABSTRACTION_DESIGN.md](../archive/SKETCH_ABSTRACTION_DESIGN.md)**
 
 Deep dive into sketch system design:
 - 2D geometry in 3D space
@@ -103,7 +103,7 @@ Architecture diagrams and visualizations:
    - Understand current v3 design
    - Learn key architectural patterns
 
-3. **Deep Dive:** [SKETCH_ABSTRACTION_DESIGN.md](SKETCH_ABSTRACTION_DESIGN.md)
+3. **Deep Dive:** [SKETCH_ABSTRACTION_DESIGN.md](../archive/SKETCH_ABSTRACTION_DESIGN.md)
    - Core abstraction (sketches)
    - How 2D/3D geometry integrates
 

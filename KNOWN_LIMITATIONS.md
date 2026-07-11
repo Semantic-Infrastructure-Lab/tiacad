@@ -324,7 +324,8 @@ of translation vectors" form. Dedicated regression coverage:
 `TestV3BracketMount.test_bounding_box` (`v3_bracket_mount.yaml`) had asserted the
 bug-compatible bbox (`height: 100.0`); corrected to the geometrically-derived true
 value (`140.0` — base plate ∪ bracket, whose center now correctly lands on
-`base_plate.face_back`). Full non-visual suite (1732 tests) and visual regression
+`base_plate.face_back`). Full non-visual suite (1732 tests at the time of this
+fix — current count is higher, see ROADMAP.md) and visual regression
 (67 tests) both green after the fix; no visual golden PNGs cover the 12 affected
 files.
 

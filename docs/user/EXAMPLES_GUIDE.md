@@ -489,3 +489,11 @@ Start with a working example, modify parameters, then add your own features. The
 
 **Status:** Active example guide
 **Scope:** Includes working examples plus a small number of intentional or documented special cases
+
+**Note (2026-07-11):** this guide's curated catalog does not yet include the
+`examples/validation/` confidence-ladder corpus (T0-T5 + `negative/N1-N6`,
+~20 files) added in the Q2-Q3 2026 validation-strengthening work — those are
+oracle-driven test fixtures with embedded `expect:` contracts rather than
+user-facing demos, so they're intentionally not catalogued here in the same
+style as the curated examples above. See `docs/developer/VALIDATION_STRENGTHENING.md`
+and `docs/developer/MODEL_VALIDATION.md` if you're looking for those instead.

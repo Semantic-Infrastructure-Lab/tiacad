@@ -1,15 +1,22 @@
 # TiaCAD Roadmap
 
-**Last Updated:** 2026-03-16
-**Current Version:** v3.1.2 (+32 commits since release)
+**Last Updated:** 2026-07-11
+**Current Version:** v3.1.2
 
 ---
 
-## Current Focus (Q1 2026)
+## Current Focus (Q3 2026)
 
-**Status:** 🟢 **Active Development** — both Q1 milestones completed ahead of schedule
+**Status:** 🟢 **Active Development** — Q1 milestones shipped ahead of schedule;
+Q2-Q3 spent hardening the test/validation infrastructure those milestones sit on.
 
-**Completed this quarter:**
+**Completed this quarter (Q3, in progress):**
+- ✅ Confidence-ladder validation corpus (Tiers 0/1/3/4/5) — see "What Was Built
+  (Q2-Q3 2026)" below
+- ✅ `SpatialResolver` longest-prefix-match fix for dotted namespaced part
+  references (2026-07-11)
+
+**Completed Q1 2026:**
 - ✅ Fixed all 17 test failures (0 failing as of 2026-03-10)
 - ✅ Component/Module Import System — local, stdlib, GitHub URI schemes (Mar 2026)
 - ✅ Dependency Graph (DAG) + Incremental Rebuild + Watch Mode (Mar 2026)
@@ -18,18 +25,19 @@
 - ✅ Tier 2 geometric contracts for all assembly examples
 - ✅ PCB standoff assembly example (`examples/pcb_standoff_assembly.yaml`)
 
-**Current test suite:** broad parser, correctness, DAG, visual, and integration coverage.
+**Current test suite:** 1,904 tests (1,840 non-visual passing, 0 failing; 67 visual passing).
 
 ---
 
-## Strategic Plan (Updated Mar 2026)
+## Strategic Plan (Updated Jul 2026)
 
 **Executed roadmap:**
 
 1. **Q1 2026:** Component System ✅ **DONE** — local/stdlib/GitHub imports + hardware stdlib
 2. **Q1 2026:** DAG + Watch ✅ **DONE** — incremental rebuild, wired into watcher.py
-3. **Q4 2026:** Constraint Solver — **current next milestone**
-4. **2027+:** CGA v5.0 Architecture — research moonshot
+3. **Q2-Q3 2026:** Validation Confidence Ladder ✅ **DONE** — see below
+4. **Q4 2026:** Constraint Solver — **current next milestone**
+5. **2027+:** CGA v5.0 Architecture — research moonshot
 
 ---
 
@@ -95,6 +103,46 @@ parameters:
 ```
 
 Unlocks: hex nuts, hex standoffs, gear blanks, decorative prisms.
+
+---
+
+## What Was Built (Q2-Q3 2026)
+
+### Validation Confidence Ladder ✅ Complete
+
+**Vision realized:** oracles over snapshots — every example's geometry is checked
+against an independently-derived expected value (closed-form formula, hand-derived
+relation, or typed error), not just "did it build without crashing."
+
+**What was delivered** (full plan: `docs/developer/VALIDATION_STRENGTHENING.md`):
+- Embedded `expect:` contract engine (volume/bbox/components/relations/no_overlap)
+  — a model + five lines of `expect:` is now fully validated, no bespoke pytest
+  class required
+- Tiers 0/1 — primitive and single-op ladder corpus (`examples/validation/T0_*`,
+  `T1_*`) checked against closed-form analytic formulas
+- Tier 3 — composite-part corpus (`T3_*`) with inclusion-exclusion-derived volumes
+  and hard BREP `count_solids()` connectivity gates
+- Tier 4 — assembly relational corpus (`T4_*`) plus a full `expect: relations:`
+  contract on `hardware_assembly_demo.yaml`, and a new `no_overlap`
+  no-interpenetration contract-engine check
+- Tier 5 — negative-input corpus (`examples/validation/negative/N1-N6`), each
+  asserting a specific typed `TiaCADError`
+- Legacy Tier-2 pytest classes trimmed (39 redundant tests removed, now subsumed
+  by embedded `expect:` contracts)
+
+**Bugs found and fixed in the process** (the ladder's actual ROI, not just
+process): inverted `polygon` `circumscribed` flag (oversized hex nuts), dead
+part-level `translate:`/`rotate:` schema syntax, `lego_brick_2x1`/`3x1` cavity
+Y/Z offset swap, all 8 fastener components' heads floating off their shafts,
+message-less negative-dimension kernel errors, silently-dropped duplicate YAML
+keys. See `KNOWN_LIMITATIONS.md` #7 and #9-#12 for details on each.
+
+**Test suite:** 1,588 (start of Q2) → 1,904 total (1,840 non-visual passing,
+0 failing; 67 visual passing).
+
+**Sessions:** the confidence-ladder work spanned multiple sessions in
+2026-07 (see `docs/developer/VALIDATION_STRENGTHENING.md` §6 for the full
+phase-by-phase history).
 
 ---
 
@@ -214,7 +262,9 @@ This covers 80% of assembly use cases without PhD-level math.
 
 ---
 
-**Last Decision:** Mar 2026 — Component System + DAG both complete. Next: Constraint Solver (Q4 2026).
+**Last Decision:** Jul 2026 — Validation confidence ladder (Tiers 0-5) complete.
+Next: Constraint Solver (Q4 2026). See `BACKLOG.md` for smaller open items in
+the meantime (docs hygiene, CI lockfile, architecture debt).
 
 ---
 
@@ -228,7 +278,9 @@ This covers 80% of assembly use cases without PhD-level math.
 
 **Implementation Reference:**
 - **CHANGELOG.md:** History of changes and completed work
-- **DAG_INCREMENTAL_REBUILD.md:** Dependency graph architecture and usage
+- **BACKLOG.md:** Consolidated open action items across all docs
+- **docs/developer/VALIDATION_STRENGTHENING.md:** Validation confidence-ladder plan (complete)
+- **docs/archive/DAG_INCREMENTAL_REBUILD.md:** Dependency graph architecture and usage (shipped; kept as design record)
 - **TESTING_GUIDE.md:** Test strategy and coverage
 - **MIGRATION_GUIDE_V3.md:** Upgrading from v0.3.0 to v3.x
 

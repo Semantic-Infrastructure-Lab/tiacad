@@ -13,8 +13,13 @@ beth_topics:
 # DAG Incremental Rebuild — Implementation Plan
 
 **Planned:** 2026-03-15 (session: astral-warrior-0315)
-**Status:** 🟡 Not started — foundation complete, implementation not begun
-**Effort estimate:** ~14-16 days
+**Status:** ✅ Shipped 2026-03-16 — DAG, `InvalidationTracker`, `BuildCache`,
+`IncrementalBuilder`, and Watch Mode are all complete and live (see
+ROADMAP.md's "Dependency Graph (DAG) + Incremental Rebuild ✅ Complete"
+section for the current-state summary). This doc is kept as the original
+implementation plan/design record — archived 2026-07-11 during a doc-coherence
+pass; the phases below describe what was actually built, not a future plan.
+**Effort estimate (original):** ~14-16 days
 
 ## Problem
 

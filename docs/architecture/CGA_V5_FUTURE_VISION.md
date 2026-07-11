@@ -2,7 +2,7 @@
 
 > 🔮 **FUTURE VISION DOCUMENT**
 > This is an **aspirational architecture** for a future version of TiaCAD (v5.0+).
-> **Current version is v3.1.1** - see [main README](../../README.md) for current features and capabilities.
+> **Current version is v3.1.2** - see [main README](../../README.md) for current features and capabilities.
 > This document represents long-term research direction and is not under active development.
 
 **Document Type:** Future Architecture Vision

@@ -3,10 +3,10 @@
 This directory contains **historical planning and tracking documents** from TiaCAD's development.
 
 > 📚 **For Current Information:**
-> - **Project Status:** See [main README](../../README.md)
+> - **Project Status / Roadmap:** See [ROADMAP.md](../../ROADMAP.md)
+> - **Known Limitations:** See [KNOWN_LIMITATIONS.md](../../KNOWN_LIMITATIONS.md)
+> - **Open backlog items:** See [BACKLOG.md](../../BACKLOG.md)
 > - **Testing Guide:** See [TESTING_GUIDE](../developer/TESTING_GUIDE.md)
-> - **Known Limitations:** See [README - Known Limitations](../../README.md#known-limitations--future-roadmap)
-> - **Roadmap:** See [README - What's Next](../../README.md#whats-next)
 
 ---
 
@@ -55,6 +55,25 @@ This directory contains **historical planning and tracking documents** from TiaC
 
 ---
 
+### Archived 2026-07-11 (doc-coherence pass)
+
+**✅ Fully shipped implementation plans**
+- [`DAG_INCREMENTAL_REBUILD.md`](DAG_INCREMENTAL_REBUILD.md) - DAG/incremental-rebuild/watch-mode plan; feature shipped March 2026 (doc's own status line hadn't been updated, contradicting 4 other current docs)
+- [`SKETCH_ABSTRACTION_DESIGN.md`](SKETCH_ABSTRACTION_DESIGN.md) - 2D sketch backend-abstraction design; all sketch ops (extrude/revolve/sweep/loft) long since shipped
+
+**✅ Closed-out point-in-time reviews**
+- [`PROJECT_REVIEW_2026-04-17.md`](PROJECT_REVIEW_2026-04-17.md) - senior review; findings actioned/superseded
+- [`CODE_REVIEW_FOLLOWUPS_2026-04-18.md`](CODE_REVIEW_FOLLOWUPS_2026-04-18.md) - 5/5 findings checked off complete
+
+**✅ Proposals that shipped exactly as proposed**
+- [`DOCUMENTATION_CONSOLIDATION_PLAN.md`](DOCUMENTATION_CONSOLIDATION_PLAN.md) - proposed creating ROADMAP.md + KNOWN_LIMITATIONS.md; both now exist and match the proposal
+
+**📉 Stale audits, superseded by later infra work**
+- [`SKIPPED_TESTS_AUDIT.md`](SKIPPED_TESTS_AUDIT.md) - classified ~29 skips as "valid keep"; Phase-0 work (2026-07-10) turned exactly those into hard failures, making the audit actively misleading
+- [`CODE_QUALITY_SUMMARY.md`](CODE_QUALITY_SUMMARY.md) - 7-month-old 10-file sample snapshot
+
+---
+
 ## Why Archive These?
 
 These documents served critical roles during development:
@@ -77,10 +96,10 @@ They're archived because:
 
 | You Want | Go To |
 |----------|-------|
-| Current project status | [Main README](../../README.md) |
+| Current project status | [ROADMAP.md](../../ROADMAP.md) |
 | Testing information | [TESTING_GUIDE](../developer/TESTING_GUIDE.md) |
-| Known limitations | [README - Known Limitations](../../README.md#known-limitations--future-roadmap) |
-| Future roadmap | [README - What's Next](../../README.md#whats-next) |
+| Known limitations | [KNOWN_LIMITATIONS.md](../../KNOWN_LIMITATIONS.md) |
+| Open backlog items | [BACKLOG.md](../../BACKLOG.md) |
 | How to test | [TESTING_QUICK_REFERENCE](../developer/TESTING_QUICK_REFERENCE.md) |
 | Historical context | Browse this archive |
 | How decisions were made | See individual archived docs |
@@ -89,12 +108,14 @@ They're archived because:
 
 ## Archive Statistics
 
-- **Total Files:** 8 markdown documents
-- **Total Lines:** 5,256 lines
-- **Date Range:** Nov 2-16, 2025
-- **Coverage:** v3.0 → v3.1.1 development cycle
-- **Status:** All plans completed or incorporated into current docs
+- **Total Files:** 14 markdown documents (8 from the original Nov-Dec 2025
+  archive + 6 archived 2026-07-11)
+- **Date Range:** Nov 2, 2025 - 2026-04-18 (content dates; archiving itself
+  happened on 2025-12-01 and 2026-07-11)
+- **Coverage:** v3.0 → v3.1.2 development cycle, plus the Q2-Q3 2026
+  validation-confidence-ladder review cycle
+- **Status:** All plans completed, superseded, or incorporated into current docs
 
 ---
 
-**Last Updated:** 2025-12-01
+**Last Updated:** 2026-07-11

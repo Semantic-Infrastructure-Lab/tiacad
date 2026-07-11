@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-07-11 (SpatialResolver longest-prefix-match for dotted names)
+
+`SpatialResolver._resolve_name` split a `"part.ref"` reference on the *first*
+dot, so a namespaced import part like `m3.shaft` (itself containing a dot
+from `as: m3`) couldn't be combined with a `.face_top`/`.axis_z` suffix —
+`"m3.shaft.face_top"` resolved as part `m3` (not found) instead of part
+`m3.shaft`. Documented as a known gap in KNOWN_LIMITATIONS.md #11, worked
+around in `hardware_assembly_demo.yaml` with flat operation-name aliases.
+Added `SpatialResolver._split_part_ref`, which tries split points from the
+last dot backward and picks the longest prefix that's an actual registered
+part, falling back to the old first-dot split only when nothing matches.
+3 new tests in `test_spatial_resolver.py::TestNamespacedPartLocalReferences`.
+Full non-visual suite: 1840 passed (was 1837), 0 failed.
+
+### Removed - 2026-07-11 (redundant Tier-2 pytest classes trimmed)
+
+Per VALIDATION_STRENGTHENING.md §4.1's deferred-trim note: 14 legacy pytest
+classes deleted outright (asserted only a final part's volume/bbox, now fully
+subsumed by that example's embedded `expect:` block — e.g. `TestSimpleBox`,
+`TestChamferedBracket`, `TestFormatsDemo`), plus final-only *methods* trimmed
+from 7 more classes while keeping their sub-part/cross-file methods. Two
+near-misses that looked redundant by name but measured a different sub-part
+than their file's `expect: final:` covers (`TestAutoRefsCylinderAssembly`,
+`TestAnchorsDemoPlatform`) were kept in full rather than trimmed. 39 test
+methods removed from `test_correctness/test_example_contracts.py` (160→121).
+Full non-visual suite: 1837 passed (was 1876 before the trim), 0 failed —
+this is the full T0→T5 confidence-ladder checklist closing out, not a
+regression: the removed tests' coverage now lives in `expect:` contracts.
+
 ### Added - 2026-07-11 (Tier 5 corpus — negative-input testing, ladder complete)
 
 #### Negative-input validation corpus (VALIDATION_STRENGTHENING.md section 5, Tier 5)
@@ -541,6 +570,24 @@ that prose into assertions. Coverage:
 Closed the "trust YAMLs have no contracts" gap: the 20 trust files were the most
 precisely-documented examples in the codebase but had zero geometric test coverage.
 Total suite: 1474 passing tests.
+
+### Added - 2026-03-16 (session: awakened-shrine-0316)
+
+- `tiacad_core/visual/trust_renderer.py` — pyvista-based 4-panel trust renderer (iso + front XZ + top XY + side YZ) with per-part colors, axis indicator, legend; filters consumed intermediate parts automatically
+- `scripts/trust_render.py` — CLI: render single file, directory, or `--gallery` (all trust scenarios + HTML gallery)
+- `examples/trust/` — 7 curated trust scenarios: box_basic, cylinder_basic, boolean_subtract, stacked_boxes, side_by_side, cylinder_on_plate, three_part_assembly
+- `trust_output/` — pre-rendered PNGs + gallery.html
+
+### Fixed - 2026-03-16 (session: awakened-shrine-0316)
+
+- `docs/user/YAML_REFERENCE.md` — box axis comments were inverted (`height`↔`depth`); fixed + added ⚠️ gotcha callout
+- `ROADMAP.md` — test count 1382→1405, stdlib list corrected (m4/m5/m6 nuts added), PCB assembly example added
+- `docs/developer/TESTING_GUIDE.md` — test count 1244→1405, Option A contracts marked done, Option D trust renderer added
+
+**Key lessons:** `position:` key in part spec is silently ignored; use
+`operations: { type: transform, translate: [x,y,z] }`. PBR rendering kills
+colors without HDR env; use smooth_shading + specular. Consumed parts
+(boolean base/subtract, transform input) must be filtered from renders.
 
 ### Added - 2026-03-16 (session: infernal-cyclops-0316)
 
@@ -1540,7 +1587,7 @@ nested imports, error cases (missing file, missing fields, circular imports, nam
 - Categorized operations in YAML structure
 - Explicit model/assembly declaration
 - Consistent spatial language
-- See [docs/LANGUAGE_IMPROVEMENTS_STATUS.md](docs/LANGUAGE_IMPROVEMENTS_STATUS.md) for details
+- See [docs/archive/LANGUAGE_IMPROVEMENTS_STATUS.md](docs/archive/LANGUAGE_IMPROVEMENTS_STATUS.md) for details
 
 ---
 
@@ -1548,21 +1595,8 @@ nested imports, error cases (missing file, missing fields, circular imports, nam
 
 - [GitHub Repository](https://github.com/scottsen/tiacad)
 - [Documentation](README.md#documentation)
-- [Language Improvements Status](docs/LANGUAGE_IMPROVEMENTS_STATUS.md)
-- [Evolution Roadmap](docs/TIACAD_EVOLUTION_ROADMAP.md)
-
-## [unreleased] — 2026-03-16 (awakened-shrine-0316)
-
-### Added
-- `tiacad_core/visual/trust_renderer.py` — pyvista-based 4-panel trust renderer (iso + front XZ + top XY + side YZ) with per-part colors, axis indicator, legend; filters consumed intermediate parts automatically
-- `scripts/trust_render.py` — CLI: render single file, directory, or `--gallery` (all trust scenarios + HTML gallery)
-- `examples/trust/` — 7 curated trust scenarios: box_basic, cylinder_basic, boolean_subtract, stacked_boxes, side_by_side, cylinder_on_plate, three_part_assembly
-- `trust_output/` — pre-rendered PNGs + gallery.html
-
-### Fixed
-- `docs/user/YAML_REFERENCE.md` — box axis comments were inverted (`height`↔`depth`); fixed + added ⚠️ gotcha callout
-- `ROADMAP.md` — test count 1382→1405, stdlib list corrected (m4/m5/m6 nuts added), PCB assembly example added
-- `docs/developer/TESTING_GUIDE.md` — test count 1244→1405, Option A contracts marked done, Option D trust renderer added
+- [Language Improvements Status](docs/archive/LANGUAGE_IMPROVEMENTS_STATUS.md)
+- [Evolution Roadmap](docs/archive/TIACAD_EVOLUTION_ROADMAP.md)
 
 ### Key lessons
 - `position:` key in part spec is silently ignored; use `operations: { type: transform, translate: [x,y,z] }`

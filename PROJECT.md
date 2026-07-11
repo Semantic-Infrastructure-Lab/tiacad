@@ -49,12 +49,14 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Version:** v3.1.2 (+19 maintenance commits)
 **Phase:** Maintenance Mode
 **Last Release:** 2025-12-02 (v3.1.2)
-**Status Updated:** 2026-02-15
+**Status Updated:** 2026-07-11
 
 **Test Suite:**
-- Broad coverage across unit, integration, correctness, DAG, and visual workflows
+- 1,904 tests total (1,840 non-visual passing, 0 failing; 67 visual passing)
 - 92%+ code coverage
-- Comprehensive coverage: unit, integration, correctness, visual regression
+- Confidence-ladder validation corpus (Tiers 0/1/3/4/5) complete under
+  `examples/validation/` with embedded `expect:` contracts — see ROADMAP.md
+  "What Was Built (Q2-Q3 2026)"
 
 **Components Complete:**
 - ✅ Named parameter syntax (width/height/depth for all primitives)
@@ -146,22 +148,30 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 
 ## Documentation
 
+**Live planning/status (start here):**
+- `ROADMAP.md` - Current priorities and strategic direction
+- `KNOWN_LIMITATIONS.md` - Current constraints, workarounds, fixed-bug log
+- `BACKLOG.md` - Consolidated open action items across all docs
+- `CHANGELOG.md` - History of shipped changes
+- `docs/DOCUMENTATION_MAP.md` - Full doc index
+
 **Primary Documentation:**
 - `README.md` - Project overview and quick start
 - `docs/user/YAML_REFERENCE.md` - Complete YAML syntax guide
-- `RELEASE_NOTES_V3.md` - v3.0 release notes
 - `docs/user/AUTO_REFERENCES_GUIDE.md` - auto-generated anchor system guide
 - `docs/user/TUTORIAL.md` - User tutorial
 - `docs/user/EXAMPLES_GUIDE.md` - Example gallery
+- `docs/developer/VALIDATION_STRENGTHENING.md` - Validation confidence-ladder plan (complete)
 
 **Design Documentation:**
-- `docs/architecture/ARCHITECTURE_DECISION_V3.md` - ADR for v3.0
-- `docs/architecture/CLEAN_ARCHITECTURE_PROPOSAL.md` - Architecture design
-- `docs/archive/TIACAD_EVOLUTION_ROADMAP.md` - Strategic roadmap
-- `docs/archive/V3_IMPLEMENTATION_STATUS.md` - Implementation tracking
+- `docs/architecture/ARCHITECTURE_DECISION_V3.md` - ADR for v3.0 (implemented)
 - `docs/developer/MIGRATION_GUIDE_V3.md` - v3.0 migration guide
 
-**Archived Documentation:**
+**Archived Documentation** (historical — superseded, kept for design-rationale value):
+- `docs/archive/TIACAD_EVOLUTION_ROADMAP.md` - Superseded by ROADMAP.md
+- `docs/archive/V3_IMPLEMENTATION_STATUS.md` - v3.0 implementation tracking (shipped)
+- `docs/architecture/CLEAN_ARCHITECTURE_PROPOSAL.md` - v3.0 proposal (shipped; kept in architecture/, not archive/, since it's still linked as design-rationale reading)
+- `RELEASE_NOTES_V3.md` - v3.1.0 release notes (superseded by v3.1.2, see CHANGELOG.md)
 - `~/Archive/tiacad/2025-11-10-v3-cleanup/` - Historical docs
 
 ## Related Projects
@@ -190,12 +200,12 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 - [x] Migration guide published
 - [x] Release notes ready
 
-### v3.1 Goals (Planned)
-- [ ] ModelGraph implementation
-- [ ] Dependency tracking working
-- [ ] Incremental rebuild 10x faster
-- [ ] `--watch` mode functional
-- [ ] 50+ DAG-specific tests
+### v3.1 Goals (All Complete ✅ — March 2026)
+- [x] ModelGraph implementation
+- [x] Dependency tracking working
+- [x] Incremental rebuild
+- [x] `--watch` mode functional
+- [x] DAG-specific test coverage in place
 
 ## Repository Structure
 

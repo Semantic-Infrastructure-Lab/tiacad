@@ -1,6 +1,10 @@
 # TiaCAD Clean Architecture v3.0
 ## Zero Legacy Constraints - Pure Design
 
+**Status (2026-07-11):** ✅ Implemented — this proposal shipped as v3.0
+(Nov 2025; see `ARCHITECTURE_DECISION_V3.md` for the ADR). Kept here as the
+original design-rationale document, not as a live proposal.
+
 **Philosophy:** Everything is a spatial reference. Positions, orientations, frames - all unified.
 
 ---

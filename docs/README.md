@@ -36,7 +36,7 @@ Complete documentation for TiaCAD - declarative parametric CAD in YAML.
 - **[CGA v5.0 Future Vision](architecture/CGA_V5_FUTURE_VISION.md)** - Conformal Geometric Algebra integration (future)
 - **[Architecture Decision v3](architecture/ARCHITECTURE_DECISION_V3.md)** - v3.0 design decisions
 - **[Clean Architecture Proposal](architecture/CLEAN_ARCHITECTURE_PROPOSAL.md)** - Code organization principles
-- **[Sketch Abstraction Design](architecture/SKETCH_ABSTRACTION_DESIGN.md)** - Sketch system design
+- **[Sketch Abstraction Design](archive/SKETCH_ABSTRACTION_DESIGN.md)** - Sketch system design
 - **[Mental Models and Language](architecture/MENTAL_MODELS_AND_LANGUAGE.md)** - Conceptual framework
 - **[Diagrams](architecture/diagrams/)** - Architecture diagrams
 

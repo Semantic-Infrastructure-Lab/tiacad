@@ -486,6 +486,11 @@ scout review-cad bracket.yaml
 
 ## Future Vision
 
+**Note (2026-07-11):** the quarter labels below predate `ROADMAP.md` becoming
+the canonical planning doc. v3.1's Dependency Graph shipped as described
+(Q1 2026). The Semantic Constraints work is retimed to **Q4 2026** in
+`ROADMAP.md` (not Q2) — see that file for the current authoritative schedule.
+
 ### v3.1: Dependency Graph (Q1 2026)
 
 **Progressive Disclosure for Dependencies:**
