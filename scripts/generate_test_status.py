@@ -13,6 +13,7 @@ suite has produced test-results.xml and coverage.xml:
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -57,13 +58,12 @@ def count_visual_tests() -> int | None:
         capture_output=True,
         text=True,
     )
+    # pytest 9.x: "67/1926 tests collected (1859 deselected) in 1.90s"
+    # older pytest: "67 tests collected in 1.90s" / "67/1926 tests collected"
     for line in result.stdout.splitlines():
-        line = line.strip()
-        if line.endswith("selected") or line.endswith("tests collected"):
-            try:
-                return int(line.split()[0])
-            except ValueError:
-                continue
+        match = re.search(r"(\d+)(?:/\d+)? tests? collected", line)
+        if match:
+            return int(match.group(1))
     return None
 
 

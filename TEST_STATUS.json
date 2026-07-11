@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-07-11T16:45:21+00:00",
+  "commit": "c66eca054c30fdd74a54b3d06be49a09f24d4c8d",
+  "python_version": "3.12",
+  "non_visual": {
+    "total": 1859,
+    "passed": 1859,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "visual_collected": 67,
+  "coverage_percent": 76.0
+}
