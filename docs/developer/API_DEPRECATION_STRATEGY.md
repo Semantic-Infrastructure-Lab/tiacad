@@ -198,7 +198,7 @@ if isinstance(export_config, list):
 - [x] Add backward compatibility logic for all patterns
 - [x] Test with deprecated examples to ensure warnings appear
 - [x] Test that new syntax works without warnings
-- [ ] Update TESTING_GUIDE.md with deprecation testing instructions
+- [x] Update TESTING_GUIDE.md with deprecation testing instructions
 - [x] Add pytest tests for deprecation warnings (use `pytest.warns()`)
 
 ---

@@ -347,6 +347,34 @@ def test_bracket_dimensions():
 | Pattern | Part count × spacing matches spec |
 | Assembly | Key parts exist, relative positions correct |
 
+### Testing deprecation warnings
+
+Legacy v3.0/v3.1 syntax still builds but raises `DeprecationWarning` (see
+`docs/developer/API_DEPRECATION_STRATEGY.md`). Assert both the warning *and*
+that the backward-compat mapping produces the same result as the new syntax:
+
+```python
+import warnings
+import pytest
+from tiacad_core.geometry import MockBackend
+from tiacad_core.parser.tiacad_parser import TiaCADParser
+
+def test_old_cone_params_warn():
+    with pytest.warns(DeprecationWarning, match="radius_bottom.*deprecated"):
+        doc = TiaCADParser.parse_string(OLD_CONE_YAML, backend=MockBackend())
+    assert doc.parts.exists("frustum")
+
+def test_new_syntax_is_silent():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        TiaCADParser.parse_string(NEW_CONE_YAML, backend=MockBackend())
+    assert not [w for w in caught if issubclass(w.category, DeprecationWarning)]
+```
+
+Run `pytest -W error::DeprecationWarning` to treat any *new* deprecated usage
+in the test corpus as a hard failure. Worked examples:
+`tiacad_core/tests/test_parser/test_deprecation_warnings.py`.
+
 ---
 
 ## Troubleshooting
