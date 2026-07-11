@@ -31,8 +31,8 @@ tags:
   - production-ready
 description: Declarative parametric CAD system using YAML - Build 3D models with readable, explicit, composable syntax. v3.0 complete with unified spatial reference system.
 tech_stack:
-  - Python 3.10+
-  - CadQuery 2.6.0
+  - Python 3.11+
+  - CadQuery 2.8+
   - pytest
   - YAML
   - networkx (DAG implementation)

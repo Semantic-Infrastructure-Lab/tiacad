@@ -31,7 +31,7 @@ By the end, you'll create a professional mounting plate with bolt holes and roun
 
 ### Prerequisites
 
-You'll need Python 3.10+ installed on your system.
+You'll need Python 3.11+ installed on your system (CadQuery 2.8 requires 3.11+).
 
 ### Install TiaCAD
 

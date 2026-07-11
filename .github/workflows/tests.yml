@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
     - name: Checkout code
@@ -31,7 +31,13 @@ jobs:
           libgl1 \
           libglu1-mesa \
           libxrender1 \
-          libxext6
+          libxext6 \
+          fontconfig \
+          fonts-liberation
+        # fontconfig + fonts-liberation are required for OCCT text rendering
+        # (the sketch text() default font is "Liberation Sans"). Without them,
+        # OCCT's Font_FontMgr finds no fonts and every text test fails. Don't
+        # rely on the runner image shipping fonts incidentally — pin them here.
 
     - name: Cache pip packages
       uses: actions/cache@v3

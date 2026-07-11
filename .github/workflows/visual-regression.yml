@@ -33,7 +33,9 @@ jobs:
           libsm6 \
           libice6 \
           libx11-6 \
-          xvfb
+          xvfb \
+          fontconfig \
+          fonts-liberation
 
     - name: Cache pip packages
       uses: actions/cache@v3

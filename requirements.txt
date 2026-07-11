@@ -1,41 +1,50 @@
 # TiaCAD Requirements
+#
+# Floors reflect the tested baseline as of 2026-07-10 (Python 3.11+, numpy 2.x,
+# CadQuery 2.8 / OCP 7.9). They are deliberately modern, not historical: the old
+# floors (numpy>=1.21 from 2021, cadquery>=2.6) predated the numpy-2 API split and
+# the current OCCT kernel, so they no longer described what we actually test.
+# CI installs the newest resolvable set on each matrix leg; see .github/workflows.
 
-# Core CAD engine
-cadquery>=2.6.0
+# Core CAD engine (2.8 requires Python >=3.11; unifies the OCP 7.9 kernel across
+# the whole CI matrix — 2.7 on a 3.10 leg tested a different kernel, now dropped)
+cadquery>=2.8.0
 
 # YAML parsing
-pyyaml>=6.0.0
-simpleeval>=0.9.13
+pyyaml>=6.0.2
+simpleeval>=1.0.0
 
 # Dependency graph (DAG) system
-networkx>=3.0
+networkx>=3.4
 
 # Scientific computing (for hull operations)
-scipy>=1.9.0
-numpy>=1.21.0
-trimesh>=4.0.0
+# scipy>=1.13 is the first release with numpy 2.0 support
+scipy>=1.13.0
+numpy>=2.0.0
+trimesh>=4.11.0
 
 # 3MF Export (multi-material 3D printing)
-lib3mf>=2.3.0
+lib3mf>=2.4.0
 
 # Visualization (3D rendering to PNG)
-pyvista>=0.43.0
+pyvista>=0.46.0
 
 # File watching (used by tiacad watch / DAG rebuild-on-save)
-watchdog>=3.0.0
+watchdog>=6.0.0
 
 # Image processing (for visual regression testing)
-Pillow>=10.0.0
+Pillow>=11.0.0
 
-# Optional schema validation used by --validate-schema and schema tests
-jsonschema>=4.0.0
+# Schema validation used by --validate-schema and schema tests (a required dep;
+# the CI import-guard hard-fails if it can't import)
+jsonschema>=4.20.0
 
 # Testing
-pytest>=7.0.0
-pytest-cov>=4.0.0
-pytest-xdist>=3.0.0
+pytest>=8.0.0
+pytest-cov>=5.0.0
+pytest-xdist>=3.5.0
 
 # Development
-black>=23.0.0
-mypy>=1.0.0
-ruff>=0.6.0
+black>=24.0.0
+mypy>=1.8.0
+ruff>=0.11.0

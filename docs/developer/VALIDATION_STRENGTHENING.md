@@ -608,6 +608,26 @@ an `expect:` block:
   (kernel-vs-kernel) is currently impossible. Routing new operation code through
   the backend is a prerequisite for the strongest oracle of all — a second
   independent kernel to cross-check against.
+- **Dependency posture modernized + CAD kernel unified (shipped 2026-07-10).**
+  The old `>=` floors (numpy>=1.21 from 2021, cadquery>=2.6, scipy>=1.9,
+  pyvista>=0.43) predated both the numpy-2 API split and the current OCCT
+  kernel — they no longer described what CI tested. Raised across
+  `requirements.txt` + `pyproject.toml` to the real tested baseline
+  (cadquery>=2.8, numpy>=2.0, scipy>=1.13, etc.), and `requires-python` bumped
+  to `>=3.11`. This **resolves the CI kernel split**: the old matrix ran
+  cadquery 2.7 / OCP 7.8 on the 3.10 leg but 2.8 / OCP 7.9 on 3.11+3.12 —
+  every leg now shares OCP 7.9. New matrix is 3.11/3.12/3.13 (the full
+  dependency tree — nlopt, casadi, cadquery-ocp — has cp313 wheels). Validated
+  end-to-end in a `python:3.13-slim` container against the newest resolvable
+  set (cadquery 2.8.0, OCP 7.9.3.1.1, numpy 2.4.6, scipy 1.18): full non-visual
+  suite `1588 passed`. That validation also surfaced that CI relied on the
+  runner image's *incidental* fonts for OCCT text rendering — both workflows
+  now install `fontconfig` + `fonts-liberation` explicitly (the sketch text
+  default is "Liberation Sans"), so text tests don't depend on that luck.
+  Still open (deliberately not done): a pinned CI **lockfile** (exact versions,
+  regenerated on review) to decouple "what the library supports" from "what CI
+  reproducibly tests" — the highest-remaining dependency-hygiene step, and the
+  clean fix for the stale-run drift that has cost debugging time before.
 
 ---
 
