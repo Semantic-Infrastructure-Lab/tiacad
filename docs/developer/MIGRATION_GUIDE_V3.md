@@ -556,7 +556,7 @@ operations:
 - Supports diagonal patterns (e.g., `[5, 5, 0]`)
 - Consistent with other vector parameters
 
-**Migration Tool:** Use `fix_pattern_api.py` in the project root for automated migration.
+**Migration Tool:** `scripts/migrations/fix_pattern_api.py` (archived). Does an in-place, no-backup rewrite of every `examples/*.yaml` — commit your tree before running. See `scripts/migrations/README.md`.
 
 ### 4. Transform Translate Simplification (v3.1.x)
 

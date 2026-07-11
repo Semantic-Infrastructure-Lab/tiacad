@@ -51,19 +51,49 @@ class ContractResult:
         return "\n".join(lines)
 
 
+def count_solids(part: Part) -> int:
+    """Number of disjoint solid bodies, counted at the BREP/kernel level.
+
+    This is the authoritative "how many separate bodies" measure. It counts
+    CadQuery ``Solid`` entities across the whole geometry stack — unlike mesh
+    islands (``trimesh.split``), which mis-count in both directions:
+
+    - A single hollow body with a fully enclosed cavity meshes as two disjoint
+      surface shells → 2 mesh islands, but is 1 solid (BREP is correct).
+    - The historical fallback to ``is_watertight`` can't catch two truly
+      disjoint bodies, because two separate closed solids are each watertight.
+
+    Counting ``Solids()`` distinguishes "one hollow body" from "two disjoint
+    bodies" that neither mesh-island counting nor watertightness can.
+    """
+    require_cadquery_part(part, "Contract check (solid count)")
+    return sum(len(v.Solids()) for v in part.geometry.vals())
+
+
 def get_manifold_stats(part: Part) -> Dict[str, Any]:
-    """Watertightness + connected-component count via a round-trip STL/trimesh export."""
+    """Watertightness (mesh) + disjoint-body count (BREP solids).
+
+    ``components`` is the BREP solid count — the correct disjoint-body signal
+    (see :func:`count_solids`). ``mesh_islands`` is retained for diagnostics:
+    it is the old ``trimesh.split`` count, which over-counts hollow bodies and
+    is *not* used for the ``expect: components:`` contract check.
+    """
     import trimesh
 
     require_cadquery_part(part, "Contract check (watertight/components)")
 
+    solids = count_solids(part)
     with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as tmp:
         tmp_path = Path(tmp.name)
     try:
         part.geometry.val().exportStl(str(tmp_path))
         mesh = trimesh.load(str(tmp_path))
-        components = mesh.split(only_watertight=False)
-        return {'watertight': bool(mesh.is_watertight), 'components': len(components)}
+        mesh_islands = len(mesh.split(only_watertight=False))
+        return {
+            'watertight': bool(mesh.is_watertight),
+            'components': solids,
+            'mesh_islands': mesh_islands,
+        }
     finally:
         tmp_path.unlink(missing_ok=True)
 

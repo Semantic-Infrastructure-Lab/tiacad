@@ -65,18 +65,38 @@ line-length = 88
 target-version = ["py310", "py311", "py312"]
 
 [tool.pytest.ini_options]
+# Single source of truth for pytest config. (A legacy pytest.ini used to
+# shadow this block entirely — pytest.ini takes precedence when both exist —
+# so this config was silently dead. pytest.ini was removed 2026-07-10 and its
+# full marker set folded in here.)
 testpaths = ["tiacad_core/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+console_output_style = "progress"
 addopts = [
     "--verbose",
     "--strict-markers",
     "--tb=short",
 ]
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
+    # Core test categories
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (slower, multi-component)",
+    # Correctness test categories (v3.1)
+    "attachment: Tests verifying attachment correctness between parts",
+    "rotation: Tests verifying rotation correctness and orientation",
+    "dimensions: Tests verifying dimensional accuracy (size, volume, surface area)",
+    "visual: Visual regression tests (comparison against reference images)",
+    # Performance and stress test categories
+    "stress: Stress tests (large assemblies, many operations)",
+    "golden: Golden master tests (reference comparisons)",
+    "slow: Slow-running tests (> 5 seconds)",
+    # Feature-specific markers
+    "parser: Tests for YAML parser and builders",
+    "spatial: Tests for spatial reference resolution",
+    "backend: Tests for geometry backend implementations",
+    "validation: Tests for validation rules",
 ]
 
 [tool.coverage.run]

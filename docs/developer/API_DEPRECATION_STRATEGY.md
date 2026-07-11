@@ -246,7 +246,7 @@ def test_pattern_deprecated_spacing():
 
 ## Migration Tool
 
-The `fix_pattern_api.py` script already exists for pattern migration. Consider creating:
+The `scripts/migrations/fix_pattern_api.py` script (archived) already exists for pattern migration. Consider creating:
 - `fix_cone_api.py` - Migrate cone parameters
 - `fix_translate_api.py` - Migrate translate offsets
 - `fix_export_api.py` - Migrate export format

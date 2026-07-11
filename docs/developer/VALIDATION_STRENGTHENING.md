@@ -441,11 +441,16 @@ fails collection outright if `jsonschema` isn't importable — it's a required
 dependency (`pyproject.toml`), so a silent skip meant the schema-validation
 net could vanish with no signal. `trimesh` was already a hard import
 (`test_geometry_validation.py`) and `"Example not found"` was already
-`pytest.fail`, not skip — both predate this pass. Still open: the CI
-import-guard step, and `lib3mf`/`pyvista` skips in the exporter/visualization
-suites (arguably legitimate — those are optional-at-runtime rendering/export
-paths, not the correctness safety net G5 is about; worth an explicit decision
-before touching them, not a mechanical sweep).
+`pytest.fail`, not skip — both predate this pass.
+
+**CI import-guard shipped:** `tests.yml` has a "Verify required dependencies
+import" step that hard-fails the run if any of `trimesh`, `lib3mf`,
+`jsonschema`, `pyvista`, `cadquery` can't import — required deps must be
+*required*, not degrade into silent skips. Still open: the `lib3mf`/`pyvista`
+skips in the exporter/visualization *test* suites (arguably legitimate — those
+are optional-at-runtime rendering/export paths, not the correctness safety net
+G5 is about; worth an explicit decision before touching them, not a mechanical
+sweep).
 
 ### 4.5b — Fix the CI validation gaps *(stronger, closes G3)*
 
@@ -495,6 +500,31 @@ catch disconnected bodies now can't. The correct fix is to count solids at the
 body" from "two disjoint bodies" that mesh-island counting cannot. **Effort:**
 medium.
 
+**Shipped 2026-07-10:** the `expect: components:` gate now counts disjoint
+bodies at the BREP/kernel level. `tiacad_core/testing/contracts.py` gained
+`count_solids(part)` — `sum(len(v.Solids()) for v in part.geometry.vals())` —
+and `get_manifold_stats` now returns `components` = BREP solid count (the
+correct signal) alongside `mesh_islands` = the old `trimesh.split` count (kept
+for diagnostics, no longer used by the contract check). Verified strictly
+stronger in both directions: a hollow 20mm cube with a fully enclosed 10mm
+void reports `components: 1` (BREP) where mesh islands reported 2 — the
+false-positive that had motivated the earlier weakening — and two disjoint
+watertight boxes report `components: 2` where `is_watertight` alone (both are
+watertight) could not tell them apart. All six existing seeded contracts were
+confirmed unchanged (each already `mesh_islands == brep_solids == 1`).
+Regression tests: `test_correctness/test_embedded_contracts.py::TestSolidCounting`.
+
+The three previously-stubbed connectivity helpers in
+`tiacad_core/testing/measurements.py` (`parts_in_contact`,
+`build_contact_graph`, `is_fully_connected`) are now real implementations —
+`parts_in_contact` uses exact OCCT `BRepExtrema_DistShapeShape` surface-to-
+surface distance (not a bounding-box approximation), and the graph/connectivity
+helpers build on it. Tested in `test_testing/test_measurements.py`
+(`TestPartsInContact`, `TestContactGraphConnectivity`). Still open: promoting
+`DisconnectedPartsRule` itself from an advisory WARNING to a hard gate that
+uses `count_solids` (the rule still uses its own bbox-proximity heuristic; the
+authoritative check now lives in the contract path via `expect: components:`).
+
 ### 4.7 — Trust gallery as a versioned, signed-off artifact + AI review loop
 
 Formalize `scripts/trust_render.py --gallery` into a committed, dated artifact
@@ -534,7 +564,10 @@ an `expect:` block:
 
 - `expect:` contract engine + `tiacad check --contract` and
   `tiacad audit --write-contract`.
-- Implement the four stubbed feature-detection / connectivity helpers.
+- ~~Implement the stubbed connectivity helpers.~~ Done 2026-07-10:
+  `parts_in_contact` / `build_contact_graph` / `is_fully_connected` are real
+  (BREP `BRepExtrema` distance); BREP solid counting (`count_solids`) is the
+  `expect: components:` gate. See section 4.6.
 
 **New tests** (`test_correctness/`):
 
@@ -547,17 +580,24 @@ an `expect:` block:
 
 - ~~`example-validation.yml` → contract check, not parse check.~~ Deleted
   2026-07-10 (was broken by upload-artifact@v3 deprecation, added no signal).
-- `visual-regression.yml` → fail (don't generate) on missing refs.
+- ~~`visual-regression.yml` → fail (don't generate) on missing refs.~~ Done
+  2026-07-10 (section 4.5b).
 - Add schema-conformance + schema-truth checks; make contracts a required gate.
 
 **Housekeeping:**
 
-- Implement or delete the `validation:` schema block; fix `schema_version` drift;
-  unify the two pytest configs into one.
-- **Delete or archive `fix_pattern_api.py`.** It is a completed one-off migration
-  that does in-place, no-backup, no-dry-run regex overwrites of every
-  `examples/*.yaml`. Orphaned at repo root, it is exactly the tool that gets
-  re-run by mistake. Move to `scripts/migrations/` with a dated README, or remove.
+- Implement or delete the `validation:` schema block; fix `schema_version` drift.
+  ~~Unify the two pytest configs into one.~~ Done 2026-07-10: a legacy
+  `pytest.ini` was silently shadowing `[tool.pytest.ini_options]` in
+  `pyproject.toml` (pytest.ini wins when both exist), so the pyproject block —
+  including its `testpaths` and partial marker list — was dead. `pytest.ini`
+  removed; its full marker set + `console_output_style` folded into
+  `pyproject.toml`. Collection verified identical (1588/1655, 67 deselected).
+- ~~**Delete or archive `fix_pattern_api.py`.**~~ Done 2026-07-10: moved from
+  the repo root to `scripts/migrations/fix_pattern_api.py` with a dated
+  `scripts/migrations/README.md` warning that it does in-place, no-backup
+  rewrites of `examples/*.yaml`. The two doc references (MIGRATION_GUIDE_V3,
+  API_DEPRECATION_STRATEGY) were repointed to the new path.
 - **Establish one source of truth for test health.** Have CI emit the pass/skip/
   fail counts as a committed badge or `TEST_STATUS.json`; stop hand-writing test
   counts into six different markdown files. Retire or clearly date-stamp the

@@ -18,6 +18,9 @@ from tiacad_core.testing.measurements import (
     measure_distance,
     get_bounding_box_dimensions,
     get_distance_between_points,
+    parts_in_contact,
+    build_contact_graph,
+    is_fully_connected,
     MeasurementError,
 )
 from tiacad_core.part import Part, PartRegistry
@@ -485,3 +488,71 @@ class TestMeasurementsIntegration:
         )
 
         assert abs(diagonal - expected_diagonal) < 0.1
+
+
+class TestPartsInContact:
+    """Test parts_in_contact() — exact BREP surface-to-surface contact."""
+
+    def _box_at(self, name, x):
+        # 10mm cube centered at (x, 0, 0): spans [x-5, x+5] in X.
+        return Part(
+            name=name,
+            geometry=cq.Workplane("XY").center(x, 0).box(10, 10, 10),
+            backend=CadQueryBackend(),
+        )
+
+    def test_touching_faces_are_in_contact(self):
+        # box at 0 spans X[-5,5]; box at 10 spans X[5,15] → share the x=5 face.
+        a = self._box_at("a", 0)
+        b = self._box_at("b", 10)
+        assert parts_in_contact(a, b) is True
+
+    def test_overlapping_are_in_contact(self):
+        a = self._box_at("a", 0)
+        b = self._box_at("b", 5)  # overlap → distance 0
+        assert parts_in_contact(a, b) is True
+
+    def test_separated_are_not_in_contact(self):
+        a = self._box_at("a", 0)
+        c = self._box_at("c", 30)  # 20mm gap
+        assert parts_in_contact(a, c) is False
+
+    def test_tolerance_bridges_a_small_gap(self):
+        a = self._box_at("a", 0)      # X[-5,5]
+        b = self._box_at("b", 10.05)  # X[5.05,15.05] → 0.05mm gap
+        assert parts_in_contact(a, b, tolerance=0.01) is False
+        assert parts_in_contact(a, b, tolerance=0.1) is True
+
+
+class TestContactGraphConnectivity:
+    """Test build_contact_graph() + is_fully_connected()."""
+
+    def _box_at(self, name, x):
+        return Part(
+            name=name,
+            geometry=cq.Workplane("XY").center(x, 0).box(10, 10, 10),
+            backend=CadQueryBackend(),
+        )
+
+    def test_chain_is_fully_connected(self):
+        # a-b-c chain: each touches the next, none touches across the chain.
+        parts = [self._box_at("a", 0), self._box_at("b", 10), self._box_at("c", 20)]
+        graph = build_contact_graph(parts)
+        assert graph["a"] == {"b"}
+        assert graph["b"] == {"a", "c"}
+        assert graph["c"] == {"b"}
+        assert is_fully_connected(graph) is True
+
+    def test_island_is_not_fully_connected(self):
+        # a-b touch; c is a distant island.
+        parts = [self._box_at("a", 0), self._box_at("b", 10), self._box_at("c", 50)]
+        graph = build_contact_graph(parts)
+        assert graph["c"] == set()
+        assert is_fully_connected(graph) is False
+
+    def test_single_part_is_trivially_connected(self):
+        graph = build_contact_graph([self._box_at("a", 0)])
+        assert is_fully_connected(graph) is True
+
+    def test_empty_graph_is_trivially_connected(self):
+        assert is_fully_connected({}) is True

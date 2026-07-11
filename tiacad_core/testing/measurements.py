@@ -15,11 +15,12 @@ Author: TIA (galactic-expedition-1110)
 Version: 1.0 (v3.1)
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Set
 import numpy as np
 from numpy.typing import NDArray
 
 from tiacad_core.part import Part, PartRegistry
+from tiacad_core.backend_support import require_cadquery_part
 from tiacad_core.spatial_resolver import SpatialResolver, SpatialResolverError
 
 
@@ -151,6 +152,28 @@ def get_distance_between_points(
 # Future utilities (planned for v3.1-v3.2)
 # These are stubs for future implementation
 
+def _shape_distance(part1: Part, part2: Part) -> float:
+    """Exact BREP surface-to-surface distance between two parts' geometry.
+
+    Uses OCCT's ``BRepExtrema_DistShapeShape`` on the CadQuery kernel shapes —
+    the true minimum gap between the solids, not a bounding-box approximation.
+    """
+    from OCP.BRepExtrema import BRepExtrema_DistShapeShape
+
+    require_cadquery_part(part1, "parts_in_contact")
+    require_cadquery_part(part2, "parts_in_contact")
+
+    calc = BRepExtrema_DistShapeShape(
+        part1.geometry.val().wrapped, part2.geometry.val().wrapped
+    )
+    calc.Perform()
+    if not calc.IsDone():
+        raise MeasurementError(
+            f"could not compute distance between {part1.name!r} and {part2.name!r}"
+        )
+    return float(calc.Value())
+
+
 def parts_in_contact(
     part1: Part,
     part2: Part,
@@ -159,54 +182,68 @@ def parts_in_contact(
     """
     Check if two parts are in physical contact (within tolerance).
 
-    [STUB - To be implemented in v3.2]
+    Computes the exact minimum BREP surface-to-surface distance between the two
+    solids (via OCCT ``BRepExtrema_DistShapeShape``) and returns True when it is
+    within ``tolerance``. Touching faces measure 0.0; overlapping solids also
+    measure 0.0. This is a real geometric test, not a bounding-box heuristic.
 
     Args:
         part1: First part
         part2: Second part
-        tolerance: Maximum distance to consider "in contact" (default 0.01)
+        tolerance: Maximum distance to consider "in contact" (default 0.01mm)
 
     Returns:
-        True if parts are within tolerance distance
+        True if the parts are within ``tolerance`` distance of each other
     """
-    raise NotImplementedError(
-        "parts_in_contact will be implemented in v3.2\n"
-        "See docs/TESTING_ROADMAP.md Week 7"
-    )
+    return _shape_distance(part1, part2) <= tolerance
 
 
-def build_contact_graph(parts: list, tolerance: float = 0.1):
+def build_contact_graph(parts: list, tolerance: float = 0.1) -> Dict[str, Set[str]]:
     """
-    Build adjacency graph of parts based on contact detection.
+    Build an adjacency graph of parts based on real contact detection.
 
-    [STUB - To be implemented in v3.2]
+    Every pair is tested with :func:`parts_in_contact`; parts within
+    ``tolerance`` are recorded as adjacent. Nodes are part names.
 
     Args:
         parts: List of Part instances
-        tolerance: Contact tolerance
+        tolerance: Contact tolerance (default 0.1mm)
 
     Returns:
-        Graph structure (adjacency dict or NetworkX graph)
+        Adjacency dict mapping each part name to the set of names it contacts.
     """
-    raise NotImplementedError(
-        "build_contact_graph will be implemented in v3.2\n"
-        "See docs/TESTING_ROADMAP.md Week 7"
-    )
+    adjacency: Dict[str, Set[str]] = {p.name: set() for p in parts}
+    for i, a in enumerate(parts):
+        for b in parts[i + 1:]:
+            if parts_in_contact(a, b, tolerance):
+                adjacency[a.name].add(b.name)
+                adjacency[b.name].add(a.name)
+    return adjacency
 
 
-def is_fully_connected(graph) -> bool:
+def is_fully_connected(graph: Dict[str, Set[str]]) -> bool:
     """
-    Check if contact graph represents a fully connected assembly.
+    Check whether a contact graph is a single connected assembly.
 
-    [STUB - To be implemented in v3.2]
+    A graph with 0 or 1 nodes is trivially connected. Otherwise, a
+    breadth-first traversal from an arbitrary node must reach every node.
 
     Args:
-        graph: Contact graph from build_contact_graph()
+        graph: Adjacency dict from :func:`build_contact_graph`
 
     Returns:
-        True if all parts are transitively connected
+        True if all parts are transitively connected through contact
     """
-    raise NotImplementedError(
-        "is_fully_connected will be implemented in v3.2\n"
-        "See docs/TESTING_ROADMAP.md Week 7"
-    )
+    if len(graph) <= 1:
+        return True
+
+    start = next(iter(graph))
+    seen: Set[str] = {start}
+    queue: List[str] = [start]
+    while queue:
+        node = queue.pop()
+        for neighbor in graph[node]:
+            if neighbor not in seen:
+                seen.add(neighbor)
+                queue.append(neighbor)
+    return len(seen) == len(graph)
