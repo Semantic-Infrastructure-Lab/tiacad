@@ -428,19 +428,26 @@ updated accordingly); no other example references the affected `.head`/
 `position_head` sub-parts as an input, so the blast radius is contained to
 these two files' geometry.
 
-**Known resolver limitation surfaced in the process (documented, not fixed):**
-relation endpoints in `expect: relations:` must be flat (non-dotted)
+**Known resolver limitation surfaced in the process — fixed 2026-07-11:**
+relation endpoints in `expect: relations:` used to require flat (non-dotted)
 part/operation names. `SpatialResolver._resolve_name`
-(`tiacad_core/spatial_resolver.py`) splits a dotted reference on the *first*
+(`tiacad_core/spatial_resolver.py`) split a dotted reference on the *first*
 dot to get `part.ref` — so a namespaced import part like `m3.shaft` (itself
-containing a dot from the `as: m3` namespace) can't be combined with a
-`.face_top`/`.axis_z` suffix: `"m3.shaft.face_top"` resolves as part `m3`
-(not found), ref `shaft.face_top`, and fails. Workaround used here: give the
-part a flat top-level name via an `operations: type: transform` (even a
-same-position no-op) and reference that instead — every Tier 4 relation in
-`hardware_assembly_demo.yaml` uses `m3_pos`/`m3_head_pos`-style flat names for
-exactly this reason. A real fix would need longest-prefix-match part lookup
-in `SpatialResolver._resolve_name`; out of scope for this pass.
+containing a dot from the `as: m3` namespace) couldn't be combined with a
+`.face_top`/`.axis_z` suffix: `"m3.shaft.face_top"` resolved as part `m3`
+(not found), ref `shaft.face_top`, and failed. Workaround used at the time:
+give the part a flat top-level name via an `operations: type: transform`
+(even a same-position no-op) and reference that instead — every Tier 4
+relation in `hardware_assembly_demo.yaml` uses `m3_pos`/`m3_head_pos`-style
+flat names for exactly this reason; those still work unchanged and were left
+as-is (no need to churn a working example). **Fix:** `SpatialResolver` gained
+`_split_part_ref`, which tries split points from the last dot backward and
+picks the longest prefix that's an actual registered part name, falling back
+to the old first-dot split (for its "part not found" error message) only
+when no prefix matches. `"m3.shaft.face_top"` now resolves to part
+`m3.shaft`, ref `face_top` directly — the flat-name workaround is no longer
+required for new models. Covered by
+`tiacad_core/tests/test_spatial_resolver.py::TestNamespacedPartLocalReferences`.
 
 ---
 

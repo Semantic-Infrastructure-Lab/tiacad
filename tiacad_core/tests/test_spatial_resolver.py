@@ -350,6 +350,64 @@ class TestPartLocalReferences:
             self.resolver.resolve('test_box.invalid_ref')
 
 
+class TestNamespacedPartLocalReferences:
+    """Test dotted-namespace part names (e.g. import 'as: m3' -> part 'm3.shaft')
+    combined with a '.face_top'/'.axis_z'-style suffix. See KNOWN_LIMITATIONS.md #11:
+    a naive first-dot split can't tell 'm3.shaft.face_top' apart from a flat
+    part 'm3' plus ref 'shaft.face_top'; _split_part_ref must prefer the
+    longest existing part-name prefix.
+    """
+
+    def setup_method(self):
+        self.registry = PartRegistry()
+
+        mock_bbox = Mock()
+        mock_bbox.xmin, mock_bbox.xmax = 0, 100
+        mock_bbox.ymin, mock_bbox.ymax = 0, 60
+        mock_bbox.zmin, mock_bbox.zmax = 0, 10
+
+        mock_val = Mock()
+        mock_val.BoundingBox.return_value = mock_bbox
+
+        mock_geometry = Mock()
+        mock_geometry.val.return_value = mock_val
+
+        mock_backend = Mock()
+        mock_backend.get_bounding_box.return_value = {
+            'min': (0, 0, 0),
+            'max': (100, 60, 10),
+            'center': (50, 30, 5)
+        }
+
+        # Namespaced part: literal dot in the name, as produced by `as: m3` imports
+        self.namespaced_part = Mock()
+        self.namespaced_part.name = 'm3.shaft'
+        self.namespaced_part.geometry = mock_geometry
+        self.namespaced_part.backend = mock_backend
+        self.namespaced_part.current_position = [0.0, 0.0, 0.0]
+        self.registry.add(self.namespaced_part)
+
+        self.resolver = SpatialResolver(self.registry, references={})
+
+    def test_dotted_part_name_with_local_ref_suffix(self):
+        """'m3.shaft.face_top'-style refs must resolve to part 'm3.shaft', ref 'center'"""
+        ref = self.resolver.resolve('m3.shaft.center')
+
+        assert_array_almost_equal(ref.position, [50, 30, 5])
+        assert ref.ref_type == 'point'
+
+    def test_dotted_part_name_axis_reference(self):
+        ref = self.resolver.resolve('m3.shaft.axis_z')
+
+        assert ref.ref_type == 'axis'
+        assert_array_almost_equal(ref.orientation, [0, 0, 1])
+
+    def test_split_part_ref_prefers_longest_existing_prefix(self):
+        """Unit-level check of the split itself, including the no-match fallback"""
+        assert self.resolver._split_part_ref('m3.shaft.center') == ('m3.shaft', 'center')
+        assert self.resolver._split_part_ref('unknown.center') == ('unknown', 'center')
+
+
 class TestFaceExtraction:
     """Test face reference extraction from geometry"""
 

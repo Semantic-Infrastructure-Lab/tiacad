@@ -171,7 +171,7 @@ class SpatialResolver:
         # Check part-local references (e.g., "base.face_top")
         if '.' in name:
             logger.debug(f"Resolving part-local reference '{name}'")
-            part_name, ref_name = name.split('.', 1)
+            part_name, ref_name = self._split_part_ref(name)
 
             # Check if part exists
             if not self.registry.exists(part_name):
@@ -190,6 +190,29 @@ class SpatialResolver:
             f"Reference '{name}' not found. "
             f"Available named references: {', '.join(self.references.keys())}"
         )
+
+    def _split_part_ref(self, name: str) -> tuple:
+        """
+        Split "part.ref" on the dot that yields the longest existing part name.
+
+        Namespaced imports (e.g. `as: m3`) produce part names that themselves
+        contain a dot (`m3.shaft`), so a naive first-dot split can't combine
+        such a part with a `.face_top`/`.axis_z` suffix: "m3.shaft.face_top"
+        would split into part "m3" (not found) and ref "shaft.face_top".
+        Trying split points from the last dot backward picks the longest
+        matching part name first, so "m3.shaft.face_top" resolves to part
+        "m3.shaft", ref "face_top".
+
+        Falls back to a first-dot split (previous behavior) when no prefix
+        matches a real part, so the caller's "part not found" error still
+        names the most intuitive candidate.
+        """
+        dot_indices = [i for i, c in enumerate(name) if c == '.']
+        for idx in reversed(dot_indices):
+            candidate = name[:idx]
+            if self.registry.exists(candidate):
+                return candidate, name[idx + 1:]
+        return tuple(name.split('.', 1))
 
     def _resolve_dict(self, spec: dict) -> SpatialRef:
         """Dispatch inline reference spec to the appropriate type resolver."""
