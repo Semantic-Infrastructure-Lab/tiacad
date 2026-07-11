@@ -1,0 +1,37 @@
+# Tier 0 — Regular polygon (hexagon) prism primitive, closed-form ground truth.
+# Volume = (N/2)*R^2*sin(2*pi/N)*h for circumscribed (tip-to-tip) radius R = diameter/2.
+# See VALIDATION_STRENGTHENING.md Appendix. This model is also the regression guard for
+# the 2026-07-10 _build_polygon circumscribed-flag-inversion bug (fixed same day) that
+# built every stdlib hex nut ~15% oversized across flats — confirms circumscribed:true
+# now means what its own docstring says (diameter = tip-to-tip, not across-flats).
+schema_version: "3.0"
+
+metadata:
+  name: T0 Polygon
+  description: "Tier 0 primitive ladder: hex-prism volume against the closed-form regular N-gon area formula"
+  version: "1.0"
+
+parameters:
+  poly_sides: 6
+  poly_diameter: 20
+  poly_h: 10
+
+parts:
+  prism:
+    primitive: polygon
+    parameters:
+      sides: ${poly_sides}
+      diameter: ${poly_diameter}
+      height: ${poly_h}
+      circumscribed: true
+
+export:
+  default_part: prism
+
+expect:
+  final: prism
+  volume: 2598.076211353316
+  bbox: [20, 17.320508075688775, 10]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01, length: 0.001 }

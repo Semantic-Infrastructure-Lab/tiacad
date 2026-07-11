@@ -223,6 +223,113 @@ new rule caught a second, independent instance of this exact bug class in
 
 ---
 
+### 7. Fixed — `polygon` primitive's `circumscribed` flag was inverted (all stdlib hex nuts oversized)
+
+**What it was:** `_build_polygon`'s own docstring says `circumscribed: true` (the
+default) means "diameter is outer [tip-to-tip] circle." It passed that flag straight
+through to `cq.Workplane.polygon(circumscribed=...)` — but CadQuery's flag means the
+opposite: `circumscribed=True` makes the *given* diameter the polygon's **inscribed**
+(across-flats) circle, with vertices landing *outside* it at `radius/cos(π/N)`.
+Result: every part built with `primitive: polygon` came out ~15.5% oversized across
+flats (for a hexagon) relative to what its own `diameter` parameter and docstring said.
+
+**Caught by:** building the Tier-0 ladder-corpus `T0_polygon` model
+(`examples/validation/T0_polygon.tiacad`) and cross-checking its bbox against the
+closed-form regular-hexagon formula — the measured across-corners extent (23.09mm for
+`diameter: 20`) didn't match a tip-to-tip diameter of 20mm at all.
+
+**Real-world impact:** all four stdlib hex nuts (`m3_nut.yaml`…`m6_nut.yaml`) — the only
+users of the `polygon` primitive — were built with across-flats 6.35/8.08/9.24/11.55mm
+instead of the intended ISO 4032 5.5/7.0/8.0/10.0mm. A printed M3 nut from stdlib would
+not fit an M3 wrench.
+
+**Fix applied:** invert the flag when calling into CadQuery
+(`tiacad_core/parser/parts_builder.py::_build_polygon`), so TiaCAD's own documented
+contract holds. Verified all four nuts now build at their ISO across-flats dimensions;
+added `test_hex_body_across_flats_matches_iso4032` regression tests to
+`test_example_contracts.py` (none of the pre-existing nut tests asserted AF at all).
+
+---
+
+### 8. Curved geometry (spheres, fillets): mesh-based `watertight` check is a false negative
+
+**What it is:** the `expect: watertight` contract check exports the built solid to STL
+(CadQuery default tessellation: `tolerance=0.001`, `angularTolerance=0.1`) and asks
+`trimesh` whether the resulting mesh is watertight. This is **always False** for any
+solid with curved surfaces sharing a seam or fillet blend:
+- The `sphere` primitive — reproduced at radii 1/5/10/18/25mm and at STL tolerances
+  down to 1e-4 — because OCCT's sphere tessellation leaves the two pole-seam vertices
+  unwelded, producing 3 disconnected mesh islands (`trimesh.split(only_watertight=False)`).
+- A box with all 12 edges filleted (`T1_fillet.tiacad`) — 9 disconnected mesh islands,
+  presumably one per rounded-corner region not welding to its neighbors.
+
+**Why it's a false negative, not a real defect:** `count_solids` (the exact BREP-level
+solid count, not mesh-derived) reports 1 for both cases, and `get_volume` (also
+BREP-exact) matches the respective closed-form formula (`4/3·π·r³` for the sphere; the
+Minkowski-sum-with-a-ball rounded-box formula for the fillet) to full kernel precision
+— the geometry itself is a single valid closed solid in both cases. Only the STL
+round-trip used for the mesh watertight check is affected.
+
+**Status:** documented, not fixed. `examples/validation/T0_sphere.tiacad` and
+`T1_fillet.tiacad` deliberately omit `expect: watertight` (asserting
+`volume`/`bbox`/`components` only) so this known export-tessellation artifact doesn't
+fail the ladder corpus. A real fix would mean post-processing the exported mesh to
+weld coincident seam/blend vertices, or switching the watertight check to a BREP-level
+test (e.g. `BRepCheck_Analyzer`) instead of an STL/trimesh round-trip — worth doing
+before Tier 3's manifold-health gates lean on `watertight` for any model with curved
+surfaces sharing a seam or blend (confirmed for spheres and fillets; the `torus`
+primitive's contract in `T0_torus.tiacad` passes `watertight: true` cleanly, so this
+is not universal to every curved primitive — verify per-shape before assuming it).
+
+---
+
+### 9. Fixed — part-level `translate:`/`rotate:` were dead schema syntax
+
+**What it was:** the schema documents `translate:` (and, less formally, `rotate:`)
+as valid keys directly on a `parts:` entry — the "auto-generated anchors" feature
+demonstrated by `anchors_demo.yaml` and the `auto_references_*.yaml` examples, e.g.
+`left_pillar: {translate: {to: platform.face_top, offset: [-30, 0, 0]}}`.
+`parts_builder.py::build_part` never read either key — confirmed by inspecting the
+raw CadQuery `BoundingBox()` of the built geometry, not just a wrapper measurement.
+Every part positioned this way silently built at its untranslated local origin.
+
+**Caught by:** building the Tier-1 ladder-corpus union model
+(`examples/validation/T1_union_overlap.tiacad`) — a `box_b` positioned via inline
+`translate:` produced the *same* volume as `box_a` alone (8000mm³, not the expected
+12000mm³ for two overlapping cubes), because the two boxes were secretly coincident.
+
+**Real-world impact:** 27 usages across 12 example files, including files whose sole
+purpose is demonstrating this feature (`anchors_demo.yaml`,
+`auto_references_with_offsets/rotation/box_stack/cylinder_assembly.yaml`). E.g.
+`anchors_demo.yaml`'s `left_pillar`/`right_pillar` were meant to sit at opposite
+edges of a platform; they actually both sat exactly at world origin, fully
+overlapping. `pcb_standoff_assembly.yaml` (one of the two examples seeded with an
+`expect:` contract in the prior session) had its `pcb` part silently stuck at Z=0
+instead of its intended height. None of the existing per-example dimensional
+contracts caught any of this — they only ever asserted a part's own local
+width/height/depth/volume, never its absolute position relative to siblings
+(exactly the class of gap Tier 4 relational contracts exist to close).
+
+**Fix applied:** `OperationsBuilder.apply_inline_part_transforms()` (new method,
+`tiacad_core/parser/operations_builder.py`) reuses the exact same
+`TransformTracker` + `_apply_translate`/`_apply_rotate` + `spatial_resolver`
+machinery that already powers `operations: type: transform`, applied once per part
+right after `PartsBuilder.build_parts()` and the document's `SpatialResolver` both
+exist (so any part may anchor to any sibling's auto-generated references) and
+before `operations:` runs (`parser/parse_pipeline.py`). `PartRegistry.replace()`
+(new) swaps each part's geometry in place under its own name. Supports both schema
+forms: a single spec (vector / `{to: ...}` / named-point string) and the "sequence
+of translation vectors" form. Dedicated regression coverage:
+`tiacad_core/tests/test_parser/test_inline_part_transforms.py`.
+`TestV3BracketMount.test_bounding_box` (`v3_bracket_mount.yaml`) had asserted the
+bug-compatible bbox (`height: 100.0`); corrected to the geometrically-derived true
+value (`140.0` — base plate ∪ bracket, whose center now correctly lands on
+`base_plate.face_back`). Full non-visual suite (1732 tests) and visual regression
+(67 tests) both green after the fix; no visual golden PNGs cover the 12 affected
+files.
+
+---
+
 ## Test Health
 
 TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.

@@ -46,3 +46,12 @@ operations:
 
 export:
   default_part: extruded_part
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: extruded_part
+  volume: 1000.0
+  bbox: [20.0, 10.0, 5.0]
+  watertight: true
+  components: 1

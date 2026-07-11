@@ -135,6 +135,82 @@ class OperationsBuilder:
         logger.info(f"Executed {len(operations_spec)} operations successfully")
         return self.registry
 
+    def apply_inline_part_transforms(self, parts_spec: Dict[str, Dict]) -> None:
+        """
+        Apply each part's own inline `translate:`/`rotate:` spec (schema v3.0),
+        in place, to the already-built part of the same name in the registry.
+
+        This is distinct from `operations: type: transform`, which creates a new,
+        separately-named part. Inline part-level translate/rotate re-positions the
+        part itself — e.g. `left_pillar.translate: {to: platform.face_top, ...}` —
+        using the same anchor-resolution machinery (TransformTracker +
+        spatial_resolver) as the transform operation, so `platform.face_top` and
+        other auto-generated/user references resolve identically either way.
+
+        Must run after every part in `parts_spec` already exists in the registry
+        (so any part may anchor to any sibling's auto-generated references) and
+        before `operations_spec` executes (so operations see the final position).
+        No-op for parts with neither key.
+
+        Args:
+            parts_spec: Dictionary of part_name → part_definition (the YAML `parts:` section)
+        """
+        for part_name, part_def in parts_spec.items():
+            if not isinstance(part_def, dict):
+                continue
+            has_translate = 'translate' in part_def
+            has_rotate = 'rotate' in part_def
+            if not has_translate and not has_rotate:
+                continue
+
+            resolved = self.resolver.resolve(part_def)
+            part = self.registry.get(part_name)
+            tracker = TransformTracker(part.geometry, backend=part.backend)
+
+            try:
+                if has_translate:
+                    for vec in self._as_translate_sequence(resolved['translate']):
+                        self._apply_translate(tracker, vec, part_name)
+                if has_rotate:
+                    for rot in self._as_rotate_sequence(resolved['rotate']):
+                        self._apply_rotate(tracker, rot, part_name)
+            except Exception as e:
+                raise OperationsBuilderError(
+                    f"Inline translate/rotate failed for part '{part_name}': {str(e)}",
+                    operation_name=part_name
+                ) from e
+
+            self.registry.replace(Part(
+                name=part_name,
+                geometry=tracker.get_geometry(),
+                metadata=part.metadata,
+                current_position=tracker.current_position,
+                backend=part.backend,
+            ))
+            logger.debug(f"Applied inline translate/rotate to part '{part_name}'")
+
+    @staticmethod
+    def _as_translate_sequence(value) -> list:
+        """Normalize a part-level `translate:` value into a list of one-or-more
+        `_apply_translate`-compatible specs. Schema allows: a single spec (dict
+        with `to:`, a [x,y,z] list, or a named-point string), or a *sequence* of
+        [x,y,z] vectors applied in order (`[[dx1,dy1,dz1], [dx2,dy2,dz2], ...]`)."""
+        if (
+            isinstance(value, list)
+            and value
+            and all(isinstance(v, list) for v in value)
+        ):
+            return value
+        return [value]
+
+    @staticmethod
+    def _as_rotate_sequence(value) -> list:
+        """Normalize a part-level `rotate:` value into a list of one-or-more
+        `_apply_rotate`-compatible specs (each a dict with angle + axis/around)."""
+        if isinstance(value, list):
+            return value
+        return [value]
+
     def execute_operation(self, name: str, spec: Dict[str, Any]):
         """
         Execute a single operation.

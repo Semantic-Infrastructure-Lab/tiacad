@@ -1,0 +1,55 @@
+# Tier 1 — Circular (polar) pattern of non-overlapping copies: V(n copies) = n * V(unit).
+# 6 cylinders (r=3, equidistant from the axis, chord spacing ~20mm >> 2*r=6mm so they
+# never touch) on a 20mm-radius bolt circle around Z, unioned together.
+# Oracle: §3 Tier 1 (polar copies equidistant from the axis; non-overlapping volume).
+schema_version: "3.0"
+
+metadata:
+  name: T1 Pattern Polar
+  description: "Tier 1 operation ladder: circular pattern volume against n * unit-volume"
+  version: "1.0"
+
+parameters:
+  unit_r: 3
+  unit_h: 10
+  bolt_circle_r: 20
+  count: 6
+
+parts:
+  unit:
+    primitive: cylinder
+    parameters:
+      radius: ${unit_r}
+      height: ${unit_h}
+
+operations:
+  copies:
+    type: pattern
+    pattern: circular
+    input: unit
+    count: ${count}
+    axis: Z
+    center: [0, 0, 0]
+    radius: ${bolt_circle_r}
+
+  merged:
+    type: boolean
+    operation: union
+    inputs: [copies_0, copies_1, copies_2, copies_3, copies_4, copies_5]
+
+export:
+  default_part: merged
+
+# bbox X = 2*(bolt_circle_r + unit_r) = 2*23 = 46 (copy at angle 0 reaches the
+# full radial extent). Y is smaller: with 6 copies at 0/60/120/180/240/300deg,
+# no copy sits at 90/270deg, so the Y extreme comes from the 60deg/120deg copies:
+# 2*(bolt_circle_r*sin(60deg) + unit_r) = 40.64101615137754.
+# Z = unit_h = 10 (unchanged — axis already matches the cylinder's own axis).
+# Volume = 6 * pi*3^2*10 = 540*pi = 1696.460...
+expect:
+  final: merged
+  volume: 1696.4600329384882
+  bbox: [46, 40.64101615137754, 10]
+  watertight: true
+  components: 6
+  tol: { volume: 0.01 }

@@ -268,6 +268,14 @@ def parse_tiacad_dict(
 
         spatial_resolver = SpatialResolver(registry, context.resolved_references)
 
+        # Apply each part's own inline translate:/rotate: (schema v3.0) in place,
+        # before operations run, so operations see parts at their final position.
+        # Runs after every part in parts_spec exists in `registry`, so a part may
+        # anchor to any sibling's auto-generated references (e.g. base.face_top).
+        OperationsBuilder(
+            registry, context.param_resolver, context.sketches, spatial_resolver
+        ).apply_inline_part_transforms(parts_spec)
+
         if operations_spec:
             registry = OperationsBuilder(
                 registry, context.param_resolver, context.sketches, spatial_resolver

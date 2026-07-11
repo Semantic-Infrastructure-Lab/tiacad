@@ -145,3 +145,12 @@ operations:
 export:
   default_part: bracket_chamfered
   format: stl
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: bracket_chamfered
+  volume: 65928.148
+  bbox: [80.0, 66.0, 80.0]
+  watertight: true
+  components: 1

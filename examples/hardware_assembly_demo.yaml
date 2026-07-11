@@ -104,3 +104,12 @@ operations:
 
 export:
   default_part: plate
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: plate
+  volume: 32000.0
+  bbox: [100.0, 4.0, 80.0]
+  watertight: true
+  components: 1

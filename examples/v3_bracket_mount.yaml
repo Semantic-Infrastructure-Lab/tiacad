@@ -164,3 +164,12 @@ export:
 #
 # 5. Finishing operations
 #    - Fillet for professional edges
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: assembly_finished
+  volume: 255576.843
+  bbox: [150.0, 140.0, 60.0]
+  watertight: true
+  components: 1

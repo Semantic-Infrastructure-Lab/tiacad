@@ -107,3 +107,12 @@ operations:
 
 export:
   default_part: final_sign
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: final_sign
+  volume: 29598.34
+  bbox: [100.0, 60.0, 5.0]
+  watertight: true
+  components: 1

@@ -1,0 +1,33 @@
+# Tier 0 — Torus primitive, closed-form ground truth.
+# Volume = 2*pi^2*R*r^2 (Pappus), surface area = 4*pi^2*R*r. See VALIDATION_STRENGTHENING.md Appendix.
+# This is the exact model shape that exposed the zero-volume torus bug fixed 2026-07-10
+# (parts_builder.py::_build_torus was building a degenerate flat profile before the
+# cq.Solid.makeTorus fix) — kept as a permanent regression guard.
+schema_version: "3.0"
+
+metadata:
+  name: T0 Torus
+  description: "Tier 0 primitive ladder: torus volume/bbox against the closed-form Pappus formula"
+  version: "1.0"
+
+parameters:
+  torus_R: 22
+  torus_r: 6
+
+parts:
+  donut:
+    primitive: torus
+    parameters:
+      major_radius: ${torus_R}
+      minor_radius: ${torus_r}
+
+export:
+  default_part: donut
+
+expect:
+  final: donut
+  volume: 15633.453371325542
+  bbox: [56, 56, 12]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

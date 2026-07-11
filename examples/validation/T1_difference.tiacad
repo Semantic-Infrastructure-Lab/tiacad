@@ -1,0 +1,50 @@
+# Tier 1 — Boolean difference: a through-hole removes exactly the overlap volume.
+# V(diff) = V(box) - pi*r^2*box_height (only the portion of the cylinder inside the
+# box is removed; the cylinder is taller than the box on purpose, to guarantee a
+# clean through-cut rather than a partial/blind hole). Oracle: §3 Tier 1.
+schema_version: "3.0"
+
+metadata:
+  name: T1 Difference
+  description: "Tier 1 operation ladder: boolean difference volume against the closed-form box-minus-cylinder formula"
+  version: "1.0"
+
+parameters:
+  box_w: 30
+  box_h: 20
+  box_d: 30
+  hole_r: 5
+  hole_h: 30
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+
+  hole:
+    primitive: cylinder
+    parameters:
+      radius: ${hole_r}
+      height: ${hole_h}
+
+operations:
+  drilled:
+    type: boolean
+    operation: difference
+    base: block
+    subtract: [hole]
+
+export:
+  default_part: drilled
+
+# V = 30*30*20 - pi*5^2*20 = 18000 - 500*pi = 16429.20367...
+expect:
+  final: drilled
+  volume: 16429.203673205102
+  bbox: [30, 30, 20]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

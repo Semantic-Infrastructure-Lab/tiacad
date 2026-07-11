@@ -1,0 +1,43 @@
+# Tier 1 — Rotate invariant: a 90° rotation about Z preserves volume exactly and
+# permutes the bbox's X/Y extents (Z unchanged). Oracle: metamorphic (§3 Tier 1).
+schema_version: "3.0"
+
+metadata:
+  name: T1 Rotate90
+  description: "Tier 1 operation ladder: 90-degree rotation preserves volume and permutes bbox axes"
+  version: "1.0"
+
+parameters:
+  box_w: 40
+  box_h: 15
+  box_d: 25
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+
+operations:
+  rotated:
+    type: transform
+    input: block
+    transforms:
+      - rotate:
+          angle: 90
+          axis: Z
+          origin: [0, 0, 0]
+
+export:
+  default_part: rotated
+
+# Unrotated bbox is [40, 25, 15] (w=X, d=Y, h=Z per T0_box); a 90-degree
+# rotation about Z swaps X and Y, so the rotated bbox is [25, 40, 15].
+expect:
+  final: rotated
+  volume: 15000
+  bbox: [25, 40, 15]
+  watertight: true
+  components: 1

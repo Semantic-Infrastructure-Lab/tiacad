@@ -1,0 +1,38 @@
+# Tier 0 — Sphere primitive, closed-form ground truth.
+# Volume = 4/3*pi*r^3, surface area = 4*pi*r^2. See VALIDATION_STRENGTHENING.md Appendix.
+#
+# No `watertight: true` here (deliberately): the BREP solid is provably valid
+# (components: 1, computed from the same exact CAD kernel `get_volume` matches
+# below), but the mesh-based watertight check (`expect: watertight`, which
+# round-trips through an STL export + trimesh) reports False for every sphere
+# at every size and every tessellation tolerance tried (5/10/18/25/1mm; STL
+# tolerance/angularTolerance down to 1e-4) — pole-seam vertices in OCCT's
+# sphere tessellation aren't welded, leaving 3 disconnected mesh islands.
+# Documented as a known gap in KNOWN_LIMITATIONS.md; not asserted here so this
+# model doesn't fail on a mesh-export artifact unrelated to the primitive's
+# actual (correct) geometry.
+schema_version: "3.0"
+
+metadata:
+  name: T0 Sphere
+  description: "Tier 0 primitive ladder: sphere volume/bbox against the closed-form 4/3*pi*r^3 formula"
+  version: "1.0"
+
+parameters:
+  sph_r: 18
+
+parts:
+  ball:
+    primitive: sphere
+    parameters:
+      radius: ${sph_r}
+
+export:
+  default_part: ball
+
+expect:
+  final: ball
+  volume: 24429.02447431423
+  bbox: [36, 36, 36]
+  components: 1
+  tol: { volume: 0.01 }

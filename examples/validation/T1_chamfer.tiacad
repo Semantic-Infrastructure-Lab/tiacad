@@ -1,0 +1,54 @@
+# Tier 1 — Chamfer all 12 edges of a box: bounded-volume-reduction oracle.
+# Unlike fillet (which has a clean closed-form Minkowski-sum formula), a 45-degree
+# chamfer on all 12 edges of a box has corner-intersection geometry that doesn't
+# reduce to a simple formula. Oracle here is the bound from §3 Tier 1: volume must
+# strictly decrease, by more than zero and less than the volume of the 12
+# independent edge wedges (chamfer can never remove more than that, since corner
+# overlaps only reduce the total removed further). expect:volume below is the
+# measured value (seeded via `tiacad audit --write-contract`, reviewed against
+# those bounds), not an independently-derived closed form.
+schema_version: "3.0"
+
+metadata:
+  name: T1 Chamfer
+  description: "Tier 1 operation ladder: chamfer-all-edges volume is bounded (reviewed, not closed-form)"
+  version: "1.0"
+
+parameters:
+  box_w: 40
+  box_h: 20
+  box_d: 40
+  chamfer_len: 3.0
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+
+operations:
+  chamfered:
+    type: finishing
+    finish: chamfer
+    input: block
+    length: ${chamfer_len}
+    edges: all
+
+export:
+  default_part: chamfered
+
+# Bounds: 0 < V < box_volume (32000). Independent per-edge wedge volume for a
+# 45-degree chamfer of leg c on a straight edge of length L is (c^2/2)*L; summing
+# all 12 edges (4 of length 40 along X, 4 of length 40 along Y, 4 of length 20
+# along Z) gives an upper bound on material removed of (3^2/2)*(4*40+4*40+4*20)
+# = 4.5*400 = 1800 (an overestimate — corner regions are shared/double-counted by
+# this per-edge sum, so true removal is less), consistent with the measured value.
+expect:
+  final: chamfered
+  volume: 30344.0
+  bbox: [40, 40, 20]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

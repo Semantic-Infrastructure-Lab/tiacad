@@ -177,3 +177,12 @@ export:
       description: Left guitar support arm
     - name: right_arm
       description: Right guitar support arm
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: plate_with_holes
+  volume: 74681.914
+  bbox: [100.0, 75.0, 10.0]
+  watertight: true
+  components: 1

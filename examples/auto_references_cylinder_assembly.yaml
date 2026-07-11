@@ -54,3 +54,11 @@ export:
 # Result: A cylinder with caps on both ends and a sphere on top
 # - All parts perfectly aligned without manual coordinate calculation
 # - If shaft height changes, caps and sphere automatically adjust
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: sphere_top
+  volume: 904.779
+  bbox: [12.0, 12.0, 12.0]
+  components: 1

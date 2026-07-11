@@ -558,6 +558,14 @@ class TestM3NutContracts:
         expected = _math.pi * 1.5**2 * 2.41
         assert dims["volume"] == pytest.approx(expected, abs=0.5)
 
+    def test_hex_body_across_flats_matches_iso4032(self):
+        """ISO 4032 M3 AF = 5.5mm. Regression guard for the 2026-07-10 _build_polygon
+        circumscribed-flag inversion bug that built every stdlib hex nut ~15% oversized
+        across flats (AF came out equal to the tip-to-tip diameter, 6.35mm, instead)."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("hex_body"))
+        assert dims["height"] == pytest.approx(5.5, abs=0.02)
+
 
 # Tier 2: m4_nut stdlib component
 # ---------------------------------------------------------------------------
@@ -602,6 +610,12 @@ class TestM4NutContracts:
         dims = get_dimensions(doc.parts.get("bore"))
         expected = _math.pi * 2.0**2 * 3.21
         assert dims["volume"] == pytest.approx(expected, abs=0.5)
+
+    def test_hex_body_across_flats_matches_iso4032(self):
+        """ISO 4032 M4 AF = 7.0mm. See TestM3NutContracts for the bug this guards."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("hex_body"))
+        assert dims["height"] == pytest.approx(7.0, abs=0.02)
 
 
 # Tier 2: m5_nut stdlib component
@@ -648,6 +662,12 @@ class TestM5NutContracts:
         expected = _math.pi * 2.5**2 * 4.71
         assert dims["volume"] == pytest.approx(expected, abs=0.5)
 
+    def test_hex_body_across_flats_matches_iso4032(self):
+        """ISO 4032 M5 AF = 8.0mm. See TestM3NutContracts for the bug this guards."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("hex_body"))
+        assert dims["height"] == pytest.approx(8.0, abs=0.02)
+
 
 # Tier 2: m6_nut stdlib component
 # ---------------------------------------------------------------------------
@@ -692,6 +712,12 @@ class TestM6NutContracts:
         dims = get_dimensions(doc.parts.get("bore"))
         expected = _math.pi * 3.0**2 * 5.21
         assert dims["volume"] == pytest.approx(expected, abs=0.5)
+
+    def test_hex_body_across_flats_matches_iso4032(self):
+        """ISO 4032 M6 AF = 10.0mm. See TestM3NutContracts for the bug this guards."""
+        doc = self._parse()
+        dims = get_dimensions(doc.parts.get("hex_body"))
+        assert dims["height"] == pytest.approx(10.0, abs=0.02)
 
 
 # Tier 2: pcb_standoff_assembly — correctly positioned multi-component assembly
@@ -1081,19 +1107,21 @@ class TestV3BracketMount:
     Final = assembly_finished (fillet on union of base+bracket+2 arms).
     Fillet does not change bounding box of flat outer faces.
 
-    Bounding box (measured):
-      W = base_width = 150          (X: widest part is the base and bracket)
-      H = base_depth = 100          (Y: depth of base plate)
-      D = arm_depth  = 60           (Z: arms define the Z reach)
+    Bounding box (measured, post 2026-07-10 inline-translate fix — see
+    KNOWN_LIMITATIONS.md #10 — bracket really is translated to base_plate.face_back now):
+      W = base_width = 150                          (X: widest part is the base and bracket)
+      H = 140  (Y: base spans [-50,50], bracket spans [-90,-10] since its center lands
+                exactly on base_plate.face_back at Y=-50; union extent = 50-(-90) = 140)
+      D = arm_depth  = 60                            (Z: arms define the Z reach)
 
     Volume < sum of solid parts (150×100×8 + 150×80×6 + 2×12×60×80 = 307,200mm³).
     """
 
     def test_bounding_box(self):
-        """W=base_width=150, H=base_depth=100, D=arm_depth=60."""
+        """W=base_width=150, H=140 (base [-50,50] unioned with bracket [-90,-10]), D=arm_depth=60."""
         dims, _ = _parse_and_measure_final("v3_bracket_mount.yaml")
         assert dims["width"] == pytest.approx(150.0, abs=TOL)
-        assert dims["height"] == pytest.approx(100.0, abs=TOL)
+        assert dims["height"] == pytest.approx(140.0, abs=TOL)
         assert dims["depth"] == pytest.approx(60.0, abs=TOL)
 
     def test_volume_below_sum_of_parts(self):

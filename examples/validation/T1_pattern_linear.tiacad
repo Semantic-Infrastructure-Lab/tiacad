@@ -1,0 +1,47 @@
+# Tier 1 — Linear pattern of non-overlapping copies: V(n copies) = n * V(unit).
+# 4 copies of a 10mm cube spaced 15mm apart (> cube width, so copies never touch or
+# overlap) unioned together. Oracle: §3 Tier 1 (non-overlapping pattern volume).
+schema_version: "3.0"
+
+metadata:
+  name: T1 Pattern Linear
+  description: "Tier 1 operation ladder: linear pattern volume against n * unit-volume"
+  version: "1.0"
+
+parameters:
+  cube: 10
+  spacing: 15
+  count: 4
+
+parts:
+  unit:
+    primitive: box
+    parameters:
+      width: ${cube}
+      height: ${cube}
+      depth: ${cube}
+
+operations:
+  copies:
+    type: pattern
+    pattern: linear
+    input: unit
+    count: ${count}
+    spacing: ['${spacing}', 0, 0]
+
+  merged:
+    type: boolean
+    operation: union
+    inputs: [copies_0, copies_1, copies_2, copies_3]
+
+export:
+  default_part: merged
+
+# Centers at X = 0, 15, 30, 45 (half-width 5 each) -> bbox X spans [-5, 50] = 55.
+# Volume = 4 * (10*10*10) = 4000.
+expect:
+  final: merged
+  volume: 4000
+  bbox: [55, 10, 10]
+  watertight: true
+  components: 4

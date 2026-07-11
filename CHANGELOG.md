@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-07-11
+
+#### Part-level `translate:`/`rotate:` were dead schema syntax
+
+The schema documents `translate:`/`rotate:` as valid keys directly on a `parts:` entry
+(the "auto-generated anchors" feature demoed by `anchors_demo.yaml` and the
+`auto_references_*.yaml` examples) — `parts_builder.py::build_part` never read either
+key, so every part positioned this way silently built at its untranslated local origin.
+27 usages across 12 example files were affected, including `pcb_standoff_assembly.yaml`
+(one of the two examples seeded with an `expect:` contract last session — its `pcb` part
+never reached its intended Z height). Found while building the T0/T1 ladder corpus (a
+`T1_union_overlap` model came out at half its expected volume because the two boxes were
+secretly coincident). Fixed by `OperationsBuilder.apply_inline_part_transforms()`, which
+reuses the same `TransformTracker`/`spatial_resolver` machinery as `operations: type:
+transform`, wired into the build pipeline right after all parts + the document's
+`SpatialResolver` exist. See `KNOWN_LIMITATIONS.md` #9 and
+`test_parser/test_inline_part_transforms.py` for full detail and regression coverage.
+
+#### `polygon` primitive's `circumscribed` flag was inverted (all stdlib hex nuts oversized)
+
+`_build_polygon` passed its own `circumscribed` flag straight through to
+`cq.Workplane.polygon(circumscribed=...)` — but CadQuery's flag means the opposite of
+what the docstring (and this primitive's own contract) claims. Result: all four stdlib
+hex nuts (`m3_nut.yaml`…`m6_nut.yaml`, the only users of `polygon`) built ~15.5%
+oversized across flats (6.35/8.08/9.24/11.55mm instead of ISO 4032's 5.5/7.0/8.0/10.0mm)
+— a printed M3 nut would not fit an M3 wrench. Found while building the `T0_polygon`
+ladder-corpus model. Fixed by inverting the flag at the call site; added
+`test_hex_body_across_flats_matches_iso4032` regression tests (none of the pre-existing
+nut tests asserted across-flats at all). See `KNOWN_LIMITATIONS.md` #7.
+
+### Added - 2026-07-11
+
+#### T0/T1 validation ladder corpus (VALIDATION_STRENGTHENING.md section 5)
+
+`examples/validation/`: 6 Tier-0 primitive models (box/cylinder/sphere/cone/torus/polygon),
+each checked against its closed-form analytic volume/bbox formula, and 9 Tier-1
+single-operation models (translate/rotate90/union/difference/intersection/pattern-linear/
+pattern-polar/fillet/chamfer), each isolating exactly one operation on Tier-0 primitives.
+Directly found the two bugs above.
+
+#### `expect:` contracts for the full Tier-2 example corpus
+
+Seeded reviewed `expect:` contracts (via `tiacad audit --write-contract`, cross-checked
+against each file's existing hand-derived pytest assertions) for the 25 examples with a
+Tier-2 pytest class in `test_example_contracts.py` that didn't already have one.
+`test_embedded_contracts.py`'s generic parametrized test now discovers and checks 50
+models total, up from 2.
+
 ### Fixed - 2026-07-10
 
 #### Zero-volume torus primitive

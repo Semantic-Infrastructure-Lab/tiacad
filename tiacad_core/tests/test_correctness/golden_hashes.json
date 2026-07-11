@@ -1,4 +1,144 @@
 {
+  "examples/anchors_demo.yaml": {
+    "bbox": [
+      70.0,
+      10.0,
+      5.0000000000000036
+    ],
+    "mesh_hash": "142571ee23630f33a1765640a12688d6aa040e1c30053d2fb9b84559b1acaf85",
+    "part": "crossbar",
+    "volume": 3500.0000000000023
+  },
+  "examples/auto_references_box_stack.yaml": {
+    "bbox": [
+      60.0,
+      30.0,
+      10.0
+    ],
+    "mesh_hash": "555d83cb9652bea53ada73fc41d70e423c245f71fb05fb1a43f4bc2014ee1c74",
+    "part": "top",
+    "volume": 18000.0
+  },
+  "examples/auto_references_cylinder_assembly.yaml": {
+    "bbox": [
+      12.0,
+      12.0,
+      12.0
+    ],
+    "mesh_hash": "2de9f64786eb026fe0a06915de566465c92102f27cf042dcb0fdcf2ddffb5bfa",
+    "part": "sphere_top",
+    "volume": 904.7786842338602
+  },
+  "examples/awesome_guitar_hanger.yaml": {
+    "bbox": [
+      120.0,
+      110.05423884151605,
+      80.74674834851757
+    ],
+    "mesh_hash": "722f96280450f0810fe9cb880112b428134438d6f4697440792a9ca5a0f29677",
+    "part": "awesome_guitar_hanger",
+    "volume": 244318.21679843232
+  },
+  "examples/bottle_revolve.yaml": {
+    "bbox": [
+      20.0,
+      20.0,
+      30.0
+    ],
+    "mesh_hash": "cfbda782a559d2734e8daf9f0c7fcda40a77b931f5df1d17bfc44acfc6223fc3",
+    "part": "bottle",
+    "volume": 7137.69850895601
+  },
+  "examples/bracket_with_hole.yaml": {
+    "bbox": [
+      50.0,
+      20.0,
+      10.0
+    ],
+    "mesh_hash": "5b0ba0ac26338e591a2ba603112fb98aaf913b5b0e0e541646c60b918b585875",
+    "part": "bracket",
+    "volume": 9214.601836602551
+  },
+  "examples/chamfered_bracket.yaml": {
+    "bbox": [
+      80.0,
+      66.0,
+      80.0
+    ],
+    "mesh_hash": "6c8949bc6325f4ac9da82ca912fd2d82826337c72a5614aab3e9bb4097a76e8b",
+    "part": "bracket_chamfered",
+    "volume": 65928.14825383054
+  },
+  "examples/component_import_demo.yaml": {
+    "bbox": [
+      200.0,
+      3.0,
+      150.0
+    ],
+    "mesh_hash": "6eac351cb686bd8f29f6dba020bc071570d97b471c085d430298e3a9a47f260c",
+    "part": "panel",
+    "volume": 90000.0
+  },
+  "examples/dag_test_simple.yaml": {
+    "bbox": [
+      50.0,
+      50.0,
+      20.0
+    ],
+    "mesh_hash": "64c4a4c7d0484cfc5417df5907f217db6a033355c028ce2e7593cf71eca850fd",
+    "part": "stacked",
+    "volume": 49999.999999999985
+  },
+  "examples/formats_demo.yaml": {
+    "bbox": [
+      50.0,
+      20.0,
+      50.0
+    ],
+    "mesh_hash": "5852b1f4f267d78dfd88cb6f0ae15d9a7df8d0eb1e08862fd6b9ff9c7fab125e",
+    "part": "demo_box_filleted",
+    "volume": 49598.67834798908
+  },
+  "examples/guitar_hanger_named_points.yaml": {
+    "bbox": [
+      100.0,
+      75.0,
+      10.0
+    ],
+    "mesh_hash": "c5620c36833fc773579cdf240878858a9b108ec140739e8787d06da4496b3012",
+    "part": "plate_with_holes",
+    "volume": 74681.91374382403
+  },
+  "examples/hardware_assembly_demo.yaml": {
+    "bbox": [
+      100.0,
+      4.0,
+      80.0
+    ],
+    "mesh_hash": "643b508ce7845e9fba13c84bce99d862b7a9096d17da2d77dfd645770fc13925",
+    "part": "plate",
+    "volume": 31999.999999999996
+  },
+  "examples/lego_brick_2x1.yaml": {
+    "bbox": [
+      16.0,
+      9.6,
+      9.6
+    ],
+    "mesh_hash": "eae5745bbc7894574440d8e6ecd42c9c9c9d4e9072fe0d8273a32650a2e8d0bc",
+    "part": "final_brick",
+    "volume": 906.7073486067304
+  },
+  "examples/lego_brick_3x1.yaml": {
+    "bbox": [
+      24.0,
+      9.6,
+      9.6
+    ],
+    "mesh_hash": "e1060bcd5280dbd98c3023d6eb9de80efe165af8348b76d0093a28cb617f3961",
+    "part": "final_brick",
+    "volume": 1309.9603309573733
+  },
   "examples/mounting_plate_with_bolt_circle.yaml": {
     "bbox": [
       150.0,
@@ -19,6 +159,16 @@
     "part": "standoff_fl",
     "volume": 202.31856689118257
   },
+  "examples/pipe_sweep_simple.yaml": {
+    "bbox": [
+      25.0,
+      10.0,
+      25.0
+    ],
+    "mesh_hash": "90356707bc49be5609bf8ea1297c1dc5185aa28c2414d6a52eb0d1b9276eb709",
+    "part": "curved_pipe",
+    "volume": 3141.5926535848507
+  },
   "examples/rounded_mounting_plate.yaml": {
     "bbox": [
       150.0,
@@ -29,6 +179,26 @@
     "part": "plate_finished",
     "volume": 167612.2285534095
   },
+  "examples/simple_box.yaml": {
+    "bbox": [
+      50.0,
+      20.0,
+      30.0
+    ],
+    "mesh_hash": "f86e5ece7fbba4d64629bc75289116cf25b5694dbd93948d765a28bd0e6772c0",
+    "part": "box",
+    "volume": 30000.0
+  },
+  "examples/simple_extrude.yaml": {
+    "bbox": [
+      20.0,
+      10.0,
+      5.0
+    ],
+    "mesh_hash": "ebdaf5b2846ef5a64ad6f5332df66d27069b0d14ed3c9663f43d443bf5fbd452",
+    "part": "extruded_part",
+    "volume": 999.9999999999998
+  },
   "examples/simple_guitar_hanger.yaml": {
     "bbox": [
       100.0,
@@ -38,6 +208,36 @@
     "mesh_hash": "e2b54e2a3277ee44984f357a1f4cb1c09d52770c2cbfe322c7ec087f6388f0cd",
     "part": "hanger",
     "volume": 218561.75420374598
+  },
+  "examples/text_engraved.yaml": {
+    "bbox": [
+      100.0,
+      60.0,
+      5.0
+    ],
+    "mesh_hash": "81630b7a8c4d11964f3a9139c49eb110d1e6632707fe47c5fc88f232c00eeadc",
+    "part": "final_sign",
+    "volume": 29598.339977646858
+  },
+  "examples/text_operation_emboss_simple.yaml": {
+    "bbox": [
+      60.0000001,
+      5.6640627,
+      41.5000001
+    ],
+    "mesh_hash": "6a46a249d8cb3233d276e29609e6618dc15ec2518834a6a96c689fc7b427b5ce",
+    "part": "product_label",
+    "volume": 12192.178187370308
+  },
+  "examples/transition_loft.yaml": {
+    "bbox": [
+      20.0000002,
+      20.0000002,
+      15.000000200000004
+    ],
+    "mesh_hash": "d2fc1cd0aadcd2841974e291b883d4b9b001f1678c295b8a35ba5bc699706419",
+    "part": "transition",
+    "volume": 5371.428958815836
   },
   "examples/trust/boolean_subtract.yaml": {
     "bbox": [
@@ -58,5 +258,205 @@
     "mesh_hash": "7c6286a6144387ac68c3f80f1993d6407163a7d750e4ad5e726318de37176935",
     "part": "final_plate",
     "volume": 74533.62878275379
+  },
+  "examples/v3_bracket_mount.yaml": {
+    "bbox": [
+      150.0,
+      140.0,
+      60.0
+    ],
+    "mesh_hash": "8de28bc926d6e7407371d12fba355c2209b0e40b667243367de8b3fa5435ba58",
+    "part": "assembly_finished",
+    "volume": 255576.84269291663
+  },
+  "examples/v3_simple_box.yaml": {
+    "bbox": [
+      50.0,
+      50.0,
+      20.0
+    ],
+    "mesh_hash": "1c54ba4f60cb062bd5bbb0d43a69d3969396f603fb1882b720913a24c908b9d6",
+    "part": "top",
+    "volume": 49999.999999999985
+  },
+  "examples/validation/T0_box.tiacad": {
+    "bbox": [
+      40.0,
+      25.0,
+      15.0
+    ],
+    "mesh_hash": "43550d0a18fcbc34b9542d1a97e8a5a29518606a09bfe57af8e8b4ad9b8cad06",
+    "part": "block",
+    "volume": 15000.0
+  },
+  "examples/validation/T0_cone.tiacad": {
+    "bbox": [
+      40.0000002,
+      40.0000002,
+      36.0000002
+    ],
+    "mesh_hash": "6b1f9b0954c4a0abb5606fe25dd8e518d858c35067f95a102e957af4fe6a7243",
+    "part": "spike",
+    "volume": 15080.39875716698
+  },
+  "examples/validation/T0_cylinder.tiacad": {
+    "bbox": [
+      24.0,
+      24.0,
+      30.0
+    ],
+    "mesh_hash": "ccf1fe9b915adecb304d128f0d75f807f89a355f85ac7deb7af8c0e85b48d4fd",
+    "part": "post",
+    "volume": 13571.680263507906
+  },
+  "examples/validation/T0_polygon.tiacad": {
+    "bbox": [
+      20.0,
+      17.320508075688778,
+      10.0
+    ],
+    "mesh_hash": "fbffe86e403fc17e556e97463545ec574c71872915c7f8193c59f79ccf6d68a4",
+    "part": "prism",
+    "volume": 2598.076211353316
+  },
+  "examples/validation/T0_sphere.tiacad": {
+    "bbox": [
+      36.0,
+      36.0,
+      36.0
+    ],
+    "mesh_hash": "e59959f8f27352ab907a1a59b8c45712895906a4d1fe665add0248b4d2877819",
+    "part": "ball",
+    "volume": 24429.02447431423
+  },
+  "examples/validation/T0_torus.tiacad": {
+    "bbox": [
+      56.0000002,
+      56.0000002,
+      12.0000002
+    ],
+    "mesh_hash": "e9ad395bad31a9d04f99d52ea1ba460277e1661fb49d40c067f978555a1f0542",
+    "part": "donut",
+    "volume": 15633.453371325548
+  },
+  "examples/validation/T1_chamfer.tiacad": {
+    "bbox": [
+      40.0,
+      40.0,
+      20.0
+    ],
+    "mesh_hash": "051eed64682be314f8308386c0e478bf1798ccf9ed4ff5c5f8888b24947be41e",
+    "part": "chamfered",
+    "volume": 30343.999999999996
+  },
+  "examples/validation/T1_difference.tiacad": {
+    "bbox": [
+      30.0,
+      30.0,
+      20.0
+    ],
+    "mesh_hash": "9da20d3d2c00bdbf684699de37892aed804ca27907d8e5ba46b8940e3ef26ba7",
+    "part": "drilled",
+    "volume": 16429.203673205102
+  },
+  "examples/validation/T1_fillet.tiacad": {
+    "bbox": [
+      40.0,
+      40.0,
+      20.0
+    ],
+    "mesh_hash": "99d9186d6aa0d5969c66916360282ba1b75ea99a8708429cd01f52d91e4d1739",
+    "part": "rounded",
+    "volume": 31263.5927138785
+  },
+  "examples/validation/T1_intersection.tiacad": {
+    "bbox": [
+      10.0,
+      20.0,
+      20.0
+    ],
+    "mesh_hash": "1adf045af4113ec03d6e45686f3dc59e160ee5443619f5c755e05b56b8a50fc9",
+    "part": "overlap",
+    "volume": 3999.999999999999
+  },
+  "examples/validation/T1_pattern_linear.tiacad": {
+    "bbox": [
+      55.0,
+      10.0,
+      10.0
+    ],
+    "mesh_hash": "149546311b109abf347c3f17220fb339628c9f6b8be5568b31d4cf4b03be9513",
+    "part": "merged",
+    "volume": 3999.999999999998
+  },
+  "examples/validation/T1_pattern_polar.tiacad": {
+    "bbox": [
+      46.0,
+      40.64101615137754,
+      10.0
+    ],
+    "mesh_hash": "3e7a82cdf895b93b81f5a5718633fd5a2650051932e39f9b7c4d57b46bc8851e",
+    "part": "merged",
+    "volume": 1696.4600329384875
+  },
+  "examples/validation/T1_rotate90.tiacad": {
+    "bbox": [
+      25.000000000000007,
+      40.0,
+      15.0
+    ],
+    "mesh_hash": "9967f6f692e94b54790a2d9e3b8ba44bd43720286c1bf6ffd301be3fb5293148",
+    "part": "rotated",
+    "volume": 15000.0
+  },
+  "examples/validation/T1_translate.tiacad": {
+    "bbox": [
+      40.0,
+      25.0,
+      15.0
+    ],
+    "mesh_hash": "7e83254f7fcbd138c01e37dd3f17ef9a5ec56596eb5c0c657b7165dab3b79656",
+    "part": "shifted",
+    "volume": 15000.0
+  },
+  "examples/validation/T1_union_overlap.tiacad": {
+    "bbox": [
+      30.0,
+      20.0,
+      20.0
+    ],
+    "mesh_hash": "41f6ffb508e1d02538f4a663f559d1956ffce28035d25656563cecb1f2ab0198",
+    "part": "merged",
+    "volume": 12000.0
+  },
+  "examples/week5_align_to_face.yaml": {
+    "bbox": [
+      35.35533905932738,
+      35.35533905932738,
+      10.000000000000007
+    ],
+    "mesh_hash": "a8bbd275e88626f662799e22578f68091d4485a99cdb4b551ca00031aff4b27d",
+    "part": "bracket_rotated",
+    "volume": 6000.0
+  },
+  "examples/week5_assembly.yaml": {
+    "bbox": [
+      24.0,
+      24.0,
+      8.0
+    ],
+    "mesh_hash": "214d6e46ec1a34b6c15a652a08f49de70dc0dc216ef959db2fb3183620d00f24",
+    "part": "rotated_gear",
+    "volume": 3619.114736935441
+  },
+  "examples/week5_frame_based_rotation.yaml": {
+    "bbox": [
+      30.0,
+      5.0,
+      30.0
+    ],
+    "mesh_hash": "c0fe4c31f3004d1ee27c328fc06f6ff3caec5a2a69383bb60592debe1a5884f2",
+    "part": "gear_multi_rotation",
+    "volume": 3534.2917352885174
   }
 }

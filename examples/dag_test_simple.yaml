@@ -30,3 +30,12 @@ operations:
 
 export:
   default_part: stacked
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: stacked
+  volume: 50000.0
+  bbox: [50.0, 50.0, 20.0]
+  watertight: true
+  components: 1

@@ -40,3 +40,12 @@ operations:
 
 export:
   default_part: product_label
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: product_label
+  volume: 12192.178
+  bbox: [60.0, 5.664, 41.5]
+  watertight: true
+  components: 1

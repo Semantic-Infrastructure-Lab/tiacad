@@ -173,6 +173,18 @@ class PartRegistry:
             raise ValueError(f"Part '{part.name}' already exists in registry")
         self._parts[part.name] = part
 
+    def replace(self, part: Part):
+        """Overwrite an existing part in place, keeping its name/slot.
+
+        Unlike ``add``, this does not require the name to be absent — used to
+        update a part's geometry in place (e.g. after applying its own inline
+        ``translate:``/``rotate:`` spec) without renaming it into a new part.
+
+        Args:
+            part: Part to store under its own name
+        """
+        self._parts[part.name] = part
+
     def get(self, name: str) -> Part:
         """Retrieve a part by name
 

@@ -1,0 +1,31 @@
+# Tier 0 — Box primitive, closed-form ground truth.
+# Volume = w*h*d, surface area = 2(wh+wd+hd). See docs/developer/VALIDATION_STRENGTHENING.md Appendix.
+schema_version: "3.0"
+
+metadata:
+  name: T0 Box
+  description: "Tier 0 primitive ladder: box volume/bbox against the closed-form w*h*d formula"
+  version: "1.0"
+
+parameters:
+  box_w: 40
+  box_h: 15
+  box_d: 25
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+
+export:
+  default_part: block
+
+expect:
+  final: block
+  volume: 15000
+  bbox: [40, 25, 15]
+  watertight: true
+  components: 1

@@ -317,3 +317,12 @@ export:
     infill: 100                 # Solid for strength
     supports: false             # No supports needed
     brim: true                  # Brim helps with adhesion
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: final_brick
+  volume: 906.707
+  bbox: [16.0, 9.6, 9.6]
+  watertight: true
+  components: 1

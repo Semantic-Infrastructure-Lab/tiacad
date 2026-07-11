@@ -116,3 +116,12 @@ export:
 # 1. align_to_face: Orienting bracket to stand on platform
 # 2. around parameter: Rotating gear around shaft axis
 # 3. Named references: Clean, readable transform specifications
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: rotated_gear
+  volume: 3619.115
+  bbox: [24.0, 24.0, 8.0]
+  watertight: true
+  components: 1

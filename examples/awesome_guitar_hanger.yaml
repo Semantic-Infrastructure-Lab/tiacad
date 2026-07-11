@@ -412,3 +412,12 @@ export:
       description: Structure without grip texture (simpler version)
     - name: mounting_plate
       description: Just the mounting plate (for testing)
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: awesome_guitar_hanger
+  volume: 244318.217
+  bbox: [120.0, 110.054, 80.747]
+  watertight: true
+  components: 1

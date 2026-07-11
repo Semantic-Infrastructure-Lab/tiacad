@@ -47,3 +47,12 @@ export:
 # - base: centered at origin
 # - middle: sits perfectly on base.face_top
 # - top: sits perfectly on middle.face_top
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: top
+  volume: 18000.0
+  bbox: [60.0, 30.0, 10.0]
+  watertight: true
+  components: 1

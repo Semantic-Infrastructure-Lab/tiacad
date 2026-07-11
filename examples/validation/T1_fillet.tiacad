@@ -1,0 +1,52 @@
+# Tier 1 — Fillet all 12 edges of a box: closed-form Minkowski-sum-with-a-ball volume.
+# Filleting every edge of an l x w x h box by radius r is exactly the Minkowski sum of
+# the shrunk box (l-2r)x(w-2r)x(h-2r) with a ball of radius r:
+#   V = l'w'h' + 2r(l'w' + w'h' + h'l') + pi*r^2*(l'+w'+h') + 4/3*pi*r^3
+# where l'=l-2r etc. Oracle: closed-form (stronger than the doc's "bounded amount"
+# guidance in §3 Tier 1 — this is the exact value, not just a reduce/never-negative check).
+schema_version: "3.0"
+
+metadata:
+  name: T1 Fillet
+  description: "Tier 1 operation ladder: fillet-all-edges volume against the closed-form rounded-box (Minkowski sum) formula"
+  version: "1.0"
+
+parameters:
+  box_w: 40
+  box_h: 20
+  box_d: 40
+  fillet_r: 3.0
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+
+operations:
+  rounded:
+    type: finishing
+    finish: fillet
+    input: block
+    radius: ${fillet_r}
+    edges: all
+
+export:
+  default_part: rounded
+
+# l'=w'=34, h'=14 (shrunk by 2r=6 each):
+# V = 34*34*14 + 2*3*(34*34 + 34*14 + 14*34) + pi*9*(34+34+14) + 4/3*pi*27 = 31263.5927...
+# (confirmed: measured volume matches this formula to full kernel precision).
+#
+# No `watertight: true` (deliberately, same as T0_sphere / KNOWN_LIMITATIONS.md #8):
+# the curved fillet surfaces leave 9 unwelded mesh islands in the default STL
+# tessellation even though the BREP solid is provably valid (components: 1, exact
+# volume match above) — a mesh-export artifact, not a real manifold defect.
+expect:
+  final: rounded
+  volume: 31263.5927138785
+  bbox: [40, 40, 20]
+  components: 1
+  tol: { volume: 0.01 }

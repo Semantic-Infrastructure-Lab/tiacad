@@ -1,0 +1,42 @@
+# Tier 1 — Translate invariant: a rigid transform preserves volume and bbox size exactly.
+# Oracle: metamorphic (§3 Tier 1 in VALIDATION_STRENGTHENING.md). Isolates `transform: translate`
+# on a Tier-0 box (volume/shape already proven exact by T0_box).
+schema_version: "3.0"
+
+metadata:
+  name: T1 Translate
+  description: "Tier 1 operation ladder: translate must leave volume unchanged and shift bbox by exactly the offset"
+  version: "1.0"
+
+parameters:
+  box_w: 40
+  box_h: 15
+  box_d: 25
+  shift_x: 100
+  shift_y: -50
+  shift_z: 30
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+
+operations:
+  shifted:
+    type: transform
+    input: block
+    transforms:
+      - translate: ['${shift_x}', '${shift_y}', '${shift_z}']
+
+export:
+  default_part: shifted
+
+expect:
+  final: shifted
+  volume: 15000
+  bbox: [40, 25, 15]
+  watertight: true
+  components: 1

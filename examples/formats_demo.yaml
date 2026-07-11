@@ -89,3 +89,11 @@ export:
 #
 # You'll notice 3MF is typically smaller than STL while preserving more data!
 # ============================================================================
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: demo_box_filleted
+  volume: 49598.678
+  bbox: [50.0, 20.0, 50.0]
+  components: 1

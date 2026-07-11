@@ -403,9 +403,16 @@ class PartsBuilder:
                 part_name=name
             )
 
+        # CadQuery's own `circumscribed` flag is inverted relative to this docstring's
+        # (and conventional geometric) meaning: cq.Workplane.polygon(circumscribed=True)
+        # puts the *given* diameter circle INSIDE the polygon (diameter = across-flats)
+        # and circumscribed=False puts vertices ON the circle (diameter = tip-to-tip).
+        # Invert here so TiaCAD's own contract — circumscribed: true = diameter is the
+        # outer/tip-to-tip circle — actually holds. (Confirmed 2026-07-10: without this,
+        # every stdlib hex nut (M3-M6) built ~15% oversized across-flats.)
         polygon = (
             cq.Workplane("XY")
-            .polygon(sides, diameter, circumscribed=circumscribed)
+            .polygon(sides, diameter, circumscribed=not circumscribed)
             .extrude(height)
         )
         return polygon

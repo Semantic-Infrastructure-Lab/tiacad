@@ -349,9 +349,25 @@ code) is deleted, superseded by `expect:`.
 Seeded two real examples as the first reviewed contracts:
 `examples/simple_guitar_hanger.yaml` (Tier 1: volume/bbox/watertight/components)
 and `examples/pcb_standoff_assembly.yaml` (Tier 4: adds a `coaxial` relation
-between a standoff and its screw). Migrating the existing hand-written
-Tier-2 pytest classes to `expect:` blocks, and building out the T0/T1 ladder
-corpus, are still open (the rest of Phase 2).
+between a standoff and its screw).
+
+**Shipped 2026-07-11:** seeded `expect:` contracts (via `tiacad audit
+--write-contract`, cross-checked against each file's pre-existing hand-derived
+pytest assertions) for the remaining 25 examples with a Tier-2 pytest class in
+`test_example_contracts.py` — every example that class covers now has its own
+reviewed ground-truth contract; `test_embedded_contracts.py`'s generic
+parametrized test discovers and checks 50 models. The hand-written pytest
+classes themselves were **not** deleted/trimmed this pass — many assert
+sub-part dimensions (`bracket.base`, `washer.washer`, individual screws in a
+25-part assembly) that a single `final:`-part `expect:` block can't replace,
+and a handful (`TestLegoMath.test_3x1_larger_than_2x1`, `TestV3BracketMount`'s
+sum-of-parts bound) do cross-file or derived-quantity comparisons `expect:`
+has no syntax for. A subset (roughly a dozen classes that assert *only* the
+final part's volume/bbox, e.g. `TestSimpleBox`, `TestV3SimpleBox.test_top_volume`,
+`TestTransitionLoft`, `TestFormatsDemo`) are now fully redundant with their
+example's `expect:` block and safe to trim in a focused follow-up — deferred
+here rather than rushed, since misclassifying a class as "final-only" and
+deleting real sub-part coverage would be a net loss.
 
 **Bug found via this tooling, fixed 2026-07-10:**
 `examples/mounting_plate_with_bolt_circle.yaml`'s boolean difference produced
@@ -643,8 +659,19 @@ low; **keep the set tiny.**
 **New `.tiacad` models** — a ladder corpus under `examples/validation/`, each with
 an `expect:` block:
 
-- `T0_*` primitives (6) · `T1_*` single ops (9) · `T3_*` composites (4) ·
-  `T4_*` assemblies (4) · `negative/*` broken inputs (~6).
+- ~~`T0_*` primitives (6)~~ Shipped 2026-07-11: `T0_box/cylinder/sphere/cone/torus/polygon`,
+  each checked against its closed-form analytic volume/bbox formula (Appendix). Found
+  and fixed two real bugs in the process (see §4.1's "Bugs found via this tooling"
+  list): the `polygon` primitive's inverted `circumscribed` flag (all stdlib hex nuts
+  were oversized), and dead part-level `translate:`/`rotate:` schema syntax.
+- ~~`T1_*` single ops (9)~~ Shipped 2026-07-11: `T1_translate/rotate90/union_overlap/
+  difference/intersection/pattern_linear/pattern_polar/fillet/chamfer`. Translate,
+  rotate, union, difference, intersection, and both patterns check an exact closed-form
+  value; fillet uses the exact Minkowski-sum-with-a-ball rounded-box formula (confirmed
+  to match measured volume to full kernel precision); chamfer uses a reviewed bounded
+  value (no closed form for a 12-edge 45° chamfer with corner interactions).
+- `T3_*` composites (4) · `T4_*` assemblies (4) · `negative/*` broken inputs (~6) —
+  still open.
 
 **New scripts / CLI:**
 
@@ -744,11 +771,15 @@ determinism gate (4.4, shipped), CI validation-gap fixes (4.5b, shipped),
 schema reconciliation (4.8, shipped 2026-07-10). **Phase 1 complete.** No new
 infrastructure; immediate strengthening.
 
-**Phase 2 — The keystone (1–2 weeks):** embedded `expect:` contracts (4.1,
-shipped) + Hypothesis property tests (4.2, shipped 2026-07-10). Still open:
-migrate the existing Tier-2 pytest classes to `expect:` blocks and build the
-T0/T1 ladder corpus. After that, *adding a validated model is trivial*, which is
-the "easier" half of the mandate.
+**Phase 2 — The keystone (1–2 weeks): complete.** Embedded `expect:` contracts (4.1,
+shipped) + Hypothesis property tests (4.2, shipped 2026-07-10) + T0/T1 ladder corpus
+(shipped 2026-07-11, §5) + `expect:` contracts seeded for every example with a
+Tier-2 pytest class — 50 models now discovered and checked by
+`test_embedded_contracts.py` (shipped 2026-07-11). *Adding a validated model is now
+trivial* — a model + five lines of `expect:`, no bespoke pytest class required —
+which was the "easier" half of the mandate. Still open, deferred rather than rushed
+(see §4.1's 2026-07-11 note): trimming the now-redundant subset of hand-written
+Tier-2 pytest classes.
 
 **Phase 3 — Depth (as needed):** connectivity gate (4.6), trust-gallery sign-off
 (4.7), composite/assembly ladder (Tiers 3–4), golden STEP set (4.9).

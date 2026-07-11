@@ -80,3 +80,12 @@ export:
 # - gear_face_rotation: rotated 30° around base's top face normal
 # - gear_axis_rotation: rotated 60° around custom vertical axis
 # - gear_multi_rotation: compound rotation (45° around Z, then 90° around X)
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: gear_multi_rotation
+  volume: 3534.292
+  bbox: [30.0, 5.0, 30.0]
+  watertight: true
+  components: 1

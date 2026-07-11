@@ -43,3 +43,12 @@ operations:
 
 export:
   default_part: curved_pipe
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: curved_pipe
+  volume: 3141.593
+  bbox: [25.0, 10.0, 25.0]
+  watertight: true
+  components: 1

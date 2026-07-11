@@ -62,3 +62,12 @@ operations:
 
 export:
   default_part: transition
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: transition
+  volume: 5371.429
+  bbox: [20.0, 20.0, 15.0]
+  watertight: true
+  components: 1

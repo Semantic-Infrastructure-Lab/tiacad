@@ -77,3 +77,12 @@ export:
 # - bracket_flush: sits flush on surface
 # - bracket_offset: elevated 15mm above surface
 # - bracket_rotated: elevated 5mm and rotated 45° around normal
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: bracket_rotated
+  volume: 6000.0
+  bbox: [35.355, 35.355, 10.0]
+  watertight: true
+  components: 1

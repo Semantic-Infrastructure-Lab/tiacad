@@ -85,3 +85,12 @@ export:
   formats:
     - stl
     - 3mf
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: crossbar
+  volume: 3500.0
+  bbox: [70.0, 10.0, 5.0]
+  watertight: true
+  components: 1

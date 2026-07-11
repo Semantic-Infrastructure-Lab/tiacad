@@ -1,0 +1,53 @@
+# Tier 1 — Boolean intersection: closed-form overlap volume of two overlapping cubes.
+# Same geometry as T1_union_overlap (20mm cubes shifted 10mm along X) so the two
+# models cross-check each other via inclusion-exclusion:
+# V(union) + V(intersection) = V(A) + V(B) = 16000.
+schema_version: "3.0"
+
+metadata:
+  name: T1 Intersection
+  description: "Tier 1 operation ladder: intersection volume against the closed-form overlap formula"
+  version: "1.0"
+
+parameters:
+  cube: 20
+  shift: 10
+
+parts:
+  box_a:
+    primitive: box
+    parameters:
+      width: ${cube}
+      height: ${cube}
+      depth: ${cube}
+
+  box_b:
+    primitive: box
+    parameters:
+      width: ${cube}
+      height: ${cube}
+      depth: ${cube}
+
+operations:
+  box_b_shifted:
+    type: transform
+    input: box_b
+    transforms:
+      - translate: ['${shift}', 0, 0]
+
+  overlap:
+    type: boolean
+    operation: intersection
+    inputs: [box_a, box_b_shifted]
+
+export:
+  default_part: overlap
+
+# box_a spans X[-10,10]; box_b_shifted spans X[0,20] -> intersection X[0,10] (extent 10),
+# Y/Z unchanged at 20. Volume = (20-10)*20*20 = 4000.
+expect:
+  final: overlap
+  volume: 4000
+  bbox: [10, 20, 20]
+  watertight: true
+  components: 1

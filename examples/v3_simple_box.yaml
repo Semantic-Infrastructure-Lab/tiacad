@@ -41,3 +41,12 @@ export:
       description: Base platform
     - name: top
       description: Top box positioned using auto-generated anchor
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: top
+  volume: 50000.0
+  bbox: [50.0, 50.0, 20.0]
+  watertight: true
+  components: 1

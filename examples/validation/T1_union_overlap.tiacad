@@ -1,0 +1,59 @@
+# Tier 1 — Boolean union of two overlapping boxes: closed-form inclusion-exclusion.
+# V(union) = V(A) + V(B) - V(A intersect B). Both cubes are 20mm, shifted 10mm along X,
+# so the axis-aligned overlap is a 10x20x20 slab. Oracle: §3 Tier 1 (inclusion-exclusion).
+schema_version: "3.0"
+
+metadata:
+  name: T1 Union Overlap
+  description: "Tier 1 operation ladder: union volume against the closed-form inclusion-exclusion formula"
+  version: "1.0"
+
+parameters:
+  cube: 20
+  shift: 10
+
+parts:
+  box_a:
+    primitive: box
+    parameters:
+      width: ${cube}
+      height: ${cube}
+      depth: ${cube}
+    origin: center
+
+  box_b:
+    primitive: box
+    parameters:
+      width: ${cube}
+      height: ${cube}
+      depth: ${cube}
+    origin: center
+
+operations:
+  # box_b is shifted via `operations: type: transform` rather than the
+  # part-level `translate:` shorthand — deliberately, to isolate exactly one
+  # operation per this ladder rung (part-level translate/rotate has its own
+  # dedicated coverage in tiacad_core/tests/test_parser/test_inline_part_transforms.py;
+  # see KNOWN_LIMITATIONS.md #9 for the bug it used to have).
+  box_b_shifted:
+    type: transform
+    input: box_b
+    transforms:
+      - translate: ['${shift}', 0, 0]
+
+  merged:
+    type: boolean
+    operation: union
+    inputs: [box_a, box_b_shifted]
+
+export:
+  default_part: merged
+
+# V(A)=V(B)=8000, overlap = (20-10)*20*20 = 4000 -> union = 8000+8000-4000 = 12000
+# bbox X-extent = 20 (box_a) + shift(10) = 30; Y,Z unchanged at 20.
+expect:
+  final: merged
+  volume: 12000
+  bbox: [30, 20, 20]
+  watertight: true
+  components: 1

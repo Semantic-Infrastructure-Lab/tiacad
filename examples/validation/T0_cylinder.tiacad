@@ -1,0 +1,30 @@
+# Tier 0 — Cylinder primitive, closed-form ground truth.
+# Volume = pi*r^2*h, surface area = 2*pi*r*h + 2*pi*r^2. See VALIDATION_STRENGTHENING.md Appendix.
+schema_version: "3.0"
+
+metadata:
+  name: T0 Cylinder
+  description: "Tier 0 primitive ladder: cylinder volume/bbox against the closed-form pi*r^2*h formula"
+  version: "1.0"
+
+parameters:
+  cyl_r: 12
+  cyl_h: 30
+
+parts:
+  post:
+    primitive: cylinder
+    parameters:
+      radius: ${cyl_r}
+      height: ${cyl_h}
+
+export:
+  default_part: post
+
+expect:
+  final: post
+  volume: 13571.680263507906
+  bbox: [24, 24, 30]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }
