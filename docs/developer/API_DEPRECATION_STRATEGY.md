@@ -2,7 +2,13 @@
 
 **Created**: 2026-02-15
 **Session**: mountain-snow-0215
-**Status**: Planned (not yet implemented)
+**Status**: ✅ Implemented 2026-07-11 (session weightless-universe-0711) — all
+four patterns emit `DeprecationWarning` with backward-compat mapping; tests in
+`tiacad_core/tests/test_parser/test_deprecation_warnings.py`. Note: two file
+locations drifted from this plan — pattern spacing is handled in
+`pattern_builder.py::_execute_linear` (not `build_pattern`), and export list
+normalization in `parse_pipeline.py::build_export_config` (not
+`tiacad_parser.py`).
 
 ---
 
@@ -185,15 +191,15 @@ if isinstance(export_config, list):
 
 ## Implementation Checklist
 
-- [ ] Add deprecation warning for cone parameters (`radius_bottom`/`radius_top`)
-- [ ] Add deprecation warning for pattern spacing (scalar + direction)
-- [ ] Add deprecation warning for translate offset wrapper (when used alone)
-- [ ] Add deprecation warning for export list format
-- [ ] Add backward compatibility logic for all patterns
-- [ ] Test with deprecated examples to ensure warnings appear
-- [ ] Test that new syntax works without warnings
+- [x] Add deprecation warning for cone parameters (`radius_bottom`/`radius_top`)
+- [x] Add deprecation warning for pattern spacing (scalar + direction)
+- [x] Add deprecation warning for translate offset wrapper (when used alone)
+- [x] Add deprecation warning for export list format
+- [x] Add backward compatibility logic for all patterns
+- [x] Test with deprecated examples to ensure warnings appear
+- [x] Test that new syntax works without warnings
 - [ ] Update TESTING_GUIDE.md with deprecation testing instructions
-- [ ] Add pytest tests for deprecation warnings (use `pytest.warns()`)
+- [x] Add pytest tests for deprecation warnings (use `pytest.warns()`)
 
 ---
 

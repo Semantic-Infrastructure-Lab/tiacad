@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-11 (legacy-syntax deprecation warnings + GitHub `@branch` import)
+
+Two API-surface additions (session `weightless-universe-0711`):
+- **Deprecation warnings** for the four legacy syntaxes that were replaced in
+  v3.1.x — cone `radius_bottom`/`radius_top`, linear-pattern scalar `spacing`
+  with `direction`, the `translate: {offset:}` wrapper used without `to:`, and
+  the list-form `export:` section. Each now raises a runtime
+  `DeprecationWarning` pointing at MIGRATION_GUIDE_V3.md *and* applies a
+  backward-compat mapping so old models still build. Implements the long-open
+  plan in `docs/developer/API_DEPRECATION_STRATEGY.md`.
+- **GitHub import branch override.** `github:user/repo/file.yaml@branch` now
+  selects a branch (default `main`, slashes allowed), branch-namespaced in the
+  download cache. Closes KNOWN_LIMITATIONS.md #4.
+
+Full non-visual suite: 1859 passed (was 1840), 0 failed (+20 tests:
+`test_deprecation_warnings.py`, GitHub-branch cases in `test_component_import.py`).
+
 ### Fixed - 2026-07-11 (SpatialResolver longest-prefix-match for dotted names)
 
 `SpatialResolver._resolve_name` split a `"part.ref"` reference on the *first*

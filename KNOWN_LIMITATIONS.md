@@ -153,18 +153,19 @@ operations:
 
 ---
 
-### 4. GitHub Import: No Branch Override
+### 4. Fixed — GitHub Import Branch Override
 
-**What's Missing:**
+**Fixed 2026-07-11.** A trailing `@branch` suffix now selects the branch
+(default `main`); branch names may contain slashes:
 ```yaml
-# CAN'T specify branch (defaults to main):
 imports:
-  - github:user/repo@develop/path.yaml  # syntax not yet supported
+  - path: github:user/repo/path.yaml         # main branch
+  - path: github:user/repo/path.yaml@develop # branch override
+  - path: github:user/repo/path.yaml@feature/x
 ```
-
-**Workaround:** Only `main` branch is supported. Use local copies for non-main branches.
-
-**Future:** Could add `github:user/repo@branch/file.yaml` syntax if there's demand.
+Fetches from `raw.githubusercontent.com/{user}/{repo}/{branch}/{path}` and
+caches under `~/.tiacad/cache/github/{user}/{repo}/{branch}/{path}`.
+See `tiacad_core/parser/component_importer.py::_fetch_github`.
 
 ---
 
