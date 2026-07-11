@@ -544,6 +544,10 @@ tiacad/
 
 ### Test Coverage
 
+For live pass/fail/skip/coverage counts, see the CI-generated
+[`TEST_STATUS.json`](TEST_STATUS.json) — the counts below are a snapshot and
+will drift; `TEST_STATUS.json` is the source of truth.
+
 **Overall:** Broad automated coverage with 92%+ code coverage
 
 **Includes:**

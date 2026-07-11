@@ -95,6 +95,7 @@ bot_results_*.json
 # --- Coverage / Reports ---
 .coverage
 coverage.xml
+test-results.xml
 htmlcov/
 pytest.ini
 

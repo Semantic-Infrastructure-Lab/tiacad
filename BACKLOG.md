@@ -18,10 +18,14 @@ against current code since the date given.
 - **CI validation as a required gate.** Add schema-conformance + schema-truth
   checks; make `expect:` contract checking a required CI gate, not just a
   local `tiacad check --contract` command. — `VALIDATION_STRENGTHENING.md` §5
-- **One source of truth for test health.** Have CI emit pass/skip/fail counts
-  as a committed badge or `TEST_STATUS.json`; stop hand-writing test counts
-  into multiple markdown files (this doc-coherence pass found counts stale
-  in at least 6 places). — `VALIDATION_STRENGTHENING.md` §5
+- ~~**One source of truth for test health.**~~ — **shipped 2026-07-11**:
+  `scripts/generate_test_status.py` parses the non-visual suite's junit-xml +
+  coverage.xml (plus a `--collect-only` count of the visual suite) into a
+  committed `TEST_STATUS.json`. `tests.yml`'s python-3.11 leg generates it
+  every run and, on push to `main`, commits it back (`[skip ci]`,
+  `contents: write` job permission) — check this file for current
+  pass/fail/skip/coverage counts instead of hand-writing them into markdown.
+  — `VALIDATION_STRENGTHENING.md` §5
 - **Differential testing blocked.** ~90% of geometry code bypasses the
   `GeometryBackend` abstraction and calls CadQuery directly, so the fast
   `MockBackend` can't stand in for most tests and true kernel-vs-kernel

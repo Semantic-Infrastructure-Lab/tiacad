@@ -830,14 +830,16 @@ an `expect:` block:
   `scripts/migrations/README.md` warning that it does in-place, no-backup
   rewrites of `examples/*.yaml`. The two doc references (MIGRATION_GUIDE_V3,
   API_DEPRECATION_STRATEGY) were repointed to the new path.
-- **Establish one source of truth for test health.** Have CI emit the pass/skip/
-  fail counts as a committed badge or `TEST_STATUS.json`; stop hand-writing test
-  counts into six different markdown files. ~~Retire or clearly date-stamp the
-  stale `CODE_QUALITY_SUMMARY.md` / `SKIPPED_TESTS_AUDIT.md`.~~ Done 2026-07-11:
-  both moved to `docs/archive/` (a 2026-07-11 doc-coherence pass) — their skip
-  classifications and quality snapshot predate Phase 0's skip→hard-failure work
-  and were actively misleading. The "one source of truth" CI-emitted counter
-  itself is still open.
+- ~~**Establish one source of truth for test health.**~~ — **shipped
+  2026-07-11**: `scripts/generate_test_status.py` parses junit-xml +
+  coverage.xml into a committed `TEST_STATUS.json`; `tests.yml`'s python-3.11
+  leg generates and (on push to `main`) commits it back to the repo. Stop
+  hand-writing test counts into markdown — check `TEST_STATUS.json` instead.
+  ~~Retire or clearly date-stamp the stale `CODE_QUALITY_SUMMARY.md` /
+  `SKIPPED_TESTS_AUDIT.md`.~~ Done 2026-07-11: both moved to `docs/archive/`
+  (a 2026-07-11 doc-coherence pass) — their skip classifications and quality
+  snapshot predate Phase 0's skip→hard-failure work and were actively
+  misleading.
 - **Note on differential testing:** ~90% of geometry code bypasses the
   `GeometryBackend` abstraction and calls CadQuery directly, so the fast
   `MockBackend` can't stand in for most tests and true differential testing
