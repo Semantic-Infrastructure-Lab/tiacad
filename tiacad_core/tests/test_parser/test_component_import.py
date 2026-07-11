@@ -635,13 +635,13 @@ class TestGithubImports:
              patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
             result = ComponentImporter._fetch_github("github:alice/parts/peg.yaml")
 
-        expected = str(cache_root / "alice" / "parts" / "peg.yaml")
+        expected = str(cache_root / "alice" / "parts" / "main" / "peg.yaml")
         assert result == expected
         assert Path(result).read_text() == GITHUB_COMPONENT_YAML
 
     def test_fetch_github_uses_cache_on_second_call(self, tmp_path):
         cache_root = tmp_path / "cache"
-        cached_file = cache_root / "alice" / "parts" / "peg.yaml"
+        cached_file = cache_root / "alice" / "parts" / "main" / "peg.yaml"
         cached_file.parent.mkdir(parents=True)
         cached_file.write_text(GITHUB_COMPONENT_YAML)
 
@@ -677,6 +677,53 @@ class TestGithubImports:
             ComponentImporter._fetch_github("github:bob/my-repo/hardware/bracket.yaml")
 
         assert captured_url[0] == "https://raw.githubusercontent.com/bob/my-repo/main/hardware/bracket.yaml"
+
+    def test_fetch_github_branch_override_url_and_cache(self, tmp_path):
+        cache_root = tmp_path / "cache"
+        captured_url = []
+
+        def fake_urlretrieve(url, dest):
+            captured_url.append(url)
+            Path(dest).write_text(GITHUB_COMPONENT_YAML)
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
+            result = ComponentImporter._fetch_github("github:bob/my-repo/hardware/bracket.yaml@dev")
+
+        assert captured_url[0] == "https://raw.githubusercontent.com/bob/my-repo/dev/hardware/bracket.yaml"
+        assert result == str(cache_root / "bob" / "my-repo" / "dev" / "hardware" / "bracket.yaml")
+
+    def test_fetch_github_branch_with_slashes(self, tmp_path):
+        cache_root = tmp_path / "cache"
+        captured_url = []
+
+        def fake_urlretrieve(url, dest):
+            captured_url.append(url)
+            Path(dest).write_text(GITHUB_COMPONENT_YAML)
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
+            ComponentImporter._fetch_github("github:bob/my-repo/peg.yaml@feature/new-parts")
+
+        assert captured_url[0] == "https://raw.githubusercontent.com/bob/my-repo/feature/new-parts/peg.yaml"
+
+    def test_fetch_github_branch_yaml_extension_auto_added(self, tmp_path):
+        cache_root = tmp_path / "cache"
+
+        def fake_urlretrieve(url, dest):
+            Path(dest).write_text(GITHUB_COMPONENT_YAML)
+
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
+             patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
+            result = ComponentImporter._fetch_github("github:alice/parts/peg@dev")
+
+        assert result == str(cache_root / "alice" / "parts" / "dev" / "peg.yaml")
+
+    def test_fetch_github_empty_branch_raises(self, tmp_path):
+        cache_root = tmp_path / "cache"
+        with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root):
+            with pytest.raises(ComponentImportError, match="empty branch"):
+                ComponentImporter._fetch_github("github:alice/parts/peg.yaml@")
 
     def test_fetch_github_http_error_raises(self, tmp_path):
         import urllib.error

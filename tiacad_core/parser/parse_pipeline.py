@@ -2,6 +2,7 @@
 
 import logging
 import os
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, FrozenSet, Optional
 
@@ -90,8 +91,45 @@ def resolve_references(references_spec: Dict, param_resolver: ParameterResolver)
     return resolved
 
 
+def _normalize_legacy_export(export_spec):
+    """Map the deprecated list-form export section to the current dict form.
+
+    Old syntax was a list of ``{filename, parts}`` entries; the current form is
+    ``{default_part, formats}``. Conversion is best-effort: the first entry's
+    first part (or its filename stem) becomes ``default_part``, and file
+    extensions across entries become ``formats``.
+    """
+    if not isinstance(export_spec, list):
+        return export_spec
+
+    warnings.warn(
+        "Export list format is deprecated; use the dict form "
+        "'export: {default_part: <name>, formats: [step, stl]}'. "
+        "See docs/developer/MIGRATION_GUIDE_V3.md.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    default_part = None
+    formats: list = []
+    for entry in export_spec:
+        if not isinstance(entry, dict):
+            continue
+        parts = entry.get('parts')
+        filename = entry.get('filename', '')
+        if default_part is None:
+            if parts:
+                default_part = parts[0]
+            elif filename:
+                default_part = os.path.splitext(os.path.basename(filename))[0]
+        ext = os.path.splitext(filename)[1].lstrip('.').lower()
+        if ext and ext not in formats:
+            formats.append(ext)
+    return {'default_part': default_part, 'formats': formats}
+
+
 def build_export_config(export_spec: Dict) -> Dict:
     """Build export configuration dict from YAML export section."""
+    export_spec = _normalize_legacy_export(export_spec)
     cfg = {
         'default_part': export_spec.get('default_part'),
         'formats': export_spec.get('formats', []),

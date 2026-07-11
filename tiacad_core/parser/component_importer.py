@@ -12,6 +12,8 @@ Supported path formats:
       as: screw
     - path: github:user/repo/component.yaml  # GitHub raw download (cached)
       as: hook
+    - path: github:user/repo/component.yaml@dev  # optional @branch override
+      as: hook_dev
       parameters:                        # optional: override parameters
         width: 75
 
@@ -22,8 +24,10 @@ Supports recursive imports (A imports B imports C).
 Circular imports are detected and raise TiaCADParserError.
 
 GitHub import details:
-  - Fetches from https://raw.githubusercontent.com/{user}/{repo}/main/{path}
-  - Cached to ~/.tiacad/cache/github/{user}/{repo}/{path}
+  - Fetches from https://raw.githubusercontent.com/{user}/{repo}/{branch}/{path}
+  - Branch defaults to `main`; override with a trailing `@branch` on the spec
+    (e.g. github:user/repo/file.yaml@dev). Branch names may contain slashes.
+  - Cached to ~/.tiacad/cache/github/{user}/{repo}/{branch}/{path}
   - Cache is permanent; delete ~/.tiacad/cache/github/ to force refresh
 
 Standard library details:
@@ -193,27 +197,39 @@ class ComponentImporter:
         Fetch a GitHub component and cache it locally.
 
         Format: github:user/repo/path/to/component.yaml
-        URL:    https://raw.githubusercontent.com/user/repo/main/path/to/component.yaml
-        Cache:  ~/.tiacad/cache/github/user/repo/path/to/component.yaml
+                github:user/repo/path/to/component.yaml@branch   (branch override)
+        URL:    https://raw.githubusercontent.com/user/repo/{branch}/path/to/component.yaml
+        Cache:  ~/.tiacad/cache/github/user/repo/{branch}/path/to/component.yaml
 
-        Defaults to the `main` branch. Cache is permanent — delete
-        ~/.tiacad/cache/github/ to force a refresh.
+        Defaults to the `main` branch when no `@branch` suffix is given. A
+        branch name may itself contain slashes (e.g. `@feature/foo`). Cache is
+        permanent — delete ~/.tiacad/cache/github/ to force a refresh.
         """
-        # Strip scheme prefix: "user/repo/path/to/file.yaml"
+        # Strip scheme prefix: "user/repo/path/to/file.yaml[@branch]"
         remainder = spec[len("github:"):]
         parts = remainder.split("/", 2)
         if len(parts) < 3:
             raise ComponentImportError(
                 f"Invalid GitHub import spec '{spec}': "
-                f"expected 'github:user/repo/path/to/file.yaml'"
+                f"expected 'github:user/repo/path/to/file.yaml[@branch]'"
             )
         user, repo, file_path = parts[0], parts[1], parts[2]
+
+        # Optional '@branch' suffix (everything after the last '@'); the branch
+        # may contain slashes, so split it off before touching the file path.
+        file_path, at, branch = file_path.rpartition("@")
+        if not at:
+            file_path, branch = branch, "main"
+        elif not branch:
+            raise ComponentImportError(
+                f"Invalid GitHub import spec '{spec}': empty branch after '@'"
+            )
 
         if not file_path.endswith(".yaml"):
             file_path += ".yaml"
 
-        url = f"https://raw.githubusercontent.com/{user}/{repo}/main/{file_path}"
-        cache_path = _GITHUB_CACHE_DIR / user / repo / file_path
+        url = f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/{file_path}"
+        cache_path = _GITHUB_CACHE_DIR / user / repo / branch / file_path
 
         if cache_path.exists():
             logger.info(f"GitHub cache hit: {spec} → {cache_path}")

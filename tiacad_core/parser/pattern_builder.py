@@ -14,6 +14,7 @@ Version: 0.1.0-alpha (Phase 2)
 """
 
 import logging
+import warnings
 from typing import Any, Dict, List, Optional
 
 from ..part import Part, PartRegistry
@@ -283,6 +284,27 @@ class PatternBuilder:
         count = spec['count']
         spacing = spec['spacing']
         start_offset = spec.get('start_offset', [0, 0, 0])
+
+        # Backward compatibility: scalar 'spacing' + 'direction' → vector 'spacing'
+        if 'direction' in spec and isinstance(spacing, (int, float)) and not isinstance(spacing, bool):
+            warnings.warn(
+                f"Linear pattern '{name}': scalar 'spacing' with 'direction' is "
+                f"deprecated; use vector 'spacing: [dx, dy, dz]' instead. "
+                f"See docs/developer/MIGRATION_GUIDE_V3.md.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            axis = str(spec['direction']).upper()
+            idx = {'X': 0, 'Y': 1, 'Z': 2}.get(axis)
+            if idx is None:
+                raise PatternBuilderError(
+                    f"Linear pattern '{name}' has invalid direction "
+                    f"{spec['direction']!r} (expected X, Y, or Z)",
+                    operation_name=name,
+                )
+            vec = [0.0, 0.0, 0.0]
+            vec[idx] = spacing
+            spacing = vec
 
         if not isinstance(count, int) or count < 1:
             raise PatternBuilderError(

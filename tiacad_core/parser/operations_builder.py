@@ -25,6 +25,7 @@ Version: 3.1.1
 
 import logging
 import math
+import warnings
 from typing import Dict, Any, Tuple
 import numpy as np
 
@@ -392,6 +393,18 @@ class OperationsBuilder:
             params: Translation parameters (dict, list, or string)
             context: Context for error messages
         """
+        # Backward compatibility: {offset: [...]} wrapper without 'to' → bare list.
+        # ('offset:' remains valid alongside 'to:', handled by Case 1 below.)
+        if isinstance(params, dict) and 'offset' in params and 'to' not in params:
+            warnings.warn(
+                f"Translate ({context}): the 'offset:' wrapper without 'to:' is "
+                f"deprecated; use 'translate: [x, y, z]' directly. "
+                f"See docs/developer/MIGRATION_GUIDE_V3.md.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            params = params['offset']
+
         # Case 1: translate with 'to' and optional 'offset'
         if isinstance(params, dict) and 'to' in params:
             # Resolve target point

@@ -17,6 +17,7 @@ Version: 0.1.0-alpha
 """
 
 import logging
+import warnings
 from typing import Dict, Any, Optional
 import cadquery as cq
 
@@ -315,6 +316,21 @@ class PartsBuilder:
         """
         # Extract parameters (check 'parameters' key first, fall back to spec for backward compat)
         params = spec.get('parameters', spec)
+
+        # Backward compatibility: deprecated radius_bottom/radius_top → radius1/radius2
+        if 'radius_bottom' in params or 'radius_top' in params:
+            warnings.warn(
+                f"Cone '{name}': 'radius_bottom'/'radius_top' are deprecated; "
+                f"use 'radius1' (base) and 'radius2' (top) instead. "
+                f"See docs/developer/MIGRATION_GUIDE_V3.md.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            params = dict(params)  # don't mutate the caller's spec
+            if 'radius_bottom' in params:
+                params.setdefault('radius1', params['radius_bottom'])
+            if 'radius_top' in params:
+                params.setdefault('radius2', params['radius_top'])
 
         # Validate required parameters
         required = ['radius1', 'radius2', 'height']
