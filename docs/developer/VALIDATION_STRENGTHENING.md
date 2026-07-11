@@ -732,6 +732,24 @@ an `expect:` block:
   suite: 1863 passed (was 1845), 0 failed — 18 new tests (9 in the new assembly-
   contracts file, 3 embedded-contract discoveries, 6 determinism checks), no
   regressions; visual suite unchanged at 67 passed.
+- ~~`negative/*` ~6~~ Shipped 2026-07-11: `N1_bad_spatial_ref/N2_cyclic_parameter/
+  N3_negative_dimension/N4_unknown_primitive/N5_malformed_schema/N6_duplicate_part_name`,
+  each an intentionally broken `.tiacad` file triggering one specific error class —
+  a bad `translate: to:` reference, a circular `${a}`/`${b}` parameter cycle, a
+  negative box dimension, a misspelled `primitive:`, a box missing its required
+  `depth`, and two `parts:` entries sharing the name `block`. Every fixture was
+  verified by actually running it through `TiaCADParser.parse_file()` and observing
+  the real exception type/message before any test assertion was written (this
+  tier's own "verify, don't assume" mandate) — see `test_negative_contracts.py`.
+  Two real gaps found and fixed in the process (small, well-scoped input-validation
+  additions, not architectural): N3 originally surfaced a message-less OCCT
+  `Standard_DomainError` wrapped into an empty-message `PartsBuilderError`; fixed
+  with `PartsBuilder._require_positive()` across box/cylinder/sphere/cone/torus. N6
+  originally parsed and built with **no error at all** — PyYAML's default loader
+  silently discards an earlier duplicate mapping key; fixed in
+  `yaml_with_lines.py::construct_mapping_with_lines`, which now rejects a same-level
+  duplicate key by name and line. See KNOWN_LIMITATIONS.md #12. **This is the last
+  item on this checklist — the full T0→T5 confidence ladder is now shipped.**
 
 **New scripts / CLI:**
 
@@ -745,15 +763,21 @@ an `expect:` block:
 **New tests** (`test_correctness/`):
 
 - `test_primitive_invariants.py` (Hypothesis) · `test_operation_invariants.py` ·
-  `test_metamorphic.py` · `test_determinism.py` · `test_embedded_contracts.py` ·
-  `test_negative_contracts.py`. Promote `test_geometry_validation.py` component/
-  watertight checks to hard failures.
+  `test_metamorphic.py` · `test_determinism.py` · `test_embedded_contracts.py`.
+  Promote `test_geometry_validation.py` component/watertight checks to hard
+  failures.
 - ~~`test_assembly_contracts.py`~~ Shipped 2026-07-11 (§5, Tier 4): synthetic
   coverage for the new `no_overlap` no-interpenetration engine plus an
   independent hand-verification pass over the Tier 4 corpus's relational
   claims — deliberately does not duplicate `test_embedded_contracts.py`'s
   generic discovery sweep, which already checks every `expect: relations:`/
   `no_overlap:` block with no per-example code required.
+- ~~`test_negative_contracts.py`~~ Shipped 2026-07-11 (§5, Tier 5): one class per
+  negative fixture asserting the specific typed `TiaCADError` subclass and
+  message it raises, plus a cross-cutting parametrized test that every fixture
+  raises *some* `TiaCADError` (never a bare/builtin exception, never a silent
+  parse). See §5's Tier 5 entry for the two real gaps found and fixed while
+  building it.
 
 **CI edits:**
 
@@ -856,8 +880,15 @@ and fixed a real dimensional bug in the process (KNOWN_LIMITATIONS.md #10). The
 assembly ladder (Tier 4, §5) followed: 3 new relational models plus a full
 `expect: relations:` contract on `hardware_assembly_demo.yaml`, a new `no_overlap`
 no-interpenetration contract-engine check, and a real screw/bolt head-position bug
-found and fixed (KNOWN_LIMITATIONS.md #11). Still open: trust-gallery sign-off (4.7),
-the negative-input corpus (Tier 5), golden STEP set (4.9).
+found and fixed (KNOWN_LIMITATIONS.md #11). **Tier 5 (negative-input corpus)
+shipped 2026-07-11 (§5): 6 intentionally-broken `.tiacad` models, each verified
+by actually running it and asserting the specific typed `TiaCADError` it
+raises, plus two small input-validation gaps found and fixed in the process
+(message-less negative-dimension errors; silently-clobbered duplicate part
+names — KNOWN_LIMITATIONS.md #12). This was the last unchecked item on the
+§5 ladder-corpus checklist — the full T0→T5 confidence ladder described in
+section 3 is now shipped end-to-end.** Still open (deliberately out of this
+ladder's scope): trust-gallery sign-off (4.7), golden STEP set (4.9).
 
 ---
 

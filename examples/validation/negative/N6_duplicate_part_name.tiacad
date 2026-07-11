@@ -1,0 +1,37 @@
+# Tier 5 negative case 6 — duplicate part name (same key twice at the same
+# YAML mapping level).
+#
+# Before this file was written, PyYAML's default SafeLoader silently let the
+# second `block:` entry clobber the first with no error and no warning at
+# all — parse_file() returned a document with a single "block" part built
+# from the *second* definition, discarding the first entirely. That's a
+# silent-wrong-output bug (parses fine, builds fine, just isn't what the
+# author of the first `block:` wrote), the exact failure mode this tier
+# exists to catch.
+# Fixed 2026-07-11: tiacad_core/parser/yaml_with_lines.py's
+# construct_mapping_with_lines() now tracks keys seen at each mapping level
+# and raises yaml.constructor.ConstructorError (surfaced as a typed
+# TiaCADParserError) naming the duplicate key and its first-seen line.
+# See KNOWN_LIMITATIONS.md #12.
+schema_version: "3.0"
+
+metadata:
+  name: N6 Duplicate Part Name
+  description: "Negative test: 'block' is defined twice under parts:"
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 10
+  block:
+    primitive: box
+    parameters:
+      width: 20
+      height: 20
+      depth: 20
+
+export:
+  default_part: block

@@ -444,6 +444,47 @@ in `SpatialResolver._resolve_name`; out of scope for this pass.
 
 ---
 
+### 12. Fixed — two silent/opaque-failure gaps found while building the Tier 5 negative-input corpus
+
+**What they were, found while building `examples/validation/negative/` (`docs/developer/VALIDATION_STRENGTHENING.md` section 3, Tier 5) and verifying — by actually running each broken file, not just reading code — that the parser fails loudly and specifically on bad input:**
+
+1. **Message-less error on a negative/zero primitive dimension.** `PartsBuilder._build_box`/`_build_cylinder`/`_build_sphere`/`_build_cone`/`_build_torus`
+   (`tiacad_core/parser/parts_builder.py`) passed dimensions straight to the OCCT
+   kernel with no positivity check (unlike `_build_polygon`/`_build_text`, which
+   already validated). A negative box width raised
+   `OCP.OCP.Standard.Standard_DomainError` with an **empty message string**; wrapped
+   by `build_parts()`'s generic `except Exception` into a `PartsBuilderError`, the
+   final surfaced message was `"Failed to build part 'block': "` — technically a
+   typed `TiaCADError`, not a raw traceback, but useless for actually diagnosing the
+   problem. Confirmed by running `examples/validation/negative/N3_negative_dimension.tiacad`
+   through `TiaCADParser.parse_file()` before any fix.
+2. **Duplicate part names silently discarded the first definition.** PyYAML's
+   default `SafeLoader` behavior lets a later duplicate mapping key clobber an
+   earlier one with **no error and no warning** —
+   `tiacad_core/parser/yaml_with_lines.py::construct_mapping_with_lines` inherited
+   this. Two `block:` entries under `parts:` parsed and built successfully, silently
+   keeping only the second — a "built, plausible, but wrong" bug, not a parse
+   failure. Confirmed by running `examples/validation/negative/N6_duplicate_part_name.tiacad`
+   before any fix: it parsed with no error at all.
+
+**Fix applied:** (1) added `PartsBuilder._require_positive()`, called from
+`_build_box`/`_build_cylinder`/`_build_sphere`/`_build_torus` (plus a
+tailored radius/height check in `_build_cone`, since a cone's radii may
+legitimately be 0 at the apex but not negative, and torus additionally
+checks `minor_radius < major_radius` to reject a self-intersecting tube) —
+raises `PartsBuilderError` naming the exact parameter and value, e.g. `"Box
+'block' has invalid width: -10 (must be a positive number)"`. (2)
+`construct_mapping_with_lines` now tracks keys seen at each mapping level and
+raises `yaml.constructor.ConstructorError` (surfaced through `parse_file()`'s
+existing `except yaml.YAMLError` handling as a typed `TiaCADParserError`) on
+a same-level duplicate key, naming the key and its first-seen line number.
+Both verified against the negative corpus (`N3`/`N6`) and against the full
+non-visual suite (no examples in this repo rely on merge keys (`<<:`) or
+intentional duplicate keys, confirmed by grep — the change is not
+regression-risky). See `tiacad_core/tests/test_correctness/test_negative_contracts.py`.
+
+---
+
 ## Test Health
 
 TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.

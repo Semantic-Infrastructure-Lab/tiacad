@@ -1,0 +1,31 @@
+# Tier 5 negative case 1 — bad spatial reference.
+# `box_b` tries to position itself relative to a part that does not exist
+# ("nonexistent_part.face_top"). The parser must fail loudly with a specific
+# SpatialResolverError-derived message naming the missing part, not build a
+# wrong/default-positioned box_b and not raise a raw traceback.
+# See docs/developer/VALIDATION_STRENGTHENING.md section 3, Tier 5.
+schema_version: "3.0"
+
+metadata:
+  name: N1 Bad Spatial Reference
+  description: "Negative test: translate: to: references a part that doesn't exist"
+
+parts:
+  box_a:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 10
+
+  box_b:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 10
+    translate:
+      to: nonexistent_part.face_top
+
+export:
+  default_part: box_b

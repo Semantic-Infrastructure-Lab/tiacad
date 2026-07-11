@@ -1,0 +1,26 @@
+# Tier 5 negative case 2 — cyclic parameter dependency.
+# `a` depends on `b`, `b` depends on `a`. The parameter resolver's DFS cycle
+# check (ParameterResolver._check_cycles) must catch this before any
+# expression evaluation is attempted, raising ParameterResolutionError with
+# the cycle path named, not a RecursionError or an infinite loop.
+# See docs/developer/VALIDATION_STRENGTHENING.md section 3, Tier 5.
+schema_version: "3.0"
+
+metadata:
+  name: N2 Cyclic Parameter Dependency
+  description: "Negative test: parameter a depends on b, b depends on a"
+
+parameters:
+  a: ${b}
+  b: ${a}
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${a}
+      height: 10
+      depth: 10
+
+export:
+  default_part: block

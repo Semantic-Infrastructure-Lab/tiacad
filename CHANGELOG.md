@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-11 (Tier 5 corpus — negative-input testing, ladder complete)
+
+#### Negative-input validation corpus (VALIDATION_STRENGTHENING.md section 5, Tier 5)
+
+`examples/validation/negative/`: 6 new intentionally-broken `.tiacad` models —
+`N1_bad_spatial_ref`, `N2_cyclic_parameter`, `N3_negative_dimension`,
+`N4_unknown_primitive`, `N5_malformed_schema`, `N6_duplicate_part_name` — each
+triggering one specific error class. New
+`tiacad_core/tests/test_correctness/test_negative_contracts.py` asserts each
+raises a specific, typed `TiaCADError` subclass (`OperationsBuilderError`,
+`ParameterResolutionError`, `PartsBuilderError` x3, `TiaCADParserError`) with a
+message that names the actual problem — never a bare exception, never an
+uncaught traceback, never a silent success. Every case was verified by
+actually running the broken file through `TiaCADParser.parse_file()` before
+the assertion was written, per this tier's own "verify, don't assume" mandate.
+This is the last unchecked item on the confidence-ladder deliverables
+checklist (VALIDATION_STRENGTHENING.md section 5) — **the full T0→T5 ladder is
+now shipped.**
+
+### Fixed - 2026-07-11 (Tier 5 corpus)
+
+#### Two silent/opaque-failure gaps found while verifying the negative corpus
+
+Found while confirming each Tier 5 fixture actually fails the way it should
+(not assumed from reading code): (1) a negative or zero primitive dimension
+(box/cylinder/sphere/cone/torus) reached the OCCT kernel unchecked and raised
+a **message-less** `Standard_DomainError`, surfacing as a `PartsBuilderError`
+with an empty message body — typed, but not "loud and correct." Fixed with a
+new `PartsBuilder._require_positive()` validation, called before the backend
+for all five primitives (`tiacad_core/parser/parts_builder.py`), producing
+messages like `"Box 'block' has invalid width: -10 (must be a positive
+number)"`. (2) a duplicate part name (same key twice under `parts:`) parsed
+and built **with no error at all** — PyYAML's default loader silently let the
+second definition clobber the first. Fixed in
+`tiacad_core/parser/yaml_with_lines.py::construct_mapping_with_lines`, which
+now tracks keys per mapping level and raises on a same-level duplicate,
+naming the key and its first-seen line. See KNOWN_LIMITATIONS.md #12.
+
+Full non-visual suite: 1876 passed (was 1863), 0 failed — 13 new tests, no
+regressions; visual suite unchanged at 67 passed.
+
 ### Added - 2026-07-11 (Tier 4 corpus)
 
 #### T4 assembly relational validation corpus (VALIDATION_STRENGTHENING.md section 5)

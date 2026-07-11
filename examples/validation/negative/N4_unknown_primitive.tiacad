@@ -1,0 +1,21 @@
+# Tier 5 negative case 4 — unknown/misspelled primitive type.
+# `boxx` is not a registered primitive (the closest valid one is `box`).
+# PartsBuilder.build_part()'s dispatch `else` branch must raise
+# PartsBuilderError naming the bad primitive type, not KeyError/AttributeError.
+# See docs/developer/VALIDATION_STRENGTHENING.md section 3, Tier 5.
+schema_version: "3.0"
+
+metadata:
+  name: N4 Unknown Primitive Type
+  description: "Negative test: primitive: boxx is misspelled/unknown"
+
+parts:
+  block:
+    primitive: boxx
+    parameters:
+      width: 10
+      height: 10
+      depth: 10
+
+export:
+  default_part: block

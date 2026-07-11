@@ -1,0 +1,30 @@
+# Tier 5 negative case 3 — zero/negative dimension where the schema requires
+# positive.
+#
+# Before this file was written, a negative box width reached the OCCT kernel
+# unchecked (tiacad_core/parser/parts_builder.py::_build_box called
+# backend.create_box(width, ...) with no positivity check) and raised a
+# message-less `OCP.OCP.Standard.Standard_DomainError` — technically wrapped
+# in a typed PartsBuilderError by build_parts()'s generic try/except, but
+# with an EMPTY message ("Failed to build part 'block': "), which fails this
+# tier's "loudly and correctly" bar even though it isn't a raw traceback.
+# Fixed 2026-07-11: PartsBuilder._require_positive() now validates
+# width/height/depth (and the equivalent dimensions on cylinder/sphere/cone/
+# torus) before calling the backend, producing a message that names the
+# parameter and the bad value. See KNOWN_LIMITATIONS.md #12.
+schema_version: "3.0"
+
+metadata:
+  name: N3 Negative Dimension
+  description: "Negative test: box width is negative"
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: -10
+      height: 10
+      depth: 10
+
+export:
+  default_part: block

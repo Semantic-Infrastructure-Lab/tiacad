@@ -174,6 +174,27 @@ class PartsBuilder:
 
         return part
 
+    def _require_positive(self, name: str, primitive_label: str, **dims: Any) -> None:
+        """
+        Validate that each named dimension is a positive, finite number.
+
+        Several primitives (box/cylinder/sphere/cone/torus) hand dimensions
+        straight to the OCCT kernel, which raises an opaque, message-less
+        `Standard_DomainError` on zero/negative input instead of a usable
+        error. Catching it here produces a typed `PartsBuilderError` that
+        actually names the offending parameter and value.
+
+        Raises:
+            PartsBuilderError: If any dimension is not a positive number.
+        """
+        for dim_name, value in dims.items():
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+                raise PartsBuilderError(
+                    f"{primitive_label} '{name}' has invalid {dim_name}: {value!r} "
+                    f"(must be a positive number)",
+                    part_name=name
+                )
+
     def _build_box(self, name: str, spec: Dict[str, Any]) -> Any:
         """
         Build a box primitive.
@@ -204,6 +225,8 @@ class PartsBuilder:
         height = params['height']
         depth = params['depth']
         origin = spec.get('origin', 'center')
+
+        self._require_positive(name, 'Box', width=width, height=height, depth=depth)
 
         box = self.backend.create_box(width, height, depth)
         if origin == 'corner':
@@ -240,6 +263,8 @@ class PartsBuilder:
         height = params['height']
         origin = spec.get('origin', 'center')
 
+        self._require_positive(name, 'Cylinder', radius=radius, height=height)
+
         cylinder = self.backend.create_cylinder(radius, height)
         if origin == 'base':
             cylinder = self.backend.translate(cylinder, (0, 0, height / 2))
@@ -269,6 +294,8 @@ class PartsBuilder:
             )
 
         radius = params['radius']
+
+        self._require_positive(name, 'Sphere', radius=radius)
 
         return self.backend.create_sphere(radius)
 
@@ -302,6 +329,24 @@ class PartsBuilder:
         radius2 = params['radius2']  # Top radius
         height = params['height']
         origin = spec.get('origin', 'center')
+
+        # radius1/radius2 may each be 0 (a true cone apex) but not negative,
+        # and not both zero (that's a degenerate line, not a solid); height
+        # must be strictly positive. See _require_positive's docstring for
+        # why this is checked here rather than left to the OCCT kernel.
+        for r_name, r_val in (('radius1', radius1), ('radius2', radius2)):
+            if not isinstance(r_val, (int, float)) or isinstance(r_val, bool) or r_val < 0:
+                raise PartsBuilderError(
+                    f"Cone '{name}' has invalid {r_name}: {r_val!r} (must be >= 0)",
+                    part_name=name
+                )
+        if radius1 == 0 and radius2 == 0:
+            raise PartsBuilderError(
+                f"Cone '{name}' has both radius1 and radius2 equal to 0 "
+                f"(degenerate — not a solid)",
+                part_name=name
+            )
+        self._require_positive(name, 'Cone', height=height)
 
         cone = self.backend.create_cone(radius1, radius2, height)
         if origin == 'base':
@@ -338,6 +383,14 @@ class PartsBuilder:
 
         major_radius = params['major_radius']  # Distance from center to tube center
         minor_radius = params['minor_radius']  # Tube radius
+
+        self._require_positive(name, 'Torus', major_radius=major_radius, minor_radius=minor_radius)
+        if minor_radius >= major_radius:
+            raise PartsBuilderError(
+                f"Torus '{name}' has minor_radius ({minor_radius}) >= major_radius "
+                f"({major_radius}) — the tube would self-intersect at the center",
+                part_name=name
+            )
 
         # Build the torus via the kernel's direct makeTorus primitive rather than
         # revolving a profile. The old `Workplane("XZ").center(R,0).circle(r)

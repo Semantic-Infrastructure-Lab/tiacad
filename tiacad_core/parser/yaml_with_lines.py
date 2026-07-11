@@ -72,9 +72,26 @@ def construct_mapping_with_lines(loader: yaml.SafeLoader, node: yaml.Node):
     mapping['__column__'] = node.start_mark.column + 1
 
     # Construct all key-value pairs
+    seen_keys: Dict[Any, int] = {}
     for key_node, value_node in node.value:
         key = loader.construct_object(key_node, deep=False)
         value = loader.construct_object(value_node, deep=False)
+
+        # PyYAML's default SafeLoader silently lets a later duplicate key
+        # clobber an earlier one (e.g. two `parts:` entries both named
+        # `block:` — the first is dropped with no warning). That is a
+        # "built, but silently wrong" bug, not a parse error, so catch it
+        # here instead: a duplicate scalar key at the same mapping level is
+        # always a user mistake (typo or copy-paste), never intentional.
+        if isinstance(key, str) and key in seen_keys:
+            raise yaml.constructor.ConstructorError(
+                "while constructing a mapping", node.start_mark,
+                f"found duplicate key '{key}' (first seen at line "
+                f"{seen_keys[key]}) — this silently discards the earlier entry",
+                key_node.start_mark,
+            )
+        if isinstance(key, str):
+            seen_keys[key] = key_node.start_mark.line + 1
 
         # Store line info for this key
         if isinstance(value, dict):

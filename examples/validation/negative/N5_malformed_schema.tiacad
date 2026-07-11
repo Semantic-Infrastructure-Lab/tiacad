@@ -1,0 +1,22 @@
+# Tier 5 negative case 5 — malformed schema: missing required field.
+# `block` is a box primitive missing the required `depth` parameter.
+# PartsBuilder._build_box()'s required-parameter check must raise
+# PartsBuilderError naming exactly which field is missing, not a raw KeyError
+# when `params['depth']` is later accessed.
+# See docs/developer/VALIDATION_STRENGTHENING.md section 3, Tier 5.
+schema_version: "3.0"
+
+metadata:
+  name: N5 Malformed Schema
+  description: "Negative test: box primitive missing required 'depth' parameter"
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      # depth intentionally omitted
+
+export:
+  default_part: block
