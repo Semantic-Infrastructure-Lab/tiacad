@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-11 (Tier 3 corpus)
+
+#### T3 composite-part validation corpus (VALIDATION_STRENGTHENING.md section 5)
+
+`examples/validation/`: 4 new Tier-3 models — `T3_plate_one_hole`, `T3_plate_bolt_circle`,
+`T3_bracket_fillet`, `T3_lego_2x1` — each a multi-feature composite part (plate + hole(s),
+fillet-all-edges box + hole, LEGO 2x1 brick) with an `expect:` volume derived from
+inclusion-exclusion of the closed-form Tier-0/1 oracles, plus a hard `components: 1`
+manifold-health gate (BREP solid count, not mesh islands). `T3_lego_2x1` is the model
+named in section 3's Tier 3 motivation — "a part that measures fine but is secretly two
+solids" — and explicitly asserts `components: 1` / `watertight: true`. Found and fixed a
+real bug while deriving it (see Fixed, below). `test_geometry_validation.py`'s
+`test_mounting_plate_bolt_circle_watertight` and `test_lego_brick_2x1_is_single_component`
+were strengthened from mesh-island/watertight-only observations to a hard BREP-level
+`count_solids() == 1` assertion, per section 3's "extend `test_geometry_validation.py` to
+assert component count ... as failures, not observations."
+
+### Fixed - 2026-07-11 (Tier 3 corpus)
+
+#### `lego_brick_2x1`/`lego_brick_3x1`: cavity floor was 1.5mm, not the declared 1.0mm
+
+`cavity_positioned`'s translate used `[wall_thickness, wall_thickness, bottom_thickness]`
+for `[X, Y, Z]`, but `brick_cavity`'s own box params put its "depth" (the vertical cavity
+dimension, `brick_height - bottom_thickness`) on the Y axis and its "height" (the lateral
+inset, `brick_width - 2*wall_thickness`) on Z (box maps `width->X, depth->Y, height->Z`).
+The translate's Y/Z components were swapped relative to what those axes actually needed:
+the vertical (Y) offset used `wall_thickness` (1.5mm) instead of `bottom_thickness`
+(1.0mm), so the printed floor was 1.5mm thick regardless of the `bottom_thickness`
+parameter's value, and the cavity silently overshot the top face by 0.5mm (clipped, no
+visible effect there). Found while hand-deriving `T3_lego_2x1.tiacad`'s inclusion-exclusion
+volume oracle — the naive closed-form total didn't match the measured build until the
+actual (clipped) cavity bounds were inspected. Did not affect connectivity or
+watertightness (both were already `true`); only the floor thickness/volume. Fixed by
+swapping the Y/Z translate components; `expect: volume:` updated in both examples
+(2x1: 906.707→891.306, 3x1: 1309.96→1283.109, both well within their existing
+`test_example_contracts.py` tolerances). See `KNOWN_LIMITATIONS.md` #10.
+
 ### Fixed - 2026-07-11
 
 #### Part-level `translate:`/`rotate:` were dead schema syntax

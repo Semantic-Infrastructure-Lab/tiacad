@@ -25,6 +25,7 @@ import trimesh  # required dependency; ImportError here is a hard collection fai
 from tiacad_core.parser import TiaCADParser
 from tiacad_core.part import Part
 from tiacad_core.geometry import CadQueryBackend
+from tiacad_core.testing.contracts import count_solids
 import cadquery as cq
 
 
@@ -301,10 +302,13 @@ class TestExampleGeometry:
 
     def test_mounting_plate_bolt_circle_watertight(self):
         """
-        mounting_plate_with_bolt_circle: plate with bolt-hole pattern should be watertight.
-        Through-holes cause CadQuery STL to export inner hole surfaces as separate shells
-        (body_count > 1), so we validate watertight + positive volume rather than
-        components == 1.
+        mounting_plate_with_bolt_circle: plate with bolt-hole pattern should be a single
+        watertight solid. Through-holes cause CadQuery STL to export inner hole surfaces
+        as separate shells, so mesh-island counting over-counts here -- component count
+        is asserted at the BREP/kernel level instead (count_solids), which is the
+        connectivity gate VALIDATION_STRENGTHENING.md section 3 Tier 3 calls for
+        (see also examples/validation/T3_plate_bolt_circle.tiacad, which reproduces this
+        example's fix and its own components: 1 / watertight: true expect: contract).
         """
         examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
         doc = TiaCADParser.parse_file(str(examples_dir / "mounting_plate_with_bolt_circle.yaml"))
@@ -312,6 +316,8 @@ class TestExampleGeometry:
         result = export_and_validate_mesh(part)
         assert result['stats']['watertight'] is True
         assert result['stats']['volume'] > 0
+        assert count_solids(part) == 1, \
+            f"Expected 1 BREP solid, got {count_solids(part)} — holes disconnected the plate"
 
     def test_chamfered_bracket_is_single_component(self):
         """chamfered_bracket should be a single merged L-bracket body."""
@@ -326,8 +332,13 @@ class TestExampleGeometry:
         """lego_brick_2x1 final_brick should be a single watertight merged body.
 
         Note: trimesh.split() returns >1 for hollow geometries (inner tube surfaces
-        are closed manifolds with inverted normals). We assert watertight instead of
-        component count, which correctly distinguishes a merged solid from disconnected floaters.
+        are closed manifolds with inverted normals), so mesh-island counting can't be
+        used as the connectivity gate here. Component count is asserted at the
+        BREP/kernel level instead (count_solids), which correctly distinguishes "one
+        hollow body" from "N disconnected floaters" -- the exact bug class this example
+        shipped with historically (see CHANGELOG.md 2026-03-17: 6 disconnected bodies).
+        See also examples/validation/T3_lego_2x1.tiacad, the Tier 3 corpus model this
+        example is named for in VALIDATION_STRENGTHENING.md section 3.
         """
         examples_dir = Path(__file__).parent.parent.parent.parent / "examples"
         doc = TiaCADParser.parse_file(str(examples_dir / "lego_brick_2x1.yaml"))
@@ -337,3 +348,5 @@ class TestExampleGeometry:
             "Brick mesh is not watertight — parts are disconnected or union failed"
         assert result['stats']['volume'] > 0, \
             f"Invalid volume: {result['stats']['volume']:.1f} mm³"
+        assert count_solids(part) == 1, \
+            f"Expected 1 BREP solid, got {count_solids(part)} — studs/posts not merged"

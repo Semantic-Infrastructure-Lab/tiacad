@@ -131,11 +131,17 @@ operations:
   # ------------------------------
 
   # Position cavity inside brick
+  # NOTE: box maps width->X, depth->Y, height->Z (tiacad_core/geometry/base.py).
+  # brick_cavity's own params are width=length-inset (X), height=width-inset (Z),
+  # depth=height-inset (Y) -- so this translate's Y component must be the
+  # bottom_thickness floor offset (not wall_thickness) and the Z component must
+  # be the wall_thickness inset (not bottom_thickness). See KNOWN_LIMITATIONS.md
+  # #10 for the bug this fixes (floor was 1.5mm instead of the intended 1.0mm).
   cavity_positioned:
     type: transform
     input: brick_cavity
     transforms:
-      - translate: ['${wall_thickness}', '${wall_thickness}', '${bottom_thickness}']
+      - translate: ['${wall_thickness}', '${bottom_thickness}', '${wall_thickness}']
 
   # Subtract cavity from brick body
   brick_hollow:
@@ -370,9 +376,12 @@ export:
 
 # Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
 # see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+# volume updated 2026-07-11: 1309.96 -> 1283.109 after fixing cavity_positioned's
+# Y/Z translate swap (KNOWN_LIMITATIONS.md #10) -- the floor was 1.5mm thick
+# instead of the intended bottom_thickness=1.0mm.
 expect:
   final: final_brick
-  volume: 1309.96
+  volume: 1283.109
   bbox: [24.0, 9.6, 9.6]
   watertight: true
   components: 1

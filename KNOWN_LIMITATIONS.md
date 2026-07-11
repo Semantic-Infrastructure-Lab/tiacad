@@ -330,6 +330,46 @@ files.
 
 ---
 
+### 10. Fixed — `lego_brick_2x1`/`lego_brick_3x1` cavity floor was 1.5mm, not the declared 1.0mm
+
+**What it was:** `cavity_positioned`'s translate used `[wall_thickness, wall_thickness,
+bottom_thickness]` for `[X, Y, Z]`. `brick_cavity` is built with `width` = length-inset
+(maps to X), `height` = width-inset (maps to Z), `depth` = height-inset (maps to Y) — box
+maps `width->X, depth->Y, height->Z` (`tiacad_core/geometry/base.py`). So this cavity's own
+"depth" param (`brick_height - bottom_thickness`, the *vertical* cavity dimension) lands on
+Y, and its "height" param (`brick_width - 2*wall_thickness`, the *lateral* inset) lands on
+Z — but the translate offset wall_thickness/wall_thickness/bottom_thickness assumed the
+opposite (X/Y both lateral insets via wall_thickness, Z vertical via bottom_thickness). The
+Y and Z offsets were effectively swapped relative to what those axes actually needed.
+
+**Caught by:** hand-deriving the closed-form inclusion-exclusion volume oracle for
+`examples/validation/T3_lego_2x1.tiacad` — the naive formula (`brick_vol - cavity_vol +
+studs`) didn't match the measured build until `cavity_positioned`'s actual bounds were
+inspected directly: `Y:[1.5, 10.1]` against a brick body whose Y extent is only `[0, 9.6]`
+— the cavity undershot the intended floor offset by 0.5mm at the bottom and overshot the
+top face by 0.5mm (silently clipped there, since no material exists past the body's own
+extent).
+
+**Real-world impact:** every brick printed from these two examples had a 1.5mm floor
+instead of the `bottom_thickness: 1.0` parameter's declared value — a genuine dimensional
+defect (not a connectivity/printability one; both files were already `components: 1` /
+watertight before and after). Volume was off by ~15-27mm³ (2x1: 906.707→891.306mm³; 3x1:
+1309.96→1283.109mm³), each within the pre-existing `test_example_contracts.py` tolerance
+(`abs=50`/`abs=100`), so no test caught it before this session's Tier 3 work demanded an
+exact oracle instead of a wide-tolerance sanity range.
+
+**Fix applied:** swap the translate's Y/Z components to `[wall_thickness, bottom_thickness,
+wall_thickness]` in both `examples/lego_brick_2x1.yaml` and `examples/lego_brick_3x1.yaml`.
+Both files' `expect: volume:` were updated to the corrected, verified value.
+`examples/validation/T3_lego_2x1.tiacad` reproduces the fixed geometry from the start with
+a full inclusion-exclusion derivation in its header comment and a hard `components: 1` /
+`watertight: true` gate — the exact "measures fine but is secretly disconnected" bug class
+this model is named for in `docs/developer/VALIDATION_STRENGTHENING.md` section 3 Tier 3
+(confirmed this specific defect was dimensional, not connectivity, but Tier 3's manifold
+gate is what forced the exact-oracle derivation that caught it).
+
+---
+
 ## Test Health
 
 TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.

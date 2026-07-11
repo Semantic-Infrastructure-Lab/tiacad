@@ -1,0 +1,121 @@
+# Tier 3 — composite part: a plate with a center hole plus an N-hole bolt
+# circle, all fully-contained through-holes. Derived from
+# examples/mounting_plate_with_bolt_circle.yaml (simplified to 4 bolt holes
+# for a cleaner hand derivation), which was the file that surfaced a real
+# axis-mapping bug in the prior session (VALIDATION_STRENGTHENING.md section
+# 4.1's "Bug found via this tooling, fixed 2026-07-10"): cylinders default to
+# a Z axis, but this plate's thin dimension is Y (box maps width->X,
+# depth->Y, height->Z), so patterning un-rotated Z-axis cylinders around this
+# plate produced 3 disconnected components (48/252/252-vertex islands)
+# instead of clean through-holes. That fix (rotate each hole 90 deg about X
+# before patterning around axis: Y) is reproduced here from the start, and
+# verified below the same way the original bug was caught: measuring actual
+# BREP solid count, not assuming it.
+#
+# Oracle (exact, closed-form): each hole is a plain cylinder drilled straight
+# through the plate's thickness, centered so none is clipped by an edge or
+# overlaps another -- inclusion-exclusion is exact, no measured/reviewed term
+# needed:
+#   plate_vol      = plate_w * plate_l * plate_t
+#                   = 100 * 100 * 6                          = 60000
+#   bolt_hole_vol   = pi * bolt_hole_r^2 * plate_t
+#                   = pi * 3.0^2 * 6                          = 169.6460 each
+#   center_hole_vol = pi * center_hole_r^2 * plate_t
+#                   = pi * 10^2 * 6                           = 1884.9556
+#   final_vol = plate_vol - bolt_count*bolt_hole_vol - center_hole_vol
+#             = 60000 - 4*169.6460 - 1884.9556
+#             = 60000 - 678.5840 - 1884.9556                 = 57436.4604
+# Matches the measured build (`tiacad audit --write-contract`) to 3 decimals.
+
+schema_version: "3.0"
+
+metadata:
+  name: T3 Plate with Bolt Circle
+  description: "Tier 3 composite: box plate with a center hole and N-hole bolt circle, all fully-contained through-holes"
+  version: "1.0"
+
+parameters:
+  plate_w: 100
+  plate_l: 100
+  plate_t: 6
+  bolt_count: 4
+  bolt_circle_r: 35
+  bolt_hole_r: 3.0
+  center_hole_r: 10
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: ${plate_w}
+      height: ${plate_l}
+      depth: ${plate_t}
+    origin: center
+
+  bolt_hole:
+    primitive: cylinder
+    radius: ${bolt_hole_r}
+    height: ${plate_t + 4}
+    origin: center
+
+  center_hole:
+    primitive: cylinder
+    radius: ${center_hole_r}
+    height: ${plate_t + 4}
+    origin: center
+
+operations:
+  # Bolt/center holes default to a Z axis, but the plate's thin dimension is
+  # Y -- rotate 90 deg about X so the holes actually pierce the plate's
+  # thickness before patterning around axis: Y. See header note.
+  bolt_hole_oriented:
+    type: transform
+    input: bolt_hole
+    transforms:
+      - rotate:
+          angle: 90
+          axis: X
+          origin: [0, 0, 0]
+
+  center_hole_oriented:
+    type: transform
+    input: center_hole
+    transforms:
+      - rotate:
+          angle: 90
+          axis: X
+          origin: [0, 0, 0]
+
+  bolt_circle:
+    type: pattern
+    pattern: circular
+    input: bolt_hole_oriented
+    count: ${bolt_count}
+    axis: Y
+    center: [0, 0, 0]
+    radius: ${bolt_circle_r}
+
+  final_plate:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract:
+      - center_hole_oriented
+      - bolt_circle_0
+      - bolt_circle_1
+      - bolt_circle_2
+      - bolt_circle_3
+
+export:
+  default_part: final_plate
+
+# components: 1 / watertight: true is the connectivity gate that would have
+# caught the disconnected-components bug this file's source example had
+# before its 2026-07-10 fix -- see header note.
+expect:
+  final: final_plate
+  volume: 57436.46
+  bbox: [100.0, 6.0, 100.0]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

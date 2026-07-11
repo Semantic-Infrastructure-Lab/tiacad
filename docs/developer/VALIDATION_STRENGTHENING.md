@@ -670,8 +670,31 @@ an `expect:` block:
   value; fillet uses the exact Minkowski-sum-with-a-ball rounded-box formula (confirmed
   to match measured volume to full kernel precision); chamfer uses a reviewed bounded
   value (no closed form for a 12-edge 45° chamfer with corner interactions).
-- `T3_*` composites (4) · `T4_*` assemblies (4) · `negative/*` broken inputs (~6) —
-  still open.
+- ~~`T3_*` composites (4)~~ Shipped 2026-07-11: `T3_plate_one_hole/plate_bolt_circle/
+  bracket_fillet/lego_2x1`, each a multi-feature composite with a volume `expect:`
+  derived from inclusion-exclusion of the closed-form Tier-0/1 oracles, plus a hard
+  `components: 1` manifold-health gate (BREP solid count via `count_solids`, not mesh
+  islands). `T3_plate_one_hole` and `T3_bracket_fillet` are exact closed-form (the hole
+  is deliberately sized/positioned to stay clear of any rounded region, so no
+  clipping/overlap correction is needed); `T3_plate_bolt_circle` reproduces the
+  Tier-2 `mounting_plate_with_bolt_circle` axis-rotation fix from §4.1 and is also
+  exact closed-form; `T3_lego_2x1` — the model VALIDATION_STRENGTHENING.md names as
+  the motivating "measures fine but is secretly two solids" case — is closed-form for
+  the base/cavity/studs term and a reviewed measured-and-bounded value (T1_chamfer
+  precedent) for the two support-tube unions, whose footprint straddles the
+  cavity/wall boundary with no simple closed form (0 < Δ < 246.401, measured
+  150.004). Found and fixed a real bug while deriving `T3_lego_2x1`: see
+  KNOWN_LIMITATIONS.md #10 — `lego_brick_2x1.yaml`/`lego_brick_3x1.yaml`'s cavity
+  translate had its Y/Z offsets swapped, giving a 1.5mm floor instead of the
+  declared `bottom_thickness: 1.0`; fixed in both examples (volumes corrected
+  906.707→891.306 and 1309.96→1283.109). Also strengthened
+  `test_geometry_validation.py`'s `test_mounting_plate_bolt_circle_watertight` and
+  `test_lego_brick_2x1_is_single_component` from mesh-island/watertight-only
+  observations to a hard BREP-level `count_solids() == 1` assertion, per this
+  section's "assert component count ... as failures, not observations" directive.
+  Full non-visual suite: 1845 passed (was 1833), 0 failed — 12 new tests (4 embedded
+  contracts + 8 determinism checks), no regressions.
+- `T4_*` assemblies (4) · `negative/*` broken inputs (~6) — still open.
 
 **New scripts / CLI:**
 
@@ -781,8 +804,14 @@ which was the "easier" half of the mandate. Still open, deferred rather than rus
 (see §4.1's 2026-07-11 note): trimming the now-redundant subset of hand-written
 Tier-2 pytest classes.
 
-**Phase 3 — Depth (as needed):** connectivity gate (4.6), trust-gallery sign-off
-(4.7), composite/assembly ladder (Tiers 3–4), golden STEP set (4.9).
+**Phase 3 — Depth (as needed): Tier 3 shipped 2026-07-11 (§5).** Connectivity gate
+(4.6, shipped 2026-07-10) + composite-part ladder corpus (Tier 3, 4 models, §5) +
+`test_geometry_validation.py`'s `expect: components:`-style hard connectivity gate
+extended to the two Tier-3-adjacent examples (`mounting_plate_with_bolt_circle`,
+`lego_brick_2x1`) that previously only asserted watertight/mesh-island counts. Found
+and fixed a real dimensional bug in the process (KNOWN_LIMITATIONS.md #10). Still
+open: trust-gallery sign-off (4.7), the assembly ladder (Tier 4), golden STEP set
+(4.9).
 
 ---
 

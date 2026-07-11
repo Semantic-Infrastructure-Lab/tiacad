@@ -1,0 +1,299 @@
+# Tier 3 — LEGO 2x1 brick: the motivating "measures fine but is secretly two
+# solids" bug case named in VALIDATION_STRENGTHENING.md section 3 Tier 3.
+# Derived directly from examples/lego_brick_2x1.yaml (same geometry, same
+# parameters) -- this file exists purely to carry a reviewed, hand-derived
+# expect: contract with the connectivity gate the source doc calls out
+# explicitly (`components: 1`, `watertight: true`), so this bug class can
+# never silently regress.
+#
+# BUG FOUND while deriving this model's expect: block, fixed in the source
+# example (examples/lego_brick_2x1.yaml and examples/lego_brick_3x1.yaml,
+# and mirrored here) -- see KNOWN_LIMITATIONS.md #10:
+# `cavity_positioned`'s translate used [wall_thickness, wall_thickness,
+# bottom_thickness] for [X, Y, Z], but brick_cavity's own box params put its
+# "depth" (the vertical cavity dimension, brick_height - bottom_thickness) on
+# the Y axis and its "height" (the lateral inset dimension, brick_width -
+# 2*wall_thickness) on Z (box maps width->X, depth->Y, height->Z). The
+# translate's Y/Z components were swapped relative to what those axes
+# actually needed, so the cavity's vertical (Y) offset used wall_thickness
+# (1.5mm) instead of bottom_thickness (1.0mm), and its lateral (Z) offset used
+# bottom_thickness instead of wall_thickness. Net effect: the printed floor
+# was 1.5mm thick, not the 1.0mm `bottom_thickness` parameter claimed, and the
+# cavity overshot the brick's top face by 0.5mm (silently clipped, no visible
+# effect there). Confirmed by measuring `cavity_positioned`'s actual bounds
+# before the fix (Y:[1.5,10.1] against a brick body whose Y extent is only
+# [0,9.6] -- overshoot at the top, undershoot at the bottom) and after
+# (Y:[1.0,9.6], flush with the top face as intended, Z:[1.5,6.5], symmetric
+# wall_thickness inset as intended). This did NOT break connectivity or
+# watertightness (both were already true before and after), only the printed
+# floor thickness / volume -- caught only because Tier 3 demands a real
+# inclusion-exclusion oracle instead of an audited snapshot.
+#
+# Volume derivation (inclusion-exclusion), all closed-form except the two
+# support-tube unions:
+#   brick_vol   = brick_length * brick_width * brick_height
+#               = 16 * 8 * 9.6                          = 1228.8
+#   cavity_vol  = (brick_length-2*wall)*(brick_width-2*wall)*(brick_height-bottom)
+#               = 13 * 5 * 8.6                           = 559.0
+#   stud_vol    = pi * stud_radius^2 * stud_height           (x2, no overlap
+#                                                              with cavity --
+#                                                              verified: stud Z
+#                                                              range [7.9,9.6]
+#                                                              vs cavity Z
+#                                                              range [1.5,6.5])
+#               = pi * 2.4^2 * 1.7                       = 30.7625 each
+#   chamfer_vol = frustum(h=0.3, r1=2.4, r2=2.2)              (x2, flush atop
+#                                                              stud, zero
+#                                                              overlap)
+#               = (pi*0.3/3) * (2.4^2 + 2.4*2.2 + 2.2^2) = 4.9888 each
+#   base_and_studs = brick_vol - cavity_vol + 2*(stud_vol + chamfer_vol)
+#                  = 1228.8 - 559.0 + 71.502              = 741.302 (exact)
+#
+# The two support-tube unions (outer r=3.25 minus inner r=2.45, height=8.6,
+# each) do NOT reduce to a closed form here: each tube's footprint straddles
+# the cavity/wall boundary (X:[0.75,7.25] against cavity X:[1.5,14.5]), so
+# part of each tube unions onto already-solid wall material (contributing
+# zero net new volume there) and part unions into the open cavity
+# (contributing its full local cross-section). This needs a circle/rectangle
+# intersection-area integral, not a table lookup -- so, per the T1_chamfer
+# precedent, the two tubes' *combined* net contribution is a reviewed
+# measured value, bounded analytically rather than computed as one:
+#   0 < delta_tubes < 2 * tube_vol
+#   tube_vol = pi * (3.25^2 - 2.45^2) * 8.6 = 123.2007 each -> bound 246.4014
+#   measured delta_tubes = final_measured_volume - base_and_studs
+#                         = 891.306 - 741.302 = 150.004  (0 < 150.004 < 246.401 -- holds)
+# final_volume = base_and_studs + delta_tubes = 741.302 + 150.004 = 891.306,
+# matching the actual build (`tiacad audit --write-contract`) to 3 decimals.
+
+schema_version: "3.0"
+
+metadata:
+  name: T3 LEGO Brick 2x1 (Tier 3 connectivity oracle)
+  description: "Tier 3 composite: LEGO 2x1 brick -- inclusion-exclusion volume oracle plus a hard components:1 / watertight:true connectivity gate for the exact bug class this model is named for"
+  version: "1.0"
+
+parameters:
+  unit_size: 8.0
+  stud_count: 2
+  brick_length: '${stud_count * unit_size}'
+  brick_width: '${unit_size}'
+  brick_height: 9.6
+
+  stud_radius: 2.4
+  stud_height: 1.7
+  stud_pitch: '${unit_size}'
+  stud_chamfer_height: 0.3
+  stud_chamfer_radius: '${stud_radius - 0.2}'
+
+  wall_thickness: 1.5
+  bottom_thickness: 1.0
+
+  connection_tube_outer_radius: 3.25
+  connection_tube_inner_radius: 2.45
+  connection_tube_height: '${brick_height - bottom_thickness}'
+
+parts:
+  brick_body:
+    primitive: box
+    parameters:
+      width: '${brick_length}'
+      height: '${brick_width}'
+      depth: '${brick_height}'
+    origin: corner
+
+  brick_cavity:
+    primitive: box
+    parameters:
+      width: '${brick_length - wall_thickness * 2}'
+      height: '${brick_width - wall_thickness * 2}'
+      depth: '${brick_height - bottom_thickness}'
+    origin: corner
+
+  stud:
+    primitive: cylinder
+    radius: '${stud_radius}'
+    height: '${stud_height}'
+    origin: center
+
+  stud_chamfer:
+    primitive: cone
+    radius1: '${stud_radius}'
+    radius2: '${stud_chamfer_radius}'
+    height: '${stud_chamfer_height}'
+    origin: center
+
+  support_post_outer:
+    primitive: cylinder
+    radius: '${connection_tube_outer_radius}'
+    height: '${connection_tube_height}'
+    origin: center
+
+  support_post_inner:
+    primitive: cylinder
+    radius: '${connection_tube_inner_radius}'
+    height: '${connection_tube_height + 0.2}'
+    origin: center
+
+operations:
+  # See the bug note above: Y gets bottom_thickness (vertical floor offset),
+  # Z gets wall_thickness (lateral inset) -- box maps width->X, depth->Y,
+  # height->Z, and brick_cavity's depth param is the vertical dimension here.
+  cavity_positioned:
+    type: transform
+    input: brick_cavity
+    transforms:
+      - translate: ['${wall_thickness}', '${bottom_thickness}', '${wall_thickness}']
+
+  brick_hollow:
+    type: boolean
+    operation: difference
+    base: brick_body
+    subtract: [cavity_positioned]
+
+  stud_array:
+    type: pattern
+    pattern: linear
+    input: stud
+    count: '${stud_count}'
+    spacing: ['${stud_pitch}', 0, 0]
+
+  stud_0_positioned:
+    type: transform
+    input: stud_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${brick_width - 0.1 + stud_height / 2}']
+
+  stud_1_positioned:
+    type: transform
+    input: stud_array_1
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${brick_width - 0.1 + stud_height / 2}']
+
+  chamfer_array:
+    type: pattern
+    pattern: linear
+    input: stud_chamfer
+    count: '${stud_count}'
+    spacing: ['${stud_pitch}', 0, 0]
+
+  chamfer_0_positioned:
+    type: transform
+    input: chamfer_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${brick_width - 0.1 + stud_height - stud_chamfer_height / 2}']
+
+  chamfer_1_positioned:
+    type: transform
+    input: chamfer_array_1
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${brick_width - 0.1 + stud_height - stud_chamfer_height / 2}']
+
+  stud_0_chamfered:
+    type: boolean
+    operation: union
+    inputs:
+      - stud_0_positioned
+      - chamfer_0_positioned
+
+  stud_1_chamfered:
+    type: boolean
+    operation: union
+    inputs:
+      - stud_1_positioned
+      - chamfer_1_positioned
+
+  post_outer_array:
+    type: pattern
+    pattern: linear
+    input: support_post_outer
+    count: '${stud_count}'
+    spacing: ['${stud_pitch}', 0, 0]
+
+  post_inner_array:
+    type: pattern
+    pattern: linear
+    input: support_post_inner
+    count: '${stud_count}'
+    spacing: ['${stud_pitch}', 0, 0]
+
+  post_outer_0_positioned:
+    type: transform
+    input: post_outer_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness + connection_tube_height / 2}']
+
+  post_inner_0_positioned:
+    type: transform
+    input: post_inner_array_0
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness + connection_tube_height / 2}']
+
+  post_outer_1_positioned:
+    type: transform
+    input: post_outer_array_1
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness + connection_tube_height / 2}']
+
+  post_inner_1_positioned:
+    type: transform
+    input: post_inner_array_1
+    transforms:
+      - translate: ['${unit_size / 2}',
+                    '${brick_width / 2}',
+                    '${bottom_thickness + connection_tube_height / 2}']
+
+  post_0_hollow:
+    type: boolean
+    operation: difference
+    base: post_outer_0_positioned
+    subtract: [post_inner_0_positioned]
+
+  post_1_hollow:
+    type: boolean
+    operation: difference
+    base: post_outer_1_positioned
+    subtract: [post_inner_1_positioned]
+
+  brick_with_studs:
+    type: boolean
+    operation: union
+    inputs:
+      - brick_hollow
+      - stud_0_chamfered
+      - stud_1_chamfered
+
+  final_brick:
+    type: boolean
+    operation: union
+    inputs:
+      - brick_with_studs
+      - post_0_hollow
+      - post_1_hollow
+
+export:
+  default_part: final_brick
+
+# See derivation above. components:1 / watertight:true is the whole point of
+# this model (the Tier 3 connectivity gate for the exact "measures fine but
+# is secretly disconnected" bug class this file is named for).
+expect:
+  final: final_brick
+  volume: 891.306
+  bbox: [16.0, 9.6, 9.6]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

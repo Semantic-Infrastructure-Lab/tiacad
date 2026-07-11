@@ -1,0 +1,99 @@
+# Tier 3 — composite part: a fillet-all-edges box with one fully-contained
+# through-hole. Combines the exact rounded-box Minkowski-sum formula proven
+# in T1_fillet.tiacad with inclusion-exclusion for the hole -- both terms are
+# closed-form here (no measured/reviewed term needed), because the hole
+# radius and position were deliberately chosen to stay entirely within the
+# filleted box's flat inner face region (never touching a rounded edge or
+# corner blend), so the rounding and the hole simply don't interact.
+#
+# Oracle derivation:
+#   1. Fillet-all-edges box (T1_fillet.tiacad's exact closed form):
+#      l'=box_w-2r=44, w'=box_d-2r=14, h'=box_h-2r=24
+#      V_rounded = l'w'h' + 2r(l'w'+w'h'+h'l') + pi*r^2*(l'+w'+h') + 4/3*pi*r^3
+#                = 14784 + 12048 + 2318.5927 + 113.0973    = 29263.5927
+#   2. Hole containment check: the flat (non-rounded) face region of a
+#      fillet-all-edges box extends, on each axis, all the way out to the
+#      original box's own extent (rounding only removes material near edges
+#      and corners, never shrinks the flat face itself) -- so a hole of
+#      radius rh centered on the box, drilled straight through one axis, stays
+#      entirely inside the flat/straight region (never grazing a rounded
+#      blend) as long as rh <= min(other two shrunk dims)/2. Here:
+#        inradius = min(box_w-2r, box_h-2r)/2 = min(44,24)/2 = 12
+#        hole_r = 6 <= 12  -- safe with a 2x margin.
+#   3. Given containment, the hole removes exactly its own cylinder volume
+#      (radius x pierced depth = box_d, the axis it's drilled through), same
+#      as any hole through a flat plate -- rounding elsewhere is irrelevant:
+#      hole_vol = pi * hole_r^2 * box_d = pi * 6^2 * 20         = 2261.9467
+#   4. final_vol = V_rounded - hole_vol = 29263.5927 - 2261.9467 = 27001.6460
+# Matches the measured build (`tiacad audit --write-contract`) to 3 decimals.
+#
+# No `watertight: true` (deliberately, same as T1_fillet.tiacad and
+# KNOWN_LIMITATIONS.md #8): the curved fillet surfaces leave unwelded mesh
+# islands in the default STL tessellation even though the BREP solid is
+# provably valid (components: 1, exact volume match above) -- a mesh-export
+# artifact, not a real manifold defect. `components: 1` is asserted and does
+# use the correct BREP-level solid count (tiacad_core/testing/contracts.py
+# count_solids), not the misleading mesh-island count.
+
+schema_version: "3.0"
+
+metadata:
+  name: T3 Bracket with Fillet and Hole
+  description: "Tier 3 composite: fillet-all-edges box with one fully-contained through-hole; exact closed-form volume oracle"
+  version: "1.0"
+
+parameters:
+  box_w: 50
+  box_h: 30
+  box_d: 20
+  fillet_r: 3.0
+  hole_r: 6.0
+
+parts:
+  block:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+
+  hole:
+    primitive: cylinder
+    radius: ${hole_r}
+    height: ${box_d + 4}
+    origin: center
+
+operations:
+  rounded:
+    type: finishing
+    finish: fillet
+    input: block
+    radius: ${fillet_r}
+    edges: all
+
+  # Hole default axis is Z; rotate 90 deg about X so it drills through the
+  # box's depth (Y) axis instead of running parallel to it.
+  hole_oriented:
+    type: transform
+    input: hole
+    transforms:
+      - rotate:
+          angle: 90
+          axis: X
+          origin: [0, 0, 0]
+
+  bracket:
+    type: boolean
+    operation: difference
+    base: rounded
+    subtract: [hole_oriented]
+
+export:
+  default_part: bracket
+
+expect:
+  final: bracket
+  volume: 27001.646
+  bbox: [50.0, 20.0, 30.0]
+  components: 1
+  tol: { volume: 0.01 }

@@ -1,0 +1,81 @@
+# Tier 3 — composite part: a plate with a single fully-contained through-hole.
+# Proves: a two-feature boolean (box - cylinder) has the exact net volume
+# inclusion-exclusion predicts, and builds as one watertight solid.
+#
+# Oracle (exact, closed-form -- no measured/reviewed term needed):
+#   plate_vol = plate_w * plate_l * plate_t          = 60 * 40 * 6   = 14400
+#   hole_vol  = pi * hole_r^2 * plate_t              = pi * 25 * 6   = 471.2389
+#   final_vol = plate_vol - hole_vol                                = 13928.7611
+# This is exact (not an approximation) because the hole is a plain cylinder
+# drilled straight through the plate's thickness (plate_t = 6, the box's Y
+# axis per width->X/depth->Y/height->Z), positioned centered in X/Z so it
+# never comes near an edge -- the removed material is exactly the cylinder's
+# own cross-section times the plate thickness, with no clipping or overlap
+# to account for.
+#
+# Manifold health: this is the whole point of Tier 3 per
+# docs/developer/VALIDATION_STRENGTHENING.md section 3 -- a boolean
+# difference that silently fails to merge (or that leaves the hole as an
+# internal cavity instead of a through-hole, the exact
+# mounting_plate_with_bolt_circle bug documented in section 4.1) would still
+# report a positive volume. `components: 1` + `watertight: true` catch that
+# class where volume alone cannot.
+
+schema_version: "3.0"
+
+metadata:
+  name: T3 Plate with One Hole
+  description: "Tier 3 composite: box plate with a single fully-contained through-hole; exact inclusion-exclusion volume oracle"
+  version: "1.0"
+
+parameters:
+  plate_w: 60
+  plate_l: 40
+  plate_t: 6
+  hole_r: 5
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: ${plate_w}
+      height: ${plate_l}
+      depth: ${plate_t}
+    origin: center
+
+  hole:
+    primitive: cylinder
+    radius: ${hole_r}
+    height: ${plate_t + 4}
+    origin: center
+
+operations:
+  # Cylinder default axis is Z; rotate 90 deg about X so the hole's axis runs
+  # along Y (the plate's thin/thickness axis) instead of parallel to it -- the
+  # same axis-mapping fix documented for mounting_plate_with_bolt_circle.yaml
+  # (VALIDATION_STRENGTHENING.md section 4.1's "Bug found" note).
+  hole_oriented:
+    type: transform
+    input: hole
+    transforms:
+      - rotate:
+          angle: 90
+          axis: X
+          origin: [0, 0, 0]
+
+  plate_with_hole:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract: [hole_oriented]
+
+export:
+  default_part: plate_with_hole
+
+expect:
+  final: plate_with_hole
+  volume: 13928.761
+  bbox: [60.0, 6.0, 40.0]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

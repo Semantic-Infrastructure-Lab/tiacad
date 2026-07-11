@@ -125,9 +125,9 @@
       9.6,
       9.6
     ],
-    "mesh_hash": "eae5745bbc7894574440d8e6ecd42c9c9c9d4e9072fe0d8273a32650a2e8d0bc",
+    "mesh_hash": "96a8156a1862eb6ccba00a80a1c63847d89ccde0fa882c05c5b76a10c3e090e1",
     "part": "final_brick",
-    "volume": 906.7073486067304
+    "volume": 891.3061526829996
   },
   "examples/lego_brick_3x1.yaml": {
     "bbox": [
@@ -135,9 +135,9 @@
       9.6,
       9.6
     ],
-    "mesh_hash": "e1060bcd5280dbd98c3023d6eb9de80efe165af8348b76d0093a28cb617f3961",
+    "mesh_hash": "6123cb02df12ce39f3ef74718a4ae78998a2e841c36fe2bc37becee3a3767b2b",
     "part": "final_brick",
-    "volume": 1309.9603309573733
+    "volume": 1283.1085370717774
   },
   "examples/mounting_plate_with_bolt_circle.yaml": {
     "bbox": [
@@ -428,6 +428,46 @@
     "mesh_hash": "41f6ffb508e1d02538f4a663f559d1956ffce28035d25656563cecb1f2ab0198",
     "part": "merged",
     "volume": 12000.0
+  },
+  "examples/validation/T3_bracket_fillet.tiacad": {
+    "bbox": [
+      50.0,
+      20.0,
+      30.0
+    ],
+    "mesh_hash": "aa4edcbed3546b6951e24624f9e5fb79e25e5a63eda7c77ac9312ae9743523bc",
+    "part": "bracket",
+    "volume": 27001.646003293856
+  },
+  "examples/validation/T3_lego_2x1.tiacad": {
+    "bbox": [
+      16.0,
+      9.6,
+      9.6
+    ],
+    "mesh_hash": "96a8156a1862eb6ccba00a80a1c63847d89ccde0fa882c05c5b76a10c3e090e1",
+    "part": "final_brick",
+    "volume": 891.3061526829996
+  },
+  "examples/validation/T3_plate_bolt_circle.tiacad": {
+    "bbox": [
+      100.0,
+      6.000000000000002,
+      100.0
+    ],
+    "mesh_hash": "06eba96a30eb7261764fb7486b7c1e2474e46f3ac36014e981f681d162ab6d21",
+    "part": "final_plate",
+    "volume": 57436.46039467075
+  },
+  "examples/validation/T3_plate_one_hole.tiacad": {
+    "bbox": [
+      60.0,
+      6.000000000000001,
+      40.0
+    ],
+    "mesh_hash": "f31d4b57db3413baaa9700a6bd59e107ae1a107b0e53bb91bc53b1cf3c68c5f2",
+    "part": "plate_with_hole",
+    "volume": 13928.761101961529
   },
   "examples/week5_align_to_face.yaml": {
     "bbox": [
