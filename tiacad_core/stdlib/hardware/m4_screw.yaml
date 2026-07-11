@@ -38,7 +38,7 @@ operations:
     type: transform
     input: head
     transforms:
-      - translate: [0, 0, '${length}']
+      - translate: [0, 0, '${length / 2 + head_height / 2}']
 
 export:
   default_part: shaft

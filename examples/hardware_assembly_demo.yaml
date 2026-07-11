@@ -60,10 +60,18 @@ parts:
       height: '${plate_height}'
 
 operations:
-  # Place M3 screw at front-left
+  # Place M3 screw at front-left (shaft + head move together, same offset, so
+  # the head stays attached to its shaft in the final assembly position --
+  # see the Tier 4 relations note below expect: for the bug this used to hide).
   m3_pos:
     type: transform
     input: m3.shaft
+    transforms:
+      - translate: [-35, 6, -25]
+
+  m3_head_pos:
+    type: transform
+    input: m3.position_head
     transforms:
       - translate: [-35, 6, -25]
 
@@ -74,6 +82,12 @@ operations:
     transforms:
       - translate: [35, 6, -25]
 
+  m4_head_pos:
+    type: transform
+    input: m4.position_head
+    transforms:
+      - translate: [35, 6, -25]
+
   # Place M5 screw at back-left
   m5_pos:
     type: transform
@@ -81,10 +95,22 @@ operations:
     transforms:
       - translate: [-35, 6, 25]
 
+  m5_head_pos:
+    type: transform
+    input: m5.position_head
+    transforms:
+      - translate: [-35, 6, 25]
+
   # Place M6 bolt at back-right
   m6_pos:
     type: transform
     input: m6.shaft
+    transforms:
+      - translate: [35, 6, 25]
+
+  m6_head_pos:
+    type: transform
+    input: m6.position_head
     transforms:
       - translate: [35, 6, 25]
 
@@ -107,9 +133,59 @@ export:
 
 # Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
 # see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+#
+# Tier 4 relations (VALIDATION_STRENGTHENING.md section 3): a handful of
+# genuinely meaningful pairwise checks on this 25-part assembly, not "25 parts
+# present." Each fastener component builds its head as a *separate* sub-part
+# from its shaft (`shaft` + `head` -> `position_head`), so "is the head
+# actually attached to the shaft, in the final assembled position" is a real,
+# breakable claim, not a tautology -- and it broke, two ways:
+#
+# 1. Component-internal gap (KNOWN_LIMITATIONS.md #11): `position_head`
+#    translated the head to Z=length (the shaft's *full* length) instead of
+#    Z=length/2+head_height/2 (the shaft's *top*, since the shaft is centered
+#    on its own local origin), leaving every screw head floating
+#    length/2-head_height/2 above its shaft with a gap instead of sitting
+#    flush on it (e.g. m3: shaft top Z=4.0, head bottom was Z=6.5 -- a 2.5mm
+#    gap). Fixed in all 4 fastener components
+#    (`examples/components/m{3,4,5,6}_{screw,bolt}.yaml` and their
+#    `tiacad_core/stdlib/hardware/` counterparts, which had the identical
+#    bug). coaxial was already true before this fix (the bug was purely an
+#    axial gap, not an off-axis head).
+# 2. Assembly-level disconnect: this file's own `m3_pos`/`m4_pos`/`m5_pos`/
+#    `m6_pos` operations translated only each screw's *shaft* to its final
+#    position -- the head was never moved, so it was left stranded at the
+#    imported component's local origin regardless of where the shaft ended
+#    up. Added matching `m{3,4,5,6}_head_pos` operations (same offset as each
+#    shaft's own `_pos`) above so the head travels with its shaft.
+#
+# Both are exactly the class of bug Tier 4 relational contracts exist to
+# catch -- volume/bbox on any single sub-part is unaffected by either, since
+# neither changes a part's own dimensions, only its position relative to a
+# sibling.
+#
+# Note: relation endpoints must be flat (non-dotted) part/operation names --
+# `SpatialResolver._resolve_name` splits a dotted reference on the *first*
+# dot to get `part.ref`, so a namespaced import part like `m3.shaft` (itself
+# containing a dot) can't be combined with a `.face_top`/`.axis_z` suffix
+# (`m3.shaft.face_top` resolves as part `m3`, ref `shaft.face_top` and fails
+# to resolve). Using the already-flat `m3_pos`/`m3_head_pos` operation names
+# below sidesteps this; it's a real resolver limitation, not fixed here
+# (would need a longest-prefix-match part lookup, out of scope for this
+# corpus -- see KNOWN_LIMITATIONS.md #11).
 expect:
   final: plate
   volume: 32000.0
   bbox: [100.0, 4.0, 80.0]
   watertight: true
   components: 1
+  relations:
+    - { coaxial: [m3_pos.axis_z, m3_head_pos.axis_z] }
+    - { flush: [m3_pos.face_top, m3_head_pos.face_bottom], gap: 0 }
+    - { coaxial: [m4_pos.axis_z, m4_head_pos.axis_z] }
+    - { flush: [m4_pos.face_top, m4_head_pos.face_bottom], gap: 0 }
+    - { coaxial: [m5_pos.axis_z, m5_head_pos.axis_z] }
+    - { flush: [m5_pos.face_top, m5_head_pos.face_bottom], gap: 0 }
+    - { coaxial: [m6_pos.axis_z, m6_head_pos.axis_z] }
+    - { flush: [m6_pos.face_top, m6_head_pos.face_bottom], gap: 0 }
+  tol: { length: 0.05 }

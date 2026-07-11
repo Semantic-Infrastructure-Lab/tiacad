@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-11 (Tier 4 corpus)
+
+#### T4 assembly relational validation corpus (VALIDATION_STRENGTHENING.md section 5)
+
+`examples/validation/`: 3 new Tier-4 models — `T4_two_boxes_flush`, `T4_standoff_stack`,
+`T4_bolted_bracket` — plus a new `expect: relations:` contract on the existing 29-part
+`examples/hardware_assembly_demo.yaml`. These prove parts are correctly positioned
+*relative to each other*, the thing single-part volume/bbox and visual regression both
+miss. `T4_two_boxes_flush` uses part-level `translate:` (the KNOWN_LIMITATIONS.md #9 fix)
+to butt two boxes face-to-face with an exact zero gap. `T4_standoff_stack` derives from
+`examples/pcb_standoff_assembly.yaml` and stacks a standoff + spacer + screw, exercising
+`coaxial` and `flush` together across three interfaces. `T4_bolted_bracket` drills a
+through-hole and positions a bolt whose shaft is coaxial with the hole (with real
+clearance, `shaft_r < hole_r`) and whose head sits flush on the bracket face. All three
+were hand-derived (closed-form volumes, exact face/axis positions from the declared
+transforms) and independently re-verified against direct `get_bounds()` measurement
+before being written into `expect:`.
+
+Added `expect: no_overlap:` (`tiacad_core/testing/contracts.py::_check_no_overlap`,
+schema in `tiacad-schema.json`): a new no-interpenetration contract check — for each
+named `[partA, partB]` pair, `vol(A) + vol(B)` must equal `vol(union(A, B))` within
+tolerance, so parts that only touch (or don't touch) pass and parts that overlap fail.
+Verified against a deliberately-overlapping synthetic pair (`test_assembly_contracts.py::
+TestNoOverlapEngine::test_interpenetrating_boxes_fail_no_overlap`) to confirm it actually
+detects the bug class it exists for, not just passes vacuously on the corpus.
+
+New `tiacad_core/tests/test_correctness/test_assembly_contracts.py`: direct synthetic
+coverage for the new `no_overlap` engine (touching/disjoint/overlapping/missing-part
+cases) plus a second, independently-derived hand-verification pass over the Tier 4
+corpus's relational claims (raw `get_bounds()` math, not routed through `check_contract`)
+— the generic `test_embedded_contracts.py` sweep already discovers and checks every
+`expect:` block including `relations:`/`no_overlap:`, so this file deliberately does not
+duplicate that; see its module docstring.
+
+Regenerated `golden_hashes.json` for the 3 new T4 models only (verified via diff — no
+existing entries changed).
+
+### Fixed - 2026-07-11 (Tier 4 corpus)
+
+#### Screw/bolt heads floated disconnected from their own shafts
+
+Two bugs, found while building the Tier 4 relational contract for
+`examples/hardware_assembly_demo.yaml`: (1) all 8 fastener component files
+(`examples/components/m{3,4,5,6}_{screw,bolt}.yaml` and their
+`tiacad_core/stdlib/hardware/` counterparts) positioned each screw's `head` at
+`Z=length` instead of `Z=length/2+head_height/2`, leaving the head floating with a gap
+above the shaft's actual tip instead of sitting flush on it (m3: 2.5mm gap). (2)
+`hardware_assembly_demo.yaml` itself only ever translated each screw's `shaft` to its
+assembly position, never the `head`, so the head stayed stranded near the origin
+regardless of where the shaft ended up. Fixed both: corrected the translate formula in
+all 8 component files, and added `m{3,4,5,6}_head_pos` operations to
+`hardware_assembly_demo.yaml` (same offset as each shaft's own `_pos`) so the head now
+travels with its shaft. `hardware_assembly_demo.yaml`'s new `expect: relations:` asserts
+`coaxial`/`flush` (zero gap) between each shaft and its head — confirmed this would have
+failed before the fix and passes after. Part count in that file rose from 25 to 29;
+`test_example_contracts.py::TestHardwareAssemblyDemo` updated accordingly. See
+`KNOWN_LIMITATIONS.md` #11, which also documents a related resolver limitation found in
+the process (dotted namespaced part names can't be combined with `.face_top`/`.axis_z`
+suffixes in `expect: relations:` — worked around with flat operation names, not fixed).
+
 ### Added - 2026-07-11 (Tier 3 corpus)
 
 #### T3 composite-part validation corpus (VALIDATION_STRENGTHENING.md section 5)

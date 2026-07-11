@@ -694,7 +694,44 @@ an `expect:` block:
   section's "assert component count ... as failures, not observations" directive.
   Full non-visual suite: 1845 passed (was 1833), 0 failed — 12 new tests (4 embedded
   contracts + 8 determinism checks), no regressions.
-- `T4_*` assemblies (4) · `negative/*` broken inputs (~6) — still open.
+- ~~`T4_*` assemblies (4)~~ Shipped 2026-07-11: `T4_two_boxes_flush/standoff_stack/
+  bolted_bracket`, plus a full `expect: relations:` contract added to the existing
+  29-part `hardware_assembly_demo.yaml` (not a new `.tiacad` file, but the fourth
+  deliverable named in section 3 Tier 4 — "the real `hardware_assembly_demo` ... with a
+  full relational contract"). `T4_two_boxes_flush` uses part-level `translate:` (the
+  KNOWN_LIMITATIONS.md #9 fix) to butt two boxes face-to-face at exactly zero gap.
+  `T4_standoff_stack` derives from `pcb_standoff_assembly.yaml` and stacks
+  standoff+spacer+screw, exercising `coaxial` and `flush` together across three
+  interfaces. `T4_bolted_bracket` drills a through-hole and positions a bolt whose
+  shaft is coaxial with the hole (with real clearance, `shaft_r < hole_r`) and whose
+  head sits flush on the bracket face. Every relation was hand-derived from the
+  declared transforms and independently re-verified against `get_bounds()`
+  measurement before being written into `expect:`. Added a new contract-engine check,
+  `expect: no_overlap:` (`tiacad_core/testing/contracts.py::_check_no_overlap`,
+  schema in `tiacad-schema.json`) — the "no-interpenetration" oracle this section
+  names (`vol(A)+vol(B) == vol(union(A,B))` for touching-only pairs), verified against
+  a deliberately-overlapping synthetic pair to confirm it actually catches
+  interpenetration, not just passes vacuously. `negative/*` broken inputs remain open
+  (Tier 5, not part of this pass).
+  Found and fixed a real bug in the process (see §4.1-style "Bugs found" note):
+  every fastener component (`m3_screw`/`m4_screw`/`m5_screw`/`m6_bolt`, 8 files —
+  both `examples/components/` and `tiacad_core/stdlib/hardware/` copies) positioned
+  its `head` at `Z=length` instead of the shaft's actual top
+  (`Z=length/2+head_height/2`), leaving every screw head floating with a gap above its
+  shaft instead of sitting flush on it; `hardware_assembly_demo.yaml` compounded this
+  by never transforming the head into the shaft's final assembly position at all. Both
+  fixed; see KNOWN_LIMITATIONS.md #11 (which also documents a related `SpatialResolver`
+  limitation found in the process — dotted namespaced part names like `m3.shaft` can't
+  be combined with a `.face_top`/`.axis_z` suffix in a relation reference — worked
+  around with flat operation names, not fixed). `tiacad_core/tests/test_correctness/
+  test_assembly_contracts.py` added: direct synthetic coverage for the new
+  `no_overlap` engine plus a second, independently-derived hand-verification pass over
+  the Tier 4 corpus (the generic `test_embedded_contracts.py` sweep already discovers
+  and checks every `expect:` block including `relations:`/`no_overlap:`, so this file
+  deliberately does not duplicate that — see its module docstring). Full non-visual
+  suite: 1863 passed (was 1845), 0 failed — 18 new tests (9 in the new assembly-
+  contracts file, 3 embedded-contract discoveries, 6 determinism checks), no
+  regressions; visual suite unchanged at 67 passed.
 
 **New scripts / CLI:**
 
@@ -711,6 +748,12 @@ an `expect:` block:
   `test_metamorphic.py` · `test_determinism.py` · `test_embedded_contracts.py` ·
   `test_negative_contracts.py`. Promote `test_geometry_validation.py` component/
   watertight checks to hard failures.
+- ~~`test_assembly_contracts.py`~~ Shipped 2026-07-11 (§5, Tier 4): synthetic
+  coverage for the new `no_overlap` no-interpenetration engine plus an
+  independent hand-verification pass over the Tier 4 corpus's relational
+  claims — deliberately does not duplicate `test_embedded_contracts.py`'s
+  generic discovery sweep, which already checks every `expect: relations:`/
+  `no_overlap:` block with no per-example code required.
 
 **CI edits:**
 
@@ -804,14 +847,17 @@ which was the "easier" half of the mandate. Still open, deferred rather than rus
 (see §4.1's 2026-07-11 note): trimming the now-redundant subset of hand-written
 Tier-2 pytest classes.
 
-**Phase 3 — Depth (as needed): Tier 3 shipped 2026-07-11 (§5).** Connectivity gate
+**Phase 3 — Depth: Tier 3 and Tier 4 shipped 2026-07-11 (§5).** Connectivity gate
 (4.6, shipped 2026-07-10) + composite-part ladder corpus (Tier 3, 4 models, §5) +
 `test_geometry_validation.py`'s `expect: components:`-style hard connectivity gate
 extended to the two Tier-3-adjacent examples (`mounting_plate_with_bolt_circle`,
 `lego_brick_2x1`) that previously only asserted watertight/mesh-island counts. Found
-and fixed a real dimensional bug in the process (KNOWN_LIMITATIONS.md #10). Still
-open: trust-gallery sign-off (4.7), the assembly ladder (Tier 4), golden STEP set
-(4.9).
+and fixed a real dimensional bug in the process (KNOWN_LIMITATIONS.md #10). The
+assembly ladder (Tier 4, §5) followed: 3 new relational models plus a full
+`expect: relations:` contract on `hardware_assembly_demo.yaml`, a new `no_overlap`
+no-interpenetration contract-engine check, and a real screw/bolt head-position bug
+found and fixed (KNOWN_LIMITATIONS.md #11). Still open: trust-gallery sign-off (4.7),
+the negative-input corpus (Tier 5), golden STEP set (4.9).
 
 ---
 

@@ -401,17 +401,20 @@ class TestComponentImportDemo:
 
 
 # ---------------------------------------------------------------------------
-# Tier 2: hardware_assembly_demo — 25-part assembly geometric contracts
+# Tier 2: hardware_assembly_demo — 29-part assembly geometric contracts
 # ---------------------------------------------------------------------------
 
 # Ground truth from `tiacad check examples/hardware_assembly_demo.yaml` 2026-03-16
 # Axis convention: get_dimensions() → X=width, Y=height, Z=depth
 # CadQuery maps: YAML width→X, YAML height→Y/Z depending on build orientation.
 # plate: box with width=100, height=4 (thin), depth=80 → X=100, Y=4, Z=80
+# Part count was 25 as of 2026-03-16; the Tier 4 assembly pass (2026-07-11,
+# VALIDATION_STRENGTHENING.md section 3) added 4 `m{3,4,5,6}_head_pos`
+# operations (KNOWN_LIMITATIONS.md #11), bringing it to 29.
 
 class TestHardwareAssemblyDemo:
     """
-    hardware_assembly_demo.yaml: 25-part assembly using 6 imported components.
+    hardware_assembly_demo.yaml: 29-part assembly using 6 imported components.
 
     Imported: m3_screw (shaft r=1.5, length=8), m4_screw (shaft r=2.0, length=16),
               m5_screw (shaft r=2.5, length=20), m6_bolt (shaft r=3.0, length=25),
@@ -501,10 +504,16 @@ class TestHardwareAssemblyDemo:
         assert standoff_vol < body_vol, "bore must remove material from standoff"
         assert standoff_vol > 0
 
-    def test_all_25_parts_present(self):
-        """All 25 parts build without error."""
+    def test_all_29_parts_present(self):
+        """All 29 parts build without error.
+
+        Was 25 until the Tier 4 assembly pass (VALIDATION_STRENGTHENING.md
+        section 3) added `m{3,4,5,6}_head_pos` operations so each screw/bolt
+        head travels with its shaft into the final assembly position — see
+        KNOWN_LIMITATIONS.md #11.
+        """
         doc = self._parse()
-        assert len(doc.parts.list_parts()) == 25
+        assert len(doc.parts.list_parts()) == 29
 
 
 # ---------------------------------------------------------------------------

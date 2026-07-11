@@ -1,0 +1,113 @@
+# Tier 4 — Assembly: standoff + spacer + screw stack, all coaxial and flush.
+# Derived from examples/pcb_standoff_assembly.yaml (which seeded a single coaxial
+# relation between one standoff and one screw). This model is a distinct stacking
+# scenario -- three parts stacked vertically along the same axis -- that exercises
+# BOTH relation kinds together (coaxial through the whole stack, plus flush contact
+# at each interface) and a no-interpenetration check at each joint.
+#
+# Geometry (all centered on X=Y=0, box maps width->X/depth->Y/height->Z, cylinders
+# default-centered on their own local origin):
+#   plate:   30x30 box (width->X, depth->Y), thickness (Z, "height" param) =
+#     plate_t = 4        -> Z:[-2, 2]
+#   standoff: m3_standoff (cylinder, outer_radius=3), height=10, imported centered
+#     at its own origin (Z:[-5,5]) -- transformed onto plate.face_top (Z=2) with an
+#     offset of its own half-height (5) so its *bottom face*, not its center, lands
+#     on the plate's top face -> final Z:[2, 12]
+#   spacer:  plain cylinder radius=3, height=4, transformed the same way onto
+#     standoff_pos.face_top (Z=12) + half its own height (2) -> final Z:[12, 16]
+#   screw:   m3_screw shaft (cylinder, shaft_radius=1.5), length = plate_t +
+#     standoff_height + spacer_height = 4+10+4 = 18, translated by
+#     [0,0,(standoff_height+spacer_height)/2] = [0,0,7] (relative offset from its
+#     own centered origin, current_position=(0,0,0)) -> final Z:[-2, 16], exactly
+#     spanning the full plate-to-spacer-top stack, coaxial with the whole assembly.
+#
+# Hand-derived relations:
+#   - plate.face_top (Z=2, normal +Z) is flush with standoff_pos.face_bottom
+#     (Z=2, normal -Z): gap = 0.
+#   - standoff_pos.face_top (Z=12, normal +Z) is flush with spacer_pos.face_bottom
+#     (Z=12, normal -Z): gap = 0.
+#   - standoff_pos.axis_z, spacer_pos.axis_z, and screw_pos.axis_z all pass through
+#     (0,0,*) with direction (0,0,1) -- all coaxial (perpendicular offset 0).
+#   - No interpenetration: each pair of vertically-adjacent parts shares only a
+#     zero-thickness face, so vol(A)+vol(B) == vol(union(A,B)) for every touching
+#     pair (plate/standoff, standoff/spacer).
+
+schema_version: "3.0"
+
+metadata:
+  name: T4 Standoff Stack
+  description: "Tier 4 assembly ladder: standoff + spacer + screw stack, exercising coaxial + flush relations together"
+  version: "1.0"
+
+imports:
+  - path: tiacad://std/hardware/m3_standoff
+    as: standoff
+    parameters: { height: 10, outer_radius: 3.0, bore_radius: 1.6 }
+
+  - path: tiacad://std/hardware/m3_screw
+    as: screw
+    parameters: { length: 18 }
+
+parameters:
+  plate_size: 30
+  plate_t: 4
+  standoff_height: 10
+  spacer_radius: 3.0
+  spacer_height: 4
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: ${plate_size}
+      height: ${plate_t}
+      depth: ${plate_size}
+    origin: center
+
+  spacer:
+    primitive: cylinder
+    radius: ${spacer_radius}
+    height: ${spacer_height}
+    origin: center
+
+operations:
+  standoff_pos:
+    type: transform
+    input: standoff.standoff
+    transforms:
+      - translate:
+          to: plate.face_top
+          offset: [0, 0, '${standoff_height / 2}']
+
+  spacer_pos:
+    type: transform
+    input: spacer
+    transforms:
+      - translate:
+          to: standoff_pos.face_top
+          offset: [0, 0, '${spacer_height / 2}']
+
+  screw_pos:
+    type: transform
+    input: screw.shaft
+    transforms:
+      - translate: [0, 0, '${(standoff_height + spacer_height) / 2}']
+
+export:
+  default_part: standoff_pos
+
+expect:
+  final: standoff_pos
+  volume: 202.319
+  bbox: [6.0, 6.0, 10.0]
+  watertight: true
+  components: 1
+  relations:
+    - { flush: [plate.face_top, standoff_pos.face_bottom], gap: 0 }
+    - { flush: [standoff_pos.face_top, spacer_pos.face_bottom], gap: 0 }
+    - { coaxial: [standoff_pos.axis_z, spacer_pos.axis_z] }
+    - { coaxial: [standoff_pos.axis_z, screw_pos.axis_z] }
+  no_overlap:
+    - [plate, standoff_pos]
+    - [standoff_pos, spacer_pos]
+  tol: { length: 0.05, volume: 0.5 }

@@ -172,6 +172,48 @@ def _check_relation(
     return ContractViolation('relation', f"unrecognized relation keys: {list(relation.keys())}")
 
 
+def _check_no_overlap(doc, pair: List[str], tol_volume: float) -> Optional[ContractViolation]:
+    """No-interpenetration check: sum of two named parts' volumes must equal
+    the volume of their union, within tolerance. Parts that only touch (or
+    don't touch at all) satisfy this; parts that interpenetrate have a
+    positive-volume intersection, so union < sum and the check fails.
+
+    This is deliberately a *pairwise* check on ``doc.parts`` (the individual
+    built parts, before any assembly-level boolean), not on the final
+    exported/composited part — it exists to catch stacked/adjacent assembly
+    members overlapping each other, the class flush/coaxial relations alone
+    don't rule out (two parts can be coaxial and flush-adjacent on one face
+    while still overlapping through the interior).
+    """
+    if len(pair) != 2:
+        return ContractViolation('no_overlap', f"expected a 2-element [partA, partB] pair, got {pair!r}")
+    a_name, b_name = pair
+    if not doc.parts.exists(a_name) or not doc.parts.exists(b_name):
+        return ContractViolation(
+            'no_overlap',
+            f"part(s) not found: {a_name!r}={doc.parts.exists(a_name)}, {b_name!r}={doc.parts.exists(b_name)}",
+        )
+    a_part = doc.parts.get(a_name)
+    b_part = doc.parts.get(b_name)
+    try:
+        vol_a = get_volume(a_part)
+        vol_b = get_volume(b_part)
+        union_geom = a_part.geometry.union(b_part.geometry)
+        union_part = Part(name=f"{a_name}+{b_name}", geometry=union_geom, backend=a_part.backend)
+        vol_union = get_volume(union_part)
+    except Exception as e:  # noqa: BLE001 - surface any build/measure failure as a violation
+        return ContractViolation('no_overlap', f"could not measure {a_name!r}/{b_name!r}: {e}")
+
+    overlap = (vol_a + vol_b) - vol_union
+    if overlap > tol_volume:
+        return ContractViolation(
+            'no_overlap',
+            f"{a_name!r}/{b_name!r} interpenetrate: vol(A)+vol(B)={vol_a + vol_b:.4f} "
+            f"vol(union)={vol_union:.4f} overlap={overlap:.4f} (tol {tol_volume:.4f})",
+        )
+    return None
+
+
 def check_contract(doc) -> ContractResult:
     """
     Check a parsed TiaCADDocument's embedded expect: block against its built
@@ -239,6 +281,13 @@ def check_contract(doc) -> ContractResult:
         resolver = SpatialResolver(doc.parts, doc.references)
         for relation in expect['relations']:
             violation = _check_relation(resolver, relation, tol_length)
+            if violation is not None:
+                violations.append(violation)
+
+    if expect.get('no_overlap'):
+        tol_volume_overlap = tol.get('volume', DEFAULT_VOLUME_TOL)
+        for pair in expect['no_overlap']:
+            violation = _check_no_overlap(doc, pair, tol_volume_overlap)
             if violation is not None:
                 violations.append(violation)
 

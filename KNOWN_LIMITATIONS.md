@@ -370,6 +370,80 @@ gate is what forced the exact-oracle derivation that caught it).
 
 ---
 
+### 11. Fixed — screw/bolt heads floated disconnected from their own shafts
+
+**What it was, two distinct bugs caught by the Tier 4 assembly relational corpus
+(`docs/developer/VALIDATION_STRENGTHENING.md` section 3):**
+
+1. **Component-internal axial gap.** Every fastener component
+   (`m3_screw`/`m4_screw`/`m5_screw`/`m6_bolt`, both the `examples/components/`
+   copies and their `tiacad_core/stdlib/hardware/` counterparts — 8 files total,
+   identical bug in each) builds `shaft` and `head` as separate cylinders, then
+   positions the head with `operations: position_head: transforms: [translate:
+   [0, 0, '${length}']]`. Since `shaft` is a default-centered cylinder (spans
+   `[-length/2, +length/2]`), translating `head` to `Z=length` (the shaft's
+   *full* length, not its top) leaves the head floating `length/2 -
+   head_height/2` above the shaft's actual tip instead of sitting flush on it.
+   Confirmed by direct `get_bounds()` measurement before the fix: m3 (length=8,
+   head_height=3) had shaft top at `Z=4.0` and head bottom at `Z=6.5` — a
+   2.5mm gap, not contact.
+2. **Assembly-level disconnect**, found while extending
+   `examples/hardware_assembly_demo.yaml` with a Tier 4 `expect: relations:`
+   contract. Its `m3_pos`/`m4_pos`/`m5_pos`/`m6_pos` operations translate only
+   each screw's `shaft` sub-part to the fastener's final position on the plate
+   — the `head`/`position_head` sub-part was never transformed at all, so it
+   stayed stranded at the imported component's local origin (near world
+   origin) regardless of where the shaft ended up. A `flush:`/`coaxial:`
+   relation between the two (once bug #1 was fixed) still failed — the head
+   and shaft were nowhere near each other in the final assembly.
+
+**Caught by:** hand-deriving the Tier 4 `flush:` relation for
+`examples/validation/T4_bolted_bracket.tiacad` (a from-scratch model, not
+derived from the buggy components) surfaced the correct pattern — `translate:
+{to: X.face_top, offset: [0,0,own_half_height]}` — which made the existing
+components' `translate: [0,0,length]` pattern look wrong by comparison;
+confirmed by direct measurement of the imported components' actual built
+geometry.
+
+**Real-world impact:** every screw/bolt built through these components (in any
+example, not just `hardware_assembly_demo.yaml`) has a head that visually
+floats above its shaft with a gap, and in `hardware_assembly_demo.yaml`
+specifically the head never appeared anywhere near its assembled shaft at all.
+Neither defect affected volume/bbox of any individual sub-part (the bug is
+purely positional), so no dimension-only contract or test caught it —
+exactly the class of gap Tier 4 relational contracts exist to close.
+
+**Fix applied:** (1) changed `position_head`'s translate to `[0, 0,
+'${length / 2 + head_height / 2}']` in all 8 fastener component files, so the
+head's bottom face lands exactly on the shaft's top face. (2) added
+`m{3,4,5,6}_head_pos` operations to `hardware_assembly_demo.yaml`, each
+translating its screw's `position_head` sub-part by the *same* offset already
+used for that screw's `_pos` shaft operation, so the head now travels with
+its shaft into the final assembly position. `hardware_assembly_demo.yaml`'s
+`expect: relations:` now asserts `coaxial`/`flush` between each
+`m{3,4,5,6}_pos` (shaft) and `m{3,4,5,6}_head_pos` (head) with zero gap — this
+would have failed before either fix and passes after both. Part count in that
+file rose from 25 to 29 (`test_example_contracts.py::TestHardwareAssemblyDemo`
+updated accordingly); no other example references the affected `.head`/
+`position_head` sub-parts as an input, so the blast radius is contained to
+these two files' geometry.
+
+**Known resolver limitation surfaced in the process (documented, not fixed):**
+relation endpoints in `expect: relations:` must be flat (non-dotted)
+part/operation names. `SpatialResolver._resolve_name`
+(`tiacad_core/spatial_resolver.py`) splits a dotted reference on the *first*
+dot to get `part.ref` — so a namespaced import part like `m3.shaft` (itself
+containing a dot from the `as: m3` namespace) can't be combined with a
+`.face_top`/`.axis_z` suffix: `"m3.shaft.face_top"` resolves as part `m3`
+(not found), ref `shaft.face_top`, and fails. Workaround used here: give the
+part a flat top-level name via an `operations: type: transform` (even a
+same-position no-op) and reference that instead — every Tier 4 relation in
+`hardware_assembly_demo.yaml` uses `m3_pos`/`m3_head_pos`-style flat names for
+exactly this reason. A real fix would need longest-prefix-match part lookup
+in `SpatialResolver._resolve_name`; out of scope for this pass.
+
+---
+
 ## Test Health
 
 TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.

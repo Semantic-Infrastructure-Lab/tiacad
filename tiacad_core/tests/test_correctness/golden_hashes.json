@@ -469,6 +469,36 @@
     "part": "plate_with_hole",
     "volume": 13928.761101961529
   },
+  "examples/validation/T4_bolted_bracket.tiacad": {
+    "bbox": [
+      30.0,
+      30.0,
+      8.0
+    ],
+    "mesh_hash": "afc8359801350634b0f8242cdc726a019b7a48efd77571b38ce4bf862c4f49a7",
+    "part": "bracket_with_hole",
+    "volume": 6973.805328941534
+  },
+  "examples/validation/T4_standoff_stack.tiacad": {
+    "bbox": [
+      6.0,
+      6.0,
+      10.0
+    ],
+    "mesh_hash": "9fde0e3a0024e84fa5f15a27173286816b7dd344fe1fe27fdafbd8c881239c21",
+    "part": "standoff_pos",
+    "volume": 202.31856689118263
+  },
+  "examples/validation/T4_two_boxes_flush.tiacad": {
+    "bbox": [
+      40.0,
+      10.0,
+      20.0
+    ],
+    "mesh_hash": "69f8c0c61327f06048a4566011c0b074608a001e5c944416e21a1ffda0bab8b5",
+    "part": "box_b",
+    "volume": 7999.999999999998
+  },
   "examples/week5_align_to_face.yaml": {
     "bbox": [
       35.35533905932738,

@@ -998,6 +998,16 @@
             "additionalProperties": false
           }
         },
+        "no_overlap": {
+          "type": "array",
+          "description": "No-interpenetration checks (Tier 4 -- assemblies). Each entry is a [partA, partB] pair of named parts whose volumes must sum to their union's volume within `tol.volume` -- i.e. they may touch but must not overlap. See docs/developer/VALIDATION_STRENGTHENING.md section 3 Tier 4.",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
         "tol": {
           "type": "object",
           "description": "Tolerances for contract comparisons",

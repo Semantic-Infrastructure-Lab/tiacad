@@ -1,0 +1,121 @@
+# Tier 4 — Assembly: a bracket with a through-hole, and a bolt whose shaft is
+# coaxial with the hole and whose head sits flush on the bracket's top face.
+# Proves the class of relational bug the older per-part-only contracts miss: a
+# bolt that "measures fine" (right shaft radius, right head size) but is off-axis
+# from its hole, or whose head floats above/sinks into the bracket surface.
+#
+# Geometry (box maps width->X, depth->Y, height->Z; cylinders default-centered
+# on their own local origin, axis along Z):
+#   bracket: 30x30 box (width->X, depth->Y), thickness (Z) = bracket_t = 8,
+#     centered at origin -> Z:[-4, 4]. hole: cylinder radius=hole_r=3,
+#     height=bracket_t+4=12 (overshoots both faces so the difference is a clean
+#     through-hole, no internal-cavity risk per KNOWN_LIMITATIONS.md's
+#     mounting_plate_with_bolt_circle precedent), centered at (0,0,0) -- default
+#     cylinder axis is already Z, so no rotation is needed (unlike the T3 plate
+#     examples, which drill through Y and need a 90 deg rotate first).
+#     bracket_with_hole = bracket - hole -> a clean through-hole along Z.
+#   bolt_head: cylinder radius=head_r=6, height=head_h=4, positioned via
+#     translate: {to: bracket_with_hole.face_top, offset: [0,0,head_h/2]} so its
+#     *bottom* face (not center) lands on the bracket's top face (Z=4) ->
+#     final Z:[4, 8].
+#   bolt_shaft: cylinder radius=shaft_r=2.8 (< hole_r=3 -- a clearance fit, so
+#     the shaft physically fits through the hole without interference),
+#     height=shaft_len=20, positioned via translate: [0,0, top_z - shaft_len/2]
+#     = [0,0,4-10] = [0,0,-6] so its *top* is flush with the bracket's top face
+#     (matching the head's bottom, both at Z=4) and it extends down through the
+#     hole and out the bottom -> final Z:[-16, 4].
+#
+# Hand-derived relations:
+#   - bolt_head_pos.face_bottom (Z=4, normal -Z) is flush with
+#     bracket_with_hole.face_top (Z=4, normal +Z): gap = 0.
+#   - bolt_shaft_pos.axis_z and hole.axis_z both pass through (0,0,*) with
+#     direction (0,0,1): coaxial, perpendicular offset 0.
+#   - No interpenetration: bolt_head_pos only touches bracket_with_hole's top
+#     face (shares a zero-thickness plane, no volume in common). bolt_shaft_pos
+#     passes *through* the drilled hole -- since shaft_r (2.8) < hole_r (3), the
+#     shaft has 0.2mm clearance on every side and does not touch the bracket's
+#     hole wall at all, so vol(bracket_with_hole) + vol(bolt_shaft_pos) must
+#     still equal vol(their union) exactly. This is the real assembly claim a
+#     shaft/hole radius typo (e.g. shaft_r > hole_r) would break.
+
+schema_version: "3.0"
+
+metadata:
+  name: T4 Bolted Bracket
+  description: "Tier 4 assembly ladder: bracket + through-hole + bolt, coaxial shaft/hole and flush head/face"
+  version: "1.0"
+
+parameters:
+  bracket_w: 30
+  bracket_d: 30
+  bracket_t: 8
+  hole_r: 3.0
+  head_r: 6.0
+  head_h: 4
+  shaft_r: 2.8
+  shaft_len: 20
+
+parts:
+  bracket:
+    primitive: box
+    parameters:
+      width: ${bracket_w}
+      height: ${bracket_t}
+      depth: ${bracket_d}
+    origin: center
+
+  hole:
+    primitive: cylinder
+    radius: ${hole_r}
+    height: ${bracket_t + 4}
+    origin: center
+
+  bolt_head:
+    primitive: cylinder
+    radius: ${head_r}
+    height: ${head_h}
+    origin: center
+
+  bolt_shaft:
+    primitive: cylinder
+    radius: ${shaft_r}
+    height: ${shaft_len}
+    origin: center
+
+operations:
+  bracket_with_hole:
+    type: boolean
+    operation: difference
+    base: bracket
+    subtract: [hole]
+
+  bolt_head_pos:
+    type: transform
+    input: bolt_head
+    transforms:
+      - translate:
+          to: bracket_with_hole.face_top
+          offset: [0, 0, '${head_h / 2}']
+
+  bolt_shaft_pos:
+    type: transform
+    input: bolt_shaft
+    transforms:
+      - translate: [0, 0, '${bracket_t / 2 - shaft_len / 2}']
+
+export:
+  default_part: bracket_with_hole
+
+expect:
+  final: bracket_with_hole
+  volume: 6973.8053
+  bbox: [30.0, 30.0, 8.0]
+  watertight: true
+  components: 1
+  relations:
+    - { flush: [bracket_with_hole.face_top, bolt_head_pos.face_bottom], gap: 0 }
+    - { coaxial: [bolt_shaft_pos.axis_z, hole.axis_z] }
+  no_overlap:
+    - [bracket_with_hole, bolt_head_pos]
+    - [bracket_with_hole, bolt_shaft_pos]
+  tol: { length: 0.05, volume: 0.5 }

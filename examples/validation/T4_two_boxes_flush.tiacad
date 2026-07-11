@@ -1,0 +1,67 @@
+# Tier 4 — Assembly: two boxes placed flush, face to face, zero gap.
+# Proves: part-level `translate:` (KNOWN_LIMITATIONS.md #9) can position one part
+# relative to another's auto-generated face anchor with *exact* zero-gap contact —
+# the simplest possible relational claim, and the foundation every other Tier 4
+# model in this corpus builds on.
+#
+# Geometry (box maps width->X, depth->Y, height->Z, per parts_builder.py):
+#   box_a: width=40, height=20, depth=10, origin: center
+#     -> X:[-20,20] Y:[-5,5] Z:[-10,10], face_right (>X) center at (20,0,0)
+#   box_b: same dims, positioned via translate: {to: box_a.face_right, offset: [box_b_w/2,0,0]}
+#     `to:` moves box_b's own center (its translate origin) to the target point, so an
+#     explicit offset of half of box_b's own width is required to bring box_b's *face*,
+#     not its center, into contact with box_a's face — final center = (20+20, 0, 0) = (40,0,0)
+#     -> X:[20,60] Y:[-5,5] Z:[-10,10]
+#
+# Hand-derived relation: box_a.face_right sits at X=20 (outward normal +X); box_b.face_left
+# sits at X=20 (outward normal -X, since box_b's own left face is at its center X - w/2 =
+# 40 - 20 = 20). Normals are opposed (dot = -1) and the planes coincide exactly (gap=0).
+# No overlap: vol(box_a) + vol(box_b) = 8000 + 8000 = 16000 = vol(union), since the two
+# boxes share only a zero-thickness face, not a volume.
+
+schema_version: "3.0"
+
+metadata:
+  name: T4 Two Boxes Flush
+  description: "Tier 4 assembly ladder: two boxes translated so one face is exactly flush against the other, zero gap"
+  version: "1.0"
+
+parameters:
+  box_w: 40
+  box_h: 20
+  box_d: 10
+
+parts:
+  box_a:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+    origin: center
+
+  box_b:
+    primitive: box
+    parameters:
+      width: ${box_w}
+      height: ${box_h}
+      depth: ${box_d}
+    origin: center
+    translate:
+      to: box_a.face_right
+      offset: ['${box_w / 2}', 0, 0]
+
+export:
+  default_part: box_b
+
+expect:
+  final: box_b
+  volume: 8000
+  bbox: [40, 10, 20]
+  watertight: true
+  components: 1
+  relations:
+    - { flush: [box_a.face_right, box_b.face_left], gap: 0 }
+  no_overlap:
+    - [box_a, box_b]
+  tol: { length: 0.05, volume: 0.5 }
