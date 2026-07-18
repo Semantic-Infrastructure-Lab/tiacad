@@ -867,10 +867,14 @@ an `expect:` block:
   runner image's *incidental* fonts for OCCT text rendering — both workflows
   now install `fontconfig` + `fonts-liberation` explicitly (the sketch text
   default is "Liberation Sans"), so text tests don't depend on that luck.
-  Still open (deliberately not done): a pinned CI **lockfile** (exact versions,
-  regenerated on review) to decouple "what the library supports" from "what CI
-  reproducibly tests" — the highest-remaining dependency-hygiene step, and the
-  clean fix for the stale-run drift that has cost debugging time before.
+  **Shipped 2026-07-18:** `requirements-lock.txt` — `pip-compile`-generated
+  exact-version pins for the Python 3.12 CI leg, verified end-to-end (clean
+  3.12 venv, installed from the lockfile, full targeted contract-suite run
+  green). `tests.yml`'s 3.12 leg now installs from the lockfile instead of
+  resolving fresh; the 3.11 (coverage/TEST_STATUS.json) and 3.13 legs still
+  resolve from `requirements.txt` floors, preserving the cross-version
+  compatibility signal those two legs exist for. Regenerate the lockfile on
+  review — instructions in its header comment.
 
 ---
 

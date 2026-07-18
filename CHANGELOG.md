@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-18 (pinned CI lockfile)
+
+Added `requirements-lock.txt` — exact-version pins generated with `pip-compile`
+against a clean Python 3.12 venv, verified end-to-end (installed into that
+venv, targeted contract-suite run green). `tests.yml`'s 3.12 leg now installs
+from the lockfile instead of resolving fresh from `requirements.txt` floors
+on every run; the 3.11 (coverage) and 3.13 legs are unchanged, so they still
+catch cross-version compatibility breaks. Decouples "what the library
+supports" from "what CI reproducibly tests" — closes the last open item in
+`docs/developer/VALIDATION_STRENGTHENING.md` section 5's dependency-posture
+pass.
+
 ### Added - 2026-07-18 (CI validation as a required merge gate)
 
 `main` had no branch protection at all — CI already ran the manifold/watertight
