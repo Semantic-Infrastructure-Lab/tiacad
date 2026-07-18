@@ -384,14 +384,18 @@ notes_next: 2
 ## TASK-TCAD-VAL-7 · CI job reports failure: TEST_STATUS.json auto-commit-back-to-main step blocked by branch protection (GH006), even though real tests pass
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [ci, bug]
 created: '2026-07-18T06:26:59Z'
-updated: '2026-07-18T06:26:59Z'
+updated: '2026-07-18T17:28:49Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - a5750d4a3b4c572c8c0616f6539ea9aa9e1a170e
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T17:28:49Z session:electric-glaze-0717] Made TEST_STATUS.json auto-commit best-effort instead of job-fatal — branch protection can never let a same-run commit land, so this was a structural false-failure, not a real test regression. Verified: CI run 29653737936 all 3 legs green.
