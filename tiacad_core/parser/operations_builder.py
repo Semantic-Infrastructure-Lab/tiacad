@@ -107,6 +107,23 @@ class OperationsBuilder:
         self.text_builder = TextBuilder(part_registry, parameter_resolver)
         self.gusset_builder = GussetBuilder(part_registry, parameter_resolver)
 
+        # op_type -> handler(name, resolved_spec). Built once here rather than
+        # dispatched via if/elif in execute_operation, so adding an operation
+        # type is a one-line registration instead of another branch.
+        self._op_dispatch = {
+            'transform': self._execute_transform,
+            'boolean': self.boolean_builder.execute_boolean_operation,
+            'pattern': self.pattern_builder.execute_pattern_operation,
+            'finishing': self.finishing_builder.execute_finishing_operation,
+            'extrude': self.extrude_builder.execute_extrude_operation,
+            'revolve': self.revolve_builder.execute_revolve_operation,
+            'sweep': self.sweep_builder.execute_sweep_operation,
+            'loft': self.loft_builder.execute_loft_operation,
+            'hull': self.hull_builder.execute_hull_operation,
+            'text': self.text_builder.execute_text_operation,
+            'gusset': self.gusset_builder.execute_gusset_operation,
+        }
+
     def execute_operations(self, operations_spec: Dict[str, Dict]) -> PartRegistry:
         """
         Execute all operations from YAML specification.
@@ -235,34 +252,13 @@ class OperationsBuilder:
 
         op_type = resolved_spec['type']
 
-        # Execute based on type
-        if op_type == 'transform':
-            self._execute_transform(name, resolved_spec)
-        elif op_type == 'boolean':
-            self.boolean_builder.execute_boolean_operation(name, resolved_spec)
-        elif op_type == 'pattern':
-            self.pattern_builder.execute_pattern_operation(name, resolved_spec)
-        elif op_type == 'finishing':
-            self.finishing_builder.execute_finishing_operation(name, resolved_spec)
-        elif op_type == 'extrude':
-            self.extrude_builder.execute_extrude_operation(name, resolved_spec)
-        elif op_type == 'revolve':
-            self.revolve_builder.execute_revolve_operation(name, resolved_spec)
-        elif op_type == 'sweep':
-            self.sweep_builder.execute_sweep_operation(name, resolved_spec)
-        elif op_type == 'loft':
-            self.loft_builder.execute_loft_operation(name, resolved_spec)
-        elif op_type == 'hull':
-            self.hull_builder.execute_hull_operation(name, resolved_spec)
-        elif op_type == 'text':
-            self.text_builder.execute_text_operation(name, resolved_spec)
-        elif op_type == 'gusset':
-            self.gusset_builder.execute_gusset_operation(name, resolved_spec)
-        else:
+        handler = self._op_dispatch.get(op_type)
+        if handler is None:
             raise OperationsBuilderError(
                 f"Unknown operation type '{op_type}' for operation '{name}'",
                 operation_name=name
             )
+        handler(name, resolved_spec)
 
     def _execute_transform(self, name: str, spec: Dict[str, Any]):
         """
