@@ -449,15 +449,19 @@ notes_next: 2
 ## TASK-TCAD-ARCH-9 · Remove dead visual_debug.py
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [cleanup]
 created: '2026-07-18T23:26:06Z'
-updated: '2026-07-18T23:26:11Z'
+updated: '2026-07-18T23:32:21Z'
 session: zatuhipi-0718
-notes_next: 2
+links:
+  commits:
+  - e918060760e369958be0be6cac5d5e33924e97d0
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T23:26:11Z session:zatuhipi-0718] Confirmed dead across two sessions (arctic-drizzle-0718, zatuhipi-0718): tiacad_core/visual/visual_debug.py has zero callers anywhere in the codebase (grep-verified), is __main__-guarded example code hardcoded to one demo, and is not imported by tiacad_core/visual/__init__.py's public surface. Safe to delete outright; not scoping-blocked like the other ARCH items -- just needs an explicit go-ahead since I didn't author it. One-line PR: git rm the file, confirm no import errors via a full parser test run.
+- [#2 2026-07-18T23:32:21Z session:cunning-chimera-0718] Deleted visual_debug.py and its __init__.py re-export; confirmed zero external callers, full test suite (visual/parser/dag/geometry_backends) green after removal.
