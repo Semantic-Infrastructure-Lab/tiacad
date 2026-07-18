@@ -102,7 +102,7 @@ def test_measure_audit_final_part_warns_on_non_positive_volume():
     })
     result = _empty_audit_result(input_file=type('FakePath', (), {'name': 'box.yaml'})())
 
-    with patch('tiacad_core.cli._measure_part_dimensions', return_value={
+    with patch('tiacad_core.cli.audit._measure_part_dimensions', return_value={
         'width': 10.0,
         'height': 10.0,
         'depth': 10.0,
