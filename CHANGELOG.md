@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-18 (CI validation as a required merge gate)
+
+`main` had no branch protection at all — CI already ran the manifold/watertight
+and `expect:` contract suites (`tests.yml`'s `test` job, `pytest -m "not
+visual"`) plus visual regression on every push/PR, but nothing stopped a merge
+when they failed. Enabled branch protection requiring all 4 CI checks (`test`
+× Python 3.11/3.12/3.13, `visual-regression (3.11)`) to pass, and blocked
+force-push/branch-deletion on `main`. No PR-review requirement — kept the
+existing direct-push-to-main workflow intact. Closes
+`docs/developer/VALIDATION_STRENGTHENING.md` §4.5b's last open item.
+
 ### Fixed - 2026-07-18 (BREP-level `watertight` contract check)
 
 The `expect: watertight` contract check (`get_manifold_stats` in

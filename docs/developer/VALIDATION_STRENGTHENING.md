@@ -576,9 +576,14 @@ suite green against the 55 committed references (`67 passed`), and a
 deliberately removed reference (`anchors_demo.png`) turned into a hard test
 failure rather than a silent regeneration. Updating or adding a reference
 still requires the explicit, reviewed `UPDATE_VISUAL_REFERENCES=1 pytest -m
-visual` invocation, run locally by a human. Not yet done: making the
-manifold/watertight and contract suites required merge checks (a repo
-branch-protection setting, not a workflow-file change).
+visual` invocation, run locally by a human.
+
+**Shipped 2026-07-18:** branch protection enabled on `main` — all 4 CI checks
+(`test (ubuntu-latest, 3.11/3.12/3.13)`, which run the manifold/watertight and
+`expect:` contract suites via `pytest -m "not visual"`, plus
+`visual-regression (3.11)`) are now required status checks; a red run blocks
+merging. No PR-review requirement (kept the existing direct-push-to-main
+workflow intact) — force-push and branch deletion are blocked.
 
 ### 4.6 — Manifold & connectivity as a first-class gate *(stronger, closes a real bug class)*
 
