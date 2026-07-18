@@ -5,7 +5,7 @@ id_prefix: TCAD
 next_id: 1
 archival: inline
 areas:
-  VAL: 6
+  VAL: 7
   UX: 7
   API: 2
   ARCH: 9
@@ -350,6 +350,22 @@ priority: low
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
 updated: '2026-07-18T02:33:07Z'
+session: electric-glaze-0717
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-6 · CI 3.13 leg red: T0_torus.tiacad golden_mesh_hash mismatch (pre-existing, predates this session — confirmed failing on commit 0801822 from 2026-07-11 too). Newly-added branch protection (main) now requires this check, so it silently blocks PR merges until fixed. Root cause: 3.13 leg resolves requirements.txt floors fresh each run, so a CadQuery/OCP point release drifted the torus tessellation hash vs the committed golden_hashes.json baseline -- exactly the kernel-drift scenario test_determinism.py's docstring warns about. Fix: regenerate the torus entry with scripts/update_determinism_goldens.py from a real Python 3.13 env (review the diff -- should touch only T0_torus), or extend the requirements-lock.txt pinning (TCAD-VAL-3) to the 3.11/3.13 legs too so this class of drift can't recur silently.
+
+```yaml
+status: backlog
+priority: high
+tags: [ci, bug]
+created: '2026-07-18T04:51:40Z'
+updated: '2026-07-18T04:51:40Z'
 session: electric-glaze-0717
 ```
 
