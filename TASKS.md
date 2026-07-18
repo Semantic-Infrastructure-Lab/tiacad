@@ -194,17 +194,21 @@ _(no notes yet)_
 ## TASK-TCAD-UX-6 · Negative trust scenarios — intentionally-bad models that must fail visual/trust-render validation
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [validation]
 created: '2026-07-18T02:32:58Z'
-updated: '2026-07-18T02:32:58Z'
+updated: '2026-07-18T04:30:51Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 09a851cb93003e2a560e91a7bb297478b1230b02
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T04:30:51Z session:electric-glaze-0717] Added examples/validation/negative_trust/ (NT1 mounting-hole regression, NT2 disconnected parts) with 4 tests proving AssemblyValidator's BooleanEffectRule/DisconnectedPartsRule catch real defect classes. First-ever committed regression coverage for DisconnectedPartsRule.
 
 
 ## TASK-TCAD-API-1 · Limited export formats — no DXF/IGES/G-code/SVG (community-driven, add on demand)
