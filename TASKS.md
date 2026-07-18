@@ -272,18 +272,22 @@ notes_next: 4
 ## TASK-TCAD-ARCH-2 · Part coupling hub — part.py (237 lines) is #1 fan-in file in repo (21 importers in tiacad_core/, 59 repo-wide)
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T23:27:10Z'
+updated: '2026-07-18T23:30:19Z'
 session: electric-glaze-0717
-notes_next: 2
+links:
+  commits:
+  - ccb255328c775309865a1964699f474e87ede30d
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T23:27:10Z session:zatuhipi-0718] Scoped (zatuhipi-0718): part.py is a small, cohesive dataclass module (237 lines, 17 simple methods -- Part + PartRegistry, mostly getters/bounds/clone). The high fan-in isn't a symptom of the file doing too much; it's the natural result of Part/PartRegistry being the central domain data types every builder and operation touches, similar to a core model class in an app. Recommend closing this as 'investigated, not a defect' (same resolution as ARCH-4) rather than attempting a split -- there's no internal-cohesion problem to fix, and splitting a data model to reduce fan-in just moves the coupling around. Needs Scott's confirmation before closing since it reverses the original framing.
+- [#2 2026-07-18T23:30:19Z session:cunning-chimera-0718] Investigated: high fan-in is expected — part.py is the central domain type (Part + PartRegistry), 237 lines / 17 cohesive methods, same resolution class as ARCH-4. Not a defect; closing.
 
 
 ## TASK-TCAD-ARCH-3 · cli.py monolith — #1 quality hotspot (1201 lines, 57 functions, 59/100); create_parser() alone 122 lines
