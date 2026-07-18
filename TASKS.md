@@ -156,17 +156,21 @@ notes_next: 2
 ## TASK-TCAD-UX-3 · Reference-based measurements CLI/testing utility — distances/angles/alignment between named spatial references
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [cli]
 created: '2026-07-18T02:32:58Z'
-updated: '2026-07-18T02:32:58Z'
+updated: '2026-07-18T22:12:18Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - c9ba0c3cfaea82d2c69eb0906f3618bb40644387
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T22:12:18Z session:vermilion-corona-0718] Shipped tiacad measure CLI: distance/angle/coaxial-alignment between named spatial references, --json for tooling. See docs/developer/CLI.md.
 
 
 ## TASK-TCAD-UX-4 · Stepwise summaries attached to operations in build_trace.json
