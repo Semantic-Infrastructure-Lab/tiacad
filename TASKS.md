@@ -269,13 +269,16 @@ status: backlog
 priority: medium
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T02:33:07Z'
+updated: '2026-07-18T05:05:22Z'
 session: electric-glaze-0717
+notes_next: 2
 ```
+
+cli.py monolith — #1 quality hotspot (1,260 lines, 58 functions); create_parser() alone 132 lines
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T05:05:22Z session:electric-glaze-0717] Numbers refreshed 2026-07-18 (were 1201/57/122 when filed) — this session's tiacad verify addition grew the file further, confirming the direction (still #1 hotspot, needs splitting), just updating the exact counts.
 
 
 ## TASK-TCAD-ARCH-4 · tiacad_core.visual vs tiacad_core.visualization overlap — no canonical-boundary decision documented
