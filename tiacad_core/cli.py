@@ -1117,7 +1117,7 @@ Examples:
 Note: 3MF is the recommended format for 3D printing (multi-material, compact, modern).
       STL is supported for legacy compatibility.
 
-For more information: https://github.com/scottsen/tiacad
+For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
         """
     )
 
