@@ -365,13 +365,13 @@
   "examples/trust/hull_spheres.yaml": {
     "bbox": [
       55.9926400721593,
-      49.990253232305534,
+      50.63126938368308,
       16.0
     ],
-    "canonical_mesh_hash": "dbc14f7305492dacd4b5dee92e4184d1450cb457332c6bb81cbc140a9de08400",
-    "mesh_hash": "acd2e5ef1d23ba4f9cea8fbaf1a49406971857965ff9b408477517fe0a7a9905",
+    "canonical_mesh_hash": "7ead8157c147eafcc8cfff486fd7d9012118a26f469fff5efbb7ea3006657fef",
+    "mesh_hash": "1cc778215a5a53a84fb4eff851dc37bed16153168a43a912a03a0419854176a9",
     "part": "smooth_hull",
-    "volume": 24960.68576375622
+    "volume": 25276.181436752122
   },
   "examples/trust/loft_rect_to_circle.yaml": {
     "bbox": [

@@ -4,7 +4,7 @@ metadata:
   name: Hull Spheres Trust
   description: >
     Convex hull around 3 spheres in an equilateral triangle (XY plane).
-    Sphere A at origin, B at (40,0,0), C at (20,34.6,0). All r=8.
+    Sphere A at origin, B at (40,0,0), C at (20,34.641,0). All r=8.
     Trust check: top (XY) = rounded triangle / smooth triangular blob.
     Front (XZ) = wide, short, rounded shape. Side (YZ) = narrower.
     Hull must be smooth — no flat faces between spheres, no hard corners.
@@ -46,7 +46,7 @@ operations:
     transforms:
       - translate:
           - 20
-          - 34
+          - 34.64101615137755
           - 0
 
   smooth_hull:
@@ -65,8 +65,8 @@ export:
 # test already asserts.
 expect:
   final: smooth_hull
-  volume: 24960.68576375622
-  bbox: [55.9926, 49.9903, 16.0]
+  volume: 25276.181436752122
+  bbox: [55.9926400721593, 50.63126938368308, 16.0]
   watertight: true
   components: 1
   tol: { length: 0.01 }
