@@ -266,15 +266,45 @@ tiacad debug examples/bracket.yaml --compare out/previous-debug
 ### `tiacad check` - Build and Report Dimensions
 
 Build a file and print dimensions + volume for every part. No output file written.
+With `--contract`, also checks the file's embedded `expect:` block (if any)
+against the actual built geometry (see
+[VALIDATION_STRENGTHENING.md](VALIDATION_STRENGTHENING.md) section 4.1).
 
 **Usage:**
 ```bash
-tiacad check INPUT [-v]
+tiacad check INPUT [-v] [--contract]
 ```
 
 ```bash
 # Report all part dimensions without exporting
 tiacad check examples/assembly.yaml
+
+# Also check the embedded expect: contract
+tiacad check examples/validation/T0_sphere.tiacad --contract
+```
+
+---
+
+### `tiacad verify` - Evaluate a Model's Contract (CI-Friendly)
+
+Evaluate a model's embedded `expect:` contract and report the result — the
+single-purpose, CI-friendly sibling of `check --contract`: no part-by-part
+dimension table, just the contract verdict. Exits non-zero on a contract
+violation or a missing `expect:` block, so it can gate a build. With `--json`,
+also prints a machine-readable result (`ok`, `part_name`, `violations`) to
+stdout for tooling to consume.
+
+**Usage:**
+```bash
+tiacad verify INPUT [-v] [--json]
+```
+
+```bash
+# Console summary + exit code only
+tiacad verify examples/validation/T0_sphere.tiacad
+
+# Machine-readable result for CI/tooling
+tiacad verify examples/validation/T0_sphere.tiacad --json
 ```
 
 ---

@@ -846,6 +846,55 @@ def cmd_check(args):
         return 1
 
 
+def cmd_verify(args):
+    """
+    Evaluate a model's embedded expect: contract and report the result.
+
+    Single-purpose sibling of `check --contract`: no part-by-part dimension
+    table, just the contract verdict — a concise console summary plus,
+    with --json, a machine-readable result for CI/tooling consumption.
+    Implements docs/developer/MODEL_VALIDATION.md "Best Next Improvements" #3.
+    """
+    from .parser.tiacad_parser import TiaCADParser
+    from .testing.contracts import ContractError, check_contract
+
+    input_file = Path(args.input)
+    if not input_file.exists():
+        print_error(f"File not found: {input_file}")
+        return 1
+
+    try:
+        doc = TiaCADParser.parse_file(str(input_file))
+        result = check_contract(doc)
+    except ContractError as e:
+        print_error(f"{input_file.name}: {e}")
+        if args.json:
+            print(json.dumps({'file': str(input_file), 'error': str(e)}, indent=2, sort_keys=True))
+        return 1
+    except Exception as e:
+        print_error(f"Verify failed: {str(e)}")
+        if args.verbose:
+            traceback.print_exc()
+        return 1
+
+    if result.ok:
+        print_success(result.summary())
+    else:
+        print_error(result.summary())
+
+    if args.json:
+        print(json.dumps({
+            'file': str(input_file),
+            'ok': result.ok,
+            'part_name': result.part_name,
+            'violations': [
+                {'check': v.check, 'message': v.message} for v in result.violations
+            ],
+        }, indent=2, sort_keys=True))
+
+    return 0 if result.ok else 1
+
+
 def _audit_one_file(input_file: Path, verbose: bool):
     """
     Build a single file and return a result dict for the audit table.
@@ -1121,6 +1170,16 @@ For more information: https://github.com/scottsen/tiacad
         help="Also check the file's embedded expect: block against the built geometry"
     )
     check_parser.set_defaults(func=cmd_check)
+
+    # Verify command
+    verify_parser = subparsers.add_parser(
+        'verify',
+        help="Evaluate a model's embedded expect: contract (CI-friendly; see also 'check --contract')"
+    )
+    verify_parser.add_argument('input', help='Input YAML file')
+    verify_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback on error')
+    verify_parser.add_argument('--json', action='store_true', help='Print machine-readable result JSON to stdout')
+    verify_parser.set_defaults(func=cmd_verify)
 
     # Audit command
     audit_parser = subparsers.add_parser(

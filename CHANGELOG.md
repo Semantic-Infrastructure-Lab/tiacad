@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-18 (`tiacad verify` CLI command)
+
+New `tiacad verify INPUT [--json]` command: evaluates a model's embedded
+`expect:` contract and reports the result — a single-purpose, CI-friendly
+sibling of the pre-existing `check --contract` (same underlying
+`check_contract()`), with no part-by-part dimension table, just the contract
+verdict and a non-zero exit code on failure or a missing `expect:` block.
+`--json` prints a machine-readable result (`ok`/`part_name`/`violations`) for
+CI/tooling consumption. Implements
+`docs/developer/MODEL_VALIDATION.md` "Best Next Improvements" #3; also
+resolves #2 as superseded by the already-shipped `expect:` contract engine.
+5 new tests in `test_cli/test_cli_verify.py`. Also documented the previously
+undocumented `check --contract` flag in `docs/developer/CLI.md`.
+
 ### Added - 2026-07-18 (pinned CI lockfile)
 
 Added `requirements-lock.txt` — exact-version pins generated with `pip-compile`

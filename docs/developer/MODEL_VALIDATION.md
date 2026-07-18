@@ -239,10 +239,20 @@ These are the highest-value improvements to the current validation model:
    Known gap: the `union` check is a whole-result sanity check, not per-input — a union
    input that fully overlaps an already-placed part (contributing nothing) will not be
    flagged. See `tiacad_core/tests/test_validation/test_boolean_effect_rule.py`.
-2. **Model-local contracts:** allow examples and user models to declare expected
-   dimensions, volumes, clearances, symmetry, and mesh facts in YAML.
-3. **`tiacad verify`:** evaluate model-local contracts and emit JSON plus a
-   concise console summary.
+2. ~~**Model-local contracts**~~ **Superseded — shipped as the `expect:`
+   contract engine** (`tiacad_core/testing/contracts.py`,
+   VALIDATION_STRENGTHENING.md section 4.1): examples and user models declare
+   expected volume, bbox, component count, watertightness, and named-part
+   relations (flush faces, coaxial axes) directly in YAML. This item as
+   originally scoped ("declare expected dimensions/volumes/clearances/
+   symmetry/mesh facts") is fully covered.
+3. ~~**`tiacad verify`**~~ **Shipped 2026-07-18:** evaluates a model's
+   `expect:` contract and emits a concise console summary plus, with `--json`,
+   a machine-readable result (`ok`/`part_name`/`violations`) for CI/tooling.
+   See [CLI.md](CLI.md) ("tiacad verify"). Sibling of the pre-existing
+   `check --contract` (same underlying
+   `check_contract()`) but single-purpose and CI-exit-code-friendly. 5 tests
+   in `test_cli/test_cli_verify.py`.
 4. **Reference-based measurements:** measure distances, angles, and alignments
    between named references such as `plate.face_top` and `shaft.axis_z`.
 5. **Stepwise summaries:** attach before/after summaries to operations in
