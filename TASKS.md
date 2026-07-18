@@ -8,7 +8,7 @@ areas:
   VAL: 8
   UX: 7
   API: 2
-  ARCH: 9
+  ARCH: 10
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -198,13 +198,14 @@ notes_next: 2
 status: backlog
 priority: low
 created: '2026-07-18T02:32:58Z'
-updated: '2026-07-18T02:32:58Z'
+updated: '2026-07-18T23:27:10Z'
 session: electric-glaze-0717
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T23:27:10Z session:zatuhipi-0718] Scoped (zatuhipi-0718): tiacad_core/visual/trust_renderer.py (684 lines) already imports PIL ImageDraw and uses it for legend annotations (_draw_parts_legend/_draw_axes_legend/_draw_voids_legend), so image-annotation plumbing exists -- but only for a static legend, not for pointing at a specific failure location on the 3D render. Real gap: ValidationIssue.location (validation_types.py:28) is typed for YAML line:column tracking only, not 3D world coordinates -- rule files compute bboxes/positions internally but don't currently surface a 3D point on the issue object. Implementing this needs (1) rules to attach a 3D failure location, (2) projecting that point through pyvista's active camera transform to a 2D pixel, (3) an ImageDraw arrow/marker at that pixel. Well-defined but nontrivial; low priority is appropriate.
 
 
 ## TASK-TCAD-UX-6 · Negative trust scenarios — intentionally-bad models that must fail visual/trust-render validation
@@ -234,13 +235,14 @@ status: backlog
 priority: low
 tags: [api]
 created: '2026-07-18T02:33:00Z'
-updated: '2026-07-18T02:33:00Z'
+updated: '2026-07-18T23:27:10Z'
 session: electric-glaze-0717
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T23:27:10Z session:zatuhipi-0718] Reviewed (zatuhipi-0718): no new scoping needed -- 'community-driven, add on demand' is already the resolution, not a placeholder awaiting a decision. Leave as backlog until a specific export format is actually requested.
 
 
 ## TASK-TCAD-ARCH-1 · Backend global state — Part/backend selection still falls back to process-global state (get_default_backend/set_default_backend) in parts_builder.py, backend_utils.py
@@ -274,13 +276,14 @@ status: backlog
 priority: medium
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T02:33:07Z'
+updated: '2026-07-18T23:27:10Z'
 session: electric-glaze-0717
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T23:27:10Z session:zatuhipi-0718] Scoped (zatuhipi-0718): part.py is a small, cohesive dataclass module (237 lines, 17 simple methods -- Part + PartRegistry, mostly getters/bounds/clone). The high fan-in isn't a symptom of the file doing too much; it's the natural result of Part/PartRegistry being the central domain data types every builder and operation touches, similar to a core model class in an app. Recommend closing this as 'investigated, not a defect' (same resolution as ARCH-4) rather than attempting a split -- there's no internal-cohesion problem to fix, and splitting a data model to reduce fan-in just moves the coupling around. Needs Scott's confirmation before closing since it reverses the original framing.
 
 
 ## TASK-TCAD-ARCH-3 · cli.py monolith — #1 quality hotspot (1201 lines, 57 functions, 59/100); create_parser() alone 122 lines
@@ -369,13 +372,14 @@ status: backlog
 priority: low
 tags: [validation]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T02:33:07Z'
+updated: '2026-07-18T23:27:10Z'
 session: electric-glaze-0717
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T23:27:10Z session:zatuhipi-0718] Scoped (zatuhipi-0718): confirmed 5 of 9 rule files in tiacad_core/validation/rules/ use bbox/bounds heuristics -- boolean_gaps_rule.py, bounding_box_rule.py, disconnected_parts_rule.py, feature_bounds_rule.py, hole_edge_proximity_rule.py (grep-verified bbox/bounding_box/get_bounds reference counts). Concrete example: hole_edge_proximity_rule.py's _estimate_hole_radius(bbox) infers a hole's radius from its axis-aligned bounding box rather than querying the actual BREP cylindrical face -- same class of heuristic-vs-actual-geometry gap that TCAD-VAL-5 already fixed for watertight checks (switched to BREP-level checks). A real fix means rewriting each of the 5 rules to query CadQuery/BREP face-level geometry instead of estimating from bbox -- real, non-trivial rework across 5 files, not a mechanical change. Priority/low is appropriate; needs design input on how much BREP-query infrastructure to build once vs. per-rule.
 
 
 ## TASK-TCAD-ARCH-8 · parameter_resolver.py high coupling — 3rd-highest fan-in in repo; _check_cycles() mixes DFS+regex+error formatting (complexity 10, depth 6)
@@ -436,3 +440,20 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T17:28:49Z session:electric-glaze-0717] Made TEST_STATUS.json auto-commit best-effort instead of job-fatal — branch protection can never let a same-run commit land, so this was a structural false-failure, not a real test regression. Verified: CI run 29653737936 all 3 legs green.
+
+
+## TASK-TCAD-ARCH-9 · Remove dead visual_debug.py
+
+```yaml
+status: backlog
+priority: low
+tags: [cleanup]
+created: '2026-07-18T23:26:06Z'
+updated: '2026-07-18T23:26:11Z'
+session: zatuhipi-0718
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-07-18T23:26:11Z session:zatuhipi-0718] Confirmed dead across two sessions (arctic-drizzle-0718, zatuhipi-0718): tiacad_core/visual/visual_debug.py has zero callers anywhere in the codebase (grep-verified), is __main__-guarded example code hardcoded to one demo, and is not imported by tiacad_core/visual/__init__.py's public surface. Safe to delete outright; not scoping-blocked like the other ARCH items -- just needs an explicit go-ahead since I didn't author it. One-line PR: git rm the file, confirm no import errors via a full parser test run.
