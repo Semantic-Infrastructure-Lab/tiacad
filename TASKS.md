@@ -14,17 +14,21 @@ areas:
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [validation]
 created: '2026-07-18T02:32:53Z'
-updated: '2026-07-18T02:32:53Z'
+updated: '2026-07-18T02:46:06Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 800075c589ac2ccafc78a9da5ae4a1e8898ac594
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T02:46:06Z session:electric-glaze-0717] Enabled GitHub branch protection on main: 4 CI checks (test x3 Python versions + visual-regression) now required for merge; force-push/deletion blocked. No PR-review requirement (kept direct-push-to-main workflow). Applied via gh api (repo setting, not a workflow file).
 
 
 ## TASK-TCAD-VAL-2 · Differential testing blocked — route geometry code through GeometryBackend so MockBackend/kernel-vs-kernel testing works
