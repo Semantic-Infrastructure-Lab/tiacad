@@ -236,6 +236,94 @@ def prepare_build_context(
     )
 
 
+def _validate_and_extract_sections(
+    yaml_data: Dict[str, Any],
+    *,
+    file_path: Optional[str],
+    validate_schema: bool,
+    supported_schema_versions: list[str],
+    build_graph: bool,
+):
+    """Normalize aliases, validate schema/version, and extract YAML sections."""
+    yaml_data = normalize_yaml_aliases(yaml_data)
+    graph = maybe_build_graph(yaml_data, file_path, build_graph)
+
+    if validate_schema:
+        errors = SchemaValidator().validate(yaml_data)
+        if errors:
+            raise TiaCADParserError(
+                "Schema validation failed:\n" + "\n".join(f"  - {e}" for e in errors),
+                file_path=file_path
+            )
+
+    schema_version = str(yaml_data.get('schema_version', '3.0'))
+    if schema_version not in supported_schema_versions:
+        logger.warning(
+            f"Schema version '{schema_version}' not explicitly supported. "
+            f"Supported versions: {supported_schema_versions}"
+        )
+
+    sections = extract_yaml_sections(yaml_data)
+    if not sections['parts'] and not sections['imports']:
+        raise TiaCADParserError("YAML must contain 'parts' section", file_path=file_path)
+
+    metadata = sections['metadata']
+    logger.info(f"Building model: {metadata.get('name', 'Unnamed')}")
+    logger.debug(
+        f"Parameters: {len(sections['parameters'])}, Parts: {len(sections['parts'])}, "
+        f"Operations: {len(sections['operations'])}, Colors: {len(sections['colors'])}"
+    )
+    return sections, graph
+
+
+def _build_parts_registry(
+    parts_spec: Dict[str, Any],
+    context: PreparedBuildContext,
+    *,
+    backend: Optional["GeometryBackend"],
+):
+    """Build parts from spec and merge in any parts already loaded from imports."""
+    registry = PartsBuilder(
+        context.param_resolver,
+        context.color_parser,
+        backend=backend,
+    ).build_parts(parts_spec)
+    logger.info(f"Built {len(parts_spec)} parts")
+
+    for part_name in context.registry.list_parts():
+        registry.add(context.registry.get(part_name))
+    if len(context.registry.list_parts()) > 0:
+        logger.debug(f"Merged {len(context.registry.list_parts())} imported parts into registry")
+
+    return registry
+
+
+def _apply_transforms_and_operations(
+    registry,
+    context: PreparedBuildContext,
+    parts_spec: Dict[str, Any],
+    operations_spec: Dict[str, Any],
+):
+    """Apply inline part transforms, then execute operations, in dependency order."""
+    spatial_resolver = SpatialResolver(registry, context.resolved_references)
+
+    # Apply each part's own inline translate:/rotate: (schema v3.0) in place,
+    # before operations run, so operations see parts at their final position.
+    # Runs after every part in parts_spec exists in `registry`, so a part may
+    # anchor to any sibling's auto-generated references (e.g. base.face_top).
+    OperationsBuilder(
+        registry, context.param_resolver, context.sketches, spatial_resolver
+    ).apply_inline_part_transforms(parts_spec)
+
+    if operations_spec:
+        registry = OperationsBuilder(
+            registry, context.param_resolver, context.sketches, spatial_resolver
+        ).execute_operations(operations_spec)
+        logger.info(f"Executed {len(operations_spec)} operations")
+
+    return registry
+
+
 def parse_tiacad_dict(
     yaml_data: Dict[str, Any],
     *,
@@ -252,38 +340,16 @@ def parse_tiacad_dict(
 ):
     """Parse TiaCAD data from a dict and construct a document via the provided factory."""
     try:
-        yaml_data = normalize_yaml_aliases(yaml_data)
-        graph = maybe_build_graph(yaml_data, file_path, build_graph)
-
-        if validate_schema:
-            errors = SchemaValidator().validate(yaml_data)
-            if errors:
-                raise TiaCADParserError(
-                    "Schema validation failed:\n" + "\n".join(f"  - {e}" for e in errors),
-                    file_path=file_path
-                )
-
-        schema_version = str(yaml_data.get('schema_version', '3.0'))
-        if schema_version not in supported_schema_versions:
-            logger.warning(
-                f"Schema version '{schema_version}' not explicitly supported. "
-                f"Supported versions: {supported_schema_versions}"
-            )
-
-        sections = extract_yaml_sections(yaml_data)
-        metadata = sections['metadata']
-        parameters = sections['parameters']
+        sections, graph = _validate_and_extract_sections(
+            yaml_data,
+            file_path=file_path,
+            validate_schema=validate_schema,
+            supported_schema_versions=supported_schema_versions,
+            build_graph=build_graph,
+        )
         parts_spec = sections['parts']
         operations_spec = sections['operations']
 
-        if not parts_spec and not sections['imports']:
-            raise TiaCADParserError("YAML must contain 'parts' section", file_path=file_path)
-
-        logger.info(f"Building model: {metadata.get('name', 'Unnamed')}")
-        logger.debug(
-            f"Parameters: {len(parameters)}, Parts: {len(parts_spec)}, "
-            f"Operations: {len(operations_spec)}, Colors: {len(sections['colors'])}"
-        )
         context = prepare_build_context(
             yaml_data,
             load_imports=load_imports,
@@ -292,36 +358,13 @@ def parse_tiacad_dict(
             backend=backend,
         )
 
-        registry = PartsBuilder(
-            context.param_resolver,
-            context.color_parser,
-            backend=backend,
-        ).build_parts(parts_spec)
-        logger.info(f"Built {len(parts_spec)} parts")
-
-        for part_name in context.registry.list_parts():
-            registry.add(context.registry.get(part_name))
-        if len(context.registry.list_parts()) > 0:
-            logger.debug(f"Merged {len(context.registry.list_parts())} imported parts into registry")
-
-        spatial_resolver = SpatialResolver(registry, context.resolved_references)
-
-        # Apply each part's own inline translate:/rotate: (schema v3.0) in place,
-        # before operations run, so operations see parts at their final position.
-        # Runs after every part in parts_spec exists in `registry`, so a part may
-        # anchor to any sibling's auto-generated references (e.g. base.face_top).
-        OperationsBuilder(
-            registry, context.param_resolver, context.sketches, spatial_resolver
-        ).apply_inline_part_transforms(parts_spec)
-
-        if operations_spec:
-            registry = OperationsBuilder(
-                registry, context.param_resolver, context.sketches, spatial_resolver
-            ).execute_operations(operations_spec)
-            logger.info(f"Executed {len(operations_spec)} operations")
+        registry = _build_parts_registry(parts_spec, context, backend=backend)
+        registry = _apply_transforms_and_operations(
+            registry, context, parts_spec, operations_spec
+        )
 
         doc = document_factory(
-            metadata=metadata,
+            metadata=sections['metadata'],
             parameters=context.resolved_params,
             parts=registry,
             operations=operations_spec,
