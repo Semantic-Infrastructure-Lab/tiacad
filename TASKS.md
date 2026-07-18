@@ -108,33 +108,41 @@ notes_next: 2
 ## TASK-TCAD-UX-1 · Reconcile MODEL_VALIDATION.md item 2 (model-local contracts) against shipped expect: engine
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [docs]
 created: '2026-07-18T02:32:58Z'
-updated: '2026-07-18T02:32:58Z'
+updated: '2026-07-18T04:25:28Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - f8132bec0a9402d8a5c763aa8c2efff1c5a8f24c
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T04:25:28Z session:electric-glaze-0717] Reconciled: item 2 (model-local contracts) is superseded by the already-shipped expect: contract engine. Updated MODEL_VALIDATION.md accordingly.
 
 
 ## TASK-TCAD-UX-2 · tiacad verify CLI command — evaluate model-local contracts, emit JSON + console summary
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [cli]
 created: '2026-07-18T02:32:58Z'
-updated: '2026-07-18T02:32:58Z'
+updated: '2026-07-18T04:25:29Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - f8132bec0a9402d8a5c763aa8c2efff1c5a8f24c
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T04:25:29Z session:electric-glaze-0717] Added 'tiacad verify INPUT [--json]' CLI command: evaluates expect: contract, console summary + JSON output, non-zero exit on failure/missing contract. 5 tests in test_cli/test_cli_verify.py. Documented in CLI.md.
 
 
 ## TASK-TCAD-UX-3 · Reference-based measurements CLI/testing utility — distances/angles/alignment between named spatial references
