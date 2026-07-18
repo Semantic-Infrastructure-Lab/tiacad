@@ -71,17 +71,29 @@ def count_solids(part: Part) -> int:
 
 
 def get_manifold_stats(part: Part) -> Dict[str, Any]:
-    """Watertightness (mesh) + disjoint-body count (BREP solids).
+    """Watertightness (BREP) + disjoint-body count (BREP solids).
+
+    ``watertight`` is a BREP-level validity check (OCCT's
+    ``BRepCheck_Analyzer``, exposed by CadQuery as ``Shape.isValid()``): every
+    solid in the part must be free of topological/geometric defects (gaps,
+    self-intersections, open shells). This replaced an STL-export +
+    ``trimesh.is_watertight`` round-trip that produced false negatives on any
+    solid with curved surfaces sharing a seam or fillet blend — OCCT's
+    tessellation leaves pole-seam/blend vertices unwelded, so the mesh reports
+    disconnected islands even though the BREP solid is provably closed and
+    correct. See KNOWN_LIMITATIONS.md #8.
 
     ``components`` is the BREP solid count — the correct disjoint-body signal
-    (see :func:`count_solids`). ``mesh_islands`` is retained for diagnostics:
-    it is the old ``trimesh.split`` count, which over-counts hollow bodies and
-    is *not* used for the ``expect: components:`` contract check.
+    (see :func:`count_solids`). ``mesh_islands`` is retained for diagnostics
+    only: it is the old ``trimesh.split`` count, which over-counts hollow
+    bodies and is *not* used for the ``expect: components:`` contract check.
     """
     import trimesh
 
     require_cadquery_part(part, "Contract check (watertight/components)")
 
+    vals = part.geometry.vals()
+    watertight = all(v.isValid() for v in vals)
     solids = count_solids(part)
     with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as tmp:
         tmp_path = Path(tmp.name)
@@ -90,7 +102,7 @@ def get_manifold_stats(part: Part) -> Dict[str, Any]:
         mesh = trimesh.load(str(tmp_path))
         mesh_islands = len(mesh.split(only_watertight=False))
         return {
-            'watertight': bool(mesh.is_watertight),
+            'watertight': watertight,
             'components': solids,
             'mesh_islands': mesh_islands,
         }

@@ -40,13 +40,14 @@ export:
 # V = 34*34*14 + 2*3*(34*34 + 34*14 + 14*34) + pi*9*(34+34+14) + 4/3*pi*27 = 31263.5927...
 # (confirmed: measured volume matches this formula to full kernel precision).
 #
-# No `watertight: true` (deliberately, same as T0_sphere / KNOWN_LIMITATIONS.md #8):
-# the curved fillet surfaces leave 9 unwelded mesh islands in the default STL
-# tessellation even though the BREP solid is provably valid (components: 1, exact
-# volume match above) — a mesh-export artifact, not a real manifold defect.
+# `watertight: true` uses the BREP-level check (same fix as T0_sphere,
+# KNOWN_LIMITATIONS.md #8, fixed 2026-07-18): the old mesh-based check left 9
+# unwelded islands in the default STL tessellation of these fillet blends —
+# an export artifact, not a real manifold defect.
 expect:
   final: rounded
   volume: 31263.5927138785
   bbox: [40, 40, 20]
   components: 1
+  watertight: true
   tol: { volume: 0.01 }

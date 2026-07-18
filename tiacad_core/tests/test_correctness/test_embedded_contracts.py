@@ -16,6 +16,10 @@ from pathlib import Path
 import cadquery as cq
 import pytest
 
+from cadquery.occ_impl.shapes import Solid
+from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeSolid, BRepBuilderAPI_Sewing
+from OCP.TopoDS import TopoDS
+
 from tiacad_core.parser import TiaCADParser
 from tiacad_core.part import Part
 from tiacad_core.geometry import CadQueryBackend
@@ -100,3 +104,42 @@ class TestSolidCounting:
         stats = get_manifold_stats(part)
         assert stats["components"] == 2
         assert stats["watertight"] is True        # weaker check would pass this
+
+
+class TestWatertightBrepCheck:
+    """`expect: watertight` is a BREP-level check (KNOWN_LIMITATIONS.md #8,
+    fixed 2026-07-18), not a mesh/STL round-trip. These tests lock in both
+    halves of the fix: curved geometry that the old mesh check false-negatived
+    on now reports True, and a genuinely broken (open) solid still reports
+    False.
+    """
+
+    def _part(self, name, wp):
+        return Part(name=name, geometry=wp, backend=CadQueryBackend())
+
+    def test_sphere_is_watertight_despite_unwelded_mesh_seam(self):
+        # Reproduces KNOWN_LIMITATIONS.md #8: OCCT's sphere tessellation
+        # leaves pole-seam vertices unwelded, so trimesh sees 3 disconnected
+        # mesh islands even though the BREP solid is a single valid closed
+        # body. The BREP-level check must not be fooled by this.
+        sphere = self._part("sphere", cq.Workplane("XY").sphere(18))
+        stats = get_manifold_stats(sphere)
+        assert stats["mesh_islands"] > 1            # the export artifact, still present
+        assert stats["watertight"] is True           # BREP check sees through it
+
+    def test_open_shell_forced_into_solid_is_not_watertight(self):
+        # A solid sewn from only 5 of a box's 6 faces: a genuine topological
+        # defect (an open shell), not a tessellation artifact. The BREP check
+        # must still catch this — proves the fix isn't just "always True".
+        faces = cq.Workplane("XY").box(10, 10, 10).faces().vals()
+        sew = BRepBuilderAPI_Sewing()
+        for f in faces[:5]:
+            sew.Add(f.wrapped)
+        sew.Perform()
+        shell = TopoDS.Shell_s(sew.SewedShape())
+        maker = BRepBuilderAPI_MakeSolid()
+        maker.Add(shell)
+        broken = self._part("broken", cq.Workplane(obj=Solid(maker.Solid())))
+
+        stats = get_manifold_stats(broken)
+        assert stats["watertight"] is False

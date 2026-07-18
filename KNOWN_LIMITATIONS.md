@@ -252,35 +252,35 @@ added `test_hex_body_across_flats_matches_iso4032` regression tests to
 
 ---
 
-### 8. Curved geometry (spheres, fillets): mesh-based `watertight` check is a false negative
+### 8. Fixed — curved geometry (spheres, fillets): mesh-based `watertight` check was a false negative
 
-**What it is:** the `expect: watertight` contract check exports the built solid to STL
-(CadQuery default tessellation: `tolerance=0.001`, `angularTolerance=0.1`) and asks
-`trimesh` whether the resulting mesh is watertight. This is **always False** for any
-solid with curved surfaces sharing a seam or fillet blend:
+**What it was:** the `expect: watertight` contract check exported the built solid to
+STL (CadQuery default tessellation: `tolerance=0.001`, `angularTolerance=0.1`) and
+asked `trimesh` whether the resulting mesh was watertight. This was **always False**
+for any solid with curved surfaces sharing a seam or fillet blend:
 - The `sphere` primitive — reproduced at radii 1/5/10/18/25mm and at STL tolerances
   down to 1e-4 — because OCCT's sphere tessellation leaves the two pole-seam vertices
   unwelded, producing 3 disconnected mesh islands (`trimesh.split(only_watertight=False)`).
 - A box with all 12 edges filleted (`T1_fillet.tiacad`) — 9 disconnected mesh islands,
   presumably one per rounded-corner region not welding to its neighbors.
 
-**Why it's a false negative, not a real defect:** `count_solids` (the exact BREP-level
-solid count, not mesh-derived) reports 1 for both cases, and `get_volume` (also
-BREP-exact) matches the respective closed-form formula (`4/3·π·r³` for the sphere; the
-Minkowski-sum-with-a-ball rounded-box formula for the fillet) to full kernel precision
-— the geometry itself is a single valid closed solid in both cases. Only the STL
-round-trip used for the mesh watertight check is affected.
+**Why it was a false negative, not a real defect:** `count_solids` (the exact
+BREP-level solid count, not mesh-derived) reports 1 for both cases, and `get_volume`
+(also BREP-exact) matches the respective closed-form formula (`4/3·π·r³` for the
+sphere; the Minkowski-sum-with-a-ball rounded-box formula for the fillet) to full
+kernel precision — the geometry itself was a single valid closed solid in both cases.
+Only the STL round-trip used for the mesh watertight check was affected.
 
-**Status:** documented, not fixed. `examples/validation/T0_sphere.tiacad` and
-`T1_fillet.tiacad` deliberately omit `expect: watertight` (asserting
-`volume`/`bbox`/`components` only) so this known export-tessellation artifact doesn't
-fail the ladder corpus. A real fix would mean post-processing the exported mesh to
-weld coincident seam/blend vertices, or switching the watertight check to a BREP-level
-test (e.g. `BRepCheck_Analyzer`) instead of an STL/trimesh round-trip — worth doing
-before Tier 3's manifold-health gates lean on `watertight` for any model with curved
-surfaces sharing a seam or blend (confirmed for spheres and fillets; the `torus`
-primitive's contract in `T0_torus.tiacad` passes `watertight: true` cleanly, so this
-is not universal to every curved primitive — verify per-shape before assuming it).
+**Fix applied (2026-07-18):** `get_manifold_stats` (`tiacad_core/testing/contracts.py`)
+now checks watertightness at the BREP level — `Shape.isValid()` per solid (CadQuery's
+wrapper over OCCT's `BRepCheck_Analyzer`) — instead of an STL/trimesh round-trip. This
+sees through tessellation-only seam/blend artifacts while still catching genuine
+topological defects (verified with a solid deliberately built from an open, 5-of-6-face
+shell — reports `watertight: False` as expected). `mesh_islands` is retained in the
+returned stats for diagnostics only; it no longer drives the `watertight` contract
+check. `examples/validation/T0_sphere.tiacad` and `T1_fillet.tiacad` both now assert
+`expect: watertight: true`. 2 new tests in
+`test_embedded_contracts.py::TestWatertightBrepCheck`.
 
 ---
 

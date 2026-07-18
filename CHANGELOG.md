@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 2026-07-18 (BREP-level `watertight` contract check)
+
+The `expect: watertight` contract check (`get_manifold_stats` in
+`tiacad_core/testing/contracts.py`) exported the built solid to STL and asked
+`trimesh` whether the mesh was watertight — always False for any solid with
+curved surfaces sharing a seam or fillet blend (spheres, filleted edges),
+because OCCT's tessellation leaves those seam vertices unwelded. The BREP
+solid itself was always a single valid closed body (`count_solids`/
+`get_volume` confirmed it to full kernel precision); only the STL round-trip
+was wrong. Replaced the mesh check with a BREP-level one — `Shape.isValid()`
+per solid (CadQuery's wrapper over OCCT's `BRepCheck_Analyzer`) — which sees
+through the tessellation artifact while still catching genuine topological
+defects (verified against a solid deliberately built from an open shell).
+`examples/validation/T0_sphere.tiacad` and `T1_fillet.tiacad` now assert
+`expect: watertight: true`, closing the last gap those two Tier 0/1 ladder
+examples had left open. Closes KNOWN_LIMITATIONS.md #8. 2 new tests in
+`test_embedded_contracts.py::TestWatertightBrepCheck`; full non-visual suite
+unaffected (194 passed across the touched test files).
+
 ### Added - 2026-07-11 (legacy-syntax deprecation warnings + GitHub `@branch` import)
 
 Two API-surface additions (session `weightless-universe-0711`):
