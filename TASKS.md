@@ -70,17 +70,21 @@ notes_next: 2
 ## TASK-TCAD-VAL-4 · Trust-gallery sign-off and golden STEP set (out of scope for T0-T5 ladder)
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [validation]
 created: '2026-07-18T02:32:53Z'
-updated: '2026-07-18T02:32:53Z'
+updated: '2026-07-18T20:09:20Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 75874678d66efd188412254c879971a53a5acd55
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T20:09:20Z session:yozove-0718] Golden STEP topology gate + trust-gallery sign-off ledger shipped; also fixed pcb_standoff_assembly axis-swap bug (b2c616a) found during the visual review
 
 
 ## TASK-TCAD-VAL-5 · Curved-geometry watertight false negative on spheres/fillets — switch to BREP-level check (BRepCheck_Analyzer)
