@@ -53,6 +53,10 @@ dev = [
     "black>=24.0.0",
     "mypy>=1.8.0",
     "ruff>=0.11.0",
+    # Independent CSG kernel used only for differential testing
+    # (test_differential.py / tiacad_core/testing/differential.py) -- never
+    # a runtime/production dependency.
+    "manifold3d>=3.5.0",
 ]
 
 [project.urls]

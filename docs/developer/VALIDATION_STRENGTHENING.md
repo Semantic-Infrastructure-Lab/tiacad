@@ -906,12 +906,36 @@ an `expect:` block:
   (a 2026-07-11 doc-coherence pass) — their skip classifications and quality
   snapshot predate Phase 0's skip→hard-failure work and were actively
   misleading.
-- **Note on differential testing:** ~90% of geometry code bypasses the
-  `GeometryBackend` abstraction and calls CadQuery directly, so the fast
-  `MockBackend` can't stand in for most tests and true differential testing
-  (kernel-vs-kernel) is currently impossible. Routing new operation code through
-  the backend is a prerequisite for the strongest oracle of all — a second
-  independent kernel to cross-check against.
+- ~~**Note on differential testing** (TCAD-VAL-2).~~ **Shipped 2026-07-18:**
+  the original framing above was reconsidered rather than executed literally.
+  Routing more code through `GeometryBackend` would not have delivered real
+  differential testing — `MockBackend`'s boolean/transform ops
+  (`tiacad_core/geometry/mock_backend.py`) are bookkeeping stubs (e.g.
+  `boolean_union` just returns `center=geom1.center`, no real geometry), so
+  it can never stand in as a second kernel no matter how much production code
+  is routed through the abstraction. Surveyed real second-kernel candidates
+  instead: `build123d` and `pythonocc-core` both wrap the *same* OCCT C++
+  library (different Python bindings, zero independence); an OpenSCAD
+  subprocess would reach the same engine `manifold3d` gives directly, at much
+  higher integration cost (system binary, `.scad` codegen, STL parsing).
+  `manifold3d` — a genuinely independent mesh-based CSG kernel with no code in
+  common with OCCT, and coincidentally the same engine modern OpenSCAD itself
+  now defaults to — was the only option that was both truly independent and
+  low-effort. Added as a `dev`-only dependency (never runtime); see
+  `tiacad_core/testing/differential.py`'s module docstring for the full
+  rationale. It implements an independent, parameter-level reconstruction of a
+  trust model's `parts:`/`operations:` graph — primitives (box/cylinder/
+  sphere/cone), booleans (union/difference/intersection), and plain-vector
+  `translate` transforms — and cross-checks volume/bbox against the
+  CadQuery-built part for every trust scenario built purely from those
+  constructs. `test_correctness/test_differential.py`: 13 tests, 12 of 24
+  trust models eligible (patterns/sketches/fillets/lofts/sweeps/revolves have
+  no independent manifold3d implementation and are explicitly reported
+  ineligible, not silently skipped — `test_eligibility_report` pins the exact
+  eligible/ineligible sets so a future addition/regression is caught in
+  review). Max observed cross-kernel volume disagreement: 0.035% (sphere_basic,
+  from manifold3d's inscribed-polygon discretization at 256 circular segments,
+  not a real defect). Full suite: 1956 passed (was 1943), 0 failed.
 - **Dependency posture modernized + CAD kernel unified (shipped 2026-07-10).**
   The old `>=` floors (numpy>=1.21 from 2021, cadquery>=2.6, scipy>=1.9,
   pyvista>=0.43) predated both the numpy-2 API split and the current OCCT

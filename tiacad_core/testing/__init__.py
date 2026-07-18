@@ -79,11 +79,15 @@ __all__ = [
     'VisualDiffResult',
     'RenderConfig',
     'pytest_visual_compare',
+    'differential_check',
+    'discover_eligible_trust_models',
+    'DifferentialResult',
+    'DifferentialError',
 ]
 
 
 def __getattr__(name):
-    """Lazily import heavy visual-regression helpers on demand."""
+    """Lazily import heavy visual-regression / differential-testing helpers on demand."""
     if name in {
         'VisualRegressionTester',
         'VisualDiffResult',
@@ -102,6 +106,27 @@ def __getattr__(name):
             'VisualDiffResult': VisualDiffResult,
             'RenderConfig': RenderConfig,
             'pytest_visual_compare': pytest_visual_compare,
+        }
+        return exports[name]
+
+    if name in {
+        'differential_check',
+        'discover_eligible_trust_models',
+        'DifferentialResult',
+        'DifferentialError',
+    }:
+        from .differential import (
+            DifferentialError,
+            DifferentialResult,
+            differential_check,
+            discover_eligible_trust_models,
+        )
+
+        exports = {
+            'differential_check': differential_check,
+            'discover_eligible_trust_models': discover_eligible_trust_models,
+            'DifferentialResult': DifferentialResult,
+            'DifferentialError': DifferentialError,
         }
         return exports[name]
 

@@ -48,6 +48,11 @@ pytest-xdist>=3.5.0
 # property suite can't silently skip (VALIDATION_STRENGTHENING.md 4.2 / 4.5).
 hypothesis>=6.100.0
 
+# Independent CSG kernel for differential (kernel-vs-kernel) testing
+# (test_correctness/test_differential.py) — a real second geometry engine
+# unrelated to OCCT, never a runtime/production dependency.
+manifold3d>=3.5.0
+
 # Development
 black>=24.0.0
 mypy>=1.8.0

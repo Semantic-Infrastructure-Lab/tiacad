@@ -89,6 +89,8 @@ librt==0.13.0
     # via mypy
 llvmlite==0.48.0
     # via numba
+manifold3d==3.5.2
+    # via -r requirements.txt
 markdown-it-py==4.2.0
     # via rich
 matplotlib==3.11.0
@@ -125,6 +127,7 @@ numpy==2.4.6
     #   casadi
     #   contourpy
     #   ezdxf
+    #   manifold3d
     #   matplotlib
     #   nlopt
     #   numba
