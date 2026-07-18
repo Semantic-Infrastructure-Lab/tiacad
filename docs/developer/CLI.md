@@ -285,6 +285,62 @@ tiacad check examples/validation/T0_sphere.tiacad --contract
 
 ---
 
+### `tiacad measure` - Distance, Angle, and Alignment Between References
+
+Build a file and report the distance, angle, and coaxial alignment between
+two named spatial references (e.g. `base.face_top`, `bracket.center`,
+`part.axis_z`). Angle and alignment are only reported when both references
+carry an orientation vector (faces, axes, edges) — a bare point reference
+has none, and the command prints a warning and skips those two fields.
+
+Useful as a fast dev-loop check: "does this face actually sit on that face?",
+"are these two holes coaxial?", without writing a Python test.
+
+**Usage:**
+```bash
+tiacad measure INPUT REF1 REF2 [-v] [--json]
+```
+
+**Arguments:**
+- `INPUT` - Input YAML file
+- `REF1`, `REF2` - Reference specs, e.g. `base.face_top`, `bracket.center`
+
+**Examples:**
+
+```bash
+# Distance + angle + alignment between two faces
+tiacad measure examples/auto_references_box_stack.yaml base.face_top middle.face_bottom
+
+# Machine-readable output for tooling
+tiacad measure examples/auto_references_cylinder_assembly.yaml shaft.axis_z top_cap.axis_z --json
+```
+
+**Output Example:**
+```
+base.face_top  <->  middle.face_bottom
+  distance:  7.5000
+  angle:     180.0000 deg
+  aligned:   yes  (parallel=True, lateral_offset=0.0000)
+```
+
+**JSON Output:**
+```json
+{
+  "ref1": "shaft.axis_z",
+  "ref2": "top_cap.axis_z",
+  "distance": 25.0,
+  "angle_deg": 0.0,
+  "alignment": {
+    "aligned": true,
+    "angle_deg": 0.0,
+    "parallel": true,
+    "lateral_offset": 0.0
+  }
+}
+```
+
+---
+
 ### `tiacad verify` - Evaluate a Model's Contract (CI-Friendly)
 
 Evaluate a model's embedded `expect:` contract and report the result — the

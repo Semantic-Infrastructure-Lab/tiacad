@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-18 (`tiacad measure` CLI, TCAD-UX-3)
+
+New `tiacad measure INPUT REF1 REF2` command: reports distance, angle, and
+coaxial alignment between two named spatial references (`base.face_top`,
+`bracket.center`, `shaft.axis_z`) without writing a Python test. Angle and
+alignment (parallel/antiparallel check + perpendicular offset from the
+reference axis) only report when both references carry an orientation
+vector — a bare point has none, and the command prints a warning and omits
+those fields rather than fabricating an angle. `--json` for tooling. Built
+on `tiacad_core/testing/measurements.py`'s existing `measure_distance`;
+added `angle_between_refs`/`distance_between_refs`/`check_alignment` and a
+part-based `measure_angle` sibling. See `docs/developer/CLI.md`'s `tiacad
+measure` section.
+
 ### Added - 2026-07-18 (differential kernel-vs-kernel testing, TCAD-VAL-2)
 
 Real second-kernel cross-checking, not the literal "route more code through

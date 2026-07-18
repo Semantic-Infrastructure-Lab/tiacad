@@ -21,6 +21,7 @@ from numpy.typing import NDArray
 
 from tiacad_core.part import Part, PartRegistry
 from tiacad_core.backend_support import require_cadquery_part
+from tiacad_core.geometry.spatial_references import SpatialRef
 from tiacad_core.spatial_resolver import SpatialResolver, SpatialResolverError
 
 
@@ -82,6 +83,118 @@ def measure_distance(
     spatial_ref2 = _resolve_part_ref(resolver, part2.name, ref2, context)
 
     return float(np.linalg.norm(spatial_ref1.position - spatial_ref2.position))
+
+
+def distance_between_refs(ref1: SpatialRef, ref2: SpatialRef) -> float:
+    """
+    Euclidean distance in model units between two already-resolved
+    spatial references.
+    """
+    return float(np.linalg.norm(ref1.position - ref2.position))
+
+
+def angle_between_refs(ref1: SpatialRef, ref2: SpatialRef) -> float:
+    """
+    Measure the angle in degrees between two spatial references' orientation
+    vectors (face normals, axis directions, or edge tangents).
+
+    Args:
+        ref1: First resolved SpatialRef
+        ref2: Second resolved SpatialRef
+
+    Returns:
+        Angle in degrees, in [0, 180]
+
+    Raises:
+        MeasurementError: If either reference has no orientation (e.g. a bare point)
+    """
+    if ref1.orientation is None or ref2.orientation is None:
+        raise MeasurementError(
+            "angle requires both references to carry an orientation vector "
+            "(face, axis, or edge) — a bare point has none"
+        )
+    cos_theta = np.clip(np.dot(ref1.orientation, ref2.orientation), -1.0, 1.0)
+    return float(np.degrees(np.arccos(cos_theta)))
+
+
+def measure_angle(
+    part1: Part,
+    part2: Part,
+    ref1: str = "center",
+    ref2: str = "center",
+    registry: Optional[PartRegistry] = None
+) -> float:
+    """
+    Measure the angle in degrees between two parts' reference orientation
+    vectors (face normals, axis directions, or edge tangents).
+
+    Args:
+        part1: First part
+        part2: Second part
+        ref1: Reference point on part1 (must resolve to an oriented reference)
+        ref2: Reference point on part2 (must resolve to an oriented reference)
+        registry: Optional PartRegistry; if None, a temporary one is created.
+
+    Returns:
+        Angle in degrees, in [0, 180]
+
+    Raises:
+        MeasurementError: If reference resolution fails or either reference
+            has no orientation
+    """
+    if not isinstance(part1, Part):
+        raise MeasurementError(f"part1 must be a Part instance, got {type(part1)}")
+    if not isinstance(part2, Part):
+        raise MeasurementError(f"part2 must be a Part instance, got {type(part2)}")
+
+    resolver = _make_resolver(registry, part1, part2)
+    context = f"part1='{part1.name}', ref1='{ref1}'\npart2='{part2.name}', ref2='{ref2}'"
+    spatial_ref1 = _resolve_part_ref(resolver, part1.name, ref1, context)
+    spatial_ref2 = _resolve_part_ref(resolver, part2.name, ref2, context)
+
+    return angle_between_refs(spatial_ref1, spatial_ref2)
+
+
+def check_alignment(
+    ref1: SpatialRef,
+    ref2: SpatialRef,
+    angle_tolerance_deg: float = 0.5,
+    offset_tolerance: float = 0.01,
+) -> Dict[str, float]:
+    """
+    Check whether two spatial references are coaxial: their orientation
+    vectors are parallel or antiparallel (within angle_tolerance_deg) and
+    ref2's position lies on the line through ref1 along its orientation
+    (within offset_tolerance).
+
+    Args:
+        ref1: First resolved SpatialRef (defines the reference axis)
+        ref2: Second resolved SpatialRef
+        angle_tolerance_deg: Max deviation from 0deg/180deg to count as parallel
+        offset_tolerance: Max perpendicular distance from ref2's position to
+            ref1's axis to count as coaxial
+
+    Returns:
+        Dict with 'aligned' (bool), 'angle_deg', 'parallel' (bool),
+        'lateral_offset' (perpendicular distance from ref2 to ref1's axis)
+
+    Raises:
+        MeasurementError: If either reference has no orientation
+    """
+    angle = angle_between_refs(ref1, ref2)
+    parallel = angle <= angle_tolerance_deg or angle >= (180.0 - angle_tolerance_deg)
+
+    delta = ref2.position - ref1.position
+    proj_len = np.dot(delta, ref1.orientation)
+    perp = delta - proj_len * ref1.orientation
+    lateral_offset = float(np.linalg.norm(perp))
+
+    return {
+        "aligned": bool(parallel and lateral_offset <= offset_tolerance),
+        "angle_deg": angle,
+        "parallel": parallel,
+        "lateral_offset": lateral_offset,
+    }
 
 
 def get_bounding_box_dimensions(part: Part) -> Dict[str, float]:

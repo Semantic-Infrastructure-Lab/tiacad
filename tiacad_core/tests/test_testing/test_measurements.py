@@ -16,6 +16,10 @@ import numpy as np
 
 from tiacad_core.testing.measurements import (
     measure_distance,
+    measure_angle,
+    distance_between_refs,
+    angle_between_refs,
+    check_alignment,
     get_bounding_box_dimensions,
     get_distance_between_points,
     parts_in_contact,
@@ -23,6 +27,7 @@ from tiacad_core.testing.measurements import (
     is_fully_connected,
     MeasurementError,
 )
+from tiacad_core.geometry.spatial_references import SpatialRef
 from tiacad_core.part import Part, PartRegistry
 from tiacad_core.geometry import CadQueryBackend
 import cadquery as cq
@@ -189,6 +194,77 @@ class TestMeasureDistance:
 
         # Should be 5.0 (3-4-5 triangle)
         assert abs(dist - 5.0) < 0.1
+
+
+class TestAngleAndAlignment:
+    """Test angle_between_refs(), measure_angle(), and check_alignment()"""
+
+    def setup_method(self):
+        self.backend = CadQueryBackend()
+        self.box1 = Part(
+            name="box1",
+            geometry=cq.Workplane("XY").box(10, 10, 10),
+            backend=self.backend
+        )
+        self.box2 = Part(
+            name="box2",
+            geometry=cq.Workplane("XY").center(0, 0).workplane(offset=10).box(10, 10, 10),
+            backend=self.backend
+        )
+
+    def test_angle_between_refs_parallel(self):
+        up = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='face')
+        also_up = SpatialRef(position=np.array([5.0, 5.0, 5.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='face')
+        assert angle_between_refs(up, also_up) == pytest.approx(0.0, abs=1e-6)
+
+    def test_angle_between_refs_antiparallel(self):
+        up = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='face')
+        down = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, -1.0]), ref_type='face')
+        assert angle_between_refs(up, down) == pytest.approx(180.0, abs=1e-6)
+
+    def test_angle_between_refs_perpendicular(self):
+        up = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='face')
+        east = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([1.0, 0.0, 0.0]), ref_type='face')
+        assert angle_between_refs(up, east) == pytest.approx(90.0, abs=1e-6)
+
+    def test_angle_between_refs_requires_orientation(self):
+        point = SpatialRef(position=np.array([0.0, 0.0, 0.0]))
+        oriented = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='face')
+        with pytest.raises(MeasurementError, match="orientation vector"):
+            angle_between_refs(point, oriented)
+
+    def test_measure_angle_stacked_boxes_faces_are_antiparallel(self):
+        # box2 sits directly above box1 -> box1's top faces box2's bottom, normals oppose
+        angle = measure_angle(self.box1, self.box2, ref1="face_top", ref2="face_bottom")
+        assert angle == pytest.approx(180.0, abs=1e-3)
+
+    def test_distance_between_refs(self):
+        a = SpatialRef(position=np.array([0.0, 0.0, 0.0]))
+        b = SpatialRef(position=np.array([3.0, 4.0, 0.0]))
+        assert distance_between_refs(a, b) == pytest.approx(5.0)
+
+    def test_check_alignment_coaxial(self):
+        axis1 = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='axis')
+        axis2 = SpatialRef(position=np.array([0.0, 0.0, 10.0]), orientation=np.array([0.0, 0.0, -1.0]), ref_type='axis')
+        result = check_alignment(axis1, axis2)
+        assert result['aligned'] is True
+        assert result['parallel'] is True
+        assert result['lateral_offset'] == pytest.approx(0.0, abs=1e-6)
+
+    def test_check_alignment_off_axis(self):
+        axis1 = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='axis')
+        axis2 = SpatialRef(position=np.array([5.0, 0.0, 10.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='axis')
+        result = check_alignment(axis1, axis2)
+        assert result['aligned'] is False
+        assert result['parallel'] is True
+        assert result['lateral_offset'] == pytest.approx(5.0, abs=1e-6)
+
+    def test_check_alignment_not_parallel(self):
+        axis1 = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([0.0, 0.0, 1.0]), ref_type='axis')
+        axis2 = SpatialRef(position=np.array([0.0, 0.0, 0.0]), orientation=np.array([1.0, 0.0, 0.0]), ref_type='axis')
+        result = check_alignment(axis1, axis2)
+        assert result['aligned'] is False
+        assert result['parallel'] is False
 
 
 class TestGetBoundingBoxDimensions:
