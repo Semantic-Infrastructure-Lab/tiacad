@@ -308,17 +308,21 @@ _(no notes yet)_
 ## TASK-TCAD-ARCH-5 · OperationsBuilder dispatch — execute_operation() routes via 12-branch if/elif on op_type, not a registry
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T02:33:07Z'
+updated: '2026-07-18T21:31:47Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 654d4bbbd42d24a1c1ce406e7bd2ca9b0e692328
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T21:31:47Z session:fuchsia-tint-0718] Replaced if/elif dispatch with a dict in OperationsBuilder.__init__
 
 
 ## TASK-TCAD-ARCH-6 · Parse orchestration hotspot — parse_pipeline.py's parse_tiacad_dict is 110 lines / depth 4 doing 6 distinct jobs
