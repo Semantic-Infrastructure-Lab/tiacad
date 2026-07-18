@@ -78,20 +78,23 @@ _(no notes yet)_
 ## TASK-TCAD-VAL-5 · Curved-geometry watertight false negative on spheres/fillets — switch to BREP-level check (BRepCheck_Analyzer)
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [validation, bug]
 created: '2026-07-18T02:32:53Z'
-updated: '2026-07-18T02:33:12Z'
+updated: '2026-07-18T02:41:01Z'
 session: electric-glaze-0717
 links:
   relates_to:
   - TCAD-VAL-2
+  commits:
+  - 7f48d32675f4554a57fb8ca484ded399174965b4
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T02:41:01Z session:electric-glaze-0717] Replaced STL/trimesh mesh check with BREP-level Shape.isValid() (BRepCheck_Analyzer) in get_manifold_stats(). Fixes false negative on spheres/fillets; verified still catches genuine defects (open-shell test). T0_sphere/T1_fillet now assert watertight: true. 2 new tests.
 
 
 ## TASK-TCAD-UX-1 · Reconcile MODEL_VALIDATION.md item 2 (model-local contracts) against shipped expect: engine
