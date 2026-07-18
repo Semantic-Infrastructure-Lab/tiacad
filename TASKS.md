@@ -34,17 +34,21 @@ notes_next: 2
 ## TASK-TCAD-VAL-2 · Differential testing blocked — route geometry code through GeometryBackend so MockBackend/kernel-vs-kernel testing works
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [validation, architecture]
 created: '2026-07-18T02:32:53Z'
-updated: '2026-07-18T02:32:53Z'
+updated: '2026-07-18T20:43:25Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 01b2fe505cf197dac48c22cf919417c2c64bb8af
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T20:43:25Z session:yozove-0718] Shipped via manifold3d as a genuine second kernel, not by routing production code through GeometryBackend as originally titled (MockBackend is a stub, would not have delivered real differential coverage). 12/24 trust models eligible; see VALIDATION_STRENGTHENING.md's differential-testing note.
 
 
 ## TASK-TCAD-VAL-3 · Pinned CI lockfile — exact dependency versions, regenerated on review
