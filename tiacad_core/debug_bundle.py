@@ -128,6 +128,32 @@ def _build_resolved_model_snapshot(
     }
 
 
+def _format_spec_scalars(spec: Dict[str, Any], *, exclude: tuple = ()) -> str:
+    """Render a spec dict's top-level scalar fields as 'key=value, key=value'."""
+    fields = [
+        f"{key}={value}"
+        for key, value in sorted(spec.items())
+        if key not in exclude and isinstance(value, (str, int, float, bool))
+    ]
+    return ', '.join(fields)
+
+
+def _summarize_part_node(spec: Dict[str, Any]) -> str:
+    """One-line human-readable summary of a declared part's shape and dimensions."""
+    primitive = spec.get('primitive', 'part')
+    params = spec.get('parameters', spec)
+    scalars = _format_spec_scalars(params, exclude=('primitive',))
+    return f"{primitive} ({scalars})" if scalars else str(primitive)
+
+
+def _summarize_operation_node(op_type: Any, inputs: list, outputs: list) -> str:
+    """One-line human-readable summary of an operation's declared inputs/outputs."""
+    label = op_type or 'operation'
+    input_text = ', '.join(inputs) if inputs else '(none declared)'
+    output_text = ', '.join(outputs) if outputs else '(none)'
+    return f"{label}: {input_text} -> {output_text}"
+
+
 def _build_build_trace(doc, resolved_model: Dict[str, Any], part_summaries: Dict[str, Any]) -> Dict[str, Any]:
     """Build a simple, stable build trace from declared parts and operations."""
     sections = resolved_model['sections']
@@ -145,19 +171,23 @@ def _build_build_trace(doc, resolved_model: Dict[str, Any], part_summaries: Dict
             'outputs': [part_name] if part_name in part_names else [],
             'spec': spec,
             'summary': part_summaries.get(part_name),
+            'summary_text': _summarize_part_node(spec),
         })
 
     for op_name, spec in declared_operations.items():
+        op_type = spec.get('type')
+        inputs = _extract_operation_inputs(spec)
         outputs = _trace_outputs_for_operation(op_name, part_names)
         nodes.append({
             'name': op_name,
             'node_type': 'operation',
             'declared_in': 'operations',
-            'operation_type': spec.get('type'),
-            'inputs': _extract_operation_inputs(spec),
+            'operation_type': op_type,
+            'inputs': inputs,
             'outputs': outputs,
             'spec': spec,
             'output_summaries': {name: part_summaries.get(name) for name in outputs},
+            'summary_text': _summarize_operation_node(op_type, inputs, outputs),
         })
 
     return {

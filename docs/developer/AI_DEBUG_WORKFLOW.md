@@ -99,6 +99,9 @@ For each node or step, include:
 - resolved parameters
 - output part names
 - whether the node was rebuilt or cached
+- `summary_text`: a one-line human-readable description (e.g. `box (depth=30, height=20, width=10)`,
+  `boolean: base, lid -> assembly`) — shipped in `build_trace.json` for quick skimming without
+  parsing each node's raw `spec`
 
 This is the most important artifact for iterative debugging.
 

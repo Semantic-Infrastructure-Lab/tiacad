@@ -3,7 +3,12 @@
 import json
 from pathlib import Path
 
-from tiacad_core.debug_bundle import create_debug_bundle, default_debug_bundle_dir
+from tiacad_core.debug_bundle import (
+    create_debug_bundle,
+    default_debug_bundle_dir,
+    _summarize_part_node,
+    _summarize_operation_node,
+)
 
 
 def test_default_debug_bundle_dir_uses_input_stem(tmp_path):
@@ -69,6 +74,7 @@ parts:
     assert build_trace['default_part'] == 'box'
     assert build_trace['nodes'][0]['name'] == 'box'
     assert build_trace['nodes'][0]['node_type'] == 'part'
+    assert build_trace['nodes'][0]['summary_text'] == 'box (depth=30, height=20, width=10)'
 
     part_summaries = json.loads((bundle_dir / 'part_summaries.json').read_text(encoding='utf-8'))
     assert 'box' in part_summaries
@@ -82,6 +88,29 @@ parts:
     trust_manifest = json.loads((bundle_dir / 'trust_render_manifest.json').read_text(encoding='utf-8'))
     assert trust_manifest['status'] == 'ok'
     assert trust_manifest['output'] == 'final_trust.png'
+
+
+def test_summarize_part_node_uses_nested_parameters():
+    spec = {'primitive': 'cylinder', 'parameters': {'radius': 5, 'height': 12}}
+    assert _summarize_part_node(spec) == 'cylinder (height=12, radius=5)'
+
+
+def test_summarize_part_node_falls_back_to_flat_spec():
+    spec = {'primitive': 'box', 'width': 10, 'height': 20, 'depth': 30}
+    assert _summarize_part_node(spec) == 'box (depth=30, height=20, width=10)'
+
+
+def test_summarize_part_node_with_no_scalar_params():
+    assert _summarize_part_node({'primitive': 'box', 'parameters': {}}) == 'box'
+
+
+def test_summarize_operation_node_formats_inputs_and_outputs():
+    text = _summarize_operation_node('boolean', ['base', 'lid'], ['assembly'])
+    assert text == 'boolean: base, lid -> assembly'
+
+
+def test_summarize_operation_node_handles_missing_type_and_io():
+    assert _summarize_operation_node(None, [], []) == 'operation: (none declared) -> (none)'
 
 
 def test_create_debug_bundle_records_trust_render_failure(tmp_path, monkeypatch):
