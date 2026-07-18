@@ -293,13 +293,16 @@ notes_next: 3
 ## TASK-TCAD-ARCH-3 · cli.py monolith — #1 quality hotspot (1201 lines, 57 functions, 59/100); create_parser() alone 122 lines
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T05:05:22Z'
+updated: '2026-07-18T23:38:29Z'
 session: electric-glaze-0717
-notes_next: 2
+links:
+  commits:
+  - 8d56ca6c9393a79cd4c218999fb954ab3625090c
+notes_next: 3
 ```
 
 cli.py monolith — #1 quality hotspot (1,260 lines, 58 functions); create_parser() alone 132 lines
@@ -307,6 +310,7 @@ cli.py monolith — #1 quality hotspot (1,260 lines, 58 functions); create_parse
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T05:05:22Z session:electric-glaze-0717] Numbers refreshed 2026-07-18 (were 1201/57/122 when filed) — this session's tiacad verify addition grew the file further, confirming the direction (still #1 hotspot, needs splitting), just updating the exact counts.
+- [#2 2026-07-18T23:38:29Z session:cunning-chimera-0718] Split into tiacad_core/cli/ package: output.py + _common.py (shared helpers) + one module per subcommand (build/validate/info/validate_geometry/check/measure/verify/audit/watch/debug) + parser.py (argparse wiring). Largest file now 211 lines vs original 1329. __init__.py re-exports for backward compat; updated one test patch target (_measure_part_dimensions now resolved in cli.audit's namespace, not cli's re-export) since mock.patch targets where a name is looked up, not where it's re-exported. Verified: test_cli/ 33 passed, live python -m tiacad_core build/check/info/audit runs against examples/.
 
 
 ## TASK-TCAD-ARCH-4 · tiacad_core.visual vs tiacad_core.visualization overlap — no canonical-boundary decision documented
