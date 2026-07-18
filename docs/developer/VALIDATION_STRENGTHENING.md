@@ -936,6 +936,21 @@ an `expect:` block:
   review). Max observed cross-kernel volume disagreement: 0.035% (sphere_basic,
   from manifold3d's inscribed-polygon discretization at 256 circular segments,
   not a real defect). Full suite: 1956 passed (was 1943), 0 failed.
+  **Extended 2026-07-18 (same day):** added `linear`/`circular` pattern
+  support (circular restricted to a cardinal X/Y/Z axis — manifold3d's
+  `rotate()` only takes global Euler angles, and a single-axis rotation is
+  the one case that's order-independent, so no arbitrary axis-angle rotation
+  had to be reimplemented). `_build_pattern_instance` in `differential.py`
+  mirrors `PatternBuilder._execute_linear`/`_execute_circular`'s geometry
+  exactly (including its axis→radial-offset convention), so instance names
+  like `bolt_circle_0` resolve correctly inside boolean/transform deps.
+  Moves `circular_pattern.yaml` from ineligible to eligible (13/24) —
+  `linear_pattern.yaml` stays ineligible for an unrelated reason (its
+  pattern op is the model's only output and produces multiple instances,
+  not one mergeable part, so it has no `expect:`/`export.default_part` to
+  check against regardless of pattern support). Verified real agreement
+  before trusting it: `circular_pattern.yaml`'s cross-kernel volume
+  disagreement is 0.0007%, bbox disagreement 0.0mm. Full suite: 1957 passed.
 - **Dependency posture modernized + CAD kernel unified (shipped 2026-07-10).**
   The old `>=` floors (numpy>=1.21 from 2021, cadquery>=2.6, scipy>=1.9,
   pyvista>=0.43) predated both the numpy-2 API split and the current OCCT

@@ -14,10 +14,12 @@ for manifold3d's circular-segment discretization bias, not genuine kernel
 disagreement.
 
 Coverage is intentionally partial: only primitives + booleans + plain
-translates have an independent manifold3d implementation, so most trust
-models involving patterns/sketches/fillets/lofts/sweeps/revolves are
-correctly reported ineligible rather than silently skipped -- see
-test_eligibility_report below for the current list.
+translates + linear/circular patterns (axis-aligned only) have an
+independent manifold3d implementation, so most trust models involving
+sketches/fillets/lofts/sweeps/revolves -- and any pattern lacking a single
+mergeable final part, like linear_pattern.yaml -- are correctly reported
+ineligible rather than silently skipped -- see test_eligibility_report
+below for the current list.
 """
 
 from pathlib import Path
@@ -50,19 +52,20 @@ def test_eligibility_report():
 
     expected_eligible = {
         "boolean_intersect.yaml", "boolean_subtract.yaml", "boolean_union.yaml",
-        "box_basic.yaml", "cone_basic.yaml", "cylinder_basic.yaml",
-        "cylinder_on_plate.yaml", "pcb_standoff_assembly.yaml", "side_by_side.yaml",
-        "sphere_basic.yaml", "stacked_boxes.yaml", "three_part_assembly.yaml",
+        "box_basic.yaml", "circular_pattern.yaml", "cone_basic.yaml",
+        "cylinder_basic.yaml", "cylinder_on_plate.yaml", "pcb_standoff_assembly.yaml",
+        "side_by_side.yaml", "sphere_basic.yaml", "stacked_boxes.yaml",
+        "three_part_assembly.yaml",
     }
     assert eligible_names == expected_eligible, (
         f"differential-eligible trust models changed: "
         f"gained {eligible_names - expected_eligible}, lost {expected_eligible - eligible_names}"
     )
     assert set(ineligible) == {
-        "chamfer_basic.yaml", "circular_pattern.yaml", "fillet_basic.yaml",
-        "hull_spheres.yaml", "linear_pattern.yaml", "loft_rect_to_circle.yaml",
-        "revolve_180.yaml", "revolve_90.yaml", "revolve_basic.yaml",
-        "revolve_x_axis.yaml", "revolve_y_axis.yaml", "sweep_basic.yaml",
+        "chamfer_basic.yaml", "fillet_basic.yaml", "hull_spheres.yaml",
+        "linear_pattern.yaml", "loft_rect_to_circle.yaml", "revolve_180.yaml",
+        "revolve_90.yaml", "revolve_basic.yaml", "revolve_x_axis.yaml",
+        "revolve_y_axis.yaml", "sweep_basic.yaml",
     }
 
 

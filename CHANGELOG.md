@@ -17,14 +17,15 @@ kernel, no code shared with OCCT — also the engine modern OpenSCAD itself
 defaults to) as a `dev`-only dependency. New
 `tiacad_core/testing/differential.py` independently reconstructs a trust
 model's `parts:`/`operations:` graph (primitives, boolean ops, plain
-`translate` transforms) and cross-checks volume/bbox against the
-CadQuery-built part. `test_correctness/test_differential.py`: 13 tests, 12
-of 24 trust models eligible (patterns/sketches/fillets/lofts/sweeps/revolves
-have no independent implementation and are explicitly reported ineligible,
-not silently skipped). Max observed cross-kernel volume disagreement:
-0.035% (sphere, from mesh discretization, not a defect). See
+`translate` transforms, and axis-aligned `linear`/`circular` patterns) and
+cross-checks volume/bbox against the CadQuery-built part.
+`test_correctness/test_differential.py`: 14 tests, 13 of 24 trust models
+eligible (sketches/fillets/lofts/sweeps/revolves and multi-instance-only
+patterns have no independent implementation and are explicitly reported
+ineligible, not silently skipped). Max observed cross-kernel volume
+disagreement: 0.035% (sphere, from mesh discretization, not a defect). See
 `docs/developer/VALIDATION_STRENGTHENING.md`'s differential-testing note for
-the full kernel-options survey. Full suite: 1956 passed, 0 failed.
+the full kernel-options survey. Full suite: 1957 passed, 0 failed.
 
 ### Added - 2026-07-18 (trust-gallery sign-off ledger + golden STEP topology gate)
 
