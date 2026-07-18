@@ -1,0 +1,46 @@
+# Negative trust scenario 2 — two parts declared in the same assembly with
+# no physical connection between them (100mm gap, well beyond
+# ValidationConstants.DEFAULT_TOLERANCE = 0.1mm).
+#
+# This model builds successfully — both boxes are valid, independent solids;
+# there is no parse/build-time failure (see examples/validation/negative/
+# for those). The defect is semantic: an assembly that's supposed to be one
+# physical object is actually two disjoint floating pieces. Exists to prove
+# AssemblyValidator's DisconnectedPartsRule actually catches this — the
+# first committed regression coverage for that rule (previously exercised
+# only implicitly, never asserted against).
+# See tiacad_core/tests/test_validation/test_negative_trust_scenarios.py and
+# docs/developer/MODEL_VALIDATION.md "Best Next Improvements" #7.
+schema_version: "3.0"
+
+metadata:
+  name: NT2 Disconnected Parts
+  description: "Negative trust scenario: two parts with no physical contact (DisconnectedPartsRule must flag this)"
+  version: "1.0"
+
+parts:
+  base_block:
+    primitive: box
+    parameters:
+      width: 20
+      height: 20
+      depth: 20
+    origin: center
+  floating_block:
+    primitive: box
+    parameters:
+      width: 20
+      height: 20
+      depth: 20
+    origin: center
+
+operations:
+  moved_floating_block:
+    type: transform
+    input: floating_block
+    transforms:
+      # 100mm gap on X — far beyond the 0.1mm connectivity tolerance.
+      - translate: [100, 0, 0]
+
+export:
+  default_part: moved_floating_block

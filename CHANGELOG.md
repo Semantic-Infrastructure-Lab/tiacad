@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-18 (negative trust scenarios)
+
+`examples/validation/negative_trust/` — intentionally-bad models that build
+successfully but are semantically wrong, proving `AssemblyValidator`'s rules
+actually catch real defect classes rather than just passing everything.
+Distinct from the Tier-5 parse/build negative corpus in
+`examples/validation/negative/`, where every model is *supposed* to fail to
+parse or build. NT1 reproduces the `awesome_guitar_hanger` mounting-hole
+regression (screw shaft floats above the plate; `BooleanEffectRule` flags an
+ERROR). NT2 is two disconnected parts (`DisconnectedPartsRule` flags a
+WARNING — first committed regression coverage for that rule, previously
+untested anywhere in the suite). 4 new tests in
+`test_validation/test_negative_trust_scenarios.py`. Implements
+`docs/developer/MODEL_VALIDATION.md` "Best Next Improvements" #7.
+
 ### Added - 2026-07-18 (`tiacad verify` CLI command)
 
 New `tiacad verify INPUT [--json]` command: evaluates a model's embedded

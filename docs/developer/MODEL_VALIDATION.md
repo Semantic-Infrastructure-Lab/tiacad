@@ -260,8 +260,15 @@ These are the highest-value improvements to the current validation model:
 6. **Annotated trust renders:** render failed contracts and named references
    directly onto review images — so a picture *points at* a measured failure instead
    of asking a human to notice it cold.
-7. **Negative trust scenarios:** keep intentionally bad models that must fail
-   validation, proving validators catch real mistakes.
+7. ~~**Negative trust scenarios**~~ **Shipped 2026-07-18:**
+   `examples/validation/negative_trust/` holds intentionally-bad models that
+   build successfully (unlike the Tier-5 parse/build negative corpus in
+   `examples/validation/negative/`) but are semantically wrong: NT1
+   reproduces the `awesome_guitar_hanger` mounting-hole regression (shaft
+   floats above the plate; `BooleanEffectRule` must report an ERROR), NT2 is
+   two disconnected parts (`DisconnectedPartsRule` must report a WARNING —
+   the first committed regression coverage for that rule, previously
+   untested). 4 tests in `test_validation/test_negative_trust_scenarios.py`.
 
 These improvements all reinforce the same pattern: TiaCAD computes facts and
 contracts; humans and AI interpret the evidence.

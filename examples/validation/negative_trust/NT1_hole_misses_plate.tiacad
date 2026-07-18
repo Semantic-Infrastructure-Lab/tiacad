@@ -1,0 +1,54 @@
+# Negative trust scenario 1 — reproduces the awesome_guitar_hanger regression
+# (fixed 2026-07-09, see docs/developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md):
+# a screw-hole shaft's vertical positioning value lands in the Z offset
+# instead of Y, so the shaft floats above the plate instead of piercing it.
+#
+# This model builds successfully (it is NOT a Tier-5 parse/build failure —
+# see examples/validation/negative/ for those) and its `difference` operation
+# runs without error. The defect is semantic: the subtract removes no
+# material because the shaft never touches the plate. It exists to prove
+# AssemblyValidator's BooleanEffectRule actually catches this bug class,
+# not just that a human happened to notice it once
+# (docs/developer/MODEL_VALIDATION.md "Best Next Improvements" #7 — negative
+# trust scenarios, distinct from the Tier-5 parse/build negative corpus).
+# See tiacad_core/tests/test_validation/test_negative_trust_scenarios.py.
+schema_version: "3.0"
+
+metadata:
+  name: NT1 Hole Misses Plate
+  description: "Negative trust scenario: screw-hole shaft floats above the plate instead of piercing it (BooleanEffectRule must flag this)"
+  version: "1.0"
+
+parts:
+  mounting_plate:
+    primitive: box
+    parameters:
+      width: 120
+      height: 15
+      depth: 90
+    origin: center
+  screw_hole_shaft:
+    primitive: cylinder
+    parameters:
+      radius: 2.5
+      height: 17
+    origin: center
+
+operations:
+  left_screw_shaft:
+    type: transform
+    input: screw_hole_shaft
+    transforms:
+      # Bug: the vertical value (25) lands in the Z offset instead of Y, so
+      # the shaft sits 25mm above the plate's top face instead of through it.
+      - translate: [-35, 0, 25]
+
+  result:
+    type: boolean
+    operation: difference
+    base: mounting_plate
+    subtract:
+      - left_screw_shaft
+
+export:
+  default_part: result
