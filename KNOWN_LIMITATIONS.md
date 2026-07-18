@@ -494,6 +494,14 @@ regression-risky). See `tiacad_core/tests/test_correctness/test_negative_contrac
 
 ---
 
+### 13. Fixed — `pcb_standoff_assembly.yaml`'s plate/PCB had `height`/`depth` swapped, rendering as a vertical wall instead of a flat plate
+
+**Found while doing the trust-gallery visual sign-off pass** (`docs/developer/VALIDATION_STRENGTHENING.md` section 4.7): the box primitive maps `width→X, depth→Y, height→Z` (`tiacad_core/geometry/cadquery_backend.py::create_box`, `cq.Workplane.box(width, depth, height)`). `examples/trust/pcb_standoff_assembly.yaml`'s `plate` and `pcb` parts assigned their in-plane footprint dimension (`plate_height`/`pcb_height`, meant to be the Y-axis extent) to the box's `height` parameter (which is actually Z, the thickness axis), and the thickness (`plate_thickness`/`pcb_thickness`) to `depth` (Y). The rendered result was a 100×5×80 vertical panel standing on edge, not the documented "flat plate (100×80×5) with PCB centered on top" — a "built, plausible-looking, but wrong" bug that a volume-only check can't catch (volume is identical regardless of axis assignment) but a visual render immediately exposes. The pre-existing hand-written `TestTrustPcbStandoffAssembly.test_plate_dimensions` had encoded the same swapped values, so it silently passed against the bug instead of catching it.
+
+**Fix applied:** swapped `height`/`depth` in both parts' `parameters:` blocks so the plate's thickness (Z) and footprint (Y) map to the correct axes; updated the hand-written dimension test to match the corrected geometry. Confirmed visually (re-rendered trust gallery) and re-ran `test_trust_contracts.py`. See `examples/trust/SIGNOFF.md`.
+
+---
+
 ## Test Health
 
 TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.

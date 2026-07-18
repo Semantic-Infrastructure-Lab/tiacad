@@ -68,16 +68,16 @@ parts:
     primitive: box
     parameters:
       width: '${plate_width}'
-      height: '${plate_height}'
-      depth: '${plate_thickness}'
+      height: '${plate_thickness}'
+      depth: '${plate_height}'
     color: "#4a90d9"
 
   pcb:
     primitive: box
     parameters:
       width: '${pcb_width}'
-      height: '${pcb_height}'
-      depth: '${pcb_thickness}'
+      height: '${pcb_thickness}'
+      depth: '${pcb_height}'
     translate:
       - [0, 0, '${pcb_center_z}']
     color: "#2d7a2d"
