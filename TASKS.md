@@ -296,17 +296,21 @@ cli.py monolith — #1 quality hotspot (1,260 lines, 58 functions); create_parse
 ## TASK-TCAD-ARCH-4 · tiacad_core.visual vs tiacad_core.visualization overlap — no canonical-boundary decision documented
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T02:33:07Z'
+updated: '2026-07-18T22:52:03Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 3fa989c89fd88d0c20381dc50f888167a9139751
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T22:52:03Z session:arctic-drizzle-0718] Investigated: real functional overlap (both render CadQuery parts to PNG via PyVista) but not ambiguous in practice — visual.trust_renderer is the sole production path (CLI tiacad debug/trust, debug_bundle.py); visualization.renderer.ModelRenderer has zero production callers, only 2 demo scripts + its own tests. Documented the canonical boundary in both __init__.py docstrings. Also surfaced (not removed): visual_debug.py is dead __main__-guarded example code with no callers anywhere — flagged for a future explicit removal decision, not deleted here.
 
 
 ## TASK-TCAD-ARCH-5 · OperationsBuilder dispatch — execute_operation() routes via 12-branch if/elif on op_type, not a registry
