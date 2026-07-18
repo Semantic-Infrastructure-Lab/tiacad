@@ -22,3 +22,11 @@ parts:
 
 export:
   default_part: cyl
+
+expect:
+  final: cyl
+  volume: 28274.333882308138
+  bbox: [30, 30, 40]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

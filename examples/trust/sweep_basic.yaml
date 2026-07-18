@@ -43,3 +43,15 @@ operations:
 
 export:
   default_part: l_pipe
+
+# No closed form for a swept elbow at a sharp path corner. Measured: the
+# continuous sweep along the 80mm L-path (two 40mm arms) is essentially
+# pi*r^2*path_length = pi*25*80 = 6283.185307 to within kernel noise — a
+# continuous tube sweep has no self-overlap to subtract at a polyline
+# corner (unlike two independently-placed cylinders unioned together).
+expect:
+  final: l_pipe
+  volume: 6283.185307172266
+  bbox: [45, 10, 45]
+  watertight: true
+  components: 1

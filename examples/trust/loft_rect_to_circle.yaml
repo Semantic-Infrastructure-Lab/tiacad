@@ -55,3 +55,14 @@ operations:
 
 export:
   default_part: transition
+
+# No closed form for a rect-to-circle loft (corner rounding is kernel-
+# interpolated, not a simple prismatoid). Measured and reviewed: falls
+# between the narrow/wide prismatoid-approximation bounds
+# ((40*40+pi*15^2)/2)*30 ~= 34,600 +/- 30%.
+expect:
+  final: transition
+  volume: 33872.379263137285
+  bbox: [40, 40, 30]
+  watertight: true
+  components: 1

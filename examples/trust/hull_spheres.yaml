@@ -58,3 +58,15 @@ operations:
 
 export:
   default_part: smooth_hull
+
+# No closed form for a 3-sphere convex hull. Measured and reviewed: exceeds
+# the volume of the 3 wrapped spheres (3 * 4/3*pi*8^3 ~= 6,434) and stays
+# under a conservative outer bounding box, as the existing hand-written
+# test already asserts.
+expect:
+  final: smooth_hull
+  volume: 24960.68576375622
+  bbox: [55.9926, 49.9903, 16.0]
+  watertight: true
+  components: 1
+  tol: { length: 0.01 }

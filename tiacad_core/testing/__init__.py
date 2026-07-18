@@ -48,6 +48,15 @@ from .geometry_summary import (
     GeometrySummaryError,
 )
 
+from .golden_step import (
+    topology_signature,
+    topology_signature_from_step,
+    check_against_golden_step,
+    export_golden_step,
+    TopologySignature,
+    GoldenStepError,
+)
+
 __all__ = [
     'measure_distance',
     'get_bounding_box_dimensions',
@@ -60,6 +69,12 @@ __all__ = [
     'summarize_part_geometry',
     'summarize_part_registry',
     'GeometrySummaryError',
+    'topology_signature',
+    'topology_signature_from_step',
+    'check_against_golden_step',
+    'export_golden_step',
+    'TopologySignature',
+    'GoldenStepError',
     'VisualRegressionTester',
     'VisualDiffResult',
     'RenderConfig',

@@ -38,3 +38,11 @@ operations:
 
 export:
   default_part: overlap
+
+expect:
+  final: overlap
+  volume: 8000.0
+  bbox: [20, 20, 20]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

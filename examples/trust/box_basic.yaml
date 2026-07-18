@@ -19,3 +19,11 @@ parts:
 
 export:
   default_part: box
+
+expect:
+  final: box
+  volume: 30000.0
+  bbox: [50, 30, 20]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

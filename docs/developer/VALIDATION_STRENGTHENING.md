@@ -663,6 +663,20 @@ the trust renderer from an ad-hoc debugging aid into an auditable
 correctness-of-record for the things math can't fully pin down (aesthetics,
 orientation sanity). **Effort:** low–medium.
 
+**Shipped 2026-07-18:** `examples/trust/SIGNOFF.md`, generated/refreshed by
+`scripts/trust_signoff.py` and hand-edited for the Reviewed/Reviewer/Note
+columns (a re-run never overwrites a prior sign-off — a new scenario shows as
+PENDING until someone actually looks). 16 of 24 trust scenarios gained
+`expect:` blocks (reusing already-verified values from the pre-existing
+hand-written `test_trust_contracts.py` assertions where possible; the other 8
+are multi-part assembly scenes with no single mergeable "final" part, so keep
+their hand-written positional/relational tests instead). All 24 renders were
+visually reviewed end-to-end and signed off. The review caught a real bug:
+`pcb_standoff_assembly.yaml`'s plate/PCB had `height`/`depth` swapped
+(rendered as a vertical wall, not a flat plate) — invisible to any
+volume-only check since volume doesn't depend on axis assignment; fixed, see
+KNOWN_LIMITATIONS.md #13.
+
 ### 4.8 — Schema truth reconciliation *(closes G4)*
 
 Add a CI test that validates every example against `tiacad-schema.json`, and a
@@ -708,6 +722,18 @@ regenerated only by explicit review. This is a *supplement* to oracles for
 catching topology changes that volume/bbox miss — deliberately last, because
 goldens without an oracle are the very trap this plan is escaping. **Effort:**
 low; **keep the set tiny.**
+
+**Shipped 2026-07-18:** `tiacad_core/testing/golden_step.py` (BREP topology
+signature: solid/face/edge/vertex counts, computed both from a live-built
+part and by re-importing a committed STEP file), `scripts/
+generate_golden_steps.py` (regenerate-and-review, never auto-regenerated from
+a test — same discipline as `update_determinism_goldens.py`), and 5 committed
+baselines under `examples/validation/golden_step/`: `T1_chamfer`, `T1_fillet`
+(face-count-sensitive finishing ops), `T3_lego_2x1` (the model with real
+disconnected-body regression history), `T3_bracket_fillet`, and
+`T4_bolted_bracket` (a multi-solid bolted assembly). `test_golden_step.py`
+gates all 5 on every run plus a self-consistency check (topology must not
+vary build-to-build).
 
 ---
 
@@ -967,8 +993,11 @@ raises, plus two small input-validation gaps found and fixed in the process
 (message-less negative-dimension errors; silently-clobbered duplicate part
 names — KNOWN_LIMITATIONS.md #12). This was the last unchecked item on the
 §5 ladder-corpus checklist — the full T0→T5 confidence ladder described in
-section 3 is now shipped end-to-end.** Still open (deliberately out of this
-ladder's scope): trust-gallery sign-off (4.7), golden STEP set (4.9).
+section 3 is now shipped end-to-end.**
+
+**Phase 4 — Outside the ladder's scope, shipped 2026-07-18: trust-gallery
+sign-off (4.7) + golden STEP set (4.9).** See those sections for detail.
+Every deliverable named in this document's original plan is now shipped.
 
 ---
 

@@ -54,3 +54,13 @@ operations:
 
 export:
   default_part: spool
+
+# Exact closed form: 2 flanges (r=25, h=8 each) + barrel (r=10, h=20):
+# 2*pi*25^2*8 + pi*10^2*20 = 31415.926536 + 6283.185307 = 37699.111843.
+expect:
+  final: spool
+  volume: 37699.111843077517
+  bbox: [50, 50, 36]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

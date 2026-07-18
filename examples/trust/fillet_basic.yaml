@@ -25,3 +25,15 @@ operations:
 
 export:
   default_part: filleted
+
+# Same box shape as examples/validation/T1_fillet.tiacad (40x40x20, r=3) —
+# exact closed-form Minkowski-sum-with-a-ball rounded-box volume (see that
+# model's header comment for the formula); confirmed to match measured
+# volume to full kernel precision.
+expect:
+  final: filleted
+  volume: 31263.5927138785
+  bbox: [40, 20, 40]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

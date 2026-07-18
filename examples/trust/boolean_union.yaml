@@ -38,3 +38,11 @@ operations:
 
 export:
   default_part: cross
+
+expect:
+  final: cross
+  volume: 48000.0
+  bbox: [80, 60, 20]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

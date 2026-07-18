@@ -20,3 +20,11 @@ parts:
 
 export:
   default_part: sphere
+
+expect:
+  final: sphere
+  volume: 33510.32163829113
+  bbox: [40, 40, 40]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

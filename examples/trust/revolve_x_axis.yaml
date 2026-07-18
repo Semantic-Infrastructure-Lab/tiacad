@@ -43,3 +43,11 @@ operations:
 
 export:
   default_part: cyl_x
+
+expect:
+  final: cyl_x
+  volume: 28274.333882308138
+  bbox: [40, 30, 30]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

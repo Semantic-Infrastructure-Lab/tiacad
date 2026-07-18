@@ -1,19 +1,24 @@
 """
 Trust Scenario Geometric Contracts
 
-Contracts for the 20 curated trust YAML files in examples/trust/.
-Each trust YAML documents its own ground truth in comments and description text.
-These tests translate that prose into assertions — catching "built but wrong"
-errors that visual inspection alone cannot.
+Contracts for the curated trust YAML files in examples/trust/.
 
-Coverage:
-  Primitives:    box, cylinder, sphere, cone, revolve (360°, 180°, 90°)
-  Assemblies:    stacked_boxes, cylinder_on_plate, side_by_side, three_part_assembly
-  Booleans:      subtract, union, intersect
-  Finishing:     chamfer, fillet
-  Surfaces:      loft, sweep, hull
-  Patterns:      linear, circular
-  Complex:       pcb_standoff_assembly (stdlib imports)
+As of 2026-07-18 (VALIDATION_STRENGTHENING.md section 4.7), every
+single-final-part trust scenario (primitives, booleans, finishing, revolve,
+loft, sweep, hull, patterns) carries its own embedded `expect:` block and is
+discovered and checked automatically by test_embedded_contracts.py's generic
+sweep — no per-example test code needed. This mirrors the 2026-07-11 trim of
+the Tier-2 example classes (see that file's history): a hand-written
+volume/bbox assertion here would just be a strictly weaker duplicate of the
+contract (the old ±100mm³/±30% bound checks vs. the contract's exact or
+near-exact reviewed values). See each trust YAML's `expect:` block for the
+reviewed ground truth and derivation notes.
+
+What remains here are the assembly-style scenarios that build *multiple*
+independent, un-merged parts (no single "final" solid for `expect:` to
+target) and whose value is in the *relationships between parts* — flush
+contact, centering, symmetric placement, per-instance dimensions — which the
+single-part contract mechanism doesn't express.
 
 Axis mapping (box primitive → get_dimensions):
   YAML width  → X → dims['width']
@@ -38,252 +43,8 @@ def _parse(filename: str):
     return TiaCADParser.parse_file(str(TRUST / filename))
 
 
-def _measure(filename: str, part_name: str):
-    doc = _parse(filename)
-    return get_dimensions(doc.parts.get(part_name))
-
-
 # ---------------------------------------------------------------------------
-# Primitives
-# ---------------------------------------------------------------------------
-
-class TestTrustBoxBasic:
-    """box_basic.yaml: w=50(X), d=30(Y), h=20(Z) → vol=30,000"""
-
-    def test_dimensions(self):
-        dims = _measure("box_basic.yaml", "box")
-        assert dims["width"]  == pytest.approx(50.0, abs=TOL)
-        assert dims["height"] == pytest.approx(30.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(20.0, abs=TOL)
-
-    def test_volume(self):
-        dims = _measure("box_basic.yaml", "box")
-        assert dims["volume"] == pytest.approx(30_000.0, abs=VOL_TOL)
-
-
-class TestTrustCylinderBasic:
-    """cylinder_basic.yaml: r=15, h=40 → diameter=30, vol≈28,274"""
-
-    def test_dimensions(self):
-        dims = _measure("cylinder_basic.yaml", "cyl")
-        assert dims["width"]  == pytest.approx(30.0, abs=TOL)   # X: 2×r
-        assert dims["height"] == pytest.approx(30.0, abs=TOL)   # Y: 2×r
-        assert dims["depth"]  == pytest.approx(40.0, abs=TOL)   # Z: height
-
-    def test_volume(self):
-        dims = _measure("cylinder_basic.yaml", "cyl")
-        assert dims["volume"] == pytest.approx(math.pi * 15**2 * 40, abs=VOL_TOL)
-
-
-class TestTrustSphereBasic:
-    """sphere_basic.yaml: r=20 → cubic bbox 40×40×40, vol≈33,510"""
-
-    def test_bounding_box_is_cube(self):
-        dims = _measure("sphere_basic.yaml", "sphere")
-        assert dims["width"]  == pytest.approx(40.0, abs=TOL)
-        assert dims["height"] == pytest.approx(40.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(40.0, abs=TOL)
-
-    def test_volume(self):
-        dims = _measure("sphere_basic.yaml", "sphere")
-        assert dims["volume"] == pytest.approx(4/3 * math.pi * 20**3, abs=VOL_TOL)
-
-
-class TestTrustConeBasic:
-    """cone_basic.yaml: r1=20, r2=0, h=40 → bbox 40×40×40, vol≈16,755"""
-
-    def test_bounding_box(self):
-        dims = _measure("cone_basic.yaml", "cone")
-        assert dims["width"]  == pytest.approx(40.0, abs=TOL)
-        assert dims["height"] == pytest.approx(40.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(40.0, abs=TOL)
-
-    def test_volume(self):
-        dims = _measure("cone_basic.yaml", "cone")
-        assert dims["volume"] == pytest.approx(1/3 * math.pi * 20**2 * 40, abs=VOL_TOL)
-
-    def test_half_cylinder_volume(self):
-        """Cone must be exactly 1/3 the volume of a cylinder with same base and height."""
-        dims = _measure("cone_basic.yaml", "cone")
-        full_cyl_vol = math.pi * 20**2 * 40
-        assert dims["volume"] == pytest.approx(full_cyl_vol / 3, abs=VOL_TOL)
-
-
-class TestTrustRevolveBasic:
-    """
-    revolve_basic.yaml: spool — flanges r=25 h=8 (×2) + barrel r=10 h=20, total h=36.
-
-    Sketch in XZ plane, revolved 360° around world Z axis.
-    Correct geometry: circular cross-section in XY (radius=25), height in Z=36.
-      width  (X) = 50  (diameter = 2×25)
-      height (Y) = 50  (diameter = 2×25)
-      depth  (Z) = 36  (flange_h + barrel_h + flange_h = 8+20+8)
-      volume     ≈ 37,699 mm³ (2 flanges + barrel, exact math)
-    """
-
-    def test_dimensions(self):
-        """Spool cross-section is circular (width == height) and Z height == 36."""
-        dims = _measure("revolve_basic.yaml", "spool")
-        assert dims["width"]  == pytest.approx(50.0, abs=TOL)   # 2×r=25
-        assert dims["height"] == pytest.approx(50.0, abs=TOL)   # 2×r=25
-        assert dims["depth"]  == pytest.approx(36.0, abs=TOL)   # 8+20+8
-
-    def test_volume(self):
-        """Volume = 2 flanges (r=25, h=8 each) + barrel (r=10, h=20)."""
-        dims = _measure("revolve_basic.yaml", "spool")
-        flange_vol = 2 * math.pi * 25**2 * 8   # 31,416 mm³
-        barrel_vol = math.pi * 10**2 * 20       #  6,283 mm³
-        expected = flange_vol + barrel_vol       # 37,699 mm³
-        assert dims["volume"] == pytest.approx(expected, abs=VOL_TOL)
-
-    def test_symmetric_cross_section(self):
-        """Revolved around Z: X and Y extents must be equal (circular cross-section)."""
-        dims = _measure("revolve_basic.yaml", "spool")
-        assert dims["width"] == pytest.approx(dims["height"], abs=TOL)
-
-    def test_barrel_narrows_spool(self):
-        """Volume must be less than a solid cylinder bounding the spool."""
-        dims = _measure("revolve_basic.yaml", "spool")
-        bbox_cyl_vol = math.pi * (dims["width"] / 2) ** 2 * dims["depth"]
-        assert dims["volume"] < bbox_cyl_vol
-
-
-class TestTrustRevolveXAxis:
-    """
-    revolve_x_axis.yaml: rectangle (X=0..40, Z=0..15) in XZ plane → 360° around X.
-    Produces cylinder: radius=15, length=40, axis along X.
-    Same volume as cylinder_basic.yaml (r=15, h=40) — cross-validates revolve
-    engine against the primitive cylinder code path.
-      width  (X) = 40  (length along axis)
-      height (Y) = 30  (diameter = 2×15)
-      depth  (Z) = 30  (diameter = 2×15)
-      volume     ≈ 28,274 mm³
-    """
-
-    def test_length_along_x(self):
-        """Cylinder length is along X (the revolve axis)."""
-        dims = _measure("revolve_x_axis.yaml", "cyl_x")
-        assert dims["width"] == pytest.approx(40.0, abs=TOL)
-
-    def test_circular_cross_section_in_yz(self):
-        """Revolve around X: Y and Z extents must be equal (circular cross-section)."""
-        dims = _measure("revolve_x_axis.yaml", "cyl_x")
-        assert dims["height"] == pytest.approx(30.0, abs=TOL)  # 2×r
-        assert dims["depth"]  == pytest.approx(30.0, abs=TOL)  # 2×r
-        assert dims["height"] == pytest.approx(dims["depth"], abs=TOL)
-
-    def test_volume(self):
-        dims = _measure("revolve_x_axis.yaml", "cyl_x")
-        assert dims["volume"] == pytest.approx(math.pi * 15**2 * 40, abs=VOL_TOL)
-
-
-class TestTrustRevolveYAxis:
-    """
-    revolve_y_axis.yaml: rectangle (X=0..15, Y=0..40) in XY plane → 360° around Y.
-    Produces cylinder: radius=15, length=40, axis along Y.
-    Same volume as cylinder_basic.yaml (r=15, h=40) — cross-validates revolve
-    engine against the primitive cylinder code path.
-      width  (X) = 30  (diameter = 2×15)
-      height (Y) = 40  (length along axis)
-      depth  (Z) = 30  (diameter = 2×15)
-      volume     ≈ 28,274 mm³
-    """
-
-    def test_length_along_y(self):
-        """Cylinder length is along Y (the revolve axis)."""
-        dims = _measure("revolve_y_axis.yaml", "cyl_y")
-        assert dims["height"] == pytest.approx(40.0, abs=TOL)
-
-    def test_circular_cross_section_in_xz(self):
-        """Revolve around Y: X and Z extents must be equal (circular cross-section)."""
-        dims = _measure("revolve_y_axis.yaml", "cyl_y")
-        assert dims["width"] == pytest.approx(30.0, abs=TOL)   # 2×r
-        assert dims["depth"] == pytest.approx(30.0, abs=TOL)   # 2×r
-        assert dims["width"] == pytest.approx(dims["depth"], abs=TOL)
-
-    def test_volume(self):
-        dims = _measure("revolve_y_axis.yaml", "cyl_y")
-        assert dims["volume"] == pytest.approx(math.pi * 15**2 * 40, abs=VOL_TOL)
-
-
-class TestTrustRevolve180:
-    """
-    revolve_180.yaml: same rectangle as revolve_x_axis.yaml, revolved 180° around X.
-    Produces a half-cylinder: r=15, length=40.
-    Volume must equal exactly half the 360° revolve: π×15²×40 / 2.
-      width (X)  = 40  (length along axis)
-      height (Y) = 15  (radius — only one side of YZ plane)
-      depth (Z)  = 30  (full diameter: from -15 to +15)
-      volume     ≈ 14,137 mm³
-    """
-
-    def test_volume_is_half_of_360(self):
-        """180° revolve must produce exactly half the volume of 360°."""
-        full_vol = math.pi * 15**2 * 40
-        dims = _measure("revolve_180.yaml", "half_cyl")
-        assert dims["volume"] == pytest.approx(full_vol / 2, abs=VOL_TOL)
-
-    def test_length_along_x(self):
-        dims = _measure("revolve_180.yaml", "half_cyl")
-        assert dims["width"] == pytest.approx(40.0, abs=TOL)
-
-    def test_z_span_equals_full_diameter(self):
-        """Z spans the full diameter (both sides of XZ symmetry plane)."""
-        dims = _measure("revolve_180.yaml", "half_cyl")
-        assert dims["depth"] == pytest.approx(30.0, abs=TOL)  # 2×r
-
-
-class TestTrustRevolve90:
-    """
-    revolve_90.yaml: same rectangle as revolve_x_axis.yaml, revolved 90° around X.
-    Produces a quarter-cylinder wedge: r=15, length=40.
-    Volume must equal exactly one quarter the 360° revolve: π×15²×40 / 4.
-      width (X)  = 40  (length along axis)
-      volume     ≈ 7,069 mm³
-    """
-
-    def test_volume_is_quarter_of_360(self):
-        """90° revolve must produce exactly one quarter the volume of 360°."""
-        full_vol = math.pi * 15**2 * 40
-        dims = _measure("revolve_90.yaml", "quarter_cyl")
-        assert dims["volume"] == pytest.approx(full_vol / 4, abs=VOL_TOL)
-
-    def test_length_along_x(self):
-        dims = _measure("revolve_90.yaml", "quarter_cyl")
-        assert dims["width"] == pytest.approx(40.0, abs=TOL)
-
-    def test_volume_positive(self):
-        dims = _measure("revolve_90.yaml", "quarter_cyl")
-        assert dims["volume"] > 0
-
-
-class TestRevolveAngleScaling:
-    """
-    Verify that revolve angle scaling is linear: 180° = half of 360°, 90° = quarter.
-    Uses the same profile (r=15, length=40) across three angles to isolate
-    the angle-scaling code path from profile/axis bugs.
-    """
-
-    _FULL_VOL = math.pi * 15**2 * 40  # ≈ 28,274 mm³
-
-    def test_180_is_half_of_360(self):
-        full = _measure("revolve_x_axis.yaml", "cyl_x")["volume"]
-        half = _measure("revolve_180.yaml",    "half_cyl")["volume"]
-        assert half == pytest.approx(full / 2, abs=VOL_TOL)
-
-    def test_90_is_quarter_of_360(self):
-        full    = _measure("revolve_x_axis.yaml", "cyl_x")["volume"]
-        quarter = _measure("revolve_90.yaml",     "quarter_cyl")["volume"]
-        assert quarter == pytest.approx(full / 4, abs=VOL_TOL)
-
-    def test_90_is_half_of_180(self):
-        half    = _measure("revolve_180.yaml", "half_cyl")["volume"]
-        quarter = _measure("revolve_90.yaml",  "quarter_cyl")["volume"]
-        assert quarter == pytest.approx(half / 2, abs=VOL_TOL)
-
-
-# ---------------------------------------------------------------------------
-# Assemblies
+# Assemblies (multiple un-merged parts — no single expect: target)
 # ---------------------------------------------------------------------------
 
 class TestTrustStackedBoxes:
@@ -461,192 +222,7 @@ class TestTrustThreePartAssembly:
 
 
 # ---------------------------------------------------------------------------
-# Boolean operations
-# ---------------------------------------------------------------------------
-
-class TestTrustBooleanSubtract:
-    """boolean_subtract.yaml: 60×60×20 box − cylinder hole r=12 h=30 through center"""
-
-    def test_bbox_unchanged(self):
-        """Centered subtract leaves bounding box identical to input box."""
-        dims = _measure("boolean_subtract.yaml", "result")
-        assert dims["width"]  == pytest.approx(60.0, abs=TOL)
-        assert dims["height"] == pytest.approx(60.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(20.0, abs=TOL)
-
-    def test_hole_removes_material(self):
-        dims = _measure("boolean_subtract.yaml", "result")
-        assert dims["volume"] < 60 * 60 * 20  # solid = 72,000
-
-    def test_volume(self):
-        """box(72k) − π×12²×20 (cylinder clipped to box height) ≈ 62,953."""
-        dims = _measure("boolean_subtract.yaml", "result")
-        expected = 60 * 60 * 20 - math.pi * 12**2 * 20
-        assert dims["volume"] == pytest.approx(expected, abs=VOL_TOL)
-
-
-class TestTrustBooleanUnion:
-    """boolean_union.yaml: union of 80×20×20 X-slab + 20×20×60 Z-slab"""
-
-    def test_bounding_box(self):
-        # x_slab: YAML width=80(X), height=20(Z→depth), depth=20(Y→height)
-        # z_slab: YAML width=20(X), height=20(Z→depth), depth=60(Y→height)
-        # union:  X=80, Y=60 (from z_slab.depth), Z=20 (shared height)
-        dims = _measure("boolean_union.yaml", "cross")
-        assert dims["width"]  == pytest.approx(80.0, abs=TOL)   # X: from x_slab.width
-        assert dims["height"] == pytest.approx(60.0, abs=TOL)   # Y: from z_slab.depth
-        assert dims["depth"]  == pytest.approx(20.0, abs=TOL)   # Z: both slabs share height=20
-
-    def test_volume(self):
-        """A + B − (A ∩ B) = 32k + 24k − 8k = 48,000."""
-        dims = _measure("boolean_union.yaml", "cross")
-        assert dims["volume"] == pytest.approx(48_000.0, abs=VOL_TOL)
-
-    def test_larger_than_either_input(self):
-        dims = _measure("boolean_union.yaml", "cross")
-        assert dims["volume"] > 80 * 20 * 20   # > x_slab (32k)
-        assert dims["volume"] > 20 * 20 * 60   # > z_slab (24k)
-
-
-class TestTrustBooleanIntersect:
-    """boolean_intersect.yaml: X-slab ∩ Z-slab = 20×20×20 cube"""
-
-    def test_is_cube(self):
-        dims = _measure("boolean_intersect.yaml", "overlap")
-        assert dims["width"]  == pytest.approx(20.0, abs=TOL)
-        assert dims["height"] == pytest.approx(20.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(20.0, abs=TOL)
-
-    def test_volume(self):
-        dims = _measure("boolean_intersect.yaml", "overlap")
-        assert dims["volume"] == pytest.approx(8_000.0, abs=VOL_TOL)
-
-    def test_smaller_than_both_inputs(self):
-        dims = _measure("boolean_intersect.yaml", "overlap")
-        assert dims["volume"] < 60 * 20 * 20  # < x_slab (24k)
-        assert dims["volume"] < 20 * 20 * 60  # < z_slab (24k)
-
-
-# ---------------------------------------------------------------------------
-# Finishing operations
-# ---------------------------------------------------------------------------
-
-class TestTrustChamferBasic:
-    """chamfer_basic.yaml: 40×40×20 box with 3mm chamfer on all 12 edges"""
-
-    def test_bbox_unchanged(self):
-        """Chamfer is inset — bounding box matches the input box.
-        Box YAML: width=40(X), depth=20(Y→height), height=40(Z→depth)."""
-        dims = _measure("chamfer_basic.yaml", "chamfered")
-        assert dims["width"]  == pytest.approx(40.0, abs=TOL)   # X
-        assert dims["height"] == pytest.approx(20.0, abs=TOL)   # Y (YAML depth=20)
-        assert dims["depth"]  == pytest.approx(40.0, abs=TOL)   # Z (YAML height=40)
-
-    def test_chamfer_removes_material(self):
-        dims = _measure("chamfer_basic.yaml", "chamfered")
-        assert dims["volume"] < 40 * 40 * 20  # solid = 32,000
-
-    def test_volume_close_to_solid(self):
-        """3mm chamfer is small — volume stays well above 28,000."""
-        dims = _measure("chamfer_basic.yaml", "chamfered")
-        assert dims["volume"] > 28_000
-
-
-class TestTrustFilletBasic:
-    """fillet_basic.yaml: 40×40×20 box with r=3 fillet on all 12 edges"""
-
-    def test_bbox_unchanged(self):
-        """Fillet is inset — bounding box matches the input box.
-        Box YAML: width=40(X), depth=20(Y→height), height=40(Z→depth)."""
-        dims = _measure("fillet_basic.yaml", "filleted")
-        assert dims["width"]  == pytest.approx(40.0, abs=TOL)   # X
-        assert dims["height"] == pytest.approx(20.0, abs=TOL)   # Y (YAML depth=20)
-        assert dims["depth"]  == pytest.approx(40.0, abs=TOL)   # Z (YAML height=40)
-
-    def test_fillet_removes_material(self):
-        dims = _measure("fillet_basic.yaml", "filleted")
-        assert dims["volume"] < 40 * 40 * 20  # solid = 32,000
-
-    def test_volume_close_to_solid(self):
-        dims = _measure("fillet_basic.yaml", "filleted")
-        assert dims["volume"] > 28_000
-
-
-# ---------------------------------------------------------------------------
-# Surface operations
-# ---------------------------------------------------------------------------
-
-class TestTrustLoftRectToCircle:
-    """loft_rect_to_circle.yaml: 40×40 square at Z=0 → circle r=15 at Z=30"""
-
-    def test_height(self):
-        """Loft spans exactly 30mm in Z."""
-        dims = _measure("loft_rect_to_circle.yaml", "transition")
-        assert dims["depth"] == pytest.approx(30.0, abs=TOL)
-
-    def test_volume_between_bounds(self):
-        """
-        Volume must be between narrow and wide extremes.
-        Prismatoid approximation: avg cross-section × height
-          = ((40×40 + π×15²) / 2) × 30 ≈ 34,600 mm³
-        Use ±30% around that estimate as tighter bounds.
-        """
-        dims = _measure("loft_rect_to_circle.yaml", "transition")
-        prismatoid_approx = ((40 * 40 + math.pi * 15**2) / 2) * 30  # ≈ 34,600
-        assert dims["volume"] > 0.70 * prismatoid_approx   # > ~24,200
-        assert dims["volume"] < 1.30 * prismatoid_approx   # < ~45,000
-
-
-class TestTrustSweepBasic:
-    """sweep_basic.yaml: r=5 circle swept along L-path (Z 0→40, then X 0→40)"""
-
-    def test_volume_positive(self):
-        dims = _measure("sweep_basic.yaml", "l_pipe")
-        assert dims["volume"] > 0
-
-    def test_volume_close_to_full_path(self):
-        """
-        L-pipe: path length = 80mm (two 40mm arms), πr²=78.5mm².
-        Both arms must be substantially present: volume > 1.5× one arm.
-        Corner overlap removes only a small amount: volume < 2× one arm.
-        """
-        dims = _measure("sweep_basic.yaml", "l_pipe")
-        one_arm = math.pi * 5**2 * 40  # ≈ 3,142
-        assert dims["volume"] > 1.5 * one_arm   # > 4,712 — both arms must contribute
-        assert dims["volume"] < 2.0 * one_arm   # < 6,283 — corner removes some material
-
-    def test_both_arms_present(self):
-        """Z span and X span must each reach ~40mm (both arms of the L built)."""
-        doc = _parse("sweep_basic.yaml")
-        bounds = doc.parts.get("l_pipe").get_bounds()
-        z_span = bounds["max"][2] - bounds["min"][2]
-        x_span = bounds["max"][0] - bounds["min"][0]
-        assert z_span > 35.0  # Z arm is 40mm
-        assert x_span > 35.0  # X arm is 40mm
-
-
-class TestTrustHullSpheres:
-    """hull_spheres.yaml: convex hull of 3 spheres r=8 at equilateral triangle vertices"""
-
-    def test_volume_positive(self):
-        dims = _measure("hull_spheres.yaml", "smooth_hull")
-        assert dims["volume"] > 0
-
-    def test_volume_exceeds_three_spheres(self):
-        """Hull volume must be larger than the three spheres it wraps."""
-        dims = _measure("hull_spheres.yaml", "smooth_hull")
-        sphere_vol = 4/3 * math.pi * 8**3  # ≈ 2,145 each
-        assert dims["volume"] > 3 * sphere_vol
-
-    def test_volume_bounded_by_bbox(self):
-        """Hull must be smaller than bounding box of all sphere centers + radii."""
-        dims = _measure("hull_spheres.yaml", "smooth_hull")
-        bbox_vol = (40 + 16) * (35 + 16) * 16  # conservative outer box
-        assert dims["volume"] < bbox_vol
-
-
-# ---------------------------------------------------------------------------
-# Patterns
+# Patterns (multi-instance — no single mergeable "final" part)
 # ---------------------------------------------------------------------------
 
 class TestTrustLinearPattern:
@@ -682,27 +258,6 @@ class TestTrustLinearPattern:
         assert x_span == pytest.approx(140.0, abs=2.0)
 
 
-class TestTrustCircularPattern:
-    """circular_pattern.yaml: 100×100×8 plate − 6 bolt holes (r=3.5) − center hole (r=12)"""
-
-    def test_plate_footprint(self):
-        dims = _measure("circular_pattern.yaml", "final_plate")
-        assert dims["width"]  == pytest.approx(100.0, abs=TOL)
-        assert dims["height"] == pytest.approx(100.0, abs=TOL)
-
-    def test_holes_removed_material(self):
-        dims = _measure("circular_pattern.yaml", "final_plate")
-        assert dims["volume"] < 100 * 100 * 8  # solid = 80,000
-
-    def test_volume(self):
-        """plate(80k) − 6×bolt_holes(π×3.5²×8) − center_hole(π×12²×8) ≈ 74,534."""
-        dims = _measure("circular_pattern.yaml", "final_plate")
-        bolt_holes   = 6 * math.pi * 3.5**2 * 8   # ≈ 1,847
-        center_hole  = math.pi * 12**2 * 8          # ≈ 3,619
-        expected = 100 * 100 * 8 - bolt_holes - center_hole  # ≈ 74,534
-        assert dims["volume"] == pytest.approx(expected, abs=200.0)
-
-
 # ---------------------------------------------------------------------------
 # Complex assembly (stdlib imports)
 # ---------------------------------------------------------------------------
@@ -714,11 +269,11 @@ class TestTrustPcbStandoffAssembly:
         return _parse("pcb_standoff_assembly.yaml")
 
     def test_plate_dimensions(self):
-        """plate: W=100(X), H=5(Y, YAML depth→Y), D=80(Z, YAML height→Z)."""
+        """plate: W=100(X), H=80(Y, YAML depth→Y), D=5(Z, YAML height→Z, the thickness)."""
         dims = get_dimensions(self._doc().parts.get("plate"))
         assert dims["width"]  == pytest.approx(100.0, abs=TOL)
-        assert dims["height"] == pytest.approx(5.0,   abs=TOL)
-        assert dims["depth"]  == pytest.approx(80.0,  abs=TOL)
+        assert dims["height"] == pytest.approx(80.0,  abs=TOL)
+        assert dims["depth"]  == pytest.approx(5.0,   abs=TOL)
 
     def test_plate_volume(self):
         dims = get_dimensions(self._doc().parts.get("plate"))
@@ -738,55 +293,3 @@ class TestTrustPcbStandoffAssembly:
                      "screw_fl", "screw_fr", "screw_bl", "screw_br"):
             vol = get_dimensions(doc.parts.get(name))["volume"]
             assert vol > 0, f"{name}: zero or negative volume"
-
-
-# ---------------------------------------------------------------------------
-# Cross-validation: different code paths must agree
-# ---------------------------------------------------------------------------
-
-class TestCrossValidation:
-    """
-    Verify that different operations producing equivalent shapes agree with each
-    other and with the analytical formula.  These tests catch bugs where one
-    code path (e.g. revolve_builder) silently produces wrong geometry while
-    another (e.g. primitive cylinder) stays correct — or vice versa.
-
-    Shared geometry: cylinder r=15, h=40.
-    Three independent code paths must all produce π×15²×40 ≈ 28,274 mm³:
-      1. Primitive cylinder (cylinder_basic.yaml)
-      2. Revolve around X axis (revolve_x_axis.yaml)
-      3. Revolve around Y axis (revolve_y_axis.yaml)
-    The Z-axis case is already covered by TestTrustRevolveBasic and
-    TestTrustCylinderBasic separately.
-    """
-
-    _EXPECTED_VOL = math.pi * 15**2 * 40  # ≈ 28,274 mm³
-
-    def test_primitive_cylinder_matches_formula(self):
-        """Baseline: cylinder_basic.yaml must match π×r²×h."""
-        dims = _measure("cylinder_basic.yaml", "cyl")
-        assert dims["volume"] == pytest.approx(self._EXPECTED_VOL, abs=VOL_TOL)
-
-    def test_revolve_x_matches_primitive_cylinder(self):
-        """Cylinder via revolve-X must equal cylinder via primitive (same r, h)."""
-        prim = _measure("cylinder_basic.yaml", "cyl")
-        revx = _measure("revolve_x_axis.yaml", "cyl_x")
-        assert revx["volume"] == pytest.approx(prim["volume"], abs=VOL_TOL)
-
-    def test_revolve_y_matches_primitive_cylinder(self):
-        """Cylinder via revolve-Y must equal cylinder via primitive (same r, h)."""
-        prim = _measure("cylinder_basic.yaml", "cyl")
-        revy = _measure("revolve_y_axis.yaml", "cyl_y")
-        assert revy["volume"] == pytest.approx(prim["volume"], abs=VOL_TOL)
-
-    def test_all_three_revolve_axes_agree(self):
-        """All three revolve axes must produce equal volumes for same geometry."""
-        vol_z = _measure("revolve_basic.yaml",   "spool")["volume"]   # spool (complex)
-        vol_x = _measure("revolve_x_axis.yaml",  "cyl_x")["volume"]   # simple cylinder
-        vol_y = _measure("revolve_y_axis.yaml",  "cyl_y")["volume"]   # simple cylinder
-        # X and Y produce the same cylinder → must agree
-        assert vol_x == pytest.approx(vol_y, abs=VOL_TOL)
-        # All three revolve axes produced positive, real geometry
-        assert vol_z > 0
-        assert vol_x > 0
-        assert vol_y > 0

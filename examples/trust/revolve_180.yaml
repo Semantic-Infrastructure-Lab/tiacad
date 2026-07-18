@@ -43,3 +43,11 @@ operations:
 
 export:
   default_part: half_cyl
+
+expect:
+  final: half_cyl
+  volume: 14137.166941154069
+  bbox: [40, 15, 30]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

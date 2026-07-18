@@ -25,3 +25,15 @@ operations:
 
 export:
   default_part: chamfered
+
+# Same box shape as examples/validation/T1_chamfer.tiacad (40x40x20, chamfer=3)
+# — no closed form for a 12-edge 45° chamfer with corner interactions, so this
+# reuses that model's measured-and-reviewed value (matches to full kernel
+# precision, isotropic to axis order).
+expect:
+  final: chamfered
+  volume: 30344.0
+  bbox: [40, 20, 40]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

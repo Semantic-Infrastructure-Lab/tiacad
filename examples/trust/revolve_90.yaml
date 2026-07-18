@@ -43,3 +43,11 @@ operations:
 
 export:
   default_part: quarter_cyl
+
+expect:
+  final: quarter_cyl
+  volume: 7068.583470577034
+  bbox: [40, 15, 15]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

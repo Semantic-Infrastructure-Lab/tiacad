@@ -263,6 +263,17 @@
     "part": "transition",
     "volume": 5371.428958815836
   },
+  "examples/trust/boolean_intersect.yaml": {
+    "bbox": [
+      20.0,
+      20.0,
+      20.0
+    ],
+    "canonical_mesh_hash": "df497c7ccbf61d78aaf4a292eca46406f399a353ce6c2c970fd3775d5e8fc140",
+    "mesh_hash": "e8ed197f8cb2620aafef962d738394ff0c170347acf3b1eb3f9ec0ae16bd6df8",
+    "part": "overlap",
+    "volume": 7999.999999999998
+  },
   "examples/trust/boolean_subtract.yaml": {
     "bbox": [
       60.0,
@@ -274,6 +285,39 @@
     "part": "result",
     "volume": 62952.2131576614
   },
+  "examples/trust/boolean_union.yaml": {
+    "bbox": [
+      80.0,
+      60.0,
+      20.0
+    ],
+    "canonical_mesh_hash": "318d7d385af084b17c6c46c98b2aff8add3274909c11774a8c1b08c1a03665a9",
+    "mesh_hash": "acf8c045082bb1f711270e2eeb8b9a93d6ee5d60aeeeedea8ba7b38e3bcc48ac",
+    "part": "cross",
+    "volume": 48000.0
+  },
+  "examples/trust/box_basic.yaml": {
+    "bbox": [
+      50.0,
+      30.0,
+      20.0
+    ],
+    "canonical_mesh_hash": "eca0d245333778244d5cc0868d99aa12d56987c9c90cbf145acb5946341f68df",
+    "mesh_hash": "50e184f9b82d19cac5f89e7cd16de6ed7a5800d4331b104b93ef556d99faa1c4",
+    "part": "box",
+    "volume": 30000.0
+  },
+  "examples/trust/chamfer_basic.yaml": {
+    "bbox": [
+      40.0,
+      20.0,
+      40.0
+    ],
+    "canonical_mesh_hash": "13ce6e356580e7e8dad77a65e0598cb05ae70eb869dea647f3db9d2a50c96d17",
+    "mesh_hash": "79ba70787ac3e17305dedf988a7f0189ba0ded6eb0235f1fff6908230c531eba",
+    "part": "chamfered",
+    "volume": 30343.999999999996
+  },
   "examples/trust/circular_pattern.yaml": {
     "bbox": [
       100.0,
@@ -284,6 +328,138 @@
     "mesh_hash": "7c6286a6144387ac68c3f80f1993d6407163a7d750e4ad5e726318de37176935",
     "part": "final_plate",
     "volume": 74533.62878275379
+  },
+  "examples/trust/cone_basic.yaml": {
+    "bbox": [
+      40.0000002,
+      40.0000002,
+      40.0000002
+    ],
+    "canonical_mesh_hash": "6eb55c05e81621a99ccb52be91e6dca3fe59fac4906d43741e695e113d16c79f",
+    "mesh_hash": "eb182fc1441ff6e71075eb18d03ef9d90cf53d40b5b6d1eba2e42b4a7fcc468f",
+    "part": "cone",
+    "volume": 16755.998619074424
+  },
+  "examples/trust/cylinder_basic.yaml": {
+    "bbox": [
+      30.0,
+      30.0,
+      40.0
+    ],
+    "canonical_mesh_hash": "9e6d4c775fbe2766f6d01fc79d2d1ef08d64b13765982184977350cd2c5e4603",
+    "mesh_hash": "1a3433e5f53b75131fd802445912f8038fcad921608af7be2172838cf15388fd",
+    "part": "cyl",
+    "volume": 28274.333882308143
+  },
+  "examples/trust/fillet_basic.yaml": {
+    "bbox": [
+      40.0,
+      20.0,
+      40.0
+    ],
+    "canonical_mesh_hash": "2cd43292c4b3399e4e063afabe161048480cec21b2c8e36fbbc0d09b494b1ef6",
+    "mesh_hash": "22d3d7edae8a3331aca64f320e1bac38af9855fb399f1c7bce37f99b8161d658",
+    "part": "filleted",
+    "volume": 31263.5927138785
+  },
+  "examples/trust/hull_spheres.yaml": {
+    "bbox": [
+      55.9926400721593,
+      49.990253232305534,
+      16.0
+    ],
+    "canonical_mesh_hash": "dbc14f7305492dacd4b5dee92e4184d1450cb457332c6bb81cbc140a9de08400",
+    "mesh_hash": "acd2e5ef1d23ba4f9cea8fbaf1a49406971857965ff9b408477517fe0a7a9905",
+    "part": "smooth_hull",
+    "volume": 24960.68576375622
+  },
+  "examples/trust/loft_rect_to_circle.yaml": {
+    "bbox": [
+      40.0000002,
+      40.0000002,
+      30.000000200000013
+    ],
+    "canonical_mesh_hash": "316385f35eea6807d885f7addeb61237f7f3c931287104c4a39115e3cf149031",
+    "mesh_hash": "6c7e48cdd528b4e5bcda28069f7868e7968fb3dc2aef43a7b1314cf4afb1baf4",
+    "part": "transition",
+    "volume": 33872.379263137285
+  },
+  "examples/trust/revolve_180.yaml": {
+    "bbox": [
+      40.0,
+      15.0,
+      30.0
+    ],
+    "canonical_mesh_hash": "d26bc0de876d887591d69610587aacc1a888d28f07a7ba0e51ea2906ec4211e5",
+    "mesh_hash": "e478b7d4a5b35622853c68476853e1ea809948ab4bc745473fb86f4d3aaa187b",
+    "part": "half_cyl",
+    "volume": 14137.166941154072
+  },
+  "examples/trust/revolve_90.yaml": {
+    "bbox": [
+      40.0,
+      15.0,
+      15.0
+    ],
+    "canonical_mesh_hash": "bf9a10cb19860fc41fc5db79d2b143827f6752eb4542df0e30fa7009d88471b5",
+    "mesh_hash": "559dc19f5c474516e11a014bd71e1b6f2806d58639a28c3acf133d11d2d87e9f",
+    "part": "quarter_cyl",
+    "volume": 7068.583470577035
+  },
+  "examples/trust/revolve_basic.yaml": {
+    "bbox": [
+      50.0,
+      50.0,
+      36.0
+    ],
+    "canonical_mesh_hash": "71a4cebfd91320db729310c8735275034ed347a60976f1c852cf165e9b48ad44",
+    "mesh_hash": "e7f61bfd56927212c5ed57dd28e137246389154cbb63ebaaaa0bb9bf69e07f86",
+    "part": "spool",
+    "volume": 37699.11184307752
+  },
+  "examples/trust/revolve_x_axis.yaml": {
+    "bbox": [
+      40.0,
+      30.0,
+      30.0
+    ],
+    "canonical_mesh_hash": "f2f4d4292bceedb1971fd7df076dff6a1c901bfadbe6f3a6cdaf65f4b59dec11",
+    "mesh_hash": "3706c0a72977fe031dfd903123eff4846fc6f43d297a688d6dcf5b01f767d6e0",
+    "part": "cyl_x",
+    "volume": 28274.333882308143
+  },
+  "examples/trust/revolve_y_axis.yaml": {
+    "bbox": [
+      30.0,
+      40.0,
+      30.0
+    ],
+    "canonical_mesh_hash": "8baf6d8089928a8dad02eda613411581739bc217f6177ee4fa2dcb119cc9a0b5",
+    "mesh_hash": "fd49410b93bb263f3a1507ab5dc824119ae2d9a5ea3c45b2008aec414655f821",
+    "part": "cyl_y",
+    "volume": 28274.333882308143
+  },
+  "examples/trust/sphere_basic.yaml": {
+    "bbox": [
+      40.0,
+      40.0,
+      40.0
+    ],
+    "canonical_mesh_hash": "2714fc98a6adb5029fedaabbbee8eaa79f5236e4eea74aefba3c5396cb57dc0e",
+    "mesh_hash": "c6b55709864544d44857395bcb159ec26ad3e4715d9ddb08bc4643b4a11413af",
+    "part": "sphere",
+    "volume": 33510.32163829113
+  },
+  "examples/trust/sweep_basic.yaml": {
+    "bbox": [
+      45.0,
+      10.0,
+      45.0
+    ],
+    "canonical_mesh_hash": "3efcd58023fa805a4f7e68c6b4ed57ab057aee204ab3cf4c50f22bb0dc265a07",
+    "mesh_hash": "2903e398ae07676e42fd483e509aba80cdf57af136704f03c91987e37b8c85ca",
+    "part": "l_pipe",
+    "volume": 6283.185307172266
   },
   "examples/v3_bracket_mount.yaml": {
     "bbox": [
