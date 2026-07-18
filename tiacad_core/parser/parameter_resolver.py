@@ -282,30 +282,30 @@ class ParameterResolver:
         finally:
             self.resolution_stack.pop()
 
-    def _check_cycles(self) -> None:
-        """
-        Detect circular references in the parameter dependency graph.
+    _EXPR_RE = re.compile(r'\$\{([^}]+)\}')
+    _WORD_RE = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b')
 
-        Raises:
-            ParameterResolutionError: If a circular reference is found
-        """
-        # Build adjacency list: param → set of param names it references
-        EXPR_RE = re.compile(r'\$\{([^}]+)\}')
-        WORD_RE = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b')
-        param_names = set(self.raw_parameters)
+    def _extract_dependencies(self, param_names: set) -> Dict[str, set]:
+        """Build the adjacency list: param name -> set of param names its
+        raw value references via ${...} expressions."""
         deps: Dict[str, set] = {}
         for name, val in self.raw_parameters.items():
             if isinstance(val, str):
-                refs: set = set()
-                for m in EXPR_RE.finditer(val):
-                    for word in WORD_RE.findall(m.group(1)):
-                        if word in param_names:
-                            refs.add(word)
+                refs = {
+                    word
+                    for m in self._EXPR_RE.finditer(val)
+                    for word in self._WORD_RE.findall(m.group(1))
+                    if word in param_names
+                }
                 deps[name] = refs
             else:
                 deps[name] = set()
+        return deps
 
-        # DFS cycle detection (WHITE=0 / GRAY=1 / BLACK=2)
+    @staticmethod
+    def _find_cycle(param_names: set, deps: Dict[str, set]) -> Optional[List[str]]:
+        """DFS cycle detection (WHITE=0 / GRAY=1 / BLACK=2) over the
+        dependency graph. Returns the cycle path if one exists, else None."""
         color: Dict[str, int] = {n: 0 for n in param_names}
         path: List[str] = []
 
@@ -328,11 +328,25 @@ class ParameterResolver:
             if color[name] == 0:
                 cycle = dfs(name)
                 if cycle is not None:
-                    raise ParameterResolutionError(
-                        f"Circular reference detected: {' -> '.join(cycle)}",
-                        parameter=cycle[0],
-                        is_circular=True
-                    )
+                    return cycle
+        return None
+
+    def _check_cycles(self) -> None:
+        """
+        Detect circular references in the parameter dependency graph.
+
+        Raises:
+            ParameterResolutionError: If a circular reference is found
+        """
+        param_names = set(self.raw_parameters)
+        deps = self._extract_dependencies(param_names)
+        cycle = self._find_cycle(param_names, deps)
+        if cycle is not None:
+            raise ParameterResolutionError(
+                f"Circular reference detected: {' -> '.join(cycle)}",
+                parameter=cycle[0],
+                is_circular=True
+            )
 
     def resolve_all(self) -> Dict[str, Any]:
         """
