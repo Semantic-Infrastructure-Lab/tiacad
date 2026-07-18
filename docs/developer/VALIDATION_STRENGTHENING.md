@@ -511,6 +511,31 @@ models build bit-identical mesh hashes across repeated builds on this
 machine's stack (CadQuery 2.8.0 / OCP 7.9.3.1.1, Python 3.12) — 13 new tests,
 full non-visual suite now 1601 passed (was 1588), 0 failed.
 
+**Fixed 2026-07-18 (TCAD-VAL-6):** the "raw hash, deliberately not
+canonicalized" design above was correct for the self-consistency tier but
+wrong for the golden-comparison tier — it assumed exact tessellation
+reproducibility *across machines*, which CadQuery's `exportStl(parallel=True)`
+does not provide. Confirmed via a real GitHub Actions 3.13 run vs a local
+build of `T0_torus.tiacad`: every one of 16129 tessellated vertices matched
+exactly (nearest-neighbor distance 0.0) while ~35% of 31752 triangles
+connected those same points differently — an ambiguous-quad-diagonal choice
+at the torus seam, resolved non-deterministically by parallel meshing, not a
+real geometry difference. Added `canonical_mesh_hash()`
+(`tiacad_core/testing/determinism.py`) — SHA-256 of the sorted, 6-decimal-
+rounded vertex point cloud, with triangle connectivity dropped from the
+fingerprint — and switched golden comparison to gate on it instead of the
+raw STL hash. Self-consistency (`check_determinism`) is untouched: it still
+compares raw mesh hashes, which is the correct zero-tolerance check for
+"does this one machine's pipeline reproduce its own output." Verified the
+new hash is genuinely cross-machine-stable (not just a coincidence for one
+pair of runs) three ways: math-only cross-check against the downloaded CI
+artifact's raw vertex data, a fresh local Python 3.13 build, and the repo's
+Python 3.12 dev venv — all three produce the identical
+`canonical_mesh_hash` for `T0_torus.tiacad`. All 53 goldens regenerated
+(pure additive diff — added field only, no existing volume/bbox/mesh_hash
+values changed). `mesh_hash` is kept in `golden_hashes.json` for provenance
+only; it's expected to differ across machines and is no longer gated on.
+
 ### 4.5 — Turn skips into failures; make the safety net non-optional *(stronger, closes G5 — do this first)*
 
 **Problem (G5):** the printability/connectivity/schema net vanishes when

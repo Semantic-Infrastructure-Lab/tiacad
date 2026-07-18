@@ -5,6 +5,7 @@
       10.0,
       5.0000000000000036
     ],
+    "canonical_mesh_hash": "2b67734db740d4031a7276891e5ca0b58f65893a1cec7401ec9fe60309598433",
     "mesh_hash": "142571ee23630f33a1765640a12688d6aa040e1c30053d2fb9b84559b1acaf85",
     "part": "crossbar",
     "volume": 3500.0000000000023
@@ -15,6 +16,7 @@
       30.0,
       10.0
     ],
+    "canonical_mesh_hash": "92aca7c6e57ae53610b9d85e62d24b2b90a8accc576f101dafffc5ea372942a5",
     "mesh_hash": "555d83cb9652bea53ada73fc41d70e423c245f71fb05fb1a43f4bc2014ee1c74",
     "part": "top",
     "volume": 18000.0
@@ -25,6 +27,7 @@
       12.0,
       12.0
     ],
+    "canonical_mesh_hash": "0909683e746d0c4fadc82ac01de76ab3ec1ddfe675555ebca1a0a8513f07ab04",
     "mesh_hash": "2de9f64786eb026fe0a06915de566465c92102f27cf042dcb0fdcf2ddffb5bfa",
     "part": "sphere_top",
     "volume": 904.7786842338602
@@ -35,6 +38,7 @@
       110.05423884151605,
       80.74674834851757
     ],
+    "canonical_mesh_hash": "cc2a42528be0cdcd3c4e7e11406038395cde34cc736e04296b8290857e526f0d",
     "mesh_hash": "722f96280450f0810fe9cb880112b428134438d6f4697440792a9ca5a0f29677",
     "part": "awesome_guitar_hanger",
     "volume": 244318.21679843232
@@ -45,6 +49,7 @@
       20.0,
       30.0
     ],
+    "canonical_mesh_hash": "3e1393c076a38d56ec0d4fd88fed3002e3197653d158edd24aa4571fe3c672d7",
     "mesh_hash": "cfbda782a559d2734e8daf9f0c7fcda40a77b931f5df1d17bfc44acfc6223fc3",
     "part": "bottle",
     "volume": 7137.69850895601
@@ -55,6 +60,7 @@
       20.0,
       10.0
     ],
+    "canonical_mesh_hash": "2a0d944f2d4c14196e1506a3b66da42eccfd582f7370240a48d6dbacc6cbb205",
     "mesh_hash": "5b0ba0ac26338e591a2ba603112fb98aaf913b5b0e0e541646c60b918b585875",
     "part": "bracket",
     "volume": 9214.601836602551
@@ -65,6 +71,7 @@
       66.0,
       80.0
     ],
+    "canonical_mesh_hash": "fd47f2ab4038e2a9eb790d84123e7bb9c0cf915686fcf84604c7f7455ff11dee",
     "mesh_hash": "6c8949bc6325f4ac9da82ca912fd2d82826337c72a5614aab3e9bb4097a76e8b",
     "part": "bracket_chamfered",
     "volume": 65928.14825383054
@@ -75,6 +82,7 @@
       3.0,
       150.0
     ],
+    "canonical_mesh_hash": "f00dc66b433bbbeabd2be411ef4c069ba08d7b6008ec0329f0d854f573f52c38",
     "mesh_hash": "6eac351cb686bd8f29f6dba020bc071570d97b471c085d430298e3a9a47f260c",
     "part": "panel",
     "volume": 90000.0
@@ -85,6 +93,7 @@
       50.0,
       20.0
     ],
+    "canonical_mesh_hash": "55e5dad6c92881adb4bc9c41bd497534c8a508e2d1a234041efbfd2d82ef4ba0",
     "mesh_hash": "64c4a4c7d0484cfc5417df5907f217db6a033355c028ce2e7593cf71eca850fd",
     "part": "stacked",
     "volume": 49999.999999999985
@@ -95,6 +104,7 @@
       20.0,
       50.0
     ],
+    "canonical_mesh_hash": "74a79765b1a565e6a6d71560392920fad5ee182149cee9486e829f14d9831065",
     "mesh_hash": "5852b1f4f267d78dfd88cb6f0ae15d9a7df8d0eb1e08862fd6b9ff9c7fab125e",
     "part": "demo_box_filleted",
     "volume": 49598.67834798908
@@ -105,6 +115,7 @@
       75.0,
       10.0
     ],
+    "canonical_mesh_hash": "38b7477816fe5451d109e94ddafe54489cab9d6b292285bddee2185554af1989",
     "mesh_hash": "c5620c36833fc773579cdf240878858a9b108ec140739e8787d06da4496b3012",
     "part": "plate_with_holes",
     "volume": 74681.91374382403
@@ -115,6 +126,7 @@
       4.0,
       80.0
     ],
+    "canonical_mesh_hash": "82816ca89575fb32540816395fc3ad4c879484243f2ae3d5539d6748871c6947",
     "mesh_hash": "643b508ce7845e9fba13c84bce99d862b7a9096d17da2d77dfd645770fc13925",
     "part": "plate",
     "volume": 31999.999999999996
@@ -125,6 +137,7 @@
       9.6,
       9.6
     ],
+    "canonical_mesh_hash": "5a8040aef1fd8511ab2f70bf654a29eac378b48a0758395c21eefebcdf6d5163",
     "mesh_hash": "96a8156a1862eb6ccba00a80a1c63847d89ccde0fa882c05c5b76a10c3e090e1",
     "part": "final_brick",
     "volume": 891.3061526829996
@@ -135,6 +148,7 @@
       9.6,
       9.6
     ],
+    "canonical_mesh_hash": "9eb93a71c7988f114e2ab9640bb103083a27592021c32b44d3310f0fb73169b5",
     "mesh_hash": "6123cb02df12ce39f3ef74718a4ae78998a2e841c36fe2bc37becee3a3767b2b",
     "part": "final_brick",
     "volume": 1283.1085370717774
@@ -145,6 +159,7 @@
       8.000000000000004,
       150.0
     ],
+    "canonical_mesh_hash": "10acf3a1baccec3960fc263187910fb069714ec1ee89394b6f1c893574add8e4",
     "mesh_hash": "c87364877ec145d939763823471e20954c53f0daace2d451e2e9213dd52a4d82",
     "part": "final_plate",
     "volume": 168354.11603314258
@@ -155,6 +170,7 @@
       6.0,
       10.0
     ],
+    "canonical_mesh_hash": "45993b55f7815063cad61e4d109da33b8e3948af49eacb19718a9b5d10ab4c53",
     "mesh_hash": "e2b431e53aaa938df3394ebc4339cb91c7290c8051bdcf87db24d93e32280ad0",
     "part": "standoff_fl",
     "volume": 202.31856689118257
@@ -165,6 +181,7 @@
       10.0,
       25.0
     ],
+    "canonical_mesh_hash": "a7236c650d7c744bf2e91fda12389a2b129685726d3275b5224804d136a6b10c",
     "mesh_hash": "90356707bc49be5609bf8ea1297c1dc5185aa28c2414d6a52eb0d1b9276eb709",
     "part": "curved_pipe",
     "volume": 3141.5926535848507
@@ -175,6 +192,7 @@
       8.000000100000001,
       150.0
     ],
+    "canonical_mesh_hash": "de82ae7c8e33793d0d504b7b50abb0a9f61e118b51c9164d6ea8f5408cd31b8c",
     "mesh_hash": "09e9d6822a8c61c4c5f68ea2b57c4eddad8bce81c53e81c0c822755309f42e29",
     "part": "plate_finished",
     "volume": 167612.2285534095
@@ -185,6 +203,7 @@
       20.0,
       30.0
     ],
+    "canonical_mesh_hash": "7223c72b20dafe4747419db05d766a6c68c39e8e584f4b2197f79f0147a9dca2",
     "mesh_hash": "f86e5ece7fbba4d64629bc75289116cf25b5694dbd93948d765a28bd0e6772c0",
     "part": "box",
     "volume": 30000.0
@@ -195,6 +214,7 @@
       10.0,
       5.0
     ],
+    "canonical_mesh_hash": "f05ef4ee4bed5b91c2fcf3f22927bc31d77f4e01eabc8fa18c6a0a6b050679fb",
     "mesh_hash": "ebdaf5b2846ef5a64ad6f5332df66d27069b0d14ed3c9663f43d443bf5fbd452",
     "part": "extruded_part",
     "volume": 999.9999999999998
@@ -205,6 +225,7 @@
       116.48787688701294,
       79.43514299510528
     ],
+    "canonical_mesh_hash": "68281bfab25352f44d2ba0a5734475d6c43270d7df97dce086fed174c0660c14",
     "mesh_hash": "e2b54e2a3277ee44984f357a1f4cb1c09d52770c2cbfe322c7ec087f6388f0cd",
     "part": "hanger",
     "volume": 218561.75420374598
@@ -215,6 +236,7 @@
       60.0,
       5.0
     ],
+    "canonical_mesh_hash": "adb384f0c4ecf11ad94b2d0ebd8708e9e42957d8ba6444e4119c0c4a1a309c91",
     "mesh_hash": "81630b7a8c4d11964f3a9139c49eb110d1e6632707fe47c5fc88f232c00eeadc",
     "part": "final_sign",
     "volume": 29598.339977646858
@@ -225,6 +247,7 @@
       5.6640627,
       41.5000001
     ],
+    "canonical_mesh_hash": "79e85ef1d844300e9a5409e6c70a01e8660bb9070c1d07c6a9fddb3549a3b9d8",
     "mesh_hash": "6a46a249d8cb3233d276e29609e6618dc15ec2518834a6a96c689fc7b427b5ce",
     "part": "product_label",
     "volume": 12192.178187370308
@@ -235,6 +258,7 @@
       20.0000002,
       15.000000200000004
     ],
+    "canonical_mesh_hash": "0edee612425dd50113eeabd9b4dafde5c2bbbb9bf4f88c60d1eb31ccbbfea071",
     "mesh_hash": "d2fc1cd0aadcd2841974e291b883d4b9b001f1678c295b8a35ba5bc699706419",
     "part": "transition",
     "volume": 5371.428958815836
@@ -245,6 +269,7 @@
       60.0,
       20.0
     ],
+    "canonical_mesh_hash": "9746f65257b092db24a21d1916f60ef7d44971ef71fa78dddd670f0dc5fe467d",
     "mesh_hash": "cef6b9836e8c81a42645941c4f69e6fa8b579bba96021b5d4ec5b1d3f40ca8b3",
     "part": "result",
     "volume": 62952.2131576614
@@ -255,6 +280,7 @@
       100.0,
       8.0
     ],
+    "canonical_mesh_hash": "e57e0c5f32b7a461490595c08f777b88c15b0cb9d882d6a0509c7d9cfb9342b2",
     "mesh_hash": "7c6286a6144387ac68c3f80f1993d6407163a7d750e4ad5e726318de37176935",
     "part": "final_plate",
     "volume": 74533.62878275379
@@ -265,6 +291,7 @@
       140.0,
       60.0
     ],
+    "canonical_mesh_hash": "b3c352ea187d72be45fbd5de9f8e0ff9269ef7af66d624733ea0231173812859",
     "mesh_hash": "8de28bc926d6e7407371d12fba355c2209b0e40b667243367de8b3fa5435ba58",
     "part": "assembly_finished",
     "volume": 255576.84269291663
@@ -275,6 +302,7 @@
       50.0,
       20.0
     ],
+    "canonical_mesh_hash": "bbde679f1bcdefd0c94d41c78d641e1320b7adc80dbcb7b51e5545a3caea56c1",
     "mesh_hash": "1c54ba4f60cb062bd5bbb0d43a69d3969396f603fb1882b720913a24c908b9d6",
     "part": "top",
     "volume": 49999.999999999985
@@ -285,6 +313,7 @@
       25.0,
       15.0
     ],
+    "canonical_mesh_hash": "43013b13aa58176173c4b6a30632bf39e79e3b3f18430cf8e98a41387bbc1ff2",
     "mesh_hash": "43550d0a18fcbc34b9542d1a97e8a5a29518606a09bfe57af8e8b4ad9b8cad06",
     "part": "block",
     "volume": 15000.0
@@ -295,6 +324,7 @@
       40.0000002,
       36.0000002
     ],
+    "canonical_mesh_hash": "d956780672d4e39f1c7c0338de9b5707628079f3f95fe7c93748bae9dc003e8d",
     "mesh_hash": "6b1f9b0954c4a0abb5606fe25dd8e518d858c35067f95a102e957af4fe6a7243",
     "part": "spike",
     "volume": 15080.39875716698
@@ -305,6 +335,7 @@
       24.0,
       30.0
     ],
+    "canonical_mesh_hash": "5d7cd58f2f100eb0a4df1b6ad942fffb13947a9431b822714462153a45f122d9",
     "mesh_hash": "ccf1fe9b915adecb304d128f0d75f807f89a355f85ac7deb7af8c0e85b48d4fd",
     "part": "post",
     "volume": 13571.680263507906
@@ -315,6 +346,7 @@
       17.320508075688778,
       10.0
     ],
+    "canonical_mesh_hash": "e1106c3d69fa7ec369807bc32909e493334e631e61fd3161f391712fb21fb7b5",
     "mesh_hash": "fbffe86e403fc17e556e97463545ec574c71872915c7f8193c59f79ccf6d68a4",
     "part": "prism",
     "volume": 2598.076211353316
@@ -325,6 +357,7 @@
       36.0,
       36.0
     ],
+    "canonical_mesh_hash": "0a9e3509bfdc7ccfdd0c56177d35efc2ca66266e6e5a0faeacae348bb35a3fec",
     "mesh_hash": "e59959f8f27352ab907a1a59b8c45712895906a4d1fe665add0248b4d2877819",
     "part": "ball",
     "volume": 24429.02447431423
@@ -335,6 +368,7 @@
       56.0000002,
       12.0000002
     ],
+    "canonical_mesh_hash": "3e0e02c92cf422105cc26426eae6ff6c9602d2818596c5541444935e25e01532",
     "mesh_hash": "e9ad395bad31a9d04f99d52ea1ba460277e1661fb49d40c067f978555a1f0542",
     "part": "donut",
     "volume": 15633.453371325548
@@ -345,6 +379,7 @@
       40.0,
       20.0
     ],
+    "canonical_mesh_hash": "ac2337142506a92eb447ee08465a4fffd0205566284d0b2730880291e4d5b72e",
     "mesh_hash": "051eed64682be314f8308386c0e478bf1798ccf9ed4ff5c5f8888b24947be41e",
     "part": "chamfered",
     "volume": 30343.999999999996
@@ -355,6 +390,7 @@
       30.0,
       20.0
     ],
+    "canonical_mesh_hash": "3b19ef071965503b03d6d9efc8cfef2853957965cfd1bfcd4010cbcd08a6c6fe",
     "mesh_hash": "9da20d3d2c00bdbf684699de37892aed804ca27907d8e5ba46b8940e3ef26ba7",
     "part": "drilled",
     "volume": 16429.203673205102
@@ -365,6 +401,7 @@
       40.0,
       20.0
     ],
+    "canonical_mesh_hash": "daf4f24f30a73c9deaeb36876b708abdc4e64a68acb5db5d42ae2e8477973ef5",
     "mesh_hash": "99d9186d6aa0d5969c66916360282ba1b75ea99a8708429cd01f52d91e4d1739",
     "part": "rounded",
     "volume": 31263.5927138785
@@ -375,6 +412,7 @@
       20.0,
       20.0
     ],
+    "canonical_mesh_hash": "a39ca4b79aff28322dad357f1c7cb067ae4a883455384119f076b7a4cb95540f",
     "mesh_hash": "1adf045af4113ec03d6e45686f3dc59e160ee5443619f5c755e05b56b8a50fc9",
     "part": "overlap",
     "volume": 3999.999999999999
@@ -385,6 +423,7 @@
       10.0,
       10.0
     ],
+    "canonical_mesh_hash": "7d36d32ea92ebf111ba27ec0cc55b4961a80fb367a451f400ca04a8dca1a6d9e",
     "mesh_hash": "149546311b109abf347c3f17220fb339628c9f6b8be5568b31d4cf4b03be9513",
     "part": "merged",
     "volume": 3999.999999999998
@@ -395,6 +434,7 @@
       40.64101615137754,
       10.0
     ],
+    "canonical_mesh_hash": "4e15a299a63a75933a9ff38260470eff52fc0a941147e057c5291455037da0b0",
     "mesh_hash": "3e7a82cdf895b93b81f5a5718633fd5a2650051932e39f9b7c4d57b46bc8851e",
     "part": "merged",
     "volume": 1696.4600329384875
@@ -405,6 +445,7 @@
       40.0,
       15.0
     ],
+    "canonical_mesh_hash": "291cb40563cdd21ecde9b7e20ae618164ec72b031845d86b7b6bb69b28b0ffc6",
     "mesh_hash": "9967f6f692e94b54790a2d9e3b8ba44bd43720286c1bf6ffd301be3fb5293148",
     "part": "rotated",
     "volume": 15000.0
@@ -415,6 +456,7 @@
       25.0,
       15.0
     ],
+    "canonical_mesh_hash": "348a35bf9cdad660874ee28a28b93a597741c9a02ed5f0c3bddd26abbb739912",
     "mesh_hash": "7e83254f7fcbd138c01e37dd3f17ef9a5ec56596eb5c0c657b7165dab3b79656",
     "part": "shifted",
     "volume": 15000.0
@@ -425,6 +467,7 @@
       20.0,
       20.0
     ],
+    "canonical_mesh_hash": "1064cef6b67a525df6d2a453fe4b76f0297caf2f5752ddcde41439dc1c091812",
     "mesh_hash": "41f6ffb508e1d02538f4a663f559d1956ffce28035d25656563cecb1f2ab0198",
     "part": "merged",
     "volume": 12000.0
@@ -435,6 +478,7 @@
       20.0,
       30.0
     ],
+    "canonical_mesh_hash": "4439397521ad0b272b7a9752a81adaa6028cb446f0f0792eecb399f7848b4eae",
     "mesh_hash": "aa4edcbed3546b6951e24624f9e5fb79e25e5a63eda7c77ac9312ae9743523bc",
     "part": "bracket",
     "volume": 27001.646003293856
@@ -445,6 +489,7 @@
       9.6,
       9.6
     ],
+    "canonical_mesh_hash": "5a8040aef1fd8511ab2f70bf654a29eac378b48a0758395c21eefebcdf6d5163",
     "mesh_hash": "96a8156a1862eb6ccba00a80a1c63847d89ccde0fa882c05c5b76a10c3e090e1",
     "part": "final_brick",
     "volume": 891.3061526829996
@@ -455,6 +500,7 @@
       6.000000000000002,
       100.0
     ],
+    "canonical_mesh_hash": "f08b70001723d425013b782d2caa564790bfaac7bc65631d222a6c259e2a8a48",
     "mesh_hash": "06eba96a30eb7261764fb7486b7c1e2474e46f3ac36014e981f681d162ab6d21",
     "part": "final_plate",
     "volume": 57436.46039467075
@@ -465,6 +511,7 @@
       6.000000000000001,
       40.0
     ],
+    "canonical_mesh_hash": "7335f891222a4c195627cc71f15430fa41b77def917005d6177c34b10fd4ed6b",
     "mesh_hash": "f31d4b57db3413baaa9700a6bd59e107ae1a107b0e53bb91bc53b1cf3c68c5f2",
     "part": "plate_with_hole",
     "volume": 13928.761101961529
@@ -475,6 +522,7 @@
       30.0,
       8.0
     ],
+    "canonical_mesh_hash": "cf5eaecd5c3ba6a70ce69f159ef7f5b53c32cd4cd649e89d23741aaf41f5a5b5",
     "mesh_hash": "afc8359801350634b0f8242cdc726a019b7a48efd77571b38ce4bf862c4f49a7",
     "part": "bracket_with_hole",
     "volume": 6973.805328941534
@@ -485,6 +533,7 @@
       6.0,
       10.0
     ],
+    "canonical_mesh_hash": "c42baac9b63528fd4dab2ddfefeb684e671b9a2a624dfabeeeac5757149ec4ba",
     "mesh_hash": "9fde0e3a0024e84fa5f15a27173286816b7dd344fe1fe27fdafbd8c881239c21",
     "part": "standoff_pos",
     "volume": 202.31856689118263
@@ -495,6 +544,7 @@
       10.0,
       20.0
     ],
+    "canonical_mesh_hash": "4da02c9ed2a3ee22174aacbefceba8c0e791ac75ed93a2c87eae46363e370264",
     "mesh_hash": "69f8c0c61327f06048a4566011c0b074608a001e5c944416e21a1ffda0bab8b5",
     "part": "box_b",
     "volume": 7999.999999999998
@@ -505,6 +555,7 @@
       35.35533905932738,
       10.000000000000007
     ],
+    "canonical_mesh_hash": "a36055fd9dfed074037906b355baa362cee9650d15a33cae33fbb99771fcd045",
     "mesh_hash": "a8bbd275e88626f662799e22578f68091d4485a99cdb4b551ca00031aff4b27d",
     "part": "bracket_rotated",
     "volume": 6000.0
@@ -515,6 +566,7 @@
       24.0,
       8.0
     ],
+    "canonical_mesh_hash": "a524a730655ecacf8a5103daed15752502fbc17d2c4819b78c1c55a016017931",
     "mesh_hash": "214d6e46ec1a34b6c15a652a08f49de70dc0dc216ef959db2fb3183620d00f24",
     "part": "rotated_gear",
     "volume": 3619.114736935441
@@ -525,6 +577,7 @@
       5.0,
       30.0
     ],
+    "canonical_mesh_hash": "ad0c9c68c4956d0e99dbf105c953dd11f40a66beb98aa40491db6f478f3224ff",
     "mesh_hash": "c0fe4c31f3004d1ee27c328fc06f6ff3caec5a2a69383bb60592debe1a5884f2",
     "part": "gear_multi_rotation",
     "volume": 3534.2917352885174

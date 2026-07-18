@@ -32,6 +32,7 @@ class BuildSnapshot:
     volume: float
     bbox: List[float]
     mesh_hash: str
+    canonical_mesh_hash: str
 
 
 @dataclass
@@ -60,9 +61,10 @@ def mesh_hash(part: Part) -> str:
     """SHA-256 of the part's exported STL bytes.
 
     Deliberately hashes the raw export, not a canonicalized form: the point
-    of this check is to catch tessellation order/precision drift between
-    builds of the *same* input, so canonicalizing away that drift would hide
-    the exact thing being tested for.
+    of this check is to catch tessellation drift between builds *within the
+    same run* (see check_determinism), where a deterministic pipeline must
+    reproduce bit-identical output. Used for self-consistency only — do not
+    use this for cross-machine golden comparison (see canonical_mesh_hash).
     """
     require_cadquery_part(part, "Determinism check (mesh hash)")
     with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as tmp:
@@ -72,6 +74,31 @@ def mesh_hash(part: Part) -> str:
         return hashlib.sha256(tmp_path.read_bytes()).hexdigest()
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+def canonical_mesh_hash(part: Part, decimals: int = 6) -> str:
+    """SHA-256 of the part's tessellated vertex point cloud, order-independent.
+
+    TCAD-VAL-6: raw STL export (see mesh_hash) uses parallel tessellation
+    (cadquery's exportStl(parallel=True)), which is non-deterministic in
+    triangle *connectivity* across machines/runs even when the sampled
+    surface is identical: confirmed via a real GitHub Actions run vs a local
+    build of T0_torus.tiacad that every one of 16129 vertices matched exactly
+    (nearest-neighbor distance 0.0) while ~35% of the 31752 triangles
+    connected those same points differently (an ambiguous-quad-diagonal
+    choice at the torus seam). Raw STL hashing treats that as a mismatch;
+    it isn't one — the surface didn't change, only which diagonal a
+    non-deterministic mesher picked.
+
+    This hashes the rounded, sorted vertex point cloud only (no triangle
+    indices), which is the actual invariant: it's insensitive to
+    triangulation-order/connectivity noise but still catches any real
+    geometry change, which moves points by far more than `decimals` places.
+    """
+    require_cadquery_part(part, "Determinism check (canonical mesh hash)")
+    verts, _triangles = part.geometry.val().tessellate(0.001, 0.1)
+    rounded = sorted((round(v.x, decimals), round(v.y, decimals), round(v.z, decimals)) for v in verts)
+    return hashlib.sha256(repr(rounded).encode()).hexdigest()
 
 
 def build_snapshot(path: str, part_name: Optional[str] = None) -> BuildSnapshot:
@@ -98,6 +125,7 @@ def build_snapshot(path: str, part_name: Optional[str] = None) -> BuildSnapshot:
         volume=get_volume(part),
         bbox=bbox,
         mesh_hash=mesh_hash(part),
+        canonical_mesh_hash=canonical_mesh_hash(part),
     )
 
 
@@ -149,12 +177,19 @@ def check_determinism(path: str, n: int = DEFAULT_BUILD_COUNT) -> DeterminismRes
 
 
 def golden_snapshot_dict(snapshot: BuildSnapshot, part_name: str) -> dict:
-    """Serialize a BuildSnapshot to the golden_hashes.json entry shape."""
+    """Serialize a BuildSnapshot to the golden_hashes.json entry shape.
+
+    `mesh_hash` is kept for provenance/debugging only (the raw hash observed
+    when this golden was captured) and is not gated on — it's expected to
+    differ across machines (TCAD-VAL-6). `canonical_mesh_hash` is the
+    actual cross-machine invariant checked by check_against_golden.
+    """
     return {
         'part': part_name,
         'volume': snapshot.volume,
         'bbox': snapshot.bbox,
         'mesh_hash': snapshot.mesh_hash,
+        'canonical_mesh_hash': snapshot.canonical_mesh_hash,
     }
 
 
@@ -173,9 +208,10 @@ def check_against_golden(snapshot: BuildSnapshot, part_name: str, golden: dict) 
         violations.append(DeterminismViolation(
             'golden_bbox', f"actual={snapshot.bbox!r} golden={golden.get('bbox')!r}"
         ))
-    if golden.get('mesh_hash') != snapshot.mesh_hash:
+    if golden.get('canonical_mesh_hash') != snapshot.canonical_mesh_hash:
         violations.append(DeterminismViolation(
-            'golden_mesh_hash',
-            f"actual={snapshot.mesh_hash[:12]}... golden={str(golden.get('mesh_hash'))[:12]}...",
+            'golden_canonical_mesh_hash',
+            f"actual={snapshot.canonical_mesh_hash[:12]}... "
+            f"golden={str(golden.get('canonical_mesh_hash'))[:12]}...",
         ))
     return violations

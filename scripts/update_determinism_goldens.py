@@ -70,7 +70,7 @@ def main() -> int:
         _, part_name = resolve_contract_part(doc, expect)
 
         golden[rel] = golden_snapshot_dict(snapshot, part_name)
-        print(f"  {rel}: part={part_name!r} volume={snapshot.volume:.4f} hash={snapshot.mesh_hash[:12]}...")
+        print(f"  {rel}: part={part_name!r} volume={snapshot.volume:.4f} hash={snapshot.canonical_mesh_hash[:12]}...")
 
     golden_path.write_text(json.dumps(golden, indent=2, sort_keys=True) + "\n")
     print(f"\nWrote {len(golden)} golden(s) to {golden_path}")
