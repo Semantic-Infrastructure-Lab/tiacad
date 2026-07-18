@@ -332,17 +332,21 @@ notes_next: 2
 ## TASK-TCAD-ARCH-6 · Parse orchestration hotspot — parse_pipeline.py's parse_tiacad_dict is 110 lines / depth 4 doing 6 distinct jobs
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T02:33:07Z'
+updated: '2026-07-18T22:43:25Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 76eda96f2db9ef900a97b87f63db2c0fcf94c24d
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T22:43:25Z session:arctic-drizzle-0718] Split parse_tiacad_dict (110 lines/6 jobs) into _validate_and_extract_sections, _build_parts_registry, _apply_transforms_and_operations. parse_tiacad_dict now 65-line orchestrator. Full test_parser suite (727 tests) passes, no regressions.
 
 
 ## TASK-TCAD-ARCH-7 · Validation heuristic vs semantic — 5 of 9 assembly validation rule files still lean on bbox/bounds heuristics
