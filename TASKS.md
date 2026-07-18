@@ -50,17 +50,21 @@ _(no notes yet)_
 ## TASK-TCAD-VAL-3 · Pinned CI lockfile — exact dependency versions, regenerated on review
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [ci]
 created: '2026-07-18T02:32:53Z'
-updated: '2026-07-18T02:32:53Z'
+updated: '2026-07-18T02:52:00Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 4a9b6ecd5d053da6a950fc66db0ef5237dd047d4
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T02:52:00Z session:electric-glaze-0717] Generated requirements-lock.txt via pip-compile against a clean Python 3.12 venv; verified by installing into that venv and running the contract-suite tests (59 passed). Wired tests.yml's 3.12 leg to install from the lockfile; 3.11/3.13 legs unchanged (still resolve from requirements.txt floors, preserving cross-version compat signal).
 
 
 ## TASK-TCAD-VAL-4 · Trust-gallery sign-off and golden STEP set (out of scope for T0-T5 ladder)
