@@ -5,7 +5,7 @@ id_prefix: TCAD
 next_id: 1
 archival: inline
 areas:
-  VAL: 7
+  VAL: 8
   UX: 7
   API: 2
   ARCH: 9
@@ -379,3 +379,19 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T06:17:37Z session:electric-glaze-0717] Fixed via canonical_mesh_hash - point-cloud fingerprint immune to parallel-tessellation triangle-connectivity nondeterminism. Verified on real CI (all 3 legs green).
+
+
+## TASK-TCAD-VAL-7 · CI job reports failure: TEST_STATUS.json auto-commit-back-to-main step blocked by branch protection (GH006), even though real tests pass
+
+```yaml
+status: backlog
+priority: high
+tags: [ci, bug]
+created: '2026-07-18T06:26:59Z'
+updated: '2026-07-18T06:26:59Z'
+session: electric-glaze-0717
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_

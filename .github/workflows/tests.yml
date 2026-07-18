@@ -132,7 +132,14 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add TEST_STATUS.json
         git commit -m "chore: update TEST_STATUS.json [skip ci]"
-        git push origin HEAD:main
+        # Best-effort: branch protection (required status checks) can never let a
+        # commit created *by this same run* land, since no check can attach to it
+        # before the push (TCAD-VAL-7). Don't fail an otherwise-green job over it —
+        # TEST_STATUS.json is still fresh in the "TEST_STATUS.json artifact" upload
+        # below for this run; commit it by hand if the repo copy drifts.
+        if ! git push origin HEAD:main; then
+          echo "::warning::Could not push TEST_STATUS.json to main (branch protection blocks a same-run commit, see TCAD-VAL-7). Not failing the job for it — see the test-status artifact for this run's fresh counts."
+        fi
 
     - name: Upload TEST_STATUS.json artifact
       if: matrix.python-version == '3.11'
