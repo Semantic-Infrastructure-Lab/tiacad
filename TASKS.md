@@ -393,21 +393,22 @@ notes_next: 2
 ## TASK-TCAD-ARCH-8 · parameter_resolver.py high coupling — 3rd-highest fan-in in repo; _check_cycles() mixes DFS+regex+error formatting (complexity 10, depth 6)
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T21:37:06Z'
+updated: '2026-07-18T23:43:49Z'
 session: electric-glaze-0717
 links:
   commits:
   - fb6d689252041f86b1b1c2c5c6db67b8bfb9e79b
-notes_next: 2
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T21:36:39Z session:fuchsia-tint-0718] Partial progress (fb6d689): split _check_cycles into _extract_dependencies/_find_cycle/_check_cycles, resolving the complexity/depth complaint. Fan-in (3rd-highest importer count) is unaddressed — that's a coupling question needing a broader design decision, not a mechanical split.
+- [#2 2026-07-18T23:43:49Z session:volatile-glacier-0718] Non-issue, same resolution class as ARCH-2/ARCH-4: 16 production importers are all parser/*_builder.py modules resolving YAML parameter expressions -- the shared domain function every builder needs, not accidental coupling. Complexity/depth already fixed via fb6d689 (_check_cycles split); reveal --check now clean except trivial Optional[]/line-length lint. No further action needed.
 
 
 ## TASK-TCAD-VAL-6 · CI 3.13 leg red: T0_torus.tiacad golden_mesh_hash mismatch (pre-existing, predates this session — confirmed failing on commit 0801822 from 2026-07-11 too). Newly-added branch protection (main) now requires this check, so it silently blocks PR merges until fixed. Root cause: 3.13 leg resolves requirements.txt floors fresh each run, so a CadQuery/OCP point release drifted the torus tessellation hash vs the committed golden_hashes.json baseline -- exactly the kernel-drift scenario test_determinism.py's docstring warns about. Fix: regenerate the torus entry with scripts/update_determinism_goldens.py from a real Python 3.13 env (review the diff -- should touch only T0_torus), or extend the requirements-lock.txt pinning (TCAD-VAL-3) to the 3.11/3.13 legs too so this class of drift can't recur silently.
