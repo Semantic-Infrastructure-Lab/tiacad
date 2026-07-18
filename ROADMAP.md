@@ -278,7 +278,7 @@ the meantime (docs hygiene, CI lockfile, architecture debt).
 
 **Implementation Reference:**
 - **CHANGELOG.md:** History of changes and completed work
-- **BACKLOG.md:** Consolidated open action items across all docs
+- **BACKLOG.md:** Pointer to `tt` (project-embedded task tracker) — open action items
 - **docs/developer/VALIDATION_STRENGTHENING.md:** Validation confidence-ladder plan (complete)
 - **docs/archive/DAG_INCREMENTAL_REBUILD.md:** Dependency graph architecture and usage (shipped; kept as design record)
 - **TESTING_GUIDE.md:** Test strategy and coverage

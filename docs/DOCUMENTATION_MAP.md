@@ -27,7 +27,7 @@ checked against the actual current file layout.*
 |----------|---------|-------------|
 | [ROADMAP](../ROADMAP.md) | Current priorities, what shipped, strategic direction | Understanding where the project is headed |
 | [KNOWN_LIMITATIONS](../KNOWN_LIMITATIONS.md) | Current constraints, workarounds, fixed-bug log | Before assuming something works a certain way |
-| [BACKLOG](../BACKLOG.md) | Consolidated open action items across all docs | Looking for something concrete to work on |
+| [BACKLOG](../BACKLOG.md) | Pointer to `tt` (project-embedded task tracker) for open action items | Looking for something concrete to work on |
 | [CHANGELOG](../CHANGELOG.md) | History of shipped changes, version by version | What changed and when |
 | [VALIDATION_STRENGTHENING](developer/VALIDATION_STRENGTHENING.md) | Testing/validation confidence-ladder plan (complete) | Understanding the test-correctness strategy |
 

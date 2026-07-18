@@ -150,7 +150,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
 **Live planning/status (start here):**
 - `ROADMAP.md` - Current priorities and strategic direction
 - `KNOWN_LIMITATIONS.md` - Current constraints, workarounds, fixed-bug log
-- `BACKLOG.md` - Consolidated open action items across all docs
+- `BACKLOG.md` - Pointer to `tt` (project-embedded task tracker) - open action items
 - `CHANGELOG.md` - History of shipped changes
 - `docs/DOCUMENTATION_MAP.md` - Full doc index
 
