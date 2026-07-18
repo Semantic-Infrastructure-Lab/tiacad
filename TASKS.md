@@ -176,16 +176,20 @@ notes_next: 2
 ## TASK-TCAD-UX-4 · Stepwise summaries attached to operations in build_trace.json
 
 ```yaml
-status: backlog
+status: done
 priority: low
 created: '2026-07-18T02:32:58Z'
-updated: '2026-07-18T02:32:58Z'
+updated: '2026-07-18T22:58:09Z'
 session: electric-glaze-0717
+links:
+  commits:
+  - 5dc3b3cd461212b704a8440d0019a5cfa7959589
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T22:58:09Z session:arctic-drizzle-0718] Added summary_text field to each build_trace.json node: parts get 'primitive (key=value, ...)' from declared spec/parameters, operations get 'type: input1, input2 -> output' from already-computed inputs/outputs. Purely additive (no existing fields changed/removed). Verified against real examples (auto_references_box_stack.yaml, simple_guitar_hanger.yaml) and unit-tested (5 new tests for _summarize_part_node/_summarize_operation_node). Docs updated in AI_DEBUG_WORKFLOW.md's Build Trace section.
 
 
 ## TASK-TCAD-UX-5 · Annotated trust renders — point at measured failures directly on the rendered image
