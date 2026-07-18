@@ -865,6 +865,16 @@ an `expect:` block:
   coverage.xml into a committed `TEST_STATUS.json`; `tests.yml`'s python-3.11
   leg generates and (on push to `main`) commits it back to the repo. Stop
   hand-writing test counts into markdown — check `TEST_STATUS.json` instead.
+  **Caveat added 2026-07-18 (TCAD-VAL-7):** since branch protection was
+  enabled (TCAD-VAL-1), the commit-back-to-`main` push is best-effort — it
+  can never satisfy a required status check that must attach to *this same*
+  commit before the push happens, so it always fails under strict
+  protection regardless of the bot's permissions. It now logs a warning and
+  continues rather than failing the job. `TEST_STATUS.json` is still
+  generated fresh and uploaded as a build artifact every run; the in-repo
+  copy just won't auto-update until a real fix lands (a branch-ruleset
+  bypass entry for `github-actions[bot]`, or dropping the auto-commit
+  entirely) — filed as a follow-up, not yet picked.
   ~~Retire or clearly date-stamp the stale `CODE_QUALITY_SUMMARY.md` /
   `SKIPPED_TESTS_AUDIT.md`.~~ Done 2026-07-11: both moved to `docs/archive/`
   (a 2026-07-11 doc-coherence pass) — their skip classifications and quality
