@@ -13,7 +13,7 @@ Version: 0.1.0-alpha (Phase 1 - Manual Points MVP)
 """
 
 import logging
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
 import cadquery as cq
 import numpy as np
 from cadquery import Wire, Solid
@@ -23,6 +23,9 @@ from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
 from ..selector_resolver import SelectorResolver
 from .backend_utils import get_cadquery_backend
+
+if TYPE_CHECKING:
+    from ..geometry import GeometryBackend
 
 logger = logging.getLogger(__name__)
 
@@ -62,17 +65,21 @@ class GussetBuilder:
 
     def __init__(self,
                  part_registry: PartRegistry,
-                 parameter_resolver: ParameterResolver):
+                 parameter_resolver: ParameterResolver,
+                 backend: Optional["GeometryBackend"] = None):
         """
         Initialize gusset builder.
 
         Args:
             part_registry: Registry of available parts
             parameter_resolver: Resolver for ${...} expressions
+            backend: CadQuery backend stamped onto the produced part; falls back
+                to the process-global default when not given
         """
         self.registry = part_registry
         self.resolver = parameter_resolver
         self.selector_resolver = SelectorResolver(part_registry)
+        self.backend = backend
 
     def execute_gusset_operation(self, name: str, spec: Dict[str, Any]):
         """
@@ -152,7 +159,7 @@ class GussetBuilder:
             geometry=geometry,
             metadata=metadata,
             current_position=(0, 0, 0),
-            backend=get_cadquery_backend(),
+            backend=self.backend or get_cadquery_backend(),
         )
 
         # Add to registry

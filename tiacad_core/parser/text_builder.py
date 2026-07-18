@@ -16,6 +16,7 @@ from .backend_utils import get_cadquery_backend, require_cadquery_input_part
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
+    from ..geometry import GeometryBackend
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,8 @@ class TextBuilder:
     def __init__(self,
                  part_registry: PartRegistry,
                  parameter_resolver: ParameterResolver,
-                 line_tracker: Optional['LineTracker'] = None):
+                 line_tracker: Optional['LineTracker'] = None,
+                 backend: Optional["GeometryBackend"] = None):
         """
         Initialize text builder.
 
@@ -69,6 +71,7 @@ class TextBuilder:
         self.registry = part_registry
         self.resolver = parameter_resolver
         self.line_tracker = line_tracker
+        self.backend = backend
 
     def _get_line_info(self, path: List[str]) -> Tuple[Optional[int], Optional[int]]:
         """Get line and column info for a YAML path."""
@@ -191,7 +194,7 @@ class TextBuilder:
                 name=name,
                 geometry=geometry,
                 metadata=metadata,
-                backend=get_cadquery_backend(),
+                backend=self.backend or get_cadquery_backend(),
             ))
             logger.debug(f"Created text operation '{name}': {operation_type} on '{input_name}'")
 

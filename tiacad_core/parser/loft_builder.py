@@ -20,6 +20,7 @@ from .backend_utils import get_cadquery_backend
 
 if TYPE_CHECKING:
     from .yaml_with_lines import LineTracker
+    from ..geometry import GeometryBackend
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,8 @@ class LoftBuilder:
                  part_registry: PartRegistry,
                  sketches: Dict[str, Sketch2D],
                  parameter_resolver: ParameterResolver,
-                 line_tracker: Optional['LineTracker'] = None):
+                 line_tracker: Optional['LineTracker'] = None,
+                 backend: Optional["GeometryBackend"] = None):
         """
         Initialize loft builder.
 
@@ -64,6 +66,7 @@ class LoftBuilder:
         self.sketches = sketches
         self.resolver = parameter_resolver
         self.line_tracker = line_tracker
+        self.backend = backend
 
     def _get_line_info(self, path: List[str]) -> Tuple[Optional[int], Optional[int]]:
         """Get line and column info for a YAML path."""
@@ -120,7 +123,7 @@ class LoftBuilder:
             geometry = self._loft_sketches(profiles, ruled, name)
             self.registry.add(Part(name=name, geometry=geometry, metadata={
                 'source': 'loft', 'profiles': profile_names, 'operation_type': 'loft', 'ruled': ruled
-            }, backend=get_cadquery_backend()))
+            }, backend=self.backend or get_cadquery_backend()))
             logger.debug(f"Created lofted part '{name}' from {len(profiles)} profiles")
 
         except LoftBuilderError:

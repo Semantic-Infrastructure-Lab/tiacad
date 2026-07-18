@@ -15,7 +15,7 @@ import io
 import logging
 import os
 import tempfile
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import cadquery as cq
 import numpy as np
 
@@ -23,6 +23,9 @@ from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from .parameter_resolver import ParameterResolver
 from .backend_utils import get_cadquery_backend, require_cadquery_input_part
+
+if TYPE_CHECKING:
+    from ..geometry import GeometryBackend
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +53,11 @@ class HullBuilder:
 
     def __init__(self,
                  part_registry: PartRegistry,
-                 parameter_resolver: ParameterResolver):
+                 parameter_resolver: ParameterResolver,
+                 backend: Optional["GeometryBackend"] = None):
         self.registry = part_registry
         self.resolver = parameter_resolver
+        self.backend = backend
 
     def _validate_hull_inputs(self, name: str, resolved_spec: Dict[str, Any]) -> List[str]:
         """Validate the 'inputs' field and return the list of input part names."""
@@ -163,7 +168,7 @@ class HullBuilder:
             geometry=hull_geometry,
             metadata=metadata,
             current_position=(0, 0, 0),
-            backend=get_cadquery_backend(),
+            backend=self.backend or get_cadquery_backend(),
         )
         self.registry.add(result_part)
         logger.info(f"Created hull part '{name}' from {len(input_parts)} inputs")

@@ -26,7 +26,7 @@ Version: 3.1.1
 import logging
 import math
 import warnings
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 
 from ..part import Part, PartRegistry
@@ -44,6 +44,9 @@ from .loft_builder import LoftBuilder
 from .hull_builder import HullBuilder
 from .text_builder import TextBuilder
 from .gusset_builder import GussetBuilder
+
+if TYPE_CHECKING:
+    from ..geometry import GeometryBackend
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +84,8 @@ class OperationsBuilder:
                  part_registry: PartRegistry,
                  parameter_resolver: ParameterResolver,
                  sketches: Dict[str, Any] = None,
-                 spatial_resolver: SpatialResolver = None):
+                 spatial_resolver: SpatialResolver = None,
+                 backend: Optional["GeometryBackend"] = None):
         """
         Initialize operations builder.
 
@@ -90,6 +94,9 @@ class OperationsBuilder:
             parameter_resolver: Resolver for ${...} expressions
             sketches: Dictionary of sketches for extrude/revolve/sweep/loft (optional)
             spatial_resolver: SpatialResolver for reference resolution (optional)
+            backend: CadQuery backend to stamp onto parts produced by sketch-based
+                operations (extrude/revolve/sweep/loft/hull/text/gusset); falls back
+                to the process-global default when not given
         """
         self.registry = part_registry
         self.resolver = parameter_resolver
@@ -99,13 +106,13 @@ class OperationsBuilder:
         self.pattern_builder = PatternBuilder(part_registry, parameter_resolver)
         self.finishing_builder = FinishingBuilder(part_registry, parameter_resolver)
         # Sketch-based operation builders (Phase 3)
-        self.extrude_builder = ExtrudeBuilder(part_registry, self.sketches, parameter_resolver)
-        self.revolve_builder = RevolveBuilder(part_registry, self.sketches, parameter_resolver)
-        self.sweep_builder = SweepBuilder(part_registry, self.sketches, parameter_resolver)
-        self.loft_builder = LoftBuilder(part_registry, self.sketches, parameter_resolver)
-        self.hull_builder = HullBuilder(part_registry, parameter_resolver)
-        self.text_builder = TextBuilder(part_registry, parameter_resolver)
-        self.gusset_builder = GussetBuilder(part_registry, parameter_resolver)
+        self.extrude_builder = ExtrudeBuilder(part_registry, self.sketches, parameter_resolver, backend=backend)
+        self.revolve_builder = RevolveBuilder(part_registry, self.sketches, parameter_resolver, backend=backend)
+        self.sweep_builder = SweepBuilder(part_registry, self.sketches, parameter_resolver, backend=backend)
+        self.loft_builder = LoftBuilder(part_registry, self.sketches, parameter_resolver, backend=backend)
+        self.hull_builder = HullBuilder(part_registry, parameter_resolver, backend=backend)
+        self.text_builder = TextBuilder(part_registry, parameter_resolver, backend=backend)
+        self.gusset_builder = GussetBuilder(part_registry, parameter_resolver, backend=backend)
 
         # op_type -> handler(name, resolved_spec). Built once here rather than
         # dispatched via if/elif in execute_operation, so adding an operation

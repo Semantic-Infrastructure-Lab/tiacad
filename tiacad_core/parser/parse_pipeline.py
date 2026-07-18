@@ -303,6 +303,8 @@ def _apply_transforms_and_operations(
     context: PreparedBuildContext,
     parts_spec: Dict[str, Any],
     operations_spec: Dict[str, Any],
+    *,
+    backend: Optional["GeometryBackend"] = None,
 ):
     """Apply inline part transforms, then execute operations, in dependency order."""
     spatial_resolver = SpatialResolver(registry, context.resolved_references)
@@ -312,12 +314,14 @@ def _apply_transforms_and_operations(
     # Runs after every part in parts_spec exists in `registry`, so a part may
     # anchor to any sibling's auto-generated references (e.g. base.face_top).
     OperationsBuilder(
-        registry, context.param_resolver, context.sketches, spatial_resolver
+        registry, context.param_resolver, context.sketches, spatial_resolver,
+        backend=backend,
     ).apply_inline_part_transforms(parts_spec)
 
     if operations_spec:
         registry = OperationsBuilder(
-            registry, context.param_resolver, context.sketches, spatial_resolver
+            registry, context.param_resolver, context.sketches, spatial_resolver,
+            backend=backend,
         ).execute_operations(operations_spec)
         logger.info(f"Executed {len(operations_spec)} operations")
 
@@ -360,7 +364,7 @@ def parse_tiacad_dict(
 
         registry = _build_parts_registry(parts_spec, context, backend=backend)
         registry = _apply_transforms_and_operations(
-            registry, context, parts_spec, operations_spec
+            registry, context, parts_spec, operations_spec, backend=backend
         )
 
         doc = document_factory(
