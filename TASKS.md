@@ -250,16 +250,17 @@ status: backlog
 priority: medium
 tags: [architecture]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T02:33:12Z'
+updated: '2026-07-18T22:58:32Z'
 session: electric-glaze-0717
 links:
   relates_to:
   - TCAD-VAL-2
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-18T22:58:32Z session:arctic-drizzle-0718] Investigated (arctic-drizzle-0718): confirmed this is live in production, not test-only. CLI (cli.py) never passes backend= anywhere, so get_default_backend() IS hit on every CLI run, lazily creating/caching a module-global CadQueryBackend in tiacad_core/geometry/__init__.py's _default_backend. There's a SECOND, separate module-global cache in parser/backend_utils.py (_cadquery_backend) used by 7 CadQuery-native builders (hull/loft/sweep/text/gusset/extrude/revolve builders) via get_cadquery_backend() — its fallback logic re-derives from get_default_backend() first, only using its own cache when the default has been swapped to a non-CadQuery backend (e.g. MockBackend in tests). Only 2 test files mutate the global via set_default_backend/reset_default_backend. A real fix means deciding: (a) keep the singleton-with-test-override pattern as intentional/documented (like visual/visualization ARCH-4 turned out to be), or (b) thread an explicit backend/context object through PartsBuilder + all 7 builders + CLI — a cross-cutting signature change touching every builder module. Did not change code — this is a design call, not a mechanical fix. Recommend scoping (a) vs (b) with Scott before starting.
 
 
 ## TASK-TCAD-ARCH-2 · Part coupling hub — part.py (237 lines) is #1 fan-in file in repo (21 importers in tiacad_core/, 59 repo-wide)
