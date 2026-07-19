@@ -716,49 +716,61 @@ notes_next: 2
 ## TASK-TCAD-CON-7 · tiacad-schema.json: tangent constraint schema is stale/incomplete — still says 'reserved for a future revision, not yet implemented' despite shipping, and doesn't declare tangent's actual face/edge fields (schema silently accepts malformed tangent specs)
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [schema, constraints]
 created: '2026-07-19T20:39:51Z'
-updated: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T21:36:14Z'
 session: astral-sun-0719
+links:
+  commits:
+  - f2ed0fc3687a81a187820387dba75550ced8e931
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T21:36:14Z session:astral-sun-0719] Fixed stale tangent schema text + added face/edge field declarations; added TestConstraintSchema coverage (flush/tangent/unknown-type).
 
 
 ## TASK-TCAD-CON-8 · Dead 'reserved for future revision' error branch in ConstraintBuilder._parse_constraint — RESERVED_CONSTRAINT_TYPES is now empty (tangent shipped) but branch still exists, printing empty list on unknown-type errors
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [cleanup, constraints]
 created: '2026-07-19T20:39:51Z'
-updated: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T21:38:52Z'
 session: astral-sun-0719
+links:
+  commits:
+  - 730556833b29d865eab93a7db36bbb3fe4600ffa
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T21:38:52Z session:astral-sun-0719] Resolved together with TCAD-CON-9: RESERVED_CONSTRAINT_TYPES is now populated (parallel/perpendicular/angle/symmetric), so the branch is live again instead of dead.
 
 
 ## TASK-TCAD-CON-9 · No angular/parallel/perpendicular/symmetric constraint family, and not even scoped as reserved — RESERVED_CONSTRAINT_TYPES is empty so requesting type: parallel errors as unknown rather than planned
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [constraints, scoping]
 created: '2026-07-19T20:39:51Z'
-updated: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T21:38:52Z'
 session: astral-sun-0719
+links:
+  commits:
+  - 730556833b29d865eab93a7db36bbb3fe4600ffa
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T21:38:52Z session:astral-sun-0719] Named+reserved parallel/perpendicular/angle/symmetric in constraint_builder.py and schema enum; added test_reserved_type_raises_distinct_error; documented in KNOWN_LIMITATIONS.md #1.
 
 
 ## TASK-TCAD-VAL-9 · CLI command entrypoints mostly untested — cmd_build (primary user path: parse->export->stats), cmd_watch, cmd_info, cmd_check, cmd_validate/cmd_validate_geometry have no direct tests
