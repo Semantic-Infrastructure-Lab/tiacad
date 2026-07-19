@@ -212,11 +212,11 @@ alongside position.
 
 **What's required:**
 - ~~Constraint YAML schema (flush, coaxial, offset, tangent)~~ Done — all four implemented (`TCAD-CON-1`, `TCAD-CON-3`, `TCAD-1`)
-- Constraint validator (detect contradictions before solve) — not yet; CadQuery's solver currently just fails to converge on a contradiction
+- ~~Constraint validator (detect contradictions before solve)~~ Done (`TCAD-CON-4`, 2026-07-19): `ConstraintBuilder._check_plane_conflicts` catches the one contradiction class CadQuery's own solver was flagged (during the `TCAD-CON-1` scoping investigation below) as an ambiguous rough edge — the same moving face mated `flush`/`offset` against two reference planes that aren't actually coincident. Raises a precise `ConstraintBuilderError` naming both conflicting constraint indices before `.solve()` ever runs, instead of an opaque IPOPT non-convergence. Scope is deliberately `flush`/`offset` (both compile to the identical zero-gap `Plane` constraint kind) only — `coaxial`'s edge/axis consistency is a different question, not addressed by this pass.
 - ~~Solver~~ Done — CadQuery's `Assembly.constrain()`/`.solve()`, not a hand-written one
 - Integration with ModelGraph (constraints are just edges) — not yet; constraints currently run as a standalone post-operations pass, not DAG edges
 
-**Effort:** ~~10-16 weeks~~ ~~2-4 weeks~~ MVP (flush + offset) shipped in one session, `coaxial` added same day thanks to reusing CadQuery's existing solver; `tangent` added in a follow-on session (needed its own direct-computation approach, not another CadQuery constraint-kind mapping).
+**Effort:** ~~10-16 weeks~~ ~~2-4 weeks~~ MVP (flush + offset) shipped in one session, `coaxial` added same day thanks to reusing CadQuery's existing solver; `tangent` added in a follow-on session (needed its own direct-computation approach, not another CadQuery constraint-kind mapping); constraint contradiction detection (`TCAD-CON-4`) added in a follow-on session.
 
 ---
 

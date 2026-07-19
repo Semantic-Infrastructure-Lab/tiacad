@@ -147,8 +147,11 @@ class ConstraintBuilder:
         # _apply_tangent_translate for why (a lone PointInPlane constraint
         # leaves 5 of 6 rigid-body freedoms open, so a real solve() there can
         # rotate the part arbitrarily instead of just translating it).
-        solved = [p for p in parsed if p[0] != 'tangent']
+        solved_indexed = [(i, p) for i, p in enumerate(parsed) if p[0] != 'tangent']
+        solved = [p for _, p in solved_indexed]
         tangents = [p for p in parsed if p[0] == 'tangent']
+
+        self._check_plane_conflicts(solved_indexed)
 
         if solved:
             involved_parts: List[str] = []
@@ -192,6 +195,64 @@ class ConstraintBuilder:
         # actual — possibly also-constrained — current pose.
         for _ctype, ref_part, ref_sel, mov_part, mov_sel, radius in tangents:
             self._apply_tangent_translate(mov_part, mov_sel, ref_part, ref_sel, radius)
+
+    def _check_plane_conflicts(self, solved_indexed: List[Tuple[int, Tuple[str, str, str, str, str, float]]]) -> None:
+        """Detect 'flush'/'offset' constraints that mate the same moving face
+        against two reference planes that don't coincide, before calling
+        CadQuery's `.solve()`.
+
+        Both 'flush' and 'offset' apply the identical zero-gap 'Plane'
+        constraint kind during solve() ('offset' only adds its extra
+        translate afterward — see module docstring), so if the same
+        (mov_part, mov_sel) face is mated 'Plane' against two reference
+        faces that aren't the same plane in space, IPOPT is asked to
+        satisfy two contradictory equations at once. This is exactly the
+        "ambiguity bug with two overlapping planar constraints on the same
+        pair" flagged as a known CadQuery rough edge during TCAD-CON-1's
+        scoping — instead of letting that surface as an opaque solve
+        failure (or a silent, arbitrary compromise), catch it here with a
+        precise error naming the two conflicting constraints.
+
+        Reference planes that *are* coincident (parallel normals, same
+        offset — e.g. two different reference parts whose faces happen to
+        share a plane) are legitimate and not flagged. Scope is deliberately
+        'flush'/'offset' only: 'coaxial' mates edges via 'Axis'+'Point', a
+        different consistency question this pass doesn't address.
+        """
+        by_moving_face: Dict[Tuple[str, str], List[Tuple[int, str, str]]] = {}
+        for i, (ctype, ref_part, ref_sel, mov_part, mov_sel, _distance) in solved_indexed:
+            if ctype not in ('flush', 'offset'):
+                continue
+            by_moving_face.setdefault((mov_part, mov_sel), []).append((i, ref_part, ref_sel))
+
+        for (mov_part, mov_sel), entries in by_moving_face.items():
+            if len(entries) < 2:
+                continue
+            first_i, first_ref_part, first_ref_sel = entries[0]
+            first_ref = self.spatial_resolver.resolve(
+                {'type': 'face', 'part': first_ref_part, 'selector': first_ref_sel}
+            )
+            for i, ref_part, ref_sel in entries[1:]:
+                ref = self.spatial_resolver.resolve({'type': 'face', 'part': ref_part, 'selector': ref_sel})
+                if not self._planes_coincide(first_ref.position, first_ref.orientation, ref.position, ref.orientation):
+                    raise ConstraintBuilderError(
+                        f"Constraints {first_i} and {i} both mate '{mov_part}.{mov_sel}' flush/offset "
+                        f"against a different reference plane ('{first_ref_part}.{first_ref_sel}' vs "
+                        f"'{ref_part}.{ref_sel}') that isn't coincident with the first — CadQuery's "
+                        f"solver can't satisfy both simultaneously. Constrain a different face of "
+                        f"'{mov_part}' for the second mate, or drop one of the two constraints.",
+                        constraint_index=i,
+                    )
+
+    @staticmethod
+    def _planes_coincide(pos1: np.ndarray, normal1: np.ndarray, pos2: np.ndarray, normal2: np.ndarray,
+                          tol: float = 1e-6) -> bool:
+        """True if two (position, normal) planes are the same plane in space
+        (normals parallel or antiparallel, and coplanar — a point on one
+        plane lies on the other)."""
+        if np.linalg.norm(np.cross(normal1, normal2)) > tol:
+            return False
+        return abs(float(np.dot(pos2 - pos1, normal1))) <= tol
 
     def _parse_constraint(self, index: int, spec: Dict[str, Any]) -> Tuple[str, str, str, str, str, float]:
         """Validate one constraint spec, returning

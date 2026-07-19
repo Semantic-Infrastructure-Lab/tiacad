@@ -648,10 +648,25 @@ The three previously-stubbed connectivity helpers in
 `parts_in_contact` uses exact OCCT `BRepExtrema_DistShapeShape` surface-to-
 surface distance (not a bounding-box approximation), and the graph/connectivity
 helpers build on it. Tested in `test_testing/test_measurements.py`
-(`TestPartsInContact`, `TestContactGraphConnectivity`). Still open: promoting
-`DisconnectedPartsRule` itself from an advisory WARNING to a hard gate that
-uses `count_solids` (the rule still uses its own bbox-proximity heuristic; the
-authoritative check now lives in the contract path via `expect: components:`).
+(`TestPartsInContact`, `TestContactGraphConnectivity`).
+
+**Decided 2026-07-18, not left open:** promoting `DisconnectedPartsRule` from
+an advisory WARNING to a hard gate was considered and deliberately rejected —
+`examples/validation/negative_trust/NT2_disconnected_parts.tiacad` and
+`test_negative_trust_scenarios.py::test_nt2_disconnected_parts_is_flagged`
+(MODEL_VALIDATION.md "Best Next Improvements" #7) now commit to WARNING as
+the correct, permanent severity: a disconnected group can be a legitimate
+multi-part kit, not a defect, so it must be surfaced but must never hard-block
+a build. `DisconnectedPartsRule`'s own bbox-proximity-first heuristic (falling
+back to the same exact BREP distance query as `parts_in_contact` for
+ambiguous cases) was checked and is not a gap — it already wraps the same
+`Shape.distance()`/`BRepExtrema` call, just with a sound cheap bbox
+short-circuit for pairs provably too far apart to matter. The authoritative
+hard gate for "is this exported geometry one solid" remains `count_solids` via
+`expect: components:`, which is a different question (one merged part's BREP
+solid count) from `DisconnectedPartsRule`'s (are all named assembly parts
+mutually reachable) — the two are complementary, not duplicates, and neither
+supersedes the other.
 
 ### 4.7 — Trust gallery as a versioned, signed-off artifact + AI review loop
 

@@ -337,6 +337,44 @@ class TestConstraintValidation:
         ConstraintBuilder(registry, resolver).apply_constraints([])
         _approx(registry.get('top').get_center(), (0.0, 0.0, 0.0))
 
+    def test_conflicting_plane_constraints_raise_before_solve(self):
+        """TCAD-CON-4: mating the same moving face flush against two
+        non-coincident reference planes must be caught up front, not left
+        to fail opaquely inside CadQuery's .solve()."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='base', geometry=cq.Workplane('XY').box(10, 10, 10), backend=backend))
+        registry.add(Part(name='wall', geometry=cq.Workplane('XY').box(10, 10, 10), backend=backend))
+        registry.add(Part(name='top', geometry=cq.Workplane('XY').box(5, 5, 5), backend=backend))
+        resolver = SpatialResolver(registry)
+
+        with pytest.raises(ConstraintBuilderError, match="can't satisfy both simultaneously"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'flush', 'faces': ['base.face_top', 'top.face_bottom']},
+                {'type': 'flush', 'faces': ['wall.face_right', 'top.face_bottom']},
+            ])
+
+    def test_same_reference_plane_from_different_parts_does_not_conflict(self):
+        """Two reference parts whose selected faces happen to share the same
+        plane (e.g. two equal-height boxes side by side) are a legitimate
+        double mate, not a contradiction, and must solve normally."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='base_a', geometry=cq.Workplane('XY').box(10, 10, 10), backend=backend))
+        registry.add(Part(
+            name='base_b',
+            geometry=cq.Workplane('XY').box(10, 10, 10).translate((20, 0, 0)),
+            backend=backend,
+        ))
+        registry.add(Part(name='top', geometry=cq.Workplane('XY').box(5, 5, 5), backend=backend))
+        resolver = SpatialResolver(registry)
+
+        ConstraintBuilder(registry, resolver).apply_constraints([
+            {'type': 'flush', 'faces': ['base_a.face_top', 'top.face_bottom']},
+            {'type': 'flush', 'faces': ['base_b.face_top', 'top.face_bottom']},
+        ])
+        _approx(registry.get('top').get_center()[2], 7.5)
+
 
 class TestConstraintPipelineIntegration:
     """End-to-end: constraints solved through the real YAML parse pipeline."""
