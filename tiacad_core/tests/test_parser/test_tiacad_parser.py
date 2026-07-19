@@ -489,6 +489,84 @@ parts:
                 os.unlink(temp_path)
 
 
+class TestConstraintsIntegration:
+    """End-to-end constraints: -> parse -> export coverage through the exact
+    entrypoint `tiacad build` uses (TiaCADParser.parse_file/parse_string ->
+    doc.export_*), as distinct from test_dag/test_watcher.py's coverage of the
+    same constraints through the separate `tiacad watch` incremental-rebuild
+    path (TCAD-VAL-11) — the two pipelines apply constraints via independent
+    code (parse_pipeline._apply_constraints vs watcher._rebuild's own call),
+    and previously only the watch path had an end-to-end test."""
+
+    def test_flush_and_offset_constraints_solve_through_full_pipeline(self):
+        """Two constraints (flush, offset) on a three-part model, parsed via
+        the standard (non-watch) pipeline, must both be reflected in the
+        parts' final positions — not just accepted without error."""
+        yaml_content = """
+parts:
+  base:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+  top:
+    primitive: box
+    parameters: {width: 5, height: 5, depth: 5}
+    origin: center
+  mount:
+    primitive: box
+    parameters: {width: 3, height: 3, depth: 3}
+    origin: center
+
+constraints:
+  - type: flush
+    faces: [base.face_top, top.face_bottom]
+  - type: offset
+    faces: [top.face_top, mount.face_bottom]
+    distance: 2
+"""
+        doc = TiaCADParser.parse_string(yaml_content)
+
+        # flush: top sits directly on base's top face (base half-height 5 + top half-height 2.5)
+        assert doc.get_part("top").get_center() == pytest.approx((0.0, 0.0, 7.5), abs=1e-6)
+        # offset: mount sits 2mm above top's top face (top center 7.5 + top half-height 2.5
+        # + offset 2 + mount half-height 1.5)
+        assert doc.get_part("mount").get_center() == pytest.approx((0.0, 0.0, 13.5), abs=1e-6)
+
+    def test_constrained_model_exports_correct_geometry(self, tmp_path):
+        """The constraint solve must actually be baked into the exported mesh,
+        not just the in-memory Part position — export through parse_file (what
+        `tiacad build` calls) and check the STL reflects the constrained bbox."""
+        input_path = tmp_path / "constrained.tiacad"
+        input_path.write_text("""
+parts:
+  base:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+  top:
+    primitive: box
+    parameters: {width: 5, height: 5, depth: 5}
+    origin: center
+
+constraints:
+  - type: flush
+    faces: [base.face_top, top.face_bottom]
+""")
+        doc = TiaCADParser.parse_file(str(input_path))
+
+        output_path = tmp_path / "constrained.stl"
+        doc.export_stl(str(output_path), "top")
+
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+
+        import trimesh
+        mesh = trimesh.load(str(output_path))
+        # top is a 5mm cube flush-mated onto base's top face -> Z spans [5, 10]
+        assert mesh.bounds[0][2] == pytest.approx(5.0, abs=0.05)
+        assert mesh.bounds[1][2] == pytest.approx(10.0, abs=0.05)
+
+
 class TestValidation:
     """Test validation functionality"""
 
