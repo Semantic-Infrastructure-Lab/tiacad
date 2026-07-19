@@ -146,7 +146,7 @@ phase-by-phase history).
 
 ---
 
-## Constraint Solver — flush/offset shipped 2026-07-19, coaxial added 2026-07-19 (`TCAD-CON-1`, `TCAD-CON-3`)
+## Constraint Solver — flush/offset shipped 2026-07-19, coaxial added 2026-07-19, tangent added 2026-07-19 (`TCAD-CON-1`, `TCAD-CON-3`, `TCAD-1`)
 
 **Vision:** Declarative assemblies — specify intent, not coordinates
 
@@ -161,6 +161,9 @@ constraints:
     edges:
       - {type: edge, part: plate, selector: "%CIRCLE and >Z"}
       - {type: edge, part: pin, selector: "%CIRCLE and >Z"}
+  - type: tangent
+    face: rail.face_top
+    edge: {type: edge, part: roller, selector: "%CIRCLE and <X"}
 ```
 
 `flush`, `offset`, and `coaxial` are implemented and shipped
@@ -172,11 +175,24 @@ transform uses), matching the original MVP framing: rigid constraint propagation
 live/bidirectional solve. `flush`/`offset` use CadQuery's `Plane` kind on two named faces;
 `coaxial` uses `Axis`+`Point` together on two named edges (aligns direction, then pins
 centers coincident) — verified live: a 3mm pin cylinder mated coaxial to a plate's 6mm hole
-lands with its center exactly on the hole's axis. `tangent` remains recognized by the schema
-but intentionally not implemented — unlike coaxial, it needs radius-aware offset math (e.g.
-a cylinder tangent to a plane sits one radius off, not coincident with it), a different
-problem from a direct constraint-kind mapping. Follow-up filed as `TCAD-CON-3` (now scoped
-down to `tangent` only).
+lands with its center exactly on the hole's axis.
+
+`tangent` (`TCAD-1`) mates a cylindrical part flush against a reference plane without their
+surfaces intersecting (e.g. a roller resting on a rail) — but, unlike the other three, it
+does NOT go through CadQuery's solver. The only fitting constraint kind, `PointInPlane`,
+only pins one point onto the plane, leaving 5 of 6 rigid-body freedoms open — verified live
+that `.solve()` on it rotates the cylinder into an arbitrary orientation rather than sliding
+it along the plane's normal, which isn't what "no auto-alignment" was meant to allow.
+Instead, `tangent` measures the cylinder's radius directly off its geometry
+(`Edge.radius()`) and computes the exact translate distance via `SpatialResolver`
+(reference-plane position + normal, vs. the moving edge's center point) — reusing the same
+post-solve translate helper `offset` already uses, just with a measured radius instead of a
+YAML-supplied distance. Like `offset`, the caller must pre-rotate the moving part so its
+cylinder axis is already parallel to the reference plane. Scope is deliberately narrow:
+cylinder-face vs. plane only, not cylinder-cylinder tangency or auto-alignment — the only
+case documented anywhere is `roller`/`rail`, and cylinder-cylinder or auto-alignment would
+mean hand-rolling solver geometry CadQuery doesn't provide, exactly what the 2026-07-18
+scoping investigation chose to avoid for the other three types.
 
 Convention: in `faces: [reference, moving]` / `edges: [reference, moving]`, the first
 reference's part is the one CadQuery's solver auto-locks (its first-referenced entity); the
@@ -184,7 +200,9 @@ second is repositioned. `offset` requires `faces:` (not the `parts:` shorthand s
 the original vision below) — that shorthand left which two faces get the gap underspecified.
 `coaxial` requires inline `{type: edge, part, selector}` refs only — there's no
 auto-generated edge-name vocabulary (unlike faces' `FACE_SELECTOR_MAP`) to resolve a dotted
-`part.edge_name` shorthand against.
+`part.edge_name` shorthand against. `tangent` uses named `face:`/`edge:` fields instead of a
+`[reference, moving]` list, since its two sides are different kinds of reference (a plane
+vs. a circular edge) with no symmetric pairing to order positionally.
 
 Prerequisite fixed first: `TCAD-CON-2` (`axis_x`/`axis_y`/`axis_z` part-local references
 always pointed along **world** axes regardless of a part's actual rotation) — needed so a
@@ -193,12 +211,12 @@ constraint-driven rotation feeds correctly into any further spatial reference on
 alongside position.
 
 **What's required:**
-- ~~Constraint YAML schema (flush, coaxial, offset, tangent)~~ Done — `flush`/`offset`/`coaxial` implemented, `tangent` schema-recognized (`TCAD-CON-3`)
+- ~~Constraint YAML schema (flush, coaxial, offset, tangent)~~ Done — all four implemented (`TCAD-CON-1`, `TCAD-CON-3`, `TCAD-1`)
 - Constraint validator (detect contradictions before solve) — not yet; CadQuery's solver currently just fails to converge on a contradiction
 - ~~Solver~~ Done — CadQuery's `Assembly.constrain()`/`.solve()`, not a hand-written one
 - Integration with ModelGraph (constraints are just edges) — not yet; constraints currently run as a standalone post-operations pass, not DAG edges
 
-**Effort:** ~~10-16 weeks~~ ~~2-4 weeks~~ MVP (flush + offset) shipped in one session, `coaxial` added same day, thanks to reusing CadQuery's existing solver.
+**Effort:** ~~10-16 weeks~~ ~~2-4 weeks~~ MVP (flush + offset) shipped in one session, `coaxial` added same day thanks to reusing CadQuery's existing solver; `tangent` added in a follow-on session (needed its own direct-computation approach, not another CadQuery constraint-kind mapping).
 
 ---
 

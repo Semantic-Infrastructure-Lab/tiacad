@@ -47,7 +47,7 @@ Before limitations, here's what works great:
 
 ## Current Limitations
 
-### 1. Constraint Solver — flush/offset/coaxial shipped, tangent not yet
+### 1. Constraint Solver — flush/offset/coaxial/tangent shipped
 
 **What Works (as of 2026-07-19):**
 ```yaml
@@ -61,30 +61,34 @@ constraints:
     edges:
       - {type: edge, part: bearing, selector: "%CIRCLE and >Z"}
       - {type: edge, part: shaft, selector: "%CIRCLE and >Z"}
-```
-Wraps CadQuery's own `Assembly.constrain()`/`.solve()`; solves once per build and compiles
-to ordinary `transform` operations (rigid propagation, not a live/bidirectional solve). See
-`tiacad_core/parser/constraint_builder.py` and ROADMAP.md "Constraint Solver".
-
-**What's Missing:**
-```yaml
-# CAN'T DO THIS (yet):
-constraints:
   - type: tangent
-    faces: [roller.face_side, rail.face_top]
+    face: rail.face_top
+    edge: {type: edge, part: roller, selector: "%CIRCLE and <X"}
 ```
-`tangent` is schema-recognized but not implemented — it needs radius-aware offset math
-(a cylinder tangent to a plane sits one radius off, not coincident/coaxial with it), unlike
-`flush`/`coaxial`'s direct CadQuery constraint-kind mapping. Tracked as `TCAD-1` (`tt show
-TCAD-1`).
+`flush`/`offset`/`coaxial` wrap CadQuery's own `Assembly.constrain()`/`.solve()`; solves once
+per build and compiles to ordinary `transform` operations (rigid propagation, not a
+live/bidirectional solve). `tangent` (TCAD-1) mates a cylindrical part flush against a
+reference plane without their surfaces intersecting — e.g. a roller resting on a rail — by
+measuring the cylinder's radius directly off its geometry (`Edge.radius()`) and translating
+along the reference normal until the axis sits exactly one radius from the plane. It
+deliberately does NOT go through CadQuery's solver: the only fitting constraint kind
+(`PointInPlane`) leaves 5 of 6 rigid-body freedoms open, so `.solve()` can rotate the part
+into an arbitrary orientation rather than just sliding it — verified empirically. Like
+`offset`, it requires the moving part's cylinder axis to already be parallel to the
+reference plane (e.g. via a prior `rotate` transform) — no auto-alignment. Scope is
+cylinder-face-vs-plane only, not cylinder-cylinder tangency. See
+`tiacad_core/parser/constraint_builder.py` and ROADMAP.md "Constraint Solver".
 
 **Also missing:**
 - Constraint contradiction validation — CadQuery's solver currently just fails to converge
   on a contradiction, with no targeted "these two constraints conflict" message
 - ModelGraph/DAG integration — constraints run as a standalone post-operations pass, not DAG
   edges
+- Cylinder-to-cylinder tangency, and tangent auto-alignment (forcing the axis parallel to
+  the plane instead of requiring it pre-rotated) — no documented use case yet; would need
+  hand-rolled solver geometry CadQuery doesn't provide out of the box
 
-**Workaround (for `tangent`, or anything constraints don't cover yet):**
+**Workaround (for anything constraints don't cover yet):**
 ```yaml
 # Use spatial references for relative positioning
 parts:

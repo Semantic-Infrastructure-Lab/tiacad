@@ -1,12 +1,12 @@
 """
-Tests for ConstraintBuilder (TCAD-CON-1/TCAD-CON-3).
+Tests for ConstraintBuilder (TCAD-CON-1/TCAD-CON-3/TCAD-1).
 
 Covers 'flush'/'offset' (CadQuery 'Plane' kind) and 'coaxial' (CadQuery
 'Axis'+'Point' kinds), all implemented by wrapping CadQuery's own
-Assembly.constrain()/.solve(). 'tangent' is schema-recognized but
-intentionally not implemented yet (see constraint_builder.py module
-docstring) — covered here only to confirm it fails loudly rather than
-silently doing nothing.
+Assembly.constrain()/.solve(). 'tangent' (TCAD-1) is implemented WITHOUT
+CadQuery's solver — see constraint_builder.py module docstring for why a
+real PointInPlane solve leaves rotation freedom open — via a direct
+distance-to-plane computation instead.
 """
 
 import numpy as np
@@ -198,6 +198,106 @@ class TestCoaxialConstraint:
             ])
 
 
+class TestTangentConstraint:
+    """A roller (cylinder lying on its side) resting tangent on a rail (flat
+    top face). Unlike flush/offset/coaxial, 'tangent' never calls CadQuery's
+    solve() — see the module docstring for why — so these tests check the
+    resulting geometry directly rather than just SpatialRef math."""
+
+    @staticmethod
+    def _rail_and_sideways_roller(radius=3.0, height=10.0, roller_pos=(5.0, 7.0, 50.0)):
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='rail', geometry=cq.Workplane('XY').box(40, 40, 4), backend=backend))
+        # Cylinder built with its axis along Z, then rotated 90° about Y so
+        # its axis lies along X — "already axis-aligned" is on the caller,
+        # same limitation as 'offset'.
+        roller_geom = (
+            cq.Workplane('XY')
+            .cylinder(height, radius)
+            .rotate((0, 0, 0), (0, 1, 0), 90)
+            .translate(roller_pos)
+        )
+        registry.add(Part(name='roller', geometry=roller_geom, backend=backend))
+        return registry
+
+    def test_tangent_lifts_roller_by_exactly_one_radius(self):
+        """rail's top face is at z=2 (20x20x2 half-height box); the roller's
+        axis must land at z=2+radius=5, with X/Y untouched (translate-only)."""
+        registry = self._rail_and_sideways_roller(radius=3.0, roller_pos=(5.0, 7.0, 50.0))
+        resolver = SpatialResolver(registry)
+
+        ConstraintBuilder(registry, resolver).apply_constraints([{
+            'type': 'tangent',
+            'face': 'rail.face_top',
+            'edge': {'type': 'edge', 'part': 'roller', 'selector': '%CIRCLE and <X'},
+        }])
+
+        _approx(registry.get('roller').get_center(), (5.0, 7.0, 5.0), abs_tol=1e-4)
+        bbox = registry.get('roller').geometry.val().BoundingBox()
+        _approx(bbox.zmin, 2.0, abs_tol=1e-4)  # touches the plane, doesn't cross it
+        _approx(bbox.zmax, 8.0, abs_tol=1e-4)  # 2 * radius above the touch point
+
+    def test_reference_part_stays_fixed(self):
+        registry = self._rail_and_sideways_roller()
+        resolver = SpatialResolver(registry)
+        ConstraintBuilder(registry, resolver).apply_constraints([{
+            'type': 'tangent',
+            'face': 'rail.face_top',
+            'edge': {'type': 'edge', 'part': 'roller', 'selector': '%CIRCLE and <X'},
+        }])
+        _approx(registry.get('rail').get_center(), (0.0, 0.0, 0.0))
+
+    def test_radius_measured_from_geometry_not_yaml(self):
+        """A bigger cylinder must land higher, with no 'distance' field supplied."""
+        registry = self._rail_and_sideways_roller(radius=6.0, roller_pos=(0.0, 0.0, 50.0))
+        resolver = SpatialResolver(registry)
+        ConstraintBuilder(registry, resolver).apply_constraints([{
+            'type': 'tangent',
+            'face': 'rail.face_top',
+            'edge': {'type': 'edge', 'part': 'roller', 'selector': '%CIRCLE and <X'},
+        }])
+        _approx(registry.get('roller').get_center(), (0.0, 0.0, 8.0), abs_tol=1e-4)
+
+    def test_missing_face_field_raises(self, two_box_registry):
+        registry = two_box_registry
+        resolver = SpatialResolver(registry)
+        with pytest.raises(ConstraintBuilderError, match="requires a 'face'"):
+            ConstraintBuilder(registry, resolver).apply_constraints([{
+                'type': 'tangent',
+                'edge': {'type': 'edge', 'part': 'top', 'selector': '%CIRCLE and <X'},
+            }])
+
+    def test_missing_edge_field_raises(self, two_box_registry):
+        registry = two_box_registry
+        resolver = SpatialResolver(registry)
+        with pytest.raises(ConstraintBuilderError, match="requires a 'face'"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'tangent', 'face': 'base.face_top'}
+            ])
+
+    def test_non_circular_edge_selector_raises(self):
+        """A straight edge has no radius — must fail loudly, not silently use 0."""
+        registry = self._rail_and_sideways_roller()
+        resolver = SpatialResolver(registry)
+        with pytest.raises(ConstraintBuilderError, match="single circular edge"):
+            ConstraintBuilder(registry, resolver).apply_constraints([{
+                'type': 'tangent',
+                'face': 'rail.face_top',
+                'edge': {'type': 'edge', 'part': 'roller', 'selector': '%LINE'},
+            }])
+
+    def test_same_part_on_both_sides_raises(self):
+        registry = self._rail_and_sideways_roller()
+        resolver = SpatialResolver(registry)
+        with pytest.raises(ConstraintBuilderError, match="two distinct parts"):
+            ConstraintBuilder(registry, resolver).apply_constraints([{
+                'type': 'tangent',
+                'face': 'roller.face_top',
+                'edge': {'type': 'edge', 'part': 'roller', 'selector': '%CIRCLE and <X'},
+            }])
+
+
 class TestConstraintValidation:
     def test_unknown_type_raises(self, two_box_registry):
         registry = two_box_registry
@@ -205,14 +305,6 @@ class TestConstraintValidation:
         with pytest.raises(ConstraintBuilderError, match="unknown type"):
             ConstraintBuilder(registry, resolver).apply_constraints([
                 {'type': 'glue', 'faces': ['base.face_top', 'top.face_bottom']}
-            ])
-
-    def test_reserved_type_raises_not_implemented(self, two_box_registry):
-        registry = two_box_registry
-        resolver = SpatialResolver(registry)
-        with pytest.raises(ConstraintBuilderError, match="reserved for a future revision"):
-            ConstraintBuilder(registry, resolver).apply_constraints([
-                {'type': 'tangent', 'faces': ['base.face_top', 'top.face_bottom']}
             ])
 
     def test_unknown_part_raises(self, two_box_registry):
@@ -317,6 +409,35 @@ constraints:
         pin_center = doc.parts.get('pin').get_center()
         assert pin_center[0] == pytest.approx(0.0, abs=1e-4)
         assert pin_center[1] == pytest.approx(0.0, abs=1e-4)
+
+    def test_tangent_via_yaml(self):
+        """A roller cylinder, laid on its side via an explicit rotate+translate
+        operation, tangent to a rail's top face."""
+        doc = TiaCADParser.parse_string("""
+parts:
+  rail:
+    primitive: box
+    parameters: {width: 40, depth: 40, height: 4}
+    origin: center
+  raw_roller:
+    primitive: cylinder
+    parameters: {radius: 3, height: 10}
+    origin: center
+
+operations:
+  roller:
+    type: transform
+    input: raw_roller
+    transforms:
+      - rotate: {angle: 90, axis: Y, origin: [0, 0, 0]}
+      - translate: [5, 7, 50]
+
+constraints:
+  - type: tangent
+    face: rail.face_top
+    edge: {type: edge, part: roller, selector: "%CIRCLE and <X"}
+""")
+        _approx(doc.parts.get('roller').get_center(), (5.0, 7.0, 5.0), abs_tol=1e-4)
 
     def test_missing_constraints_section_is_fine(self):
         doc = TiaCADParser.parse_string("""

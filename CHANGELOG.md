@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-19 (tangent constraint, TCAD-1)
+
+`constraints: type: tangent` now implemented — mates a cylindrical part
+flush against a reference plane without their surfaces intersecting (e.g. a
+roller resting on a rail), by measuring the cylinder's radius directly off
+its geometry (`Edge.radius()`) and translating along the reference plane's
+normal until the axis sits exactly one radius from the plane. Unlike
+`flush`/`offset`/`coaxial`, this does NOT go through CadQuery's
+`Assembly.constrain()`/`.solve()`: the only fitting constraint kind
+(`PointInPlane`) leaves 5 of 6 rigid-body freedoms open, so a real solve
+can rotate the part arbitrarily rather than just sliding it — verified
+live. Instead the translate distance is computed directly via
+`SpatialResolver`, reusing the existing post-solve translate helper
+`offset` already established. Schema uses named `face:`/`edge:` fields
+(not a `[reference, moving]` list) since the two sides are different kinds
+of reference. Like `offset`, requires the moving part's cylinder axis to
+already be parallel to the reference plane — no auto-alignment. Scope is
+cylinder-face vs. plane only, not cylinder-cylinder tangency. See
+`tiacad_core/parser/constraint_builder.py` and `tt show TCAD-1`.
+
 ### Added - 2026-07-19 (coaxial constraint, TCAD-CON-3)
 
 `constraints: type: coaxial` now implemented — mates two edges concentric

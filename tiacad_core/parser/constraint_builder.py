@@ -24,11 +24,33 @@ pin cylinder mated coaxial to a 6mm hole in a plate lands with its center
 exactly on the hole's axis (X=0, Y=0), confirmed via the solved
 `Assembly.toCompound()` geometry (not just the raw `Location`, which a
 naive re-application can silently corrupt — see the task notes for the
-verification pitfall this ran into). 'tangent' remains reserved: unlike
-coaxial/flush, it needs radius-aware offset math (e.g. a cylinder tangent
-to a plane sits one radius off, not coincident/coaxial with it), which is
-a genuinely different problem from a direct CadQuery constraint-kind
-mapping and hasn't been scoped.
+verification pitfall this ran into).
+
+'tangent' (TCAD-1) mates a cylindrical part flush against a reference plane
+without their surfaces intersecting — e.g. a roller resting on a rail —
+by measuring the moving part's cylinder radius (`Edge.radius()` on a
+selected circular edge) and translating it along the reference face's
+normal until its axis sits exactly one radius away from the plane, so the
+curved surface touches the plane instead of piercing or floating clear of
+it. Unlike flush/offset/coaxial, this is deliberately NOT built on
+CadQuery's `Assembly.constrain()`/`.solve()`: the only constraint kind that
+fits (`PointInPlane`, pinning the edge's center into the plane) leaves 5 of
+6 rigid-body freedoms open, so IPOPT is free to satisfy it by rotating the
+part into some arbitrary orientation rather than just sliding it along the
+normal — verified empirically (a cylinder lying along X came out of
+`.solve()` tilted onto a diagonal axis, not translated straight up).
+`_apply_tangent_translate` computes the same result directly: resolve the
+reference face and moving edge via `SpatialResolver` (giving exact
+position+normal for the face and the edge's center point), take the
+signed distance from that point to the plane, and translate by
+`radius - current_distance` — exact, and with zero risk of an
+unintended rotation. Scope is deliberately narrow: cylinder-face vs. plane
+only (not cylinder-cylinder, not auto-alignment), because it's the only
+case documented anywhere (ROADMAP.md / KNOWN_LIMITATIONS.md's
+`roller.face_side`/`rail.face_top` example). Like 'offset', 'tangent' does
+NOT rotate anything: the caller is responsible for the moving part's
+cylinder axis already being parallel to the reference plane (e.g. via a
+prior `rotate` transform) before the constraint runs.
 
 Design notes:
 - Convention: `faces: [reference, moving]` / `edges: [reference, moving]`
@@ -50,11 +72,18 @@ Design notes:
   `parts:` shorthand in ROADMAP.md's illustrative pseudocode — that
   shorthand leaves which two faces get the gap underspecified, which
   CadQuery's face-selector-based solve needs to be explicit about.
+- 'tangent' uses named `face:`/`edge:` fields, not a `[reference, moving]`
+  list like the other three — its two sides are different *kinds* of
+  reference (a plane vs. a circular edge), so there's no symmetric pair to
+  order positionally; naming the roles is clearer than a list where item 0
+  and item 1 mean different things depending on which key holds the list.
+  `face:` is always the reference (locked) side, `edge:` the moving side.
 """
 
 import math
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import cadquery as cq
 from OCP.gp import gp_Vec
 
@@ -62,8 +91,8 @@ from ..part import Part, PartRegistry
 from ..transform_tracker import TransformTracker
 from ..spatial_resolver import SpatialResolver, FACE_SELECTOR_MAP
 
-IMPLEMENTED_CONSTRAINT_TYPES = {'flush', 'offset', 'coaxial'}
-RESERVED_CONSTRAINT_TYPES = {'tangent'}
+IMPLEMENTED_CONSTRAINT_TYPES = {'flush', 'offset', 'coaxial', 'tangent'}
+RESERVED_CONSTRAINT_TYPES: set = set()
 
 # type -> (reference field name in the YAML spec, CadQuery query selector_kind,
 #          CadQuery constraint kinds to apply between the resolved pair)
@@ -102,13 +131,7 @@ class ConstraintBuilder:
 
         parsed = [self._parse_constraint(i, spec) for i, spec in enumerate(constraints_spec)]
 
-        involved_parts: List[str] = []
-        seen = set()
         for ctype, ref_part, _, mov_part, _, _ in parsed:
-            for p in (ref_part, mov_part):
-                if p not in seen:
-                    seen.add(p)
-                    involved_parts.append(p)
             if not self.registry.exists(ref_part):
                 raise ConstraintBuilderError(
                     f"Constraint references unknown part '{ref_part}'. "
@@ -120,33 +143,55 @@ class ConstraintBuilder:
                     f"Available parts: {', '.join(self.registry.list_parts())}"
                 )
 
-        assembly = cq.Assembly()
-        for part_name in involved_parts:
-            assembly.add(self.registry.get(part_name).geometry, name=part_name, loc=cq.Location())
+        # 'tangent' never touches CadQuery's Assembly/solve() — see
+        # _apply_tangent_translate for why (a lone PointInPlane constraint
+        # leaves 5 of 6 rigid-body freedoms open, so a real solve() there can
+        # rotate the part arbitrarily instead of just translating it).
+        solved = [p for p in parsed if p[0] != 'tangent']
+        tangents = [p for p in parsed if p[0] == 'tangent']
 
-        for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in parsed:
-            query_kind = _CONSTRAINT_QUERY_KIND[ctype]
-            ref_query = f"{ref_part}@{query_kind}@{ref_sel}"
-            mov_query = f"{mov_part}@{query_kind}@{mov_sel}"
-            for cq_kind in _CONSTRAINT_CQ_KINDS[ctype]:
-                assembly.constrain(ref_query, mov_query, cq_kind)
+        if solved:
+            involved_parts: List[str] = []
+            seen = set()
+            for _ctype, ref_part, _, mov_part, _, _ in solved:
+                for p in (ref_part, mov_part):
+                    if p not in seen:
+                        seen.add(p)
+                        involved_parts.append(p)
 
-        try:
-            assembly.solve()
-        except Exception as e:
-            raise ConstraintBuilderError(f"Constraint solve failed: {e}") from e
+            assembly = cq.Assembly()
+            for part_name in involved_parts:
+                assembly.add(self.registry.get(part_name).geometry, name=part_name, loc=cq.Location())
 
-        # Bake the solved position into every involved part (locked parts
-        # solve to an identity location, so this is a no-op for them).
-        for part_name in involved_parts:
-            self._bake_location(part_name, assembly.objects[part_name].loc)
+            for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in solved:
+                query_kind = _CONSTRAINT_QUERY_KIND[ctype]
+                ref_query = f"{ref_part}@{query_kind}@{ref_sel}"
+                mov_query = f"{mov_part}@{query_kind}@{mov_sel}"
+                for cq_kind in _CONSTRAINT_CQ_KINDS[ctype]:
+                    assembly.constrain(ref_query, mov_query, cq_kind)
 
-        # 'offset' constraints add a translate on top of the now-baked flush
-        # position, along the reference face's normal (resolved fresh, so it
-        # reflects the reference part's actual — possibly also-constrained — pose).
-        for ctype, ref_part, ref_sel, mov_part, _mov_sel, distance in parsed:
-            if ctype == 'offset':
-                self._apply_offset_translate(mov_part, ref_part, ref_sel, distance)
+            try:
+                assembly.solve()
+            except Exception as e:
+                raise ConstraintBuilderError(f"Constraint solve failed: {e}") from e
+
+            # Bake the solved position into every involved part (locked parts
+            # solve to an identity location, so this is a no-op for them).
+            for part_name in involved_parts:
+                self._bake_location(part_name, assembly.objects[part_name].loc)
+
+            # 'offset' constraints add a translate on top of the now-baked flush
+            # position, along the reference face's normal (resolved fresh, so it
+            # reflects the reference part's actual — possibly also-constrained — pose).
+            for ctype, ref_part, ref_sel, mov_part, _mov_sel, distance in solved:
+                if ctype == 'offset':
+                    self._apply_offset_translate(mov_part, ref_part, ref_sel, distance)
+
+        # 'tangent' is applied last (after any other constraints in the same
+        # batch have been baked), so its reference face is resolved from its
+        # actual — possibly also-constrained — current pose.
+        for _ctype, ref_part, ref_sel, mov_part, mov_sel, radius in tangents:
+            self._apply_tangent_translate(mov_part, mov_sel, ref_part, ref_sel, radius)
 
     def _parse_constraint(self, index: int, spec: Dict[str, Any]) -> Tuple[str, str, str, str, str, float]:
         """Validate one constraint spec, returning
@@ -165,6 +210,9 @@ class ConstraintBuilder:
                 f"reserved for later: {sorted(RESERVED_CONSTRAINT_TYPES)}.",
                 constraint_index=index,
             )
+
+        if ctype == 'tangent':
+            return self._parse_tangent(index, spec)
 
         if ctype == 'coaxial':
             refs = spec.get('edges')
@@ -250,6 +298,49 @@ class ConstraintBuilder:
             constraint_index=constraint_index,
         )
 
+    def _parse_tangent(self, index: int, spec: Dict[str, Any]) -> Tuple[str, str, str, str, str, float]:
+        """Validate a 'tangent' spec: a 'face' (reference plane) and an 'edge'
+        (moving cylindrical edge). Unlike the other constraint types there's no
+        symmetric [reference, moving] list — the two sides are different kinds
+        of reference, so the roles are named explicitly instead. The moving
+        edge's radius is measured here (via CadQuery's `Edge.radius()`) rather
+        than supplied in YAML, since 'tangent' means "touching", not
+        "offset by a distance you pick" — the whole point is deriving that
+        distance from the geometry."""
+        if 'face' not in spec or 'edge' not in spec:
+            raise ConstraintBuilderError(
+                f"Constraint {index} (type 'tangent') requires a 'face' (reference plane) "
+                f"and an 'edge' (moving cylindrical edge) field, got: {spec}",
+                constraint_index=index,
+            )
+        ref_part, ref_sel = self._face_selector(spec['face'], index)
+        mov_part, mov_sel = self._edge_selector(spec['edge'], index)
+        if ref_part == mov_part:
+            raise ConstraintBuilderError(
+                f"Constraint {index}: reference face and moving edge both belong to part "
+                f"'{ref_part}' — a constraint needs two distinct parts.",
+                constraint_index=index,
+            )
+
+        radius = 0.0
+        if self.registry.exists(mov_part):
+            # Existence is re-checked (and raises a clearer, consistent error)
+            # by apply_constraints right after parsing every constraint — skip
+            # the lookup here rather than let a missing part surface as a raw
+            # KeyError from inside radius measurement.
+            try:
+                edge = self.registry.get(mov_part).geometry.edges(mov_sel).val()
+                radius = edge.radius()
+            except Exception as e:
+                raise ConstraintBuilderError(
+                    f"Constraint {index} (type 'tangent'): edge selector '{mov_sel}' on part "
+                    f"'{mov_part}' must resolve to a single circular edge to measure a radius "
+                    f"from ({e}).",
+                    constraint_index=index,
+                ) from e
+
+        return 'tangent', ref_part, ref_sel, mov_part, mov_sel, radius
+
     @staticmethod
     def _parse_distance(value: Any, constraint_index: int) -> float:
         """Parse a 'distance' value — plain number, or a string with an 'mm' suffix."""
@@ -324,3 +415,26 @@ class ConstraintBuilder:
             current_orientation=tracker.current_orientation,
             backend=part.backend,
         ))
+
+    def _apply_tangent_translate(
+        self, mov_part_name: str, mov_sel: str, ref_part: str, ref_sel: str, radius: float
+    ) -> None:
+        """Translate the moving part along the reference face's normal so its
+        selected circular edge's center sits exactly `radius` away from the
+        plane — i.e. the cylinder's curved surface touches the plane instead
+        of crossing or floating clear of it. Computed directly rather than via
+        CadQuery's solver: see the module docstring for why a real
+        `PointInPlane` solve leaves rotation freedom open that this avoids
+        entirely by never invoking `.solve()` in the first place.
+
+        The edge's center is read straight off the CadQuery geometry (not via
+        `SpatialResolver`'s generic edge extraction) because that path also
+        computes a tangent direction we don't need here, and does so via a
+        start/end-point difference that raises on a closed circular edge
+        (start == end, zero length) rather than the circle's own derivative."""
+        ref_face_ref = self.spatial_resolver.resolve({'type': 'face', 'part': ref_part, 'selector': ref_sel})
+        normal = ref_face_ref.orientation
+        edge = self.registry.get(mov_part_name).geometry.edges(mov_sel).val()
+        edge_center = np.array(edge.Center().toTuple())
+        current_distance = float(np.dot(edge_center - ref_face_ref.position, normal))
+        self._apply_offset_translate(mov_part_name, ref_part, ref_sel, radius - current_distance)
