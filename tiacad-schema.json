@@ -855,7 +855,7 @@
     },
     "constraints": {
       "type": "array",
-      "description": "Declarative assembly constraints, solved once at build time and compiled into transform operations on the constrained parts (see ROADMAP.md 'Constraint Solver'). 'flush' and 'offset' mate two named faces (auto-generated like 'part.face_top' or inline {type: face, part, selector}); 'coaxial' mates two edges (inline {type: edge, part, selector} only — no auto-generated edge name vocabulary exists yet). In all cases the second (moving) reference's part is repositioned to satisfy the constraint, the first (reference) stays fixed. 'tangent' is reserved for a future revision (not yet implemented).",
+      "description": "Declarative assembly constraints, solved once at build time and compiled into transform operations on the constrained parts (see ROADMAP.md 'Constraint Solver'). 'flush' and 'offset' mate two named faces (auto-generated like 'part.face_top' or inline {type: face, part, selector}); 'coaxial' mates two edges (inline {type: edge, part, selector} only — no auto-generated edge name vocabulary exists yet). In all cases the second (moving) reference's part is repositioned to satisfy the constraint, the first (reference) stays fixed. 'tangent' mates a cylindrical edge flush against a reference face without auto-alignment, using named 'face'/'edge' fields (not a [reference, moving] list) since its two sides are different kinds of reference; the offset distance is measured from the edge's own radius, not supplied.",
       "items": {
         "type": "object",
         "properties": {
@@ -881,6 +881,17 @@
               { "type": "string" }
             ],
             "description": "Offset distance along the reference face's normal, for type: offset"
+          },
+          "face": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "object" }
+            ],
+            "description": "Reference plane, for type: tangent. 'part.face_name' or inline {type: face, part, selector}."
+          },
+          "edge": {
+            "type": "object",
+            "description": "Moving cylindrical edge, for type: tangent. Inline {type: edge, part, selector} only — no auto-generated edge name vocabulary exists."
           }
         },
         "required": ["type"]

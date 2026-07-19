@@ -29,6 +29,55 @@ assert JSONSCHEMA_AVAILABLE, (
 )
 
 
+class TestConstraintSchema:
+    """Schema-level coverage for constraints: — previously untested (TCAD-CON-7):
+    the schema declared 'tangent' as unimplemented and didn't list its face/edge
+    fields, so a malformed tangent spec passed schema validation and only failed
+    later, at ConstraintBuilder build time."""
+
+    def _base_parts(self):
+        return {
+            "base": {"primitive": "box", "size": [20, 20, 5]},
+            "top": {"primitive": "box", "size": [10, 10, 5]},
+        }
+
+    def test_flush_constraint_valid(self):
+        validator = SchemaValidator()
+        data = {
+            "parts": self._base_parts(),
+            "constraints": [
+                {"type": "flush", "faces": ["base.face_top", "top.face_bottom"]}
+            ],
+        }
+        assert validator.validate(data) == []
+
+    def test_tangent_constraint_with_inline_face_and_edge_valid(self):
+        """tangent uses named face:/edge: fields, not the faces:/edges: list
+        the other three constraint types use — this is the shape TCAD-CON-7
+        added to the schema."""
+        validator = SchemaValidator()
+        data = {
+            "parts": self._base_parts(),
+            "constraints": [
+                {
+                    "type": "tangent",
+                    "face": "base.face_top",
+                    "edge": {"type": "edge", "part": "top", "selector": "%CIRCLE and >Z"},
+                }
+            ],
+        }
+        assert validator.validate(data) == []
+
+    def test_unknown_constraint_type_invalid(self):
+        validator = SchemaValidator()
+        data = {
+            "parts": self._base_parts(),
+            "constraints": [{"type": "not_a_real_constraint"}],
+        }
+        errors = validator.validate(data)
+        assert len(errors) > 0
+
+
 class TestSchemaValidator:
     """Test SchemaValidator class"""
 
