@@ -1,0 +1,84 @@
+# Tier 4 — Declarative `constraints:` tangent solve (TCAD-1), the last of the
+# four constraint types — see T4_constraint_flush.tiacad (flush),
+# T4_constraint_offset.tiacad (offset), T4_constraint_coaxial.tiacad (coaxial).
+# Adds TCAD-VAL-10 coverage: `tangent` had unit tests only
+# (test_constraint_builder.py::TestTangentConstraint, which reproduces this
+# exact rail/roller geometry directly against CadQuery) and, unlike the other
+# three, is the highest-risk omission — it never calls CadQuery's `.solve()`
+# at all, computing the touch distance directly from the moving edge's
+# measured radius instead (see constraint_builder.py module docstring).
+#
+# `rail` (40x40x4, center) has its top face at z=2. `roller` is a cylinder
+# (radius 3, height 10) built with its axis along Z, then rotated 90 deg
+# about Y so it lies on its side with its axis along X — the caller must
+# pre-rotate it this way, `tangent` never auto-aligns — then translated well
+# clear of the rail (50, 5, 40). After
+# `tangent: {face: rail.face_top, edge: {part: roller, selector: '%CIRCLE and <X'}}`
+# solves, the roller's axis lands at exactly z = 2 + radius = 5, translate-only
+# (X/Y untouched): its curved surface touches the rail's top face rather than
+# floating clear of it or crossing through it.
+#
+# Oracle (exact, closed-form): roller_vol = pi * 3^2 * 10 = 282.7433; bbox
+# after the axis-swapping rotation is [height, 2*radius, 2*radius] = [10, 6, 6]
+# (see test_tangent_lifts_roller_by_exactly_one_radius for the exact zmin/zmax
+# derivation this reproduces: 2..8, a 6mm span). There is no `relations:`
+# checker for `tangent` (only `flush`/`coaxial` are supported by
+# tiacad_core/testing/contracts.py) so this file leans on volume/bbox alone —
+# see BACKLOG/tt for that gap.
+
+schema_version: "3.0"
+
+metadata:
+  name: T4 Constraint Tangent
+  description: "Tier 4 assembly ladder: declarative constraints: tangent rests a roller on a rail via direct radius-measured computation, not CadQuery's solver"
+  version: "1.0"
+
+parameters:
+  rail_size: 40
+  rail_thickness: 4
+  roller_radius: 3
+  roller_height: 10
+
+parts:
+  rail:
+    primitive: box
+    parameters:
+      width: ${rail_size}
+      depth: ${rail_size}
+      height: ${rail_thickness}
+    origin: center
+
+  roller_raw:
+    primitive: cylinder
+    radius: ${roller_radius}
+    height: ${roller_height}
+    origin: center
+
+operations:
+  roller:
+    type: transform
+    input: roller_raw
+    transforms:
+      - rotate:
+          angle: 90
+          axis: Y
+          origin: [0, 0, 0]
+      - translate: [50, 5, 40]
+
+constraints:
+  - type: tangent
+    face: rail.face_top
+    edge: { type: edge, part: roller, selector: "%CIRCLE and <X" }
+
+export:
+  default_part: roller
+
+expect:
+  final: roller
+  volume: 282.7433
+  bbox: [10, 6, 6]
+  watertight: true
+  components: 1
+  no_overlap:
+    - [rail, roller]
+  tol: { length: 0.05, volume: 0.5 }

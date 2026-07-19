@@ -132,6 +132,15 @@ skip is forced to always-solve) and `tiacad_core/tests/test_dag/test_graph_build
 - Angular/relative-orientation constraints (`parallel`, `perpendicular`, `angle`,
   `symmetric`) — named and reserved (`TCAD-CON-9`, 2026-07-19) so requesting one errors as
   "reserved for a future revision" rather than "unknown type", but none are implemented
+- `flush`/`offset` can converge to an arbitrary in-plane rotation for some
+  moving-part/reference-size combinations — CadQuery's `Plane` constraint kind leaves
+  rotation-about-normal unconstrained, and IPOPT doesn't reliably land on zero (e.g. a
+  20x20x2 reference with a 4x4x4 moving part rotates ~40°; a 12x12x4 reference with the
+  same 4x4x4 part doesn't). Position/gap along the normal is still correct — only the
+  in-plane rotation is affected — but this visibly misaligns a non-square moving part and
+  inflates a square one's AABB. Found building the `TCAD-VAL-10` validation corpus
+  (`examples/validation/T4_constraint_offset.tiacad` uses a 12/4 ratio to avoid it). Not
+  yet root-caused or fixed — see `tt show TCAD-CON-10`.
 
 **Workaround (for anything constraints don't cover yet):**
 ```yaml

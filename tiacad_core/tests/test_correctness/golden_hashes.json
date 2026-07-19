@@ -703,6 +703,17 @@
     "part": "bracket_with_hole",
     "volume": 6973.805328941534
   },
+  "examples/validation/T4_constraint_coaxial.tiacad": {
+    "bbox": [
+      20.0,
+      20.0,
+      5.0
+    ],
+    "canonical_mesh_hash": "29e00f120df672ad438dfe5648c3a609d5294c0485958b9cd51b1c20caa5b847",
+    "mesh_hash": "95dd17b5f5ebe939e920d9662befe5b9071c2928bd0e58d89f36472eb75c9c53",
+    "part": "plate_with_hole",
+    "volume": 1858.628330588459
+  },
   "examples/validation/T4_constraint_flush.tiacad": {
     "bbox": [
       5.0,
@@ -713,6 +724,28 @@
     "mesh_hash": "7750c00eea27dc05fc543614e58b772d3b5379da0112fd1baaa09861697294bc",
     "part": "top",
     "volume": 124.99999999999999
+  },
+  "examples/validation/T4_constraint_offset.tiacad": {
+    "bbox": [
+      4.000419928172459,
+      4.000419928172855,
+      4.000000000000405
+    ],
+    "canonical_mesh_hash": "3f307eadfa6a83228dd6aad718d1c6564e975c9d4815949845a37d8a23193453",
+    "mesh_hash": "74da13d0cedfbf16c2a26832f981828021ab22b9f8cc190512d1c467eeb4741c",
+    "part": "mount",
+    "volume": 63.99999999999998
+  },
+  "examples/validation/T4_constraint_tangent.tiacad": {
+    "bbox": [
+      10.0,
+      6.0,
+      6.0
+    ],
+    "canonical_mesh_hash": "1257830e928e34603cb25753feb4dfe61857fcd420c4f93b113d1bcc1c528bea",
+    "mesh_hash": "af24483d42a0032ffea3a9941f8ae8838267f2d64dcba24110f9c2858013f4f8",
+    "part": "roller",
+    "volume": 282.7433388230814
   },
   "examples/validation/T4_standoff_stack.tiacad": {
     "bbox": [

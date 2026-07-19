@@ -1,0 +1,66 @@
+# Tier 4 — Declarative `constraints:` offset solve (TCAD-CON-1), the second of
+# the four constraint types (flush/offset/coaxial/tangent) — see
+# T4_constraint_flush.tiacad for the first. Adds TCAD-VAL-10 coverage: until
+# now only `flush` had an oracle-backed example in this ladder; `offset` had
+# unit tests only (test_constraint_builder.py::TestOffsetConstraint).
+#
+# `surface` (20x20x2, center) has its top face at z=1. `mount` (4x4x4,
+# center) starts at the origin, fully overlapping `surface`. After
+# `offset: [surface.face_top, mount.face_bottom], distance: 5` solves, mount
+# is pushed 5mm clear of surface's top face: mount center moves to z=1+2+5=8,
+# spanning z:[6,10] — no longer overlapping surface (z:[-1,1]).
+#
+# The `relations: flush` checker below (gap: 5) is reused for `offset`
+# validation deliberately: it measures the actual geometric gap between two
+# named faces regardless of which constraint type produced it, so it directly
+# verifies the 5mm distance was honored, not just that mount ended up some
+# arbitrary size/position clear of surface.
+
+schema_version: "3.0"
+
+metadata:
+  name: T4 Constraint Offset
+  description: "Tier 4 assembly ladder: declarative constraints: offset holds a fixed gap between two faces via CadQuery's solver"
+  version: "1.0"
+
+parameters:
+  surface_size: 12
+  surface_thickness: 2
+  mount_size: 4
+
+parts:
+  surface:
+    primitive: box
+    parameters:
+      width: ${surface_size}
+      depth: ${surface_size}
+      height: ${surface_thickness}
+    origin: center
+
+  mount:
+    primitive: box
+    parameters:
+      width: ${mount_size}
+      depth: ${mount_size}
+      height: ${mount_size}
+    origin: center
+
+constraints:
+  - type: offset
+    faces: [surface.face_top, mount.face_bottom]
+    distance: 5
+
+export:
+  default_part: mount
+
+expect:
+  final: mount
+  volume: 64
+  bbox: [4, 4, 4]
+  watertight: true
+  components: 1
+  relations:
+    - { flush: [surface.face_top, mount.face_bottom], gap: 5 }
+  no_overlap:
+    - [surface, mount]
+  tol: { length: 0.05, volume: 0.5 }

@@ -1,0 +1,88 @@
+# Tier 4 — Declarative `constraints:` coaxial solve (TCAD-CON-3), the third of
+# the four constraint types — see T4_constraint_flush.tiacad (flush) and
+# T4_constraint_offset.tiacad (offset). Adds TCAD-VAL-10 coverage: until now
+# `coaxial` had unit tests only (test_constraint_builder.py::TestCoaxialConstraint,
+# which reproduces this exact plate/pin geometry directly against CadQuery).
+#
+# `plate` (20x20x5, center) has a 6mm-diameter hole cut straight through its
+# thickness, centered on the plate — so the hole's axis coincides with the
+# plate's own central Z axis (`plate_with_hole.axis_z`). `pin` (radius 3,
+# height 10) starts translated off to one side (30, 30) — nowhere near the
+# hole. After `coaxial: [{part: plate_with_hole, ...}, {part: pin, ...}]`
+# solves (matched on the hole's rim edge vs. the pin's own rim edge, both
+# selected via `%CIRCLE and >Z`), the pin's X/Y center moves onto the hole's
+# axis; only Z (untouched by coaxial — it aligns direction + perpendicular
+# offset, not position along the axis) stays where the translate put it.
+#
+# Oracle (exact, closed-form): plate_vol = 20*20*5 = 2000; hole_vol =
+# pi*3^2*5 = 141.3717; final_vol = 2000 - 141.3717 = 1858.6283.
+
+schema_version: "3.0"
+
+metadata:
+  name: T4 Constraint Coaxial
+  description: "Tier 4 assembly ladder: declarative constraints: coaxial mates a pin onto a plate's hole axis via CadQuery's solver"
+  version: "1.0"
+
+parameters:
+  plate_size: 20
+  plate_thickness: 5
+  hole_radius: 3
+  pin_height: 10
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: ${plate_size}
+      depth: ${plate_size}
+      height: ${plate_thickness}
+    origin: center
+
+  hole_cyl:
+    primitive: cylinder
+    radius: ${hole_radius}
+    height: ${plate_thickness + 4}
+    origin: center
+
+  pin_raw:
+    primitive: cylinder
+    radius: ${hole_radius}
+    height: ${pin_height}
+    origin: center
+
+operations:
+  # hole_cyl's default axis is already Z, matching the plate's thin
+  # dimension — no pre-rotation needed (contrast T3_plate_bolt_circle.tiacad,
+  # whose thin dimension is Y and does need one).
+  plate_with_hole:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract:
+      - hole_cyl
+
+  pin:
+    type: transform
+    input: pin_raw
+    transforms:
+      - translate: [30, 30, 0]
+
+constraints:
+  - type: coaxial
+    edges:
+      - { type: edge, part: plate_with_hole, selector: "%CIRCLE and >Z" }
+      - { type: edge, part: pin, selector: "%CIRCLE and >Z" }
+
+export:
+  default_part: plate_with_hole
+
+expect:
+  final: plate_with_hole
+  volume: 1858.6283
+  bbox: [20, 20, 5]
+  watertight: true
+  components: 1
+  relations:
+    - { coaxial: [plate_with_hole.axis_z, pin.axis_z] }
+  tol: { length: 0.05, volume: 0.5 }
