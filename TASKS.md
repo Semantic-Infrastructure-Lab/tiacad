@@ -9,7 +9,7 @@ areas:
   UX: 7
   API: 2
   ARCH: 10
-  CON: 10
+  CON: 11
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -808,17 +808,21 @@ _(no notes yet)_
 ## TASK-TCAD-VAL-11 · No integration test for constraints -> DAG incremental build -> export in the normal (non-watch) cmd_build pipeline — only watch mode is covered, and build/watch use separately-patched code paths (root cause of a prior watch-mode constraint bug)
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [testing, constraints, dag]
 created: '2026-07-19T20:39:51Z'
-updated: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T21:41:02Z'
 session: astral-sun-0719
+links:
+  commits:
+  - 1e9bd8fda91c5734c0d284bba9986a731b297849
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T21:41:02Z session:astral-sun-0719] Added TestConstraintsIntegration in test_tiacad_parser.py: multi-constraint (flush+offset) full-pipeline test via parse_string, and parse_file->export_stl->trimesh bbox check. Verified both fail when constraint application is disabled (non-vacuous).
 
 
 ## TASK-TCAD-VAL-12 · Tier-5 negative-input corpus has no malformed/contradictory constraint case, despite TCAD-CON-4's contradiction detector being unit-tested only in isolation
@@ -829,6 +833,22 @@ priority: medium
 tags: [testing, constraints]
 created: '2026-07-19T20:39:51Z'
 updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-CON-10 · flush/offset constraint solve can converge to an arbitrary in-plane rotation for certain moving-part/reference-size combinations (e.g. 20x20x2 surface + 4x4x4 mount), inflating the AABB and misaligning non-square parts, even though the physical position/gap is still correct — CadQuery's Plane constraint kind leaves rotation-about-normal unconstrained and IPOPT doesn't reliably land on zero. Discovered building the TCAD-VAL-10 offset validation example (20/4 size ratio triggered it; 10/5 and 12/4 did not).
+
+```yaml
+status: backlog
+priority: medium
+tags: [constraints, solver, bug]
+created: '2026-07-19T21:57:11Z'
+updated: '2026-07-19T21:57:11Z'
 session: astral-sun-0719
 ```
 
