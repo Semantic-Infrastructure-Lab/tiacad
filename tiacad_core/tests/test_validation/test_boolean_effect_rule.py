@@ -111,6 +111,7 @@ class TestBooleanEffectRuleDifference:
         assert issues[0].severity.value == "ERROR"
         assert "Difference" in issues[0].message
         assert "result" in issues[0].message
+        assert issues[0].world_position is not None
 
 
 class TestBooleanEffectRuleIntersection:
@@ -126,6 +127,7 @@ class TestBooleanEffectRuleIntersection:
         assert len(issues) == 1
         assert issues[0].severity.value == "ERROR"
         assert "Intersection" in issues[0].message
+        assert issues[0].world_position is not None
 
     def test_fully_disjoint_boxes_fails_at_build_time(self, tmp_path):
         """A fully empty intersection is already caught by the CAD kernel itself (Bnd_Box is void)."""

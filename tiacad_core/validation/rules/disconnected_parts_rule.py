@@ -4,7 +4,7 @@ Disconnected Parts Rule for TiaCAD Assembly Validator
 Detects groups of parts that are not physically connected in an assembly.
 """
 
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 from ..validation_rule import ValidationRule
 from ..validation_types import ValidationIssue, Severity
 
@@ -50,7 +50,7 @@ class DisconnectedPartsRule(ValidationRule):
 
             # Report if multiple disconnected groups found
             if len(components) > 1:
-                issues.append(self._create_disconnected_issue(components))
+                issues.append(self._create_disconnected_issue(components, bboxes))
 
         except Exception as e:
             issues.append(self._create_skip_issue(str(e)))
@@ -171,7 +171,7 @@ class DisconnectedPartsRule(ValidationRule):
 
         return components
 
-    def _create_disconnected_issue(self, components: List[Set[str]]) -> ValidationIssue:
+    def _create_disconnected_issue(self, components: List[Set[str]], bboxes: dict) -> ValidationIssue:
         """Create issue for disconnected components."""
         component_names = [[name for name in comp] for comp in components]
 
@@ -179,8 +179,18 @@ class DisconnectedPartsRule(ValidationRule):
             severity=Severity.WARNING,
             category=self.category,
             message=f"Assembly has {len(components)} disconnected groups of parts",
-            suggestion=f"Groups: {component_names}. Verify all parts are positioned correctly."
+            suggestion=f"Groups: {component_names}. Verify all parts are positioned correctly.",
+            world_position=self._smallest_component_center(components, bboxes),
         )
+
+    def _smallest_component_center(self, components: List[Set[str]], bboxes: dict) -> Tuple[float, float, float]:
+        """
+        Center of the smallest disconnected group — the likely "orphan" part(s)
+        a modeler needs to look at, vs. the main body the rest is attached to.
+        """
+        smallest = min(components, key=len)
+        centers = [self._bbox_center(bboxes[name]) for name in smallest]
+        return tuple(sum(axis) / len(centers) for axis in zip(*centers))
 
     def _create_skip_issue(self, error_message: str) -> ValidationIssue:
         """Create issue when check is skipped due to error."""

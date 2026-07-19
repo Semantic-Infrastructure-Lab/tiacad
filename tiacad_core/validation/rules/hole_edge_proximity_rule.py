@@ -108,7 +108,7 @@ class HoleEdgeProximityRule(ValidationRule):
         hole_bbox = self._get_bounding_box(hole_part)
 
         # Calculate hole properties
-        hole_center = self._calculate_bbox_center(hole_bbox)
+        hole_center = self._bbox_center(hole_bbox)
         hole_radius = self._get_hole_radius(hole_part, hole_bbox)
 
         # Check proximity to each face
@@ -120,13 +120,6 @@ class HoleEdgeProximityRule(ValidationRule):
             ))
 
         return issues
-
-    def _calculate_bbox_center(self, bbox) -> Tuple[float, float, float]:
-        """Calculate center point of bounding box."""
-        center_x = (bbox.xmin + bbox.xmax) / 2
-        center_y = (bbox.ymin + bbox.ymax) / 2
-        center_z = (bbox.zmin + bbox.zmax) / 2
-        return (center_x, center_y, center_z)
 
     def _get_hole_radius(self, hole_part, bbox) -> float:
         """

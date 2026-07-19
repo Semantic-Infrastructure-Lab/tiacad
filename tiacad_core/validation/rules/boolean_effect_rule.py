@@ -66,6 +66,7 @@ class BooleanEffectRule(ValidationRule):
                 suggestion="Verify the subtract geometry actually overlaps the base part. "
                            "A difference that removes ~0mm³ usually means the cutting tool "
                            "is positioned off the base entirely.",
+                world_position=self._part_center(result_part),
             ))
         return issues
 
@@ -84,6 +85,7 @@ class BooleanEffectRule(ValidationRule):
                 message=f"Intersection '{op_name}': result volume is {result_volume:.3f}mm³ — inputs do not overlap",
                 part_name=op_name,
                 suggestion="Verify the intersecting parts actually share volume.",
+                world_position=self._part_center(result_part),
             ))
         return issues
 
@@ -120,6 +122,7 @@ class BooleanEffectRule(ValidationRule):
                 ),
                 part_name=op_name,
                 suggestion="This usually indicates a backend/geometry error rather than a positioning mistake.",
+                world_position=self._part_center(result_part),
             ))
         return issues
 

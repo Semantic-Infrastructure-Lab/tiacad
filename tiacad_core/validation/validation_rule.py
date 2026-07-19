@@ -5,7 +5,7 @@ Defines the abstract base class for all validation rules.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 from .validation_constants import ValidationConstants
 
 if TYPE_CHECKING:
@@ -104,6 +104,21 @@ class ValidationRule(ABC):
         else:
             # Direct shape
             return geometry.BoundingBox()
+
+    def _bbox_center(self, bbox) -> Tuple[float, float, float]:
+        """Calculate center point of a bounding box (for ValidationIssue.world_position)."""
+        return (
+            (bbox.xmin + bbox.xmax) / 2,
+            (bbox.ymin + bbox.ymax) / 2,
+            (bbox.zmin + bbox.zmax) / 2,
+        )
+
+    def _part_center(self, part) -> Optional[Tuple[float, float, float]]:
+        """Best-effort world-position center for a part, for trust-render annotation."""
+        try:
+            return self._bbox_center(self._get_bounding_box(part))
+        except Exception:
+            return None
 
     def _get_operation_attr(self, operation, attr_name, default=None):
         """
