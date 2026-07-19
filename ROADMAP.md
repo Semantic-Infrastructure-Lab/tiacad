@@ -172,12 +172,37 @@ constraints:
 - Solver: start with geometric constraint propagation, not full symbolic solver
 - Integration with ModelGraph (constraints are just edges)
 
-**Effort:** 10-16 weeks
+**Effort:** ~~10-16 weeks~~ **Revised, see below — likely 2-4 weeks for the MVP.**
 **Timeline:** Q4 2026 (if prioritized)
+
+**Note (2026-07-18 investigation, `TCAD-CON-1`):** Don't build a solver from scratch —
+**CadQuery's own `Assembly.constrain()`/`.solve()` already is one**, and it's already a
+working transitive dependency (`casadi`+IPOPT, confirmed importable and correct in this
+repo's venv with zero new installs). Its constraint types (`Plane`, `Point`, `Axis`,
+`PointInPlane`, `PointOnLine`, `Fixed*`) map almost directly onto `flush`/`coaxial`/
+`offset`/`tangent`. Verified live: a `Plane` constraint correctly placed a 5mm cube flush
+on a 10mm cube (exact expected Z, X/Y/rotation undisturbed) — the exact example above.
+
+Revised MVP: parse `constraints:` into `cq.Assembly` constraint calls (reusing
+`SpatialResolver`'s existing face/edge/axis resolution for the underlying OCCT shapes),
+call `.solve()` once per build, then compile the resulting `Location`s into the existing
+`transform` operation machinery. No DAG execution-model change — this still matches the
+original MVP framing below (compile constraints to transforms at build time), it just
+reuses a solver instead of writing propagation logic by hand. Two structural gaps to fill
+first: `Part` has no persisted orientation (`part.py` tracks position only); and
+`axis_x/y/z` part-local references in `spatial_resolver.py` currently always point along
+**world** axes regardless of the part's actual rotation, which would silently produce
+wrong results the moment a constraint-driven rotation feeds another spatial reference
+(tracked as `TCAD-CON-2`, a latent bug independent of the constraint solver itself).
+Known rough edges in CadQuery's solver (from upstream issues): a crash on `.solve()` with
+zero constraints, an ambiguity bug with two overlapping planar constraints on the same
+pair, and repeated-solve angle drift under animation-style iterative solving (irrelevant
+here — TiaCAD solves once per build). None are architecture-blocking.
 
 **Note:** A full symbolic constraint solver is hard. MVP approach: compile constraints to
 transform operations at build time (rigid constraint propagation, not general solving).
-This covers 80% of assembly use cases without PhD-level math.
+This covers 80% of assembly use cases without PhD-level math — now cheaper, since the
+"rigid constraint propagation" step can be CadQuery's solver rather than new code.
 
 ---
 
