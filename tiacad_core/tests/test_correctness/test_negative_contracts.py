@@ -22,6 +22,7 @@ from tiacad_core.parser import TiaCADParser
 from tiacad_core.parser.parameter_resolver import ParameterResolutionError
 from tiacad_core.parser.parts_builder import PartsBuilderError
 from tiacad_core.parser.operations_builder import OperationsBuilderError
+from tiacad_core.parser.constraint_builder import ConstraintBuilderError
 from tiacad_core.parser.errors import TiaCADParserError
 from tiacad_core.utils.exceptions import TiaCADError
 
@@ -42,8 +43,8 @@ def test_negative_directory_is_discoverable():
     directory) — if this fails, every test below is vacuous.
     """
     files = sorted(NEGATIVE_DIR.glob("N*.tiacad"))
-    assert len(files) >= 6, (
-        f"Expected at least 6 negative fixtures under {NEGATIVE_DIR}, found "
+    assert len(files) >= 7, (
+        f"Expected at least 7 negative fixtures under {NEGATIVE_DIR}, found "
         f"{len(files)}: {[f.name for f in files]}"
     )
 
@@ -137,6 +138,18 @@ class TestDuplicatePartName:
         assert "block" in message
 
 
+class TestContradictoryConstraints:
+    """N7: same moving face flush-mated against two non-coincident reference
+    planes (TCAD-CON-4's contradiction detector, TCAD-VAL-12)."""
+
+    def test_raises_typed_error(self):
+        with pytest.raises(ConstraintBuilderError) as exc_info:
+            TiaCADParser.parse_file(_path("N7_contradictory_constraints.tiacad"))
+        message = str(exc_info.value)
+        assert "can't satisfy both simultaneously" in message
+        assert "0" in message and "1" in message
+
+
 # ---------------------------------------------------------------------------
 # Cross-cutting: every negative fixture must raise a TiaCADError subclass,
 # never a bare/builtin exception (KeyError, AttributeError, TypeError, ...)
@@ -150,6 +163,7 @@ ALL_NEGATIVE_FIXTURES = [
     "N4_unknown_primitive.tiacad",
     "N5_malformed_schema.tiacad",
     "N6_duplicate_part_name.tiacad",
+    "N7_contradictory_constraints.tiacad",
 ]
 
 

@@ -90,6 +90,7 @@ from OCP.gp import gp_Vec
 from ..part import Part, PartRegistry
 from ..transform_tracker import TransformTracker
 from ..spatial_resolver import SpatialResolver, FACE_SELECTOR_MAP
+from ..utils.exceptions import TiaCADError
 
 IMPLEMENTED_CONSTRAINT_TYPES = {'flush', 'offset', 'coaxial', 'tangent'}
 # Named and reserved so requesting one of these errors as "planned" rather than
@@ -133,7 +134,7 @@ def referenced_part_names(spec: Dict[str, Any]) -> set:
     return names
 
 
-class ConstraintBuilderError(Exception):
+class ConstraintBuilderError(TiaCADError):
     """Raised when a constraint spec is invalid or cannot be solved."""
 
     def __init__(self, message: str, constraint_index: Optional[int] = None):

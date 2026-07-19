@@ -1,0 +1,50 @@
+# Tier 5 negative case 7 — contradictory constraints:.
+#
+# `top`'s bottom face is mated flush against two reference planes that are
+# not coincident (`base`'s top face, and `wall`'s right face — perpendicular
+# planes, not the same plane). CadQuery's own `.solve()` would otherwise fail
+# opaquely (an IPOPT non-convergence with no useful message); TCAD-CON-4's
+# `ConstraintBuilder._check_plane_conflicts` must catch this up front and
+# raise a ConstraintBuilderError naming both conflicting constraint indices,
+# not a raw solver error. Reproduces
+# test_constraint_builder.py::test_conflicting_plane_constraints_raise_before_solve
+# as a file-level fixture (TCAD-VAL-12) — previously this class of failure
+# had unit-test coverage only, absent from the Tier-5 corpus that's meant to
+# prove every documented failure-injection path also fails loudly at the file
+# level, not just when driven directly against ConstraintBuilder in Python.
+schema_version: "3.0"
+
+metadata:
+  name: N7 Contradictory Constraints
+  description: "Negative test: same moving face flush-mated against two non-coincident reference planes"
+
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 10
+
+  wall:
+    primitive: box
+    parameters:
+      width: 10
+      height: 10
+      depth: 10
+
+  top:
+    primitive: box
+    parameters:
+      width: 5
+      height: 5
+      depth: 5
+
+constraints:
+  - type: flush
+    faces: [base.face_top, top.face_bottom]
+  - type: flush
+    faces: [wall.face_right, top.face_bottom]
+
+export:
+  default_part: top
