@@ -612,20 +612,23 @@ notes_next: 2
 ## TASK-TCAD-CON-4 · Constraint contradiction validation — detect conflicting constraints before .solve() fails opaquely
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [constraints]
 created: '2026-07-19T07:53:52Z'
-updated: '2026-07-19T07:53:57Z'
+updated: '2026-07-19T09:01:42Z'
 session: sapphire-stone-0719
 links:
   references:
   - KNOWN_LIMITATIONS.md
+  commits:
+  - 4435ea8c37b8a7ed4ba358c54b929e9553ed9196
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T09:01:42Z session:garnet-gem-0719] Plane-conflict pre-solve check shipped; ROADMAP.md + VALIDATION_STRENGTHENING.md updated
 
 
 ## TASK-TCAD-CON-5 · ModelGraph/DAG integration for constraints — currently a standalone post-operations pass, not real DAG edges
