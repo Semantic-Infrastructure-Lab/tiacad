@@ -9,7 +9,7 @@ areas:
   UX: 7
   API: 2
   ARCH: 10
-  CON: 3
+  CON: 4
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -495,23 +495,26 @@ notes_next: 3
 ## TASK-TCAD-CON-1 · Constraint solver MVP — wrap cadquery.Assembly.constrain()/solve() instead of building from scratch
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [feature, constraints]
 created: '2026-07-19T01:52:47Z'
-updated: '2026-07-19T01:53:28Z'
+updated: '2026-07-19T02:28:22Z'
 session: flux-lens-0718
 depends_on: [TCAD-CON-2]
 links:
   references:
   - ROADMAP.md
-notes_next: 3
+  commits:
+  - 74100605905ff274e7604c4750b16f80263873ad
+notes_next: 4
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-19T01:53:12Z session:flux-lens-0718] Investigation (session flux-lens-0718, 2026-07-18): CadQuery's Assembly.constrain()/.solve() is a real 6-DOF rigid-body geometric constraint solver (casadi+IPOPT, exact Hessian), already a transitive dependency (casadi==3.7.2 via cadquery-ocp) -- confirmed importable and correct in this repo's venv with zero new installs. Its constraint types (Plane, Point, Axis, PointInPlane, PointOnLine, Fixed/FixedPoint/FixedAxis/FixedRotation) map almost directly onto TiaCAD's flush/coaxial/offset/tangent vocabulary from ROADMAP.md. Verified live: a Plane constraint correctly placed a 5mm cube flush on a 10mm cube (Z=7.5 exactly, X/Y/rotation undisturbed) -- the exact ROADMAP worked example. Academic DOF-graph-reduction solvers and hand-rolled options (SolveSpace-style symbolic+Newton, FreeCAD's OndselSolver) were surveyed and rejected as unnecessary engineering for TiaCAD's assembly sizes -- CadQuery's face/edge-selector-based constraints also match TiaCAD's existing face_top/axis_z spatial-reference model more closely than mate-connector-based systems (Onshape/FreeCAD Assembly3) would.
 - [#2 2026-07-19T01:53:16Z session:flux-lens-0718] MVP design: parse constraints: block into cq.Assembly.constrain() calls (reuse SpatialResolver's existing face/edge/axis resolution to get underlying OCCT shapes), call .solve() once per build, compile resulting Locations into the existing transform operation machinery (operations_builder.py/_execute_transform, transform_tracker.py). No DAG execution-model change needed -- matches ROADMAP's original MVP framing (compile constraints to transforms at build time), just reuses a tested solver instead of hand-written propagation. Two structural gaps to fill first: (1) Part has no persisted orientation state (part.py current_position is position-only) -- constraint math needs full pose in/out. (2) axis_x/y/z part-local refs in spatial_resolver.py always point along WORLD axes regardless of a part's actual rotation -- filed separately as TCAD-CON-2, a latent bug independent of this milestone but blocking for it. Known CadQuery solver rough edges (upstream GH issues): crash on .solve() with zero constraints (trivial guard), ambiguity bug with two overlapping planar constraints on same pair, repeated-solve angle drift under iterative/animation use (N/A here, TiaCAD solves once per build). None architecture-blocking. Revised effort estimate: ~2-4 weeks for MVP, down from ROADMAP's original 10-16 week from-scratch estimate. Not yet prioritized/started -- Scott has not committed to building this, this is scoping only.
+- [#3 2026-07-19T02:28:22Z session:polar-drought-0718] MVP implemented: 'flush' and 'offset' constraint types, both via cq.Assembly.constrain()/.solve() ('Plane' kind). ConstraintBuilder (tiacad_core/parser/constraint_builder.py) resolves face refs via SpatialResolver/FACE_SELECTOR_MAP, builds an ad-hoc Assembly, solves, and bakes the result into parts via TransformTracker (consistent with TCAD-CON-2's orientation tracking). Wired into parse_pipeline.py after parts+operations build. 17 new tests in tiacad_core/tests/test_parser/test_constraint_builder.py, reproducing the exact ROADMAP.md worked example (Z=7.5) plus a rotation case, offset, inline face specs, and error paths. 'coaxial'/'tangent' deliberately deferred (schema-recognized, raise a clear not-yet-implemented error) since they need edge/axis-selector support this session didn't validate -- filed as TCAD-CON-3.
 
 
 ## TASK-TCAD-CON-2 · axis_x/y/z part-local spatial references always point along world axes, ignore part's actual rotation
@@ -533,3 +536,20 @@ notes_next: 3
 ### Notes
 - [#1 2026-07-19T01:53:21Z session:flux-lens-0718] Found during constraint-solver scoping (session flux-lens-0718, 2026-07-18): spatial_resolver.py's _resolve_part_local() handles axis_x/axis_y/axis_z by returning world X/Y/Z unit vectors through the part's bbox center, never consulting the part's actual applied rotation (Part has no persisted orientation state to consult -- see TCAD-CON-1 note #2). Currently latent because nothing rotates a part and then chains an axis_ reference off it in a way that would expose the discrepancy, but it will produce silently wrong results the moment (a) the constraint solver rotates a part and something downstream reads its axis_z, or (b) any existing manual rotate + axis_ chain that happens to rely on this today. Needs Part to track a real pose (position+orientation), then axis_* to derive from that pose rather than hardcoded world unit vectors.
 - [#2 2026-07-19T02:15:50Z session:polar-drought-0718] Fixed by tracking current_orientation (3x3 rotation matrix) on Part/TransformTracker, accumulated across rotate transforms and inline part rotate:, applied in SpatialResolver._resolve_part_local for axis_x/y/z. Regression tests in tiacad_core/tests/test_part_orientation.py.
+
+
+## TASK-TCAD-CON-3 · Implement coaxial/tangent constraints
+
+```yaml
+status: backlog
+priority: low
+tags: [feature, constraints]
+created: '2026-07-19T02:28:15Z'
+updated: '2026-07-19T02:28:22Z'
+session: polar-drought-0718
+depends_on: [TCAD-CON-1]
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
