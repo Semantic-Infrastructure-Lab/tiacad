@@ -47,18 +47,45 @@ class FeatureBoundsRule(ValidationRule):
             subtract_part = parts_dict[subtract_name]
             if not hasattr(subtract_part, 'geometry') or subtract_part.geometry is None:
                 continue
-            overflows = self._bound_overflows(
-                self._get_bounding_box(subtract_part), base_bbox, tol
-            )
-            if overflows:
+            subtract_bbox = self._get_bounding_box(subtract_part)
+            overflows = self._bound_overflows(subtract_bbox, base_bbox, tol)
+            if self._really_overflows(base_part, subtract_part, overflows):
                 issues.append(ValidationIssue(
                     severity=Severity.INFO,
                     category=self.category,
                     part_name=subtract_name,
-                    message=f"Feature '{subtract_name}' extends beyond parent '{base_name}': {', '.join(overflows)}",
+                    message=f"Feature '{subtract_name}' extends beyond parent '{base_name}'"
+                            f"{': ' + ', '.join(overflows) if overflows else ''}",
                     suggestion="This is often intentional for through-holes, but verify if unexpected"
                 ))
         return issues
+
+    def _really_overflows(self, base_part, subtract_part, overflows) -> bool:
+        """
+        Decide whether a feature actually overflows its base.
+
+        bbox containment is neither sound nor complete for non-convex
+        bases: exceeding the base's bbox always means a real overflow
+        (bbox is a lower-bound envelope, so no expensive query is
+        needed there), but *not* exceeding it doesn't guarantee
+        containment -- a feature sitting entirely in the empty notch
+        of an L-shaped base reads as bbox-contained while being 100%
+        outside the real solid. So the real check only needs to run
+        for that ambiguous "bbox says clean" case, which also keeps
+        this check cheap: most subtract features in practice don't
+        need the real boolean query at all.
+
+        Falls back to trusting the bbox result when no backend is
+        attached (no better signal available).
+        """
+        if overflows:
+            return True
+        if base_part.backend is None or subtract_part.backend is None:
+            return False
+        overflow_volume = base_part.backend.get_overflow_volume(
+            subtract_part.geometry, base_part.geometry
+        )
+        return overflow_volume > self.constants.MIN_SIGNIFICANT_VOLUME
 
     def _is_difference_op(self, operation) -> bool:
         """Return True if this is a boolean difference op with subtract targets."""

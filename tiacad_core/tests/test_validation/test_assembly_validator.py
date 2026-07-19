@@ -9,7 +9,9 @@ Tests validation of common design issues:
 """
 
 import pytest
+import cadquery as cq
 from tiacad_core.geometry import MockBackend
+from tiacad_core.geometry.cadquery_backend import CadQueryBackend
 from tiacad_core.part import Part, PartRegistry
 from tiacad_core.validation.assembly_validator import (
     AssemblyValidator,
@@ -20,6 +22,9 @@ from tiacad_core.validation.assembly_validator import (
 from tiacad_core.parser.tiacad_parser import TiaCADParser
 from tiacad_core.validation.rules.bounding_box_rule import BoundingBoxRule
 from tiacad_core.validation.rules.hole_edge_proximity_rule import HoleEdgeProximityRule
+from tiacad_core.validation.rules.boolean_gaps_rule import BooleanGapsRule
+from tiacad_core.validation.rules.disconnected_parts_rule import DisconnectedPartsRule
+from tiacad_core.validation.rules.feature_bounds_rule import FeatureBoundsRule
 
 
 class TestValidationIssue:
@@ -374,6 +379,118 @@ def test_validation_report_summary(capsys):
     assert "WARNINGS" in captured.out
     assert "Test error" in captured.out
     assert "Test warning" in captured.out
+
+
+class TestBrepGeometryValidation:
+    """
+    Rules that switched from bbox heuristics to real BREP distance/volume
+    queries (TCAD-ARCH-7): boolean_gaps_rule, disconnected_parts_rule,
+    feature_bounds_rule. Uses real CadQueryBackend geometry, since the
+    whole point is a case where the bbox estimate would be wrong.
+    """
+
+    @pytest.fixture
+    def backend(self):
+        return CadQueryBackend()
+
+    def test_boolean_gaps_uses_real_distance_for_touching_l_shape(self, backend):
+        """
+        An L-shaped base (two boxes fused) has a non-convex bbox. A part
+        placed in the bbox's "notch" reads as bbox-close even though it
+        doesn't actually touch the L-shape -- bbox would false-negative
+        (miss the gap). Real distance() must still catch it.
+        """
+        arm1 = backend.create_box(10, 10, 10)
+        arm2 = backend.translate(backend.create_box(10, 10, 10), (10, 10, 0))
+        l_shape = backend.boolean_union(arm1, arm2)
+        # Sits in the notch of the L: within the combined bbox, but not
+        # touching either arm.
+        notch_part = backend.translate(backend.create_box(4, 4, 4), (10, 0, 0))
+
+        base_part = Part("l_shape", l_shape, backend=backend)
+        add_part = Part("notch", notch_part, backend=backend)
+
+        rule = BooleanGapsRule()
+        base_bbox = rule._get_bounding_box(base_part)
+        add_bbox = rule._get_bounding_box(add_part)
+
+        assert rule._boxes_are_close(base_bbox, add_bbox), \
+            "sanity check: bbox heuristic should think these are close/touching"
+
+        gap = rule._get_gap(base_part, add_part, base_bbox, add_bbox)
+        assert gap > 0, "real BREP distance should catch the gap bbox missed"
+
+    def test_boolean_gaps_falls_back_to_bbox_without_backend(self):
+        base_part = Part("base", cq.Workplane("XY").box(10, 10, 10))  # no backend attached
+        add_part = Part("add", cq.Workplane("XY").box(10, 10, 10).translate((15, 0, 0)))
+
+        rule = BooleanGapsRule()
+        base_bbox = rule._get_bounding_box(base_part)
+        add_bbox = rule._get_bounding_box(add_part)
+        gap = rule._get_gap(base_part, add_part, base_bbox, add_bbox)
+
+        assert gap == rule._calculate_bbox_gap(base_bbox, add_bbox)
+
+    def test_disconnected_parts_real_distance_catches_l_shape_gap(self, backend):
+        """Same non-convex-bbox trap as above, exercised via the connectivity rule."""
+        arm1 = backend.create_box(10, 10, 10)
+        arm2 = backend.translate(backend.create_box(10, 10, 10), (10, 10, 0))
+        l_shape = backend.boolean_union(arm1, arm2)
+        notch_part = backend.translate(backend.create_box(4, 4, 4), (10, 0, 0))
+
+        p1 = Part("l_shape", l_shape, backend=backend)
+        p2 = Part("notch", notch_part, backend=backend)
+
+        rule = DisconnectedPartsRule()
+        bbox1 = rule._get_bounding_box(p1.geometry)
+        bbox2 = rule._get_bounding_box(p2.geometry)
+
+        assert rule._boxes_are_close(bbox1, bbox2), \
+            "sanity check: bbox heuristic should think these are connected"
+        assert not rule._are_connected(p1, p2, bbox1, bbox2), \
+            "real BREP distance should show these parts are not actually touching"
+
+    def test_feature_bounds_real_check_catches_bbox_false_negative(self, backend):
+        """
+        L-shaped base: a feature sitting in the L's empty notch is fully
+        within the *combined* bbox (so `_bound_overflows` finds nothing
+        to flag) while being 100% outside the real solid. The real
+        cut-volume check must run independently of that bbox pre-check
+        to catch this, or it's silently skipped.
+        """
+        arm1 = backend.create_box(10, 10, 10)
+        arm2 = backend.translate(backend.create_box(10, 10, 10), (10, 10, 0))
+        l_shape = backend.boolean_union(arm1, arm2)
+        notch_hole = backend.translate(backend.create_box(2, 2, 2), (10, 0, 0))
+
+        base_part = Part("l_shape", l_shape, backend=backend)
+        subtract_part = Part("hole", notch_hole, backend=backend)
+
+        rule = FeatureBoundsRule()
+        base_bbox = rule._get_bounding_box(base_part)
+        subtract_bbox = rule._get_bounding_box(subtract_part)
+        overflows = rule._bound_overflows(subtract_bbox, base_bbox, rule.constants.FEATURE_EXTENSION_TOLERANCE)
+
+        assert overflows == [], "sanity check: bbox pre-check should find nothing to flag here"
+        assert rule._really_overflows(base_part, subtract_part, overflows) is True
+
+    def test_feature_bounds_real_check_confirms_true_positive(self, backend):
+        base = backend.create_box(10, 10, 10)
+        poking_hole = backend.translate(backend.create_box(4, 4, 4), (9, 0, 0))
+
+        base_part = Part("base", base, backend=backend)
+        subtract_part = Part("hole", poking_hole, backend=backend)
+
+        rule = FeatureBoundsRule()
+        assert rule._really_overflows(base_part, subtract_part, ["X-max by 3.00mm"]) is True
+
+    def test_feature_bounds_falls_back_to_bbox_without_backend(self):
+        base_part = Part("base", cq.Workplane("XY").box(10, 10, 10))
+        subtract_part = Part("hole", cq.Workplane("XY").box(4, 4, 4).translate((9, 0, 0)))
+
+        rule = FeatureBoundsRule()
+        assert rule._really_overflows(base_part, subtract_part, ["X-max by 3.00mm"]) is True
+        assert rule._really_overflows(base_part, subtract_part, []) is False
 
 
 if __name__ == "__main__":

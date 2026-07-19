@@ -271,6 +271,28 @@ class CadQueryBackend(GeometryBackend):
 
         return circle_edges[0].radius()
 
+    def get_distance(self, geom1: cq.Workplane, geom2: cq.Workplane) -> float:
+        """
+        Get the exact minimum distance between two shapes.
+
+        Shape.distance() is a public CadQuery/OCCT query (BRepExtrema
+        under the hood) -- returns 0.0 for touching or overlapping
+        shapes, the true minimum distance otherwise.
+        """
+        shape1 = geom1.val() if hasattr(geom1, 'val') else geom1
+        shape2 = geom2.val() if hasattr(geom2, 'val') else geom2
+        return shape1.distance(shape2)
+
+    def get_overflow_volume(self, feature_geom: cq.Workplane, base_geom: cq.Workplane) -> float:
+        """
+        Get the volume of feature_geom outside base_geom via a real
+        boolean cut, rather than comparing bounding boxes (which can
+        both false-positive and false-negative for non-convex bases).
+        """
+        feature_shape = feature_geom.val() if hasattr(feature_geom, 'val') else feature_geom
+        base_shape = base_geom.val() if hasattr(base_geom, 'val') else base_geom
+        return feature_shape.cut(base_shape).Volume()
+
     def get_edge_tangent(self, edge: Any) -> Tuple[float, float, float]:
         """
         Get the tangent vector of an edge.

@@ -36,14 +36,14 @@ class DisconnectedPartsRule(ValidationRule):
             if len(parts_dict) < self.constants.MIN_PARTS_FOR_CONNECTIVITY_CHECK:
                 return issues
 
-            # Compute bounding boxes for all parts
+            # Compute bounding boxes for all parts (fallback path + centers)
             bboxes = self._compute_bounding_boxes(parts_dict)
 
             if len(bboxes) < self.constants.MIN_PARTS_FOR_CONNECTIVITY_CHECK:
                 return issues  # Not enough valid geometries
 
             # Build connectivity graph
-            adjacency = self._build_adjacency_graph(bboxes)
+            adjacency = self._build_adjacency_graph(parts_dict, bboxes)
 
             # Find connected components
             components = self._find_connected_components(adjacency)
@@ -82,12 +82,16 @@ class DisconnectedPartsRule(ValidationRule):
         """Check if part has valid geometry."""
         return hasattr(part, 'geometry') and part.geometry is not None
 
-    def _build_adjacency_graph(self, bboxes: dict) -> Dict[str, Set[str]]:
+    def _build_adjacency_graph(self, parts_dict: dict, bboxes: dict) -> Dict[str, Set[str]]:
         """
-        Build adjacency graph based on bounding box proximity.
+        Build adjacency graph based on part-to-part connectivity.
+
+        Uses the real BREP distance query when both parts have a backend
+        attached, falling back to bounding-box proximity otherwise.
 
         Args:
-            bboxes: Dictionary of part name -> BoundingBox
+            parts_dict: Dictionary of part name -> Part object
+            bboxes: Dictionary of part name -> BoundingBox (fallback path)
 
         Returns:
             Adjacency graph as dictionary of part name -> set of connected part names
@@ -97,11 +101,30 @@ class DisconnectedPartsRule(ValidationRule):
 
         for i, name1 in enumerate(part_names):
             for name2 in part_names[i+1:]:
-                if self._boxes_are_close(bboxes[name1], bboxes[name2]):
+                if self._are_connected(parts_dict[name1], parts_dict[name2],
+                                        bboxes[name1], bboxes[name2]):
                     adjacency[name1].add(name2)
                     adjacency[name2].add(name1)
 
         return adjacency
+
+    def _are_connected(self, part1, part2, bbox1, bbox2) -> bool:
+        """
+        Check whether two parts touch/overlap.
+
+        bbox proximity is a sound lower bound: if the boxes aren't
+        close, the real shapes are provably farther apart than
+        tolerance too, so there's no need to pay for a real distance
+        query -- report disconnected directly. Only ambiguous cases
+        (bbox says close, e.g. a non-convex part's notch) need the
+        real BREP query to disambiguate, which keeps this O(n^2) check
+        affordable on assemblies with many parts.
+        """
+        if not self._boxes_are_close(bbox1, bbox2):
+            return False
+        if part1.backend is not None and part2.backend is not None:
+            return part1.backend.get_distance(part1.geometry, part2.geometry) <= self.tolerance
+        return True
 
     def _boxes_are_close(self, bbox1, bbox2) -> bool:
         """

@@ -387,6 +387,37 @@ class MockBackend(GeometryBackend):
             return None
         return geom.parameters.get('radius')
 
+    def get_distance(self, geom1: MockGeometry, geom2: MockGeometry) -> float:
+        """
+        Approximate minimum distance from bounding-box gap.
+
+        MockBackend has no real solid geometry, so this is a proxy
+        (bbox gap, not true shape-to-shape distance) -- fine for fast
+        unit tests, not a stand-in for CadQueryBackend's exact query.
+        """
+        b1, b2 = geom1.bounds, geom2.bounds
+        gaps = [
+            max(0.0, max(b1['min'][i] - b2['max'][i], b2['min'][i] - b1['max'][i]))
+            for i in range(3)
+        ]
+        return max(gaps)
+
+    def get_overflow_volume(self, feature_geom: MockGeometry, base_geom: MockGeometry) -> float:
+        """
+        Approximate overflow from bounding-box containment.
+
+        MockBackend has no real solid geometry to cut, so this returns
+        the largest single-axis overflow distance as a nonzero-iff-
+        overflowing signal -- not a real volume, just enough for rules
+        to threshold against zero in fast unit tests.
+        """
+        f, b = feature_geom.bounds, base_geom.bounds
+        overflows = [
+            max(0.0, b['min'][i] - f['min'][i], f['max'][i] - b['max'][i])
+            for i in range(3)
+        ]
+        return max(overflows)
+
     def get_face_center(self, face: MockFace) -> Tuple[float, float, float]:
         """Get the center point of a mock face"""
         return face.center

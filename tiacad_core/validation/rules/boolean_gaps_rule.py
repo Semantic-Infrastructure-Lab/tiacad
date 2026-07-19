@@ -34,8 +34,8 @@ class BooleanGapsRule(ValidationRule):
             if not hasattr(add_part, 'geometry') or add_part.geometry is None:
                 continue
             add_bbox = self._get_bounding_box(add_part)
-            if not self._boxes_are_close(base_bbox, add_bbox):
-                gap = self._calculate_bbox_gap(base_bbox, add_bbox)
+            gap = self._get_gap(base_part, add_part, base_bbox, add_bbox)
+            if gap > self.tolerance:
                 issues.append(ValidationIssue(
                     severity=Severity.WARNING,
                     category=self.category,
@@ -66,6 +66,27 @@ class BooleanGapsRule(ValidationRule):
                 message=f"Boolean gap check skipped: {str(e)}"
             ))
         return issues
+
+    def _get_gap(self, base_part, add_part, base_bbox, add_bbox) -> float:
+        """
+        Get the gap between two parts, using the real BREP distance query
+        only when the bbox check can't settle it on its own.
+
+        bbox is a sound lower bound on true distance: if the boxes
+        aren't close, the real shapes are provably at least that far
+        apart too, so there's no need to pay for an expensive boolean
+        query -- the bbox-derived gap is reported directly. Only when
+        the boxes *are* close (which a non-convex part, e.g. an
+        L-shape, can report even when the real shapes don't touch) is
+        the real query needed to disambiguate.
+        """
+        if not self._boxes_are_close(base_bbox, add_bbox):
+            return self._calculate_bbox_gap(base_bbox, add_bbox)
+
+        if base_part.backend is not None and add_part.backend is not None:
+            return base_part.backend.get_distance(base_part.geometry, add_part.geometry)
+
+        return 0.0
 
     def _boxes_are_close(self, bbox1, bbox2) -> bool:
         """Check if two bounding boxes are within tolerance distance."""

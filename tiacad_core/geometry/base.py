@@ -420,6 +420,47 @@ class GeometryBackend(ABC):
         pass
 
     @abstractmethod
+    def get_distance(self, geom1: Any, geom2: Any) -> float:
+        """
+        Get the minimum distance between two geometries.
+
+        Queries the actual shapes rather than their bounding boxes, so
+        near-miss or overlap-but-not-touching cases (which axis-aligned
+        bbox proximity can get wrong for non-convex or rotated parts)
+        are reported exactly.
+
+        Args:
+            geom1: First geometry
+            geom2: Second geometry
+
+        Returns:
+            0.0 if the geometries touch or overlap, else the true
+            minimum distance between them.
+
+        Examples:
+            >>> gap = backend.get_distance(base_geom, add_geom)
+        """
+        pass
+
+    @abstractmethod
+    def get_overflow_volume(self, feature_geom: Any, base_geom: Any) -> float:
+        """
+        Get the volume of feature_geom that lies outside base_geom.
+
+        Args:
+            feature_geom: Geometry to check (e.g. a subtract/hole tool)
+            base_geom: Geometry it should be contained within
+
+        Returns:
+            0.0 if feature_geom is fully within base_geom, else the
+            volume of the portion that pokes outside.
+
+        Examples:
+            >>> overflow = backend.get_overflow_volume(hole_geom, base_geom)
+        """
+        pass
+
+    @abstractmethod
     def get_edge_tangent(self, edge: Any) -> Tuple[float, float, float]:
         """
         Get the tangent vector of an edge.

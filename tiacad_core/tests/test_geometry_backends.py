@@ -124,6 +124,30 @@ class TestMockBackend:
 
         assert backend.get_cylindrical_radius(box) is None
 
+    def test_get_distance_touching(self, backend):
+        box1 = backend.create_box(10, 10, 10)
+        box2 = backend.translate(backend.create_box(10, 10, 10), (10, 0, 0))
+
+        assert backend.get_distance(box1, box2) == 0.0
+
+    def test_get_distance_gap(self, backend):
+        box1 = backend.create_box(10, 10, 10)
+        box2 = backend.translate(backend.create_box(10, 10, 10), (15, 0, 0))
+
+        assert backend.get_distance(box1, box2) == pytest.approx(5.0)
+
+    def test_get_overflow_volume_contained(self, backend):
+        base = backend.create_box(10, 10, 10)
+        inside = backend.create_box(2, 2, 2)
+
+        assert backend.get_overflow_volume(inside, base) == 0.0
+
+    def test_get_overflow_volume_poking_out(self, backend):
+        base = backend.create_box(10, 10, 10)
+        poking = backend.translate(backend.create_box(4, 4, 4), (9, 0, 0))
+
+        assert backend.get_overflow_volume(poking, base) > 0.0
+
     def test_boolean_union(self, backend):
         """Union creates composite geometry"""
         box = backend.create_box(10, 10, 10)
@@ -292,6 +316,43 @@ class TestCadQueryBackend:
         box = backend.create_box(10, 10, 10)
 
         assert backend.get_cylindrical_radius(box) is None
+
+    def test_get_distance_exact_gap(self, backend):
+        box1 = backend.create_box(10, 10, 10)
+        box2 = backend.translate(backend.create_box(10, 10, 10), (17, 0, 0))
+
+        assert backend.get_distance(box1, box2) == pytest.approx(7.0)
+
+    def test_get_distance_catches_non_convex_bbox_false_negative(self, backend):
+        """
+        An L-shaped base's bbox spans its own notch. A part sitting in
+        that notch reads as bbox-close/overlapping even though it does
+        not touch the real (non-convex) solid -- exact distance() must
+        still report the true gap.
+        """
+        arm1 = backend.create_box(10, 10, 10)
+        arm2 = backend.translate(backend.create_box(10, 10, 10), (10, 10, 0))
+        l_shape = backend.boolean_union(arm1, arm2)
+        notch_part = backend.translate(backend.create_box(4, 4, 4), (10, 0, 0))
+
+        assert backend.get_distance(l_shape, notch_part) > 0.0
+
+    def test_get_overflow_volume_exact(self, backend):
+        base = backend.create_box(10, 10, 10)
+        poking = backend.translate(backend.create_box(4, 4, 4), (4, 0, 0))
+
+        # poking spans x: 2..6; base's x-max is 5 -> 1mm of overflow
+        assert backend.get_overflow_volume(poking, base) == pytest.approx(1 * 4 * 4)
+
+    def test_get_overflow_volume_catches_notch_false_negative(self, backend):
+        """A feature sitting entirely in an L-shape's notch is bbox-contained
+        but 100% real overflow -- the exact cut volume must catch it."""
+        arm1 = backend.create_box(10, 10, 10)
+        arm2 = backend.translate(backend.create_box(10, 10, 10), (10, 10, 0))
+        l_shape = backend.boolean_union(arm1, arm2)
+        notch_hole = backend.translate(backend.create_box(2, 2, 2), (10, 0, 0))
+
+        assert backend.get_overflow_volume(notch_hole, l_shape) == pytest.approx(2 * 2 * 2)
 
 
 # ============================================================================
