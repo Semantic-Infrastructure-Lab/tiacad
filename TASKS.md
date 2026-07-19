@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 2
+next_id: 3
 archival: inline
 areas:
   VAL: 8
@@ -585,3 +585,22 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-19T04:18:43Z session:molten-ultimatum-0718] Implemented via direct radius measurement (no CadQuery solve) rather than PointInPlane solve — see constraint_builder.py module docstring
+
+
+## TASK-TCAD-2 · Extend trust-render world_position to remaining rules: ParameterSanityRule, MissingPositionRule, UnusedPartsRule, BoundingBoxRule
+
+```yaml
+status: backlog
+priority: low
+tags: [trust-render, validation]
+created: '2026-07-19T06:59:16Z'
+updated: '2026-07-19T06:59:29Z'
+session: earthly-unicorn-0718
+links:
+  references:
+  - docs/developer/MODEL_VALIDATION.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
