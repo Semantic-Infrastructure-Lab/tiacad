@@ -38,7 +38,7 @@ parts:
     )
     bundle_dir = tmp_path / "bundle"
 
-    def fake_render(doc, output_path, title):
+    def fake_render(doc, output_path, title, issues):
         output = tmp_path / output_path if not str(output_path).startswith("/") else output_path
         output = bundle_dir / "final_trust.png"
         output.write_bytes(b"fake-png")
@@ -129,7 +129,7 @@ parts:
     )
     bundle_dir = tmp_path / "bundle"
 
-    def fake_render(_doc, _output_path, _title):
+    def fake_render(_doc, _output_path, _title, _issues):
         raise RuntimeError("render backend unavailable")
 
     monkeypatch.setattr('tiacad_core.debug_bundle._render_trust_preview', fake_render)
@@ -176,7 +176,7 @@ operations:
         encoding="utf-8",
     )
 
-    def fake_render(_doc, output_path, _title):
+    def fake_render(_doc, output_path, _title, _issues):
         Path(output_path).write_bytes(b"fake-png")
         return str(output_path)
 

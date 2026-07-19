@@ -46,6 +46,7 @@ def create_debug_bundle(
         bundle_dir=bundle_dir,
         include_trust_render=include_trust_render,
         title=input_file.stem,
+        issues=validation_report.issues,
     )
 
     _write_json(bundle_dir / "resolved_model.json", resolved_model)
@@ -203,6 +204,7 @@ def _write_trust_render_artifacts(
     bundle_dir: Path,
     include_trust_render: bool,
     title: str,
+    issues: list,
 ) -> Dict[str, Any]:
     """Attempt trust rendering and return a manifest payload."""
     if not include_trust_render:
@@ -216,7 +218,7 @@ def _write_trust_render_artifacts(
     output_path = bundle_dir / output_name
 
     try:
-        written_path = _render_trust_preview(doc, output_path, title)
+        written_path = _render_trust_preview(doc, output_path, title, issues)
         return {
             'status': 'ok',
             'output': output_name,
@@ -231,11 +233,11 @@ def _write_trust_render_artifacts(
         }
 
 
-def _render_trust_preview(doc, output_path: Path, title: str) -> str:
+def _render_trust_preview(doc, output_path: Path, title: str, issues: list) -> str:
     """Render the trust preview lazily so missing render deps do not break import."""
     from .visual.trust_renderer import render_trust
 
-    return render_trust(doc, str(output_path), title=title)
+    return render_trust(doc, str(output_path), title=title, issues=issues)
 
 
 def _build_manifest(

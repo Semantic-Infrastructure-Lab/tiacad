@@ -116,7 +116,7 @@ class HoleEdgeProximityRule(ValidationRule):
 
         if edge_warnings:
             issues.append(self._create_proximity_issue(
-                hole_name, base_name, edge_warnings, hole_radius
+                hole_name, base_name, edge_warnings, hole_radius, hole_center
             ))
 
         return issues
@@ -199,14 +199,16 @@ class HoleEdgeProximityRule(ValidationRule):
             warnings.append(f"{axis}-max face (distance: {dist_to_max:.2f}mm)")
 
     def _create_proximity_issue(self, hole_name: str, base_name: str,
-                                edge_warnings: List[str], hole_radius: float) -> ValidationIssue:
+                                edge_warnings: List[str], hole_radius: float,
+                                hole_center: Tuple[float, float, float]) -> ValidationIssue:
         """Create ValidationIssue for hole too close to edge."""
         return ValidationIssue(
             severity=Severity.WARNING,
             category=self.category,
             part_name=hole_name,
             message=f"Hole '{hole_name}' very close to edge(s) of '{base_name}': {', '.join(edge_warnings)}",
-            suggestion=f"Move hole inward by at least {hole_radius:.2f}mm from edges to avoid getting chopped off"
+            suggestion=f"Move hole inward by at least {hole_radius:.2f}mm from edges to avoid getting chopped off",
+            world_position=hole_center
         )
 
     def _create_skip_issue(self, error_message: str) -> ValidationIssue:

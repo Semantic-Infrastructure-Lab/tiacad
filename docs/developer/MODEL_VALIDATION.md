@@ -257,9 +257,19 @@ These are the highest-value improvements to the current validation model:
    between named references such as `plate.face_top` and `shaft.axis_z`.
 5. **Stepwise summaries:** attach before/after summaries to operations in
    `build_trace.json` so regressions are easier to localize.
-6. **Annotated trust renders:** render failed contracts and named references
-   directly onto review images — so a picture *points at* a measured failure instead
-   of asking a human to notice it cold.
+6. ~~**Annotated trust renders**~~ **Shipped 2026-07-18 (partial — hole-edge-proximity
+   only):** `render_trust(doc, ..., issues=...)` (`tiacad_core/visual/trust_renderer.py`)
+   projects each issue's `ValidationIssue.world_position` through every panel's own
+   camera and draws a crosshair marker at the resulting pixel — so a marker lands in
+   the right spot in all 8 views (isometric, ortho, X-ray) even though they're rendered
+   from different angles. `create_debug_bundle` wires this in automatically: every
+   `final_trust.png` now has the current `AssemblyValidator` findings drawn on it, no
+   extra step required. Currently only `HoleEdgeProximityRule` populates
+   `world_position` (the hole's bbox center) — other rules (`BooleanEffectRule`,
+   `DisconnectedPartsRule`, etc.) don't yet compute a 3D failure point, so their issues
+   still show up in the text report but not as a marker. Extending coverage to those
+   rules is a natural follow-on, not scoped here. See
+   `tiacad_core/tests/test_visualization/test_trust_renderer.py`.
 7. ~~**Negative trust scenarios**~~ **Shipped 2026-07-18:**
    `examples/validation/negative_trust/` holds intentionally-bad models that
    build successfully (unlike the Tier-5 parse/build negative corpus in

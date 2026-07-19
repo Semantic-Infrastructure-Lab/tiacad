@@ -6,7 +6,7 @@ Shared data structures used across all validation components.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 import json
 
 
@@ -26,6 +26,7 @@ class ValidationIssue:
     part_name: Optional[str] = None
     suggestion: Optional[str] = None
     location: Optional[Dict] = None  # For future YAML line number tracking
+    world_position: Optional[Tuple[float, float, float]] = None  # 3D (x, y, z) mm, for trust-render annotation
 
     def __str__(self) -> str:
         parts = [f"[{self.severity.value}]", f"({self.category})"]
@@ -54,7 +55,8 @@ class ValidationIssue:
             'message': self.message,
             'part_name': self.part_name,
             'suggestion': self.suggestion,
-            'location': self.location
+            'location': self.location,
+            'world_position': self.world_position
         }
 
 

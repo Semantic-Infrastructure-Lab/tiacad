@@ -41,12 +41,14 @@ import logging
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import pyvista as pv
 import numpy as np
+import vtk
 from PIL import Image, ImageDraw
 from ..backend_support import tessellate_part
+from ..validation.validation_types import Severity, ValidationIssue
 
 logger = logging.getLogger(__name__)
 
@@ -472,16 +474,6 @@ def _render_view(plotter: pv.Plotter, idx: int, parts_data, voids_data, metrics:
     plotter.add_title(view_label, font_size=10, color="black")
 
 
-def _render_views(parts_data, voids_data, metrics: SceneMetrics, width: int, height: int):
-    """Render all configured trust-render subplots and return the screenshot array."""
-    plotter = _create_plotter(width, height)
-    for idx in range(len(VIEWS)):
-        _render_view(plotter, idx, parts_data, voids_data, metrics)
-    screenshot = plotter.screenshot(return_img=True)
-    plotter.close()
-    return screenshot
-
-
 def _add_axes_widget(plotter: pv.Plotter):
     """Add a small XYZ axis indicator to the current subplot."""
     plotter.add_axes(
@@ -508,12 +500,71 @@ def _add_feature_edges(plotter: pv.Plotter, mesh: pv.PolyData, color=(0, 0, 0),
                          render_lines_as_tubes=False)
 
 
+_ISSUE_MARKER_COLOR = {
+    Severity.ERROR: (230, 57, 70),      # vivid red
+    Severity.WARNING: (255, 152, 0),    # vivid orange
+    Severity.INFO: (33, 150, 243),      # vivid blue
+}
+_ISSUE_MARKER_RADIUS = 10
+
+
+def _subplot_pixel_rect(renderer, width: int, height: int) -> tuple:
+    """Return (x0, y0, x1, y1) pixel rect for a subplot, top-left image origin."""
+    vxmin, vymin, vxmax, vymax = renderer.GetViewport()
+    x0, x1 = vxmin * width, vxmax * width
+    # VTK viewports are bottom-left origin; flip to top-left for image coords.
+    y0, y1 = height - vymax * height, height - vymin * height
+    return x0, y0, x1, y1
+
+
+def _project_world_to_pixel(renderer, point: Tuple[float, float, float], height: int) -> Tuple[int, int]:
+    """Project a 3D world point through one subplot's active camera to an image pixel."""
+    coord = vtk.vtkCoordinate()
+    coord.SetCoordinateSystemToWorld()
+    coord.SetValue(*point)
+    display_x, display_y = coord.GetComputedDisplayValue(renderer)
+    return display_x, height - display_y
+
+
+def _draw_issue_marker(draw: ImageDraw.ImageDraw, px: float, py: float, color: tuple) -> None:
+    """Draw a crosshair-circle marker pointing at one validation issue's location."""
+    r = _ISSUE_MARKER_RADIUS
+    draw.ellipse([px - r, py - r, px + r, py + r], outline=color, width=3)
+    draw.line([px - r - 5, py, px - r + 3, py], fill=color, width=2)
+    draw.line([px + r - 3, py, px + r + 5, py], fill=color, width=2)
+    draw.line([px, py - r - 5, px, py - r + 3], fill=color, width=2)
+    draw.line([px, py + r - 3, px, py + r + 5], fill=color, width=2)
+
+
+def _annotate_issues(
+    render_img: Image.Image,
+    plotter: pv.Plotter,
+    issues: Optional[List[ValidationIssue]],
+    width: int,
+    height: int,
+) -> None:
+    """Mark each located validation issue on every panel, in that panel's own view. Mutates render_img in place."""
+    located = [issue for issue in (issues or []) if issue.world_position is not None]
+    if not located:
+        return
+
+    draw = ImageDraw.Draw(render_img)
+    for renderer in plotter.renderers:
+        x0, y0, x1, y1 = _subplot_pixel_rect(renderer, width, height)
+        for issue in located:
+            px, py = _project_world_to_pixel(renderer, issue.world_position, height)
+            if x0 <= px <= x1 and y0 <= py <= y1:
+                color = _ISSUE_MARKER_COLOR.get(issue.severity, (150, 150, 150))
+                _draw_issue_marker(draw, px, py, color)
+
+
 def render_trust(
     doc,
     output_path: str,
     title: Optional[str] = None,
     width: int = 2200,
     height: int = 1000,
+    issues: Optional[List[ValidationIssue]] = None,
 ) -> str:
     """
     Render a TiaCADDocument to an 8-panel trust PNG.
@@ -532,6 +583,10 @@ def render_trust(
         title: Optional title shown in the legend panel
         width: Output image width in pixels
         height: Output image height in pixels
+        issues: Optional validation issues to annotate directly on the render.
+            Only issues with a `world_position` are drawn; each is projected
+            through every panel's own camera, so it lands in the correct spot
+            in each view (isometric, ortho, X-ray) rather than one fixed panel.
 
     Returns:
         Absolute path to the written PNG
@@ -544,8 +599,13 @@ def render_trust(
 
     metrics = _compute_scene_metrics(parts_data, doc.parameters)
     description = ((doc.metadata or {}).get("description") or "").strip()
-    screenshot = _render_views(parts_data, voids_data, metrics, width, height)
+    plotter = _create_plotter(width, height)
+    for idx in range(len(VIEWS)):
+        _render_view(plotter, idx, parts_data, voids_data, metrics)
+    screenshot = plotter.screenshot(return_img=True)
     render_img = Image.fromarray(screenshot)
+    _annotate_issues(render_img, plotter, issues, width, height)
+    plotter.close()
     final_img = _add_legend(render_img, parts_data, voids_data, title, description, width, height)
 
     out = Path(output_path)
