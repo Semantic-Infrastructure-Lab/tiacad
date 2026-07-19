@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-18 (annotated trust renders, TCAD-UX-5)
+
+`render_trust(doc, ..., issues=...)` now draws a crosshair marker at each
+validation issue's measured 3D location, projected through every panel's own
+camera so it lands in the right spot in all 8 views (isometric, ortho,
+X-ray) instead of one fixed angle. `create_debug_bundle` wires this in
+automatically — every `final_trust.png` now points at measured failures
+instead of leaving a human to match a text warning to a picture. Currently
+only `HoleEdgeProximityRule` populates `ValidationIssue.world_position` (the
+hole's bbox center); other rules don't yet compute a 3D failure point, so
+their issues still show up in the text report but without a marker —
+tracked as a natural follow-on in `docs/developer/MODEL_VALIDATION.md`
+item 6, not scoped here.
+
 ### Added - 2026-07-19 (tangent constraint, TCAD-1)
 
 `constraints: type: tangent` now implemented — mates a cylindrical part
