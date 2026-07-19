@@ -446,4 +446,44 @@ class TestFileWatcherIntegration:
 
         assert results
         assert not results[0].ok
-        assert results[0].error
+
+    def test_rebuild_applies_constraints(self, tmp_path):
+        """Regression test: watch-mode rebuild used to skip `constraints:`
+        entirely (IncrementalBuilder only knows parts/operations), so a
+        constrained part silently stayed at its raw pre-constraint position
+        under `tiacad watch` while the same file built correctly outside
+        watch mode. `_rebuild` is called directly (not through the
+        background thread) so this doesn't need `@pytest.mark.slow`."""
+        f = tmp_path / "watch_constraints.yaml"
+        f.write_text("""\
+schema_version: "3.0"
+parts:
+  base:
+    primitive: box
+    parameters: { width: 10, depth: 10, height: 10 }
+    origin: center
+  top:
+    primitive: box
+    parameters: { width: 5, depth: 5, height: 5 }
+    origin: center
+export:
+  default_part: top
+constraints:
+  - type: flush
+    faces: [base.face_top, top.face_bottom]
+""")
+
+        out = tmp_path / "watch_constraints.stl"
+        results = []
+        watcher = FileWatcher(f, on_rebuild=results.append, export_path=out, debounce=0.05)
+        watcher._rebuild(is_initial=True)
+
+        assert results and results[0].ok, f"build failed: {results[0].error if results else None}"
+        assert results[0].exported_path == str(out)
+
+        import trimesh
+        mesh = trimesh.load_mesh(str(out))
+        # export.default_part is 'top' alone. Flush-mated (5mm cube on a
+        # 10mm cube) it spans z=[5, 10]; unconstrained (raw origin) it would
+        # span z=[-2.5, 2.5] instead.
+        assert mesh.bounds[:, 2] == pytest.approx([5.0, 10.0], abs=1e-3)

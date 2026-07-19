@@ -79,11 +79,31 @@ reference plane (e.g. via a prior `rotate` transform) — no auto-alignment. Sco
 cylinder-face-vs-plane only, not cylinder-cylinder tangency. See
 `tiacad_core/parser/constraint_builder.py` and ROADMAP.md "Constraint Solver".
 
-**Also missing:**
-- Constraint contradiction validation — CadQuery's solver currently just fails to converge
-  on a contradiction, with no targeted "these two constraints conflict" message
-- ModelGraph/DAG integration — constraints run as a standalone post-operations pass, not DAG
-  edges
+**Fixed 2026-07-19 (`TCAD-CON-4`):** constraint contradiction validation. `ConstraintBuilder`
+now catches, before calling `.solve()`, the same moving face mated `flush`/`offset` against
+two reference planes that don't actually coincide — previously this reached CadQuery's
+solver and either failed to converge with an opaque error or landed on an arbitrary
+compromise. Scoped to `flush`/`offset` (both compile to the same `Plane` constraint kind);
+`coaxial`'s edge/axis consistency is a different question, not covered.
+
+**Fixed 2026-07-19 (found investigating `TCAD-CON-5`):** `tiacad watch` silently dropped
+`constraints:` entirely. `IncrementalBuilder.build()` only rebuilds `parts:`/`operations:` —
+it has no `constraints_spec` parameter — and `watcher.py::_rebuild` called it directly
+without ever invoking `ConstraintBuilder`, unlike the normal (non-watch) parse pipeline.
+Concretely: a model with a `constraints:` block built correctly via `TiaCADParser.parse_file`
+but exported every constrained part at its raw, pre-constraint position under
+`tiacad watch` — verified live (`base`/`top` flush-mated to `z=7.5` via the normal pipeline,
+`z=0` under watch, before the fix). Fixed by re-solving all constraints against the
+just-rebuilt registry as an explicit, non-incremental step in `_rebuild` after the
+incremental parts/operations build. See `tiacad_core/tests/test_dag/test_watcher.py::
+TestFileWatcherIntegration::test_rebuild_applies_constraints`.
+
+**Still missing:**
+- ModelGraph/DAG integration (`TCAD-CON-5`) — constraints are now correct under `tiacad
+  watch`, but still run as a standalone, non-incremental post-build pass rather than real DAG
+  edges: every watched rebuild re-solves *all* constraints from scratch (cheap relative to a
+  full re-parse, but not cache-aware like `parts:`/`operations:` are). Making constraints DAG
+  edges would let unaffected constraints be skipped on an incremental rebuild.
 - Cylinder-to-cylinder tangency, and tangent auto-alignment (forcing the axis parallel to
   the plane instead of requiring it pre-rotated) — no documented use case yet; would need
   hand-rolled solver geometry CadQuery doesn't provide out of the box

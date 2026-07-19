@@ -9,7 +9,7 @@ areas:
   UX: 7
   API: 2
   ARCH: 10
-  CON: 6
+  CON: 7
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -668,3 +668,19 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-19T08:35:22Z session:whispered-demon-0719] Fixed real per-part/per-operation usage detection; also fixed a shared dict-vs-attribute bug in MissingPositionRule/_get_used_parts/_get_exported_parts and restored dropped export.parts parsing. See docs/developer/MODEL_VALIDATION.md item 6.
+
+
+## TASK-TCAD-CON-6 · tiacad watch silently dropped constraints: entirely (IncrementalBuilder has no constraints_spec, watcher.py never called ConstraintBuilder)
+
+```yaml
+status: backlog
+priority: high
+tags: [constraints, watch, bug]
+created: '2026-07-19T09:11:38Z'
+updated: '2026-07-19T09:11:38Z'
+session: garnet-gem-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_

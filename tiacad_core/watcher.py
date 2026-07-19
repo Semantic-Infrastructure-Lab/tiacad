@@ -204,10 +204,12 @@ class FileWatcher:
         so unchanged parts are served from cache rather than re-computed.
         """
         from .dag.incremental_builder import IncrementalBuilder
+        from .parser.constraint_builder import ConstraintBuilder
         from .parser.operations_builder import OperationsBuilder
         from .parser.parse_pipeline import normalize_yaml_aliases, prepare_build_context
         from .parser.parts_builder import PartsBuilder
         from .parser.tiacad_parser import TiaCADDocument
+        from .spatial_resolver import SpatialResolver
         t0 = time.monotonic()
         result = WatchBuildResult(is_initial=is_initial)
 
@@ -244,6 +246,21 @@ class FileWatcher:
             )
 
             self._state = inc_result.state
+
+            # 4. Solve `constraints:` — IncrementalBuilder only knows about
+            # parts/operations, not constraints (they aren't DAG edges yet,
+            # see tt show TCAD-CON-5), so this step is not itself
+            # incremental: every watched rebuild re-solves all constraints
+            # from scratch against the just-rebuilt registry. Cheap relative
+            # to a full re-parse, and correct — the alternative (skipping
+            # this entirely, the prior behavior) silently left every
+            # constrained part at its raw pre-constraint position in watch
+            # mode while the same file built correctly outside watch mode.
+            constraints_spec = sections.get('constraints', [])
+            if constraints_spec:
+                spatial_resolver = SpatialResolver(context.registry, context.resolved_references)
+                ConstraintBuilder(context.registry, spatial_resolver).apply_constraints(constraints_spec)
+
             result.rebuild_ms = (time.monotonic() - t0) * 1000
             result.rebuilt = inc_result.stats.rebuilt
             result.cached = inc_result.stats.cached
