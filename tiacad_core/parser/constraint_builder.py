@@ -8,24 +8,37 @@ investigation that found this already-working, already-a-dependency solver.
 
 MVP scope: 'flush' (coincident faces, opposed normals) and 'offset' (flush,
 plus an additional translate along the reference face's normal) are
-implemented, both via CadQuery's 'Plane' constraint kind — the exact pairing
+implemented via CadQuery's 'Plane' constraint kind — the exact pairing
 verified working end-to-end during TCAD-CON-1's scoping (a 5mm cube flush-
-mated onto a 10mm cube). 'coaxial' and 'tangent' are recognized by the
-schema but not implemented here: only face-based constraints translate
-cleanly onto CadQuery's Assembly query grammar ("part@faces@selector"),
-since `Assembly._query` only accepts string selectors run against a part's
-real geometry — not TiaCAD's synthetic axis_x/y/z references or arbitrary
-two-point axes. Making coaxial/tangent work needs either edge-selector
-support in that same grammar or a lower-level ConstraintSolver integration
-that bypasses Assembly's query strings entirely; both are unvalidated, so
-they raise ConstraintBuilderError with a pointer to the follow-up task
-rather than guessing at untested constraint-kind semantics.
+mated onto a 10mm cube). 'coaxial' (two edges made concentric — e.g. a pin
+mated into a hole) is implemented via CadQuery's 'Axis' + 'Point' constraint
+kinds together, run against the same edge pair: 'Axis' aligns the edges'
+directions (Face.normalAt() for planar edges, Edge.normal() for circular
+edges, Edge.tangentAt() for other curves — see cadquery's solver.py
+`_getAxis`), 'Point' pins their centers coincident. `Assembly._query`'s
+grammar (`getattr(workplane, query.selector_kind)(query.selector)`) already
+supports "part@edges@<selector>" out of the box — the TCAD-CON-1-era
+docstring here assumed it didn't and deferred coaxial; TCAD-CON-3's
+validation (see `tt show TCAD-CON-3`) found it does. Verified live: a 3mm
+pin cylinder mated coaxial to a 6mm hole in a plate lands with its center
+exactly on the hole's axis (X=0, Y=0), confirmed via the solved
+`Assembly.toCompound()` geometry (not just the raw `Location`, which a
+naive re-application can silently corrupt — see the task notes for the
+verification pitfall this ran into). 'tangent' remains reserved: unlike
+coaxial/flush, it needs radius-aware offset math (e.g. a cylinder tangent
+to a plane sits one radius off, not coincident/coaxial with it), which is
+a genuinely different problem from a direct CadQuery constraint-kind
+mapping and hasn't been scoped.
 
 Design notes:
-- Convention: `faces: [reference, moving]` — the reference face's part is
-  the one `Assembly.solve()` auto-locks (it locks the first entity
-  referenced across all constraints); the moving face's part is the one
-  repositioned to satisfy the constraint.
+- Convention: `faces: [reference, moving]` / `edges: [reference, moving]`
+  — the reference's part is the one `Assembly.solve()` auto-locks (it locks
+  the first entity referenced across all constraints); the moving
+  reference's part is the one repositioned to satisfy the constraint.
+- 'coaxial' requires inline `{type: edge, part, selector}` refs only — there
+  is no auto-generated edge-name vocabulary (like `face_top`/`FACE_SELECTOR_MAP`
+  for faces) to resolve a dotted `part.edge_name` shorthand against, so the
+  caller must supply a real CadQuery edge selector (e.g. `%CIRCLE and >Z`).
 - The solved `cq.Location` per part is decomposed into a single rotation
   (axis+angle, from the transform's quaternion) plus a translation, and
   baked in through the same `TransformTracker` machinery every other
@@ -49,8 +62,13 @@ from ..part import Part, PartRegistry
 from ..transform_tracker import TransformTracker
 from ..spatial_resolver import SpatialResolver, FACE_SELECTOR_MAP
 
-IMPLEMENTED_CONSTRAINT_TYPES = {'flush', 'offset'}
-RESERVED_CONSTRAINT_TYPES = {'coaxial', 'tangent'}
+IMPLEMENTED_CONSTRAINT_TYPES = {'flush', 'offset', 'coaxial'}
+RESERVED_CONSTRAINT_TYPES = {'tangent'}
+
+# type -> (reference field name in the YAML spec, CadQuery query selector_kind,
+#          CadQuery constraint kinds to apply between the resolved pair)
+_CONSTRAINT_QUERY_KIND = {'flush': 'faces', 'offset': 'faces', 'coaxial': 'edges'}
+_CONSTRAINT_CQ_KINDS = {'flush': ('Plane',), 'offset': ('Plane',), 'coaxial': ('Axis', 'Point')}
 
 
 class ConstraintBuilderError(Exception):
@@ -86,7 +104,7 @@ class ConstraintBuilder:
 
         involved_parts: List[str] = []
         seen = set()
-        for ref_part, _, mov_part, _, _ in parsed:
+        for ctype, ref_part, _, mov_part, _, _ in parsed:
             for p in (ref_part, mov_part):
                 if p not in seen:
                     seen.add(p)
@@ -106,28 +124,33 @@ class ConstraintBuilder:
         for part_name in involved_parts:
             assembly.add(self.registry.get(part_name).geometry, name=part_name, loc=cq.Location())
 
-        for ref_part, ref_sel, mov_part, mov_sel, _distance in parsed:
-            assembly.constrain(f"{ref_part}@faces@{ref_sel}", f"{mov_part}@faces@{mov_sel}", "Plane")
+        for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in parsed:
+            query_kind = _CONSTRAINT_QUERY_KIND[ctype]
+            ref_query = f"{ref_part}@{query_kind}@{ref_sel}"
+            mov_query = f"{mov_part}@{query_kind}@{mov_sel}"
+            for cq_kind in _CONSTRAINT_CQ_KINDS[ctype]:
+                assembly.constrain(ref_query, mov_query, cq_kind)
 
         try:
             assembly.solve()
         except Exception as e:
             raise ConstraintBuilderError(f"Constraint solve failed: {e}") from e
 
-        # Bake the solved flush/coincident position into every involved part
-        # (locked parts solve to an identity location, so this is a no-op for them).
+        # Bake the solved position into every involved part (locked parts
+        # solve to an identity location, so this is a no-op for them).
         for part_name in involved_parts:
             self._bake_location(part_name, assembly.objects[part_name].loc)
 
         # 'offset' constraints add a translate on top of the now-baked flush
         # position, along the reference face's normal (resolved fresh, so it
         # reflects the reference part's actual — possibly also-constrained — pose).
-        for ref_part, ref_sel, mov_part, _mov_sel, distance in parsed:
-            if distance:
+        for ctype, ref_part, ref_sel, mov_part, _mov_sel, distance in parsed:
+            if ctype == 'offset':
                 self._apply_offset_translate(mov_part, ref_part, ref_sel, distance)
 
-    def _parse_constraint(self, index: int, spec: Dict[str, Any]) -> Tuple[str, str, str, str, float]:
-        """Validate one constraint spec, returning (ref_part, ref_selector, mov_part, mov_selector, distance)."""
+    def _parse_constraint(self, index: int, spec: Dict[str, Any]) -> Tuple[str, str, str, str, str, float]:
+        """Validate one constraint spec, returning
+        (type, ref_part, ref_selector, mov_part, mov_selector, distance)."""
         ctype = spec.get('type')
         if ctype in RESERVED_CONSTRAINT_TYPES:
             raise ConstraintBuilderError(
@@ -143,18 +166,24 @@ class ConstraintBuilder:
                 constraint_index=index,
             )
 
-        faces = spec.get('faces')
-        if not isinstance(faces, list) or len(faces) != 2:
+        if ctype == 'coaxial':
+            refs = spec.get('edges')
+            ref_field, resolver = 'edges', self._edge_selector
+        else:
+            refs = spec.get('faces')
+            ref_field, resolver = 'faces', self._face_selector
+
+        if not isinstance(refs, list) or len(refs) != 2:
             raise ConstraintBuilderError(
-                f"Constraint {index} (type '{ctype}') requires a 'faces' list of exactly "
-                f"2 entries [reference, moving], got: {faces}",
+                f"Constraint {index} (type '{ctype}') requires a '{ref_field}' list of exactly "
+                f"2 entries [reference, moving], got: {refs}",
                 constraint_index=index,
             )
-        ref_part, ref_sel = self._face_selector(faces[0], index)
-        mov_part, mov_sel = self._face_selector(faces[1], index)
+        ref_part, ref_sel = resolver(refs[0], index)
+        mov_part, mov_sel = resolver(refs[1], index)
         if ref_part == mov_part:
             raise ConstraintBuilderError(
-                f"Constraint {index}: reference and moving faces both belong to part "
+                f"Constraint {index}: reference and moving {ref_field} both belong to part "
                 f"'{ref_part}' — a constraint needs two distinct parts.",
                 constraint_index=index,
             )
@@ -168,7 +197,22 @@ class ConstraintBuilder:
                 )
             distance = self._parse_distance(spec['distance'], index)
 
-        return ref_part, ref_sel, mov_part, mov_sel, distance
+        return ctype, ref_part, ref_sel, mov_part, mov_sel, distance
+
+    def _edge_selector(self, ref_spec: Any, constraint_index: int) -> Tuple[str, str]:
+        """Resolve a constraint edge reference to (part_name, cadquery_selector_string).
+        Inline {type: edge, part, selector} only — there is no auto-generated
+        edge-name vocabulary (unlike faces' FACE_SELECTOR_MAP) to resolve a
+        dotted 'part.edge_name' shorthand against."""
+        if isinstance(ref_spec, dict) and ref_spec.get('type') == 'edge' and 'part' in ref_spec and 'selector' in ref_spec:
+            return ref_spec['part'], ref_spec['selector']
+
+        raise ConstraintBuilderError(
+            f"Constraint {constraint_index}: edge reference must be an inline "
+            f"{{type: edge, part, selector}} spec (e.g. {{type: edge, part: pin, selector: '%CIRCLE and >Z'}}), "
+            f"got: {ref_spec!r}",
+            constraint_index=constraint_index,
+        )
 
     def _face_selector(self, ref_spec: Any, constraint_index: int) -> Tuple[str, str]:
         """Resolve a constraint face reference to (part_name, cadquery_selector_string)."""

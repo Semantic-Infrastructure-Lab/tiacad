@@ -1,11 +1,12 @@
 """
-Tests for ConstraintBuilder (TCAD-CON-1 MVP).
+Tests for ConstraintBuilder (TCAD-CON-1/TCAD-CON-3).
 
-Covers the 'flush' and 'offset' constraint types, both implemented by
-wrapping CadQuery's own Assembly.constrain()/.solve(). 'coaxial'/'tangent'
-are schema-recognized but intentionally not implemented yet (see
-constraint_builder.py module docstring) — covered here only to confirm they
-fail loudly rather than silently doing nothing.
+Covers 'flush'/'offset' (CadQuery 'Plane' kind) and 'coaxial' (CadQuery
+'Axis'+'Point' kinds), all implemented by wrapping CadQuery's own
+Assembly.constrain()/.solve(). 'tangent' is schema-recognized but
+intentionally not implemented yet (see constraint_builder.py module
+docstring) — covered here only to confirm it fails loudly rather than
+silently doing nothing.
 """
 
 import numpy as np
@@ -124,6 +125,79 @@ class TestOffsetConstraint:
             ])
 
 
+class TestCoaxialConstraint:
+    def test_coaxial_pin_lands_on_hole_axis(self):
+        """A pin cylinder off to the side must land centered on a plate's hole axis."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(
+            name='plate',
+            geometry=cq.Workplane('XY').box(20, 20, 5).faces('>Z').workplane().hole(6),
+            backend=backend,
+        ))
+        registry.add(Part(
+            name='pin',
+            geometry=cq.Workplane('XY').center(30, 30).cylinder(10, 3),
+            backend=backend,
+        ))
+        resolver = SpatialResolver(registry)
+
+        ConstraintBuilder(registry, resolver).apply_constraints([{
+            'type': 'coaxial',
+            'edges': [
+                {'type': 'edge', 'part': 'plate', 'selector': '%CIRCLE and >Z'},
+                {'type': 'edge', 'part': 'pin', 'selector': '%CIRCLE and >Z'},
+            ],
+        }])
+
+        pin_center = registry.get('pin').get_center()
+        assert pin_center[0] == pytest.approx(0.0, abs=1e-4)
+        assert pin_center[1] == pytest.approx(0.0, abs=1e-4)
+
+    def test_coaxial_reference_part_stays_fixed(self):
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(
+            name='plate',
+            geometry=cq.Workplane('XY').box(20, 20, 5).faces('>Z').workplane().hole(6),
+            backend=backend,
+        ))
+        registry.add(Part(
+            name='pin',
+            geometry=cq.Workplane('XY').center(30, 30).cylinder(10, 3),
+            backend=backend,
+        ))
+        resolver = SpatialResolver(registry)
+
+        ConstraintBuilder(registry, resolver).apply_constraints([{
+            'type': 'coaxial',
+            'edges': [
+                {'type': 'edge', 'part': 'plate', 'selector': '%CIRCLE and >Z'},
+                {'type': 'edge', 'part': 'pin', 'selector': '%CIRCLE and >Z'},
+            ],
+        }])
+
+        _approx(registry.get('plate').get_center(), (0.0, 0.0, 0.0))
+        assert np.allclose(registry.get('plate').current_orientation, np.eye(3))
+
+    def test_coaxial_string_face_ref_rejected(self, two_box_registry):
+        """No FACE_SELECTOR_MAP equivalent exists for edges — dotted shorthand isn't valid."""
+        registry = two_box_registry
+        resolver = SpatialResolver(registry)
+        with pytest.raises(ConstraintBuilderError, match="inline"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'coaxial', 'edges': ['base.face_top', 'top.face_bottom']}
+            ])
+
+    def test_coaxial_requires_edges_field(self, two_box_registry):
+        registry = two_box_registry
+        resolver = SpatialResolver(registry)
+        with pytest.raises(ConstraintBuilderError, match="'edges' list"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'coaxial', 'faces': ['base.face_top', 'top.face_bottom']}
+            ])
+
+
 class TestConstraintValidation:
     def test_unknown_type_raises(self, two_box_registry):
         registry = two_box_registry
@@ -133,13 +207,12 @@ class TestConstraintValidation:
                 {'type': 'glue', 'faces': ['base.face_top', 'top.face_bottom']}
             ])
 
-    @pytest.mark.parametrize("reserved_type", ["coaxial", "tangent"])
-    def test_reserved_types_raise_not_implemented(self, two_box_registry, reserved_type):
+    def test_reserved_type_raises_not_implemented(self, two_box_registry):
         registry = two_box_registry
         resolver = SpatialResolver(registry)
         with pytest.raises(ConstraintBuilderError, match="reserved for a future revision"):
             ConstraintBuilder(registry, resolver).apply_constraints([
-                {'type': reserved_type, 'faces': ['base.face_top', 'top.face_bottom']}
+                {'type': 'tangent', 'faces': ['base.face_top', 'top.face_bottom']}
             ])
 
     def test_unknown_part_raises(self, two_box_registry):
@@ -221,6 +294,29 @@ constraints:
     faces: [base.face_top, top.face_bottom]
 """)
         _approx(doc.parts.get('top').get_center(), (0.0, 0.0, 7.5))
+
+    def test_coaxial_via_yaml(self):
+        """Two cylinders (a bushing and a pin), offset in XY, made coaxial."""
+        doc = TiaCADParser.parse_string("""
+parts:
+  bushing:
+    primitive: cylinder
+    parameters: {radius: 6, height: 5}
+    origin: center
+  pin:
+    primitive: cylinder
+    parameters: {radius: 3, height: 10}
+    origin: [30, 30, 0]
+
+constraints:
+  - type: coaxial
+    edges:
+      - {type: edge, part: bushing, selector: "%CIRCLE and >Z"}
+      - {type: edge, part: pin, selector: "%CIRCLE and >Z"}
+""")
+        pin_center = doc.parts.get('pin').get_center()
+        assert pin_center[0] == pytest.approx(0.0, abs=1e-4)
+        assert pin_center[1] == pytest.approx(0.0, abs=1e-4)
 
     def test_missing_constraints_section_is_fine(self):
         doc = TiaCADParser.parse_string("""

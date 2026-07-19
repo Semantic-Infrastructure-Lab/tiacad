@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-19 (coaxial constraint, TCAD-CON-3)
+
+`constraints: type: coaxial` now implemented — mates two edges concentric
+(e.g. a pin into a hole) via CadQuery's `Axis`+`Point` constraint kinds
+together, run against a `part@edges@<selector>` pair (the same
+`Assembly._query` grammar `flush`/`offset` use for faces, extended to
+edges). Requires inline `{type: edge, part, selector}` refs — no
+auto-generated edge-name vocabulary exists yet, unlike faces'
+`FACE_SELECTOR_MAP`. `tangent` remains schema-recognized but unimplemented:
+it needs radius-aware offset math, a different problem from coaxial's
+direct constraint-kind mapping. See `tiacad_core/parser/constraint_builder.py`
+and `tt show TCAD-CON-3`.
+
 ### Added - 2026-07-19 (constraint solver MVP, TCAD-CON-1)
 
 New `constraints:` YAML section — `flush` (mate two faces coincident,

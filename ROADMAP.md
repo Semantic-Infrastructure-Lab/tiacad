@@ -146,7 +146,7 @@ phase-by-phase history).
 
 ---
 
-## Constraint Solver — MVP shipped 2026-07-19 (`TCAD-CON-1`)
+## Constraint Solver — flush/offset shipped 2026-07-19, coaxial added 2026-07-19 (`TCAD-CON-1`, `TCAD-CON-3`)
 
 **Vision:** Declarative assemblies — specify intent, not coordinates
 
@@ -157,22 +157,34 @@ constraints:
   - type: offset
     faces: [surface.face_top, mount.face_bottom]
     distance: 5mm
+  - type: coaxial
+    edges:
+      - {type: edge, part: plate, selector: "%CIRCLE and >Z"}
+      - {type: edge, part: pin, selector: "%CIRCLE and >Z"}
 ```
 
-`flush` and `offset` are implemented and shipped (`tiacad_core/parser/constraint_builder.py`),
-wrapping CadQuery's own `Assembly.constrain()`/`.solve()` (`casadi`+IPOPT) rather than a
-hand-written solver — see the 2026-07-18 scoping investigation below for why. Both compile
-to ordinary `transform` operations at build time (baked via the same `TransformTracker`
-every other transform uses), matching the original MVP framing: rigid constraint
-propagation, not a live/bidirectional solve. `coaxial` and `tangent` are recognized by the
-schema but intentionally not implemented — they need edge/axis-selector query support this
-round didn't validate; raise a clear error instead of guessing. Follow-up filed as
-`TCAD-CON-3`.
+`flush`, `offset`, and `coaxial` are implemented and shipped
+(`tiacad_core/parser/constraint_builder.py`), wrapping CadQuery's own
+`Assembly.constrain()`/`.solve()` (`casadi`+IPOPT) rather than a hand-written solver — see
+the 2026-07-18 scoping investigation below for why. All three compile to ordinary
+`transform` operations at build time (baked via the same `TransformTracker` every other
+transform uses), matching the original MVP framing: rigid constraint propagation, not a
+live/bidirectional solve. `flush`/`offset` use CadQuery's `Plane` kind on two named faces;
+`coaxial` uses `Axis`+`Point` together on two named edges (aligns direction, then pins
+centers coincident) — verified live: a 3mm pin cylinder mated coaxial to a plate's 6mm hole
+lands with its center exactly on the hole's axis. `tangent` remains recognized by the schema
+but intentionally not implemented — unlike coaxial, it needs radius-aware offset math (e.g.
+a cylinder tangent to a plane sits one radius off, not coincident with it), a different
+problem from a direct constraint-kind mapping. Follow-up filed as `TCAD-CON-3` (now scoped
+down to `tangent` only).
 
-Convention: in `faces: [reference, moving]`, the first face's part is the one CadQuery's
-solver auto-locks (its first-referenced entity); the second is repositioned. `offset`
-requires `faces:` (not the `parts:` shorthand sketched in the original vision below) —
-that shorthand left which two faces get the gap underspecified.
+Convention: in `faces: [reference, moving]` / `edges: [reference, moving]`, the first
+reference's part is the one CadQuery's solver auto-locks (its first-referenced entity); the
+second is repositioned. `offset` requires `faces:` (not the `parts:` shorthand sketched in
+the original vision below) — that shorthand left which two faces get the gap underspecified.
+`coaxial` requires inline `{type: edge, part, selector}` refs only — there's no
+auto-generated edge-name vocabulary (unlike faces' `FACE_SELECTOR_MAP`) to resolve a dotted
+`part.edge_name` shorthand against.
 
 Prerequisite fixed first: `TCAD-CON-2` (`axis_x`/`axis_y`/`axis_z` part-local references
 always pointed along **world** axes regardless of a part's actual rotation) — needed so a
@@ -181,12 +193,12 @@ constraint-driven rotation feeds correctly into any further spatial reference on
 alongside position.
 
 **What's required:**
-- ~~Constraint YAML schema (flush, coaxial, offset, tangent)~~ Done — `flush`/`offset` implemented, `coaxial`/`tangent` schema-recognized (`TCAD-CON-3`)
+- ~~Constraint YAML schema (flush, coaxial, offset, tangent)~~ Done — `flush`/`offset`/`coaxial` implemented, `tangent` schema-recognized (`TCAD-CON-3`)
 - Constraint validator (detect contradictions before solve) — not yet; CadQuery's solver currently just fails to converge on a contradiction
 - ~~Solver~~ Done — CadQuery's `Assembly.constrain()`/`.solve()`, not a hand-written one
 - Integration with ModelGraph (constraints are just edges) — not yet; constraints currently run as a standalone post-operations pass, not DAG edges
 
-**Effort:** ~~10-16 weeks~~ ~~2-4 weeks~~ MVP (flush + offset) shipped in one session, thanks to reusing CadQuery's existing solver.
+**Effort:** ~~10-16 weeks~~ ~~2-4 weeks~~ MVP (flush + offset) shipped in one session, `coaxial` added same day, thanks to reusing CadQuery's existing solver.
 
 ---
 

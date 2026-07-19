@@ -855,7 +855,7 @@
     },
     "constraints": {
       "type": "array",
-      "description": "Declarative assembly constraints, solved once at build time and compiled into transform operations on the constrained parts (see ROADMAP.md 'Constraint Solver'). 'flush' and 'offset' mate two named faces (auto-generated like 'part.face_top' or inline {type: face, part, selector}); the second face's part is moved to satisfy the constraint, the first stays fixed. 'coaxial' and 'tangent' are reserved for a future revision (not yet implemented).",
+      "description": "Declarative assembly constraints, solved once at build time and compiled into transform operations on the constrained parts (see ROADMAP.md 'Constraint Solver'). 'flush' and 'offset' mate two named faces (auto-generated like 'part.face_top' or inline {type: face, part, selector}); 'coaxial' mates two edges (inline {type: edge, part, selector} only — no auto-generated edge name vocabulary exists yet). In all cases the second (moving) reference's part is repositioned to satisfy the constraint, the first (reference) stays fixed. 'tangent' is reserved for a future revision (not yet implemented).",
       "items": {
         "type": "object",
         "properties": {
@@ -869,9 +869,9 @@
             "minItems": 2,
             "maxItems": 2
           },
-          "axes": {
+          "edges": {
             "type": "array",
-            "description": "Exactly two axis references (reserved for 'coaxial')",
+            "description": "Exactly two edge references: [reference_edge, moving_edge], for type: coaxial. Inline {type: edge, part, selector} only.",
             "minItems": 2,
             "maxItems": 2
           },
