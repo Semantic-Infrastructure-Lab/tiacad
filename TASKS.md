@@ -380,14 +380,26 @@ status: backlog
 priority: low
 tags: [validation]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-18T23:27:10Z'
+updated: '2026-07-19T00:23:45Z'
 session: electric-glaze-0717
-notes_next: 2
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T23:27:10Z session:zatuhipi-0718] Scoped (zatuhipi-0718): confirmed 5 of 9 rule files in tiacad_core/validation/rules/ use bbox/bounds heuristics -- boolean_gaps_rule.py, bounding_box_rule.py, disconnected_parts_rule.py, feature_bounds_rule.py, hole_edge_proximity_rule.py (grep-verified bbox/bounding_box/get_bounds reference counts). Concrete example: hole_edge_proximity_rule.py's _estimate_hole_radius(bbox) infers a hole's radius from its axis-aligned bounding box rather than querying the actual BREP cylindrical face -- same class of heuristic-vs-actual-geometry gap that TCAD-VAL-5 already fixed for watertight checks (switched to BREP-level checks). A real fix means rewriting each of the 5 rules to query CadQuery/BREP face-level geometry instead of estimating from bbox -- real, non-trivial rework across 5 files, not a mechanical change. Priority/low is appropriate; needs design input on how much BREP-query infrastructure to build once vs. per-rule.
+- [#2 2026-07-19T00:23:45Z session:volatile-glacier-0718] Web research validates the plan (2026-07-18, volatile-glacier-0718). Checked against installed cadquery==2.8.0 directly (python -c imports), not just docs.
+
+  API findings:
+  - Face.geomType() returns PLANE/CYLINDER/CONE/SPHERE/etc -- selecting "the cylindrical face" is public, one-line: face.geomType() == "CYLINDER" or selector string "%CYLINDER".
+  - Face has NO public .radius() in 2.8.0 (verified: dir(Face) has no 'radius'). Getting a cylindrical face's radius via Face._geomAdaptor() -> raw OCCT Geom_Surface -> downcast to Geom_CylindricalSurface -> .Radius() works but leans on a `_`-prefixed CadQuery internal -- avoid.
+  - Better public path (verified Edge.radius() exists in 2.8.0): get the face's circular boundary edges (face.edges() filtered by geomType()=="CIRCLE") and call edge.radius() on one of them. This is the pattern to use for hole_edge_proximity_rule.py's _estimate_hole_radius() replacement.
+
+  Design validation: build123d (CadQuery's OCCT-based successor) solved this exact "avoid bbox, query real geometry" problem with a composable filter layer: part.faces().filter_by(GeomType.CYLINDER).filter_by(lambda f: f.radius == r). Independent confirmation that a small shared query-helper module (not per-rule ad hoc geometry math) is the standard shape of this fix, not a TiaCAD-specific idea.
+
+  Performance: no evidence BREP face/edge queries themselves are a bottleneck in CadQuery. Known slowness is in tessellation and multi-part assembly constraint solving (github.com/CadQuery/cadquery issues #1868, #705), not topology/geometry queries -- and the 5 validation rules run per-part, not full-assembly solving, so this class of slowdown shouldn't apply. Worth one timing check against the largest example assembly once implemented, not a reason to design around preemptively.
+
+  Recommended implementation: new tiacad_core/validation/brep_queries.py (or similar) with 2-3 helpers -- cylindrical_faces(solid), face_radius(face) implemented via boundary-edge .radius() not the private adaptor route -- shared across the 5 rule files (boolean_gaps_rule.py, bounding_box_rule.py, disconnected_parts_rule.py, feature_bounds_rule.py, hole_edge_proximity_rule.py). Still needs Scott's go-ahead to start, but the technical unknowns from note #1 (how much infra to build once vs per-rule, and whether the CadQuery API even supports this cleanly) are now resolved -- build the shared module.
 
 
 ## TASK-TCAD-ARCH-8 · parameter_resolver.py high coupling — 3rd-highest fan-in in repo; _check_cycles() mixes DFS+regex+error formatting (complexity 10, depth 6)
