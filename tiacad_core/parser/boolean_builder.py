@@ -15,7 +15,7 @@ Version: 0.1.0-alpha (Phase 2)
 
 import logging
 import re
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Optional
 import cadquery as cq
 
 from ..geometry import CadQueryBackend
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class BooleanBuilderError(TiaCADError):
     """Error during boolean operations"""
-    def __init__(self, message: str, operation_name: str = None):
+    def __init__(self, message: str, operation_name: Optional[str] = None):
         super().__init__(message)
         self.operation_name = operation_name
 

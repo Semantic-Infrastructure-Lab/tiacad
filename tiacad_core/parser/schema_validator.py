@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class SchemaValidationError(Exception):
     """Raised when schema validation fails"""
-    def __init__(self, message: str, errors: List[str] = None):
+    def __init__(self, message: str, errors: Optional[List[str]] = None):
         super().__init__(message)
         self.errors = errors or []
 

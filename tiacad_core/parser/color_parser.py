@@ -25,7 +25,7 @@ from .color_utils import hsl_to_rgb, rgb_to_hex, clamp
 class ColorParseError(Exception):
     """Error parsing color value"""
 
-    def __init__(self, message: str, value: Any = None, suggestions: Optional[List[str]] = None):
+    def __init__(self, message: str, value: Optional[Any] = None, suggestions: Optional[List[str]] = None):
         self.value = value
         self.suggestions = suggestions or []
         super().__init__(message)

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class TextBuilderError(Exception):
     """Error during text operation building or execution"""
 
-    def __init__(self, message: str, operation_name: str = None,
+    def __init__(self, message: str, operation_name: Optional[str] = None,
                  line: Optional[int] = None, column: Optional[int] = None):
         super().__init__(message)
         self.operation_name = operation_name
@@ -80,56 +80,52 @@ class TextBuilder:
             return (line, col)
         return (None, None)
 
+    def _err(self, name: str, field: str, msg: str):
+        line, col = self._get_line_info(['operations', name, field])
+        raise TextBuilderError(msg, operation_name=name, line=line, column=col)
+
     def _validate_required_params(self, name: str, spec: Dict[str, Any]):
         """Validate required text op fields. Returns (input_name, input_part, text_content, face_selector, position, size, depth)."""
-        def _err(field, msg):
-            line, col = self._get_line_info(['operations', name, field])
-            raise TextBuilderError(msg, operation_name=name, line=line, column=col)
-
         input_name = spec.get('input')
         if not input_name:
-            _err('input', f"Text operation '{name}' missing required 'input' field")
+            self._err(name, 'input', f"Text operation '{name}' missing required 'input' field")
         if not self.registry.exists(input_name):
             available = ', '.join(self.registry.list_parts())
-            _err('input', f"Text operation '{name}' input part '{input_name}' not found. Available parts: {available}")
+            self._err(name, 'input', f"Text operation '{name}' input part '{input_name}' not found. Available parts: {available}")
         input_part = self.registry.get(input_name)
 
         text_content = spec.get('text')
         if not text_content:
-            _err('text', f"Text operation '{name}' missing required 'text' field")
+            self._err(name, 'text', f"Text operation '{name}' missing required 'text' field")
         if not isinstance(text_content, str):
-            _err('text', f"Text operation '{name}' text must be a string, got: {type(text_content).__name__}")
+            self._err(name, 'text', f"Text operation '{name}' text must be a string, got: {type(text_content).__name__}")
 
         face_selector = spec.get('face')
         if not face_selector:
-            _err('face', f"Text operation '{name}' missing required 'face' field. Use face selector like '>Z', '<X', '|Y', etc.")
+            self._err(name, 'face', f"Text operation '{name}' missing required 'face' field. Use face selector like '>Z', '<X', '|Y', etc.")
 
         position = spec.get('position')
         if not position:
-            _err('position', f"Text operation '{name}' missing required 'position' field. Specify as [x, y] coordinates on the face.")
+            self._err(name, 'position', f"Text operation '{name}' missing required 'position' field. Specify as [x, y] coordinates on the face.")
         if not isinstance(position, list) or len(position) != 2:
-            _err('position', f"Text operation '{name}' position must be [x, y], got: {position}")
+            self._err(name, 'position', f"Text operation '{name}' position must be [x, y], got: {position}")
 
         size = spec.get('size')
         if size is None:
-            _err('size', f"Text operation '{name}' missing required 'size' field (font size in mm)")
+            self._err(name, 'size', f"Text operation '{name}' missing required 'size' field (font size in mm)")
         if not isinstance(size, (int, float)) or size <= 0:
-            _err('size', f"Text operation '{name}' size must be a positive number, got: {size}")
+            self._err(name, 'size', f"Text operation '{name}' size must be a positive number, got: {size}")
 
         depth = spec.get('depth')
         if depth is None:
-            _err('depth', f"Text operation '{name}' missing required 'depth' field (positive=emboss, negative=engrave)")
+            self._err(name, 'depth', f"Text operation '{name}' missing required 'depth' field (positive=emboss, negative=engrave)")
         if not isinstance(depth, (int, float)) or depth == 0:
-            _err('depth', f"Text operation '{name}' depth must be non-zero number (positive=emboss, negative=engrave), got: {depth}")
+            self._err(name, 'depth', f"Text operation '{name}' depth must be non-zero number (positive=emboss, negative=engrave), got: {depth}")
 
         return input_name, input_part, text_content, face_selector, position, size, depth
 
     def _validate_style_params(self, name: str, spec: Dict[str, Any]):
         """Extract and validate optional style/alignment params. Returns (font, style, halign, valign, font_path, spacing)."""
-        def _err(field, msg):
-            line, col = self._get_line_info(['operations', name, field])
-            raise TextBuilderError(msg, operation_name=name, line=line, column=col)
-
         font = spec.get('font', 'Liberation Sans')
         style = spec.get('style', 'regular')
         halign = spec.get('halign', 'left')
@@ -139,15 +135,15 @@ class TextBuilder:
 
         valid_styles = ['regular', 'bold', 'italic', 'bold-italic']
         if style not in valid_styles:
-            _err('style', f"Text operation '{name}' invalid style '{style}'. Valid styles: {', '.join(valid_styles)}")
+            self._err(name, 'style', f"Text operation '{name}' invalid style '{style}'. Valid styles: {', '.join(valid_styles)}")
 
         valid_halign = ['left', 'center', 'right']
         if halign not in valid_halign:
-            _err('halign', f"Text operation '{name}' invalid halign '{halign}'. Valid values: {', '.join(valid_halign)}")
+            self._err(name, 'halign', f"Text operation '{name}' invalid halign '{halign}'. Valid values: {', '.join(valid_halign)}")
 
         valid_valign = ['top', 'center', 'baseline', 'bottom']
         if valign not in valid_valign:
-            _err('valign', f"Text operation '{name}' invalid valign '{valign}'. Valid values: {', '.join(valid_valign)}")
+            self._err(name, 'valign', f"Text operation '{name}' invalid valign '{valign}'. Valid values: {', '.join(valid_valign)}")
 
         return font, style, halign, valign, font_path, spacing
 

@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 class OperationsBuilderError(TiaCADError):
     """Error during operations building or execution"""
-    def __init__(self, message: str, operation_name: str = None):
+    def __init__(self, message: str, operation_name: Optional[str] = None):
         super().__init__(message)
         self.operation_name = operation_name
 
@@ -83,8 +83,8 @@ class OperationsBuilder:
     def __init__(self,
                  part_registry: PartRegistry,
                  parameter_resolver: ParameterResolver,
-                 sketches: Dict[str, Any] = None,
-                 spatial_resolver: SpatialResolver = None,
+                 sketches: Optional[Dict[str, Any]] = None,
+                 spatial_resolver: Optional[SpatialResolver] = None,
                  backend: Optional["GeometryBackend"] = None):
         """
         Initialize operations builder.

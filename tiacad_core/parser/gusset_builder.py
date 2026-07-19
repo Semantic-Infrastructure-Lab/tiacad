@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class GussetBuilderError(TiaCADError):
     """Error during gusset operations"""
-    def __init__(self, message: str, operation_name: str = None):
+    def __init__(self, message: str, operation_name: Optional[str] = None):
         super().__init__(message)
         self.operation_name = operation_name
 

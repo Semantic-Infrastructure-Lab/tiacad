@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class SweepBuilderError(TiaCADError):
     """Error during sweep operation"""
-    def __init__(self, message: str, operation_name: str = None, **kwargs):
+    def __init__(self, message: str, operation_name: Optional[str] = None, **kwargs):
         super().__init__(message, **kwargs)
         self.operation_name = operation_name
 

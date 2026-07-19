@@ -29,7 +29,7 @@ _AXIS_VECTORS = {'X': (1, 0, 0), 'Y': (0, 1, 0), 'Z': (0, 0, 1)}
 
 class RevolveBuilderError(TiaCADError):
     """Error during revolve operation"""
-    def __init__(self, message: str, operation_name: str = None, **kwargs):
+    def __init__(self, message: str, operation_name: Optional[str] = None, **kwargs):
         super().__init__(message, **kwargs)
         self.operation_name = operation_name
 

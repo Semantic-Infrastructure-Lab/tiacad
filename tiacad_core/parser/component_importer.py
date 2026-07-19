@@ -62,7 +62,7 @@ if TYPE_CHECKING:
 
 class ComponentImportError(TiaCADError):
     """Error during component import"""
-    def __init__(self, message: str, path: str = None):
+    def __init__(self, message: str, path: Optional[str] = None):
         super().__init__(message)
         self.path = path
 

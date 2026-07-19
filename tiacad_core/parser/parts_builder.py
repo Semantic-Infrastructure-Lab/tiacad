@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class PartsBuilderError(TiaCADError):
     """Error during parts building"""
-    def __init__(self, message: str, part_name: str = None):
+    def __init__(self, message: str, part_name: Optional[str] = None):
         super().__init__(message)
         self.part_name = part_name
 

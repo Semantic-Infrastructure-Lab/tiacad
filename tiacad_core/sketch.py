@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class SketchError(TiaCADError):
     """Error during sketch creation or manipulation"""
-    def __init__(self, message: str, sketch_name: str = None, **kwargs):
+    def __init__(self, message: str, sketch_name: Optional[str] = None, **kwargs):
         super().__init__(message, **kwargs)
         self.sketch_name = sketch_name
 

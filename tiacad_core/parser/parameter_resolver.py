@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 class ParameterResolutionError(TiaCADError):
     """Error during parameter resolution"""
-    def __init__(self, message: str, parameter: str = None, expression: str = None, is_circular: bool = False):
+    def __init__(self, message: str, parameter: Optional[str] = None,
+                 expression: Optional[str] = None, is_circular: bool = False):
         super().__init__(message)
         self.parameter = parameter
         self.expression = expression
@@ -253,8 +254,9 @@ class ParameterResolver:
 
         # Check parameter exists
         if name not in self.raw_parameters:
+            available = list(self.raw_parameters.keys())
             raise ParameterResolutionError(
-                f"Parameter '{name}' not found. Available parameters: {list(self.raw_parameters.keys())}",
+                f"Parameter '{name}' not found. Available parameters: {available}",
                 parameter=name
             )
 
