@@ -376,16 +376,18 @@ notes_next: 2
 ## TASK-TCAD-ARCH-7 · Validation heuristic vs semantic — 5 of 9 assembly validation rule files still lean on bbox/bounds heuristics
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [validation]
 created: '2026-07-18T02:33:07Z'
-updated: '2026-07-19T00:57:00Z'
+updated: '2026-07-19T01:27:23Z'
 session: electric-glaze-0717
 links:
   references:
   - tiacad_core/validation/rules/hole_edge_proximity_rule.py
-notes_next: 4
+  commits:
+  - f96112ae839376ac61269ed6c36fe3939241b978
+notes_next: 5
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
@@ -404,6 +406,7 @@ notes_next: 4
 
   Recommended implementation: new tiacad_core/validation/brep_queries.py (or similar) with 2-3 helpers -- cylindrical_faces(solid), face_radius(face) implemented via boundary-edge .radius() not the private adaptor route -- shared across the 5 rule files (boolean_gaps_rule.py, bounding_box_rule.py, disconnected_parts_rule.py, feature_bounds_rule.py, hole_edge_proximity_rule.py). Still needs Scott's go-ahead to start, but the technical unknowns from note #1 (how much infra to build once vs per-rule, and whether the CadQuery API even supports this cleanly) are now resolved -- build the shared module.
 - [#3 2026-07-19T00:57:00Z session:breezy-glacier-0718] Session breezy-glacier-0718: implemented the hole-radius fix only (1 of 5 files), scoped down after review -- the other 4 flagged files (boolean_gaps_rule, feature_bounds_rule, disconnected_parts_rule, bounding_box_rule) use bbox for legitimately bbox-shaped part-to-part spatial questions (gap distance, overlap, adjacency, overall size), not radius estimation. Converting those to real solid-solid BREP intersection would be a separate, much bigger, unresearched rework -- not the same class of fix as this one. Shipped: GeometryBackend.get_cylindrical_radius() (CadQueryBackend + MockBackend), used by hole_edge_proximity_rule.HoleEdgeProximityRule._get_hole_radius() with bbox fallback. Commit edf9453, NOT pushed. 7 new tests added (test_geometry_backends.py, test_assembly_validator.py), full 1984-test suite passes.
+- [#4 2026-07-19T01:27:22Z session:breezy-glacier-0718] Session breezy-glacier-0718 (part 2, 'adult it'): completed the remaining 3 files -- boolean_gaps_rule, disconnected_parts_rule, feature_bounds_rule -- all genuinely had the same heuristic-vs-real gap as the hole-radius fix. bounding_box_rule (4th) confirmed correct as-is: pure size-sanity check, not a heuristic standing in for something more precise, left untouched. Added GeometryBackend.get_distance()/get_overflow_volume() (real via CadQuery Shape.distance()/.cut(), approximated in MockBackend). Caught and fixed a real correctness gap during implementation: bbox proximity/containment is a sound lower bound but not complete for non-convex parts (an L-shaped part's bbox includes its own empty notch) -- verified with concrete L-shape+notch fixtures that the naive 'only check real geometry when bbox already flags something' design would have silently missed connectivity/overflow errors in that notch. Also caught and fixed a 3x full-suite slowdown (210s->669s) from an unconditional real-query version; final version uses bbox as a sound fast-reject filter (skip real query when bbox already proves the answer) and lands at 196s, faster than pre-session baseline. Commit f96112a (stacked on edf9453 from part 1), NOT pushed. All 5 rule files from the original scope are now resolved -- closing this ticket.
 
 
 ## TASK-TCAD-ARCH-8 · parameter_resolver.py high coupling — 3rd-highest fan-in in repo; _check_cycles() mixes DFS+regex+error formatting (complexity 10, depth 6)
