@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added/Fixed - 2026-07-19 (constraint contradiction detection + watch-mode bug, TCAD-CON-4/TCAD-CON-6)
+
+`ConstraintBuilder._check_plane_conflicts` now catches, before calling CadQuery's
+`.solve()`, the same moving face mated `flush`/`offset` against two reference planes
+that don't actually coincide — a class CadQuery's own solver was known to handle
+ambiguously (an "overlapping planar constraints" rough edge flagged during
+`TCAD-CON-1`'s scoping). Raises a precise error naming both conflicting constraint
+indices instead of an opaque IPOPT non-convergence. Scoped to `flush`/`offset` (both
+compile to the same `Plane` constraint kind); `coaxial` is a separate question.
+
+Separately, found and fixed a real correctness bug while scoping `TCAD-CON-5`
+(ModelGraph/DAG integration): `tiacad watch` silently dropped `constraints:`
+entirely — `IncrementalBuilder.build()` only knows `parts:`/`operations:`, and
+`watcher.py` never called `ConstraintBuilder`. A model with a `constraints:` block
+built correctly via the normal parse pipeline but exported every constrained part at
+its raw, unconstrained position under `tiacad watch`, with no error. Fixed by
+re-solving all constraints as an explicit step after every watched rebuild — not
+yet incremental (that's the real remaining scope of `TCAD-CON-5`), but correct.
+See `tiacad_core/parser/constraint_builder.py`, `tiacad_core/watcher.py`,
+KNOWN_LIMITATIONS.md #1, `tt show TCAD-CON-4`/`TCAD-CON-6`.
+
 ### Added - 2026-07-18 (annotated trust renders, TCAD-UX-5)
 
 `render_trust(doc, ..., issues=...)` now draws a crosshair marker at each
