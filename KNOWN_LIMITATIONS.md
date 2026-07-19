@@ -18,7 +18,7 @@ Before limitations, here's what works great:
 - Proper rotation math (Rodrigues formula, explicit origins)
 
 ✅ **Complete Primitives & Operations:**
-- All primitives (box, cylinder, sphere, cone, polygon)
+- All primitives (box, cylinder, sphere, cone, polygon, torus, text)
 - Boolean ops (union, difference, intersection)
 - Patterns (linear, polar, grid)
 - Finishing (fillet, chamfer)
