@@ -562,15 +562,19 @@ notes_next: 2
 ## TASK-TCAD-1 · Implement tangent constraint (radius-aware offset)
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [feature, constraints]
 created: '2026-07-19T02:56:31Z'
-updated: '2026-07-19T02:56:31Z'
+updated: '2026-07-19T04:18:43Z'
 session: maritime-blizzard-0718
 parent: TCAD-CON-3
+links:
+  commits:
+  - a1cee056bbe2d26f9c052b51750b94a6eca67ca8
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T04:18:43Z session:molten-ultimatum-0718] Implemented via direct radius measurement (no CadQuery solve) rather than PointInPlane solve — see constraint_builder.py module docstring
