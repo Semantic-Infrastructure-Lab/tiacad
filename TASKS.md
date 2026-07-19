@@ -5,11 +5,11 @@ id_prefix: TCAD
 next_id: 4
 archival: inline
 areas:
-  VAL: 9
+  VAL: 13
   UX: 7
   API: 2
   ARCH: 10
-  CON: 7
+  CON: 10
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -711,3 +711,115 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-19T19:21:27Z session:umber-gem-0719] Added T4_constraint_flush.tiacad (ROADMAP.md worked example) + golden hash
+
+
+## TASK-TCAD-CON-7 · tiacad-schema.json: tangent constraint schema is stale/incomplete — still says 'reserved for a future revision, not yet implemented' despite shipping, and doesn't declare tangent's actual face/edge fields (schema silently accepts malformed tangent specs)
+
+```yaml
+status: backlog
+priority: high
+tags: [schema, constraints]
+created: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-CON-8 · Dead 'reserved for future revision' error branch in ConstraintBuilder._parse_constraint — RESERVED_CONSTRAINT_TYPES is now empty (tangent shipped) but branch still exists, printing empty list on unknown-type errors
+
+```yaml
+status: backlog
+priority: low
+tags: [cleanup, constraints]
+created: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-CON-9 · No angular/parallel/perpendicular/symmetric constraint family, and not even scoped as reserved — RESERVED_CONSTRAINT_TYPES is empty so requesting type: parallel errors as unknown rather than planned
+
+```yaml
+status: backlog
+priority: low
+tags: [constraints, scoping]
+created: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-9 · CLI command entrypoints mostly untested — cmd_build (primary user path: parse->export->stats), cmd_watch, cmd_info, cmd_check, cmd_validate/cmd_validate_geometry have no direct tests
+
+```yaml
+status: backlog
+priority: high
+tags: [testing, cli]
+created: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-10 · Confidence-ladder validation corpus covers only flush constraint — no oracle-backed Tier example for offset/coaxial/tangent; tangent is highest-risk since it bypasses CadQuery's solver with hand-rolled geometry
+
+```yaml
+status: backlog
+priority: high
+tags: [testing, constraints]
+created: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-11 · No integration test for constraints -> DAG incremental build -> export in the normal (non-watch) cmd_build pipeline — only watch mode is covered, and build/watch use separately-patched code paths (root cause of a prior watch-mode constraint bug)
+
+```yaml
+status: backlog
+priority: high
+tags: [testing, constraints, dag]
+created: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-12 · Tier-5 negative-input corpus has no malformed/contradictory constraint case, despite TCAD-CON-4's contradiction detector being unit-tested only in isolation
+
+```yaml
+status: backlog
+priority: medium
+tags: [testing, constraints]
+created: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T20:39:51Z'
+session: astral-sun-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
