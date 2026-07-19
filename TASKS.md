@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 1
+next_id: 2
 archival: inline
 areas:
   VAL: 8
@@ -541,13 +541,34 @@ notes_next: 3
 ## TASK-TCAD-CON-3 · Implement coaxial/tangent constraints
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [feature, constraints]
 created: '2026-07-19T02:28:15Z'
-updated: '2026-07-19T02:28:22Z'
+updated: '2026-07-19T02:56:31Z'
 session: polar-drought-0718
 depends_on: [TCAD-CON-1]
+links:
+  commits:
+  - 2f805db3ba61edf1e70b1b41c5defde4dd205d55
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-07-19T02:56:31Z session:maritime-blizzard-0718] Implemented coaxial (Axis+Point on edges via part@edges@selector, validated empirically that CadQuery's Assembly._query grammar already supports edges). tangent split out as follow-up — needs radius-aware offset math.
+
+
+## TASK-TCAD-1 · Implement tangent constraint (radius-aware offset)
+
+```yaml
+status: backlog
+priority: low
+tags: [feature, constraints]
+created: '2026-07-19T02:56:31Z'
+updated: '2026-07-19T02:56:31Z'
+session: maritime-blizzard-0718
+parent: TCAD-CON-3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
