@@ -25,6 +25,7 @@ from tiacad_core.validation.rules.hole_edge_proximity_rule import HoleEdgeProxim
 from tiacad_core.validation.rules.boolean_gaps_rule import BooleanGapsRule
 from tiacad_core.validation.rules.disconnected_parts_rule import DisconnectedPartsRule
 from tiacad_core.validation.rules.feature_bounds_rule import FeatureBoundsRule
+from tiacad_core.validation.rules.missing_position_rule import MissingPositionRule
 
 
 class TestValidationIssue:
@@ -549,6 +550,39 @@ class TestBrepGeometryValidation:
         assert issues[0].world_position == expected
         # Sanity: midpoint should sit between the two part centers on X.
         assert 0 < issues[0].world_position[0] < 20
+
+    def test_bounding_box_issue_has_world_position(self, backend):
+        """
+        TCAD-2 follow-on: BoundingBoxRule issues should report world_position
+        at the flagged part's own center, so a trust render can point
+        directly at the degenerate/oversized part.
+        """
+        sliver = backend.create_box(10, 10, 0.0001)
+        part = Part("sliver", sliver, backend=backend)
+
+        rule = BoundingBoxRule()
+        issues = rule._check_part_bbox("sliver", part)
+
+        assert len(issues) == 1
+        assert issues[0].world_position is not None
+        assert issues[0].world_position == rule._part_center(part)
+
+    def test_missing_position_issue_has_world_position(self):
+        """
+        TCAD-2 follow-on: MissingPositionRule issues should report
+        world_position at the orphaned part's own (unpositioned) center,
+        so a trust render can point at where it sits by default.
+        """
+        doc = TiaCADParser.parse_file('examples/guitar_hanger_with_holes.yaml')
+
+        rule = MissingPositionRule()
+        issues = rule.check(doc)
+
+        beam_issues = [i for i in issues if i.part_name == 'beam']
+        assert len(beam_issues) == 1
+        assert beam_issues[0].world_position is not None
+        expected = rule._part_center(doc.parts.get('beam'))
+        assert beam_issues[0].world_position == expected
 
 
 if __name__ == "__main__":

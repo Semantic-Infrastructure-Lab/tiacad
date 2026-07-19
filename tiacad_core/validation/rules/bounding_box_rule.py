@@ -28,7 +28,8 @@ class BoundingBoxRule(ValidationRule):
                     category=self.category,
                     part_name=part_name,
                     message=f"Part has near-zero dimension: [{dims[0]:.4f}, {dims[1]:.4f}, {dims[2]:.4f}]",
-                    suggestion="Check part definition - may be degenerate geometry"
+                    suggestion="Check part definition - may be degenerate geometry",
+                    world_position=self._part_center(part)
                 ))
             if any(d > self.constants.LARGE_DIMENSION for d in dims):
                 issues.append(ValidationIssue(
@@ -36,7 +37,8 @@ class BoundingBoxRule(ValidationRule):
                     category=self.category,
                     part_name=part_name,
                     message=f"Large part detected: max dimension = {max(dims):.1f}mm",
-                    suggestion="Verify dimensions are in millimeters"
+                    suggestion="Verify dimensions are in millimeters",
+                    world_position=self._part_center(part)
                 ))
             return issues
         except Exception as e:

@@ -264,25 +264,37 @@ These are the highest-value improvements to the current validation model:
    the right spot in all 8 views (isometric, ortho, X-ray) even though they're rendered
    from different angles. `create_debug_bundle` wires this in automatically: every
    `final_trust.png` now has the current `AssemblyValidator` findings drawn on it, no
-   extra step required. Five of nine rules populate `world_position`:
+   extra step required. Seven of nine rules populate `world_position`:
    `HoleEdgeProximityRule` (the hole's bbox center), `BooleanEffectRule` (the boolean
    result part's bbox center — difference/intersection/union all point at the
    part the volume check flagged), `DisconnectedPartsRule` (the centroid of the
    smallest disconnected group — the likely "orphan" a modeler needs to look at,
    not the main body), `FeatureBoundsRule` (the overflowing feature/subtract part's
-   bbox center, not the base it overflows), and `BooleanGapsRule` (the midpoint
+   bbox center, not the base it overflows), `BooleanGapsRule` (the midpoint
    between the two ungapped parts' centers, since the gap sits between them rather
-   than inside either one). A shared `ValidationRule._bbox_center`/`_part_center`
-   helper (`tiacad_core/validation/validation_rule.py`) makes adding another rule a
-   small diff. The remaining rules (`ParameterSanityRule`, `MissingPositionRule`,
-   `UnusedPartsRule`, `BoundingBoxRule`) don't yet compute a 3D failure point, so
-   their issues still show up in the text report but not as a marker — tracked as
-   `TCAD-2` rather than a recurring README note. See
-   `tiacad_core/tests/test_visualization/test_trust_renderer.py`,
+   than inside either one), `MissingPositionRule` (the orphaned part's own — unmoved,
+   origin — center), and `BoundingBoxRule` (the flagged part's own bbox center). A
+   shared `ValidationRule._bbox_center`/`_part_center` helper
+   (`tiacad_core/validation/validation_rule.py`) makes adding another rule a small
+   diff. See `tiacad_core/tests/test_visualization/test_trust_renderer.py`,
    `tiacad_core/tests/test_validation/test_boolean_effect_rule.py`,
    `tiacad_core/tests/test_validation/test_disconnected_parts_rule.py`, and
    `tiacad_core/tests/test_validation/test_assembly_validator.py`
    (`TestBrepGeometryValidation`).
+
+   The final two rules deliberately do **not** get `world_position` — an
+   architectural mismatch, not an oversight:
+   - **`ParameterSanityRule`** validates raw document-level `parameters:` (e.g. a
+     negative `width`) *before* any part/geometry resolution happens. There's no
+     reliable way to trace which part(s) consume a given named parameter without a
+     parameter-usage-tracing feature that doesn't exist yet — real new scope, not a
+     small annotation diff.
+   - **`UnusedPartsRule`** isn't actually a `world_position` gap — its `check()` has
+     been a stub since the initial commit (`f05baf7`): it only checks whether an
+     `export:` section exists at all, never implementing real per-part unused-part
+     detection despite its name. Tracked as `TCAD-VAL-8` (fix the rule's actual
+     logic); once it produces real per-part issues, `world_position` is a small
+     follow-on using the same `_part_center` helper.
 7. ~~**Negative trust scenarios**~~ **Shipped 2026-07-18:**
    `examples/validation/negative_trust/` holds intentionally-bad models that
    build successfully (unlike the Tier-5 parse/build negative corpus in

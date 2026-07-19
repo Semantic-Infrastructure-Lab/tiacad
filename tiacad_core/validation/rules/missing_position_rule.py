@@ -50,8 +50,9 @@ class MissingPositionRule(ValidationRule):
         unpositioned = self._filter_out_operations(document, unpositioned)
 
         # Create issues for each unpositioned part
+        parts_dict = self._get_parts_dict(document)
         for part_name in unpositioned:
-            issues.append(self._create_missing_position_issue(part_name))
+            issues.append(self._create_missing_position_issue(part_name, parts_dict.get(part_name)))
 
         return issues
 
@@ -107,12 +108,13 @@ class MissingPositionRule(ValidationRule):
             return parts - operation_names
         return parts
 
-    def _create_missing_position_issue(self, part_name: str) -> ValidationIssue:
+    def _create_missing_position_issue(self, part_name: str, part=None) -> ValidationIssue:
         """Create ValidationIssue for missing position."""
         return ValidationIssue(
             severity=Severity.WARNING,
             category=self.category,
             part_name=part_name,
             message=f"Part '{part_name}' defined but never positioned or exported",
-            suggestion="Add transform operation, export part, or remove if unused"
+            suggestion="Add transform operation, export part, or remove if unused",
+            world_position=self._part_center(part) if part is not None else None
         )
