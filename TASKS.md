@@ -673,14 +673,18 @@ notes_next: 2
 ## TASK-TCAD-CON-6 · tiacad watch silently dropped constraints: entirely (IncrementalBuilder has no constraints_spec, watcher.py never called ConstraintBuilder)
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [constraints, watch, bug]
 created: '2026-07-19T09:11:38Z'
-updated: '2026-07-19T09:11:38Z'
+updated: '2026-07-19T09:11:49Z'
 session: garnet-gem-0719
+links:
+  commits:
+  - 10b8c2cdd0e4a97bf148b7f616822c2bc0533e10
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T09:11:49Z session:garnet-gem-0719] Fixed: constraints now re-solved every watched rebuild; see KNOWN_LIMITATIONS.md #1 and ROADMAP.md
