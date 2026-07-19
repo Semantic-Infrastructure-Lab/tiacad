@@ -492,6 +492,64 @@ class TestBrepGeometryValidation:
         assert rule._really_overflows(base_part, subtract_part, ["X-max by 3.00mm"]) is True
         assert rule._really_overflows(base_part, subtract_part, []) is False
 
+    def test_feature_bounds_issue_has_world_position(self, backend):
+        """
+        TCAD-UX-5 follow-on: FeatureBoundsRule issues should report
+        world_position at the offending feature (subtract part), not the
+        base, so a trust render can point directly at what overflowed.
+        """
+        base = backend.create_box(10, 10, 10)
+        poking_hole = backend.translate(backend.create_box(4, 4, 4), (9, 0, 0))
+
+        base_part = Part("base", base, backend=backend)
+        subtract_part = Part("hole", poking_hole, backend=backend)
+        parts_dict = {"base": base_part, "hole": subtract_part}
+
+        operation = {
+            "type": "boolean",
+            "operation": "difference",
+            "base": "base",
+            "subtract": ["hole"],
+        }
+
+        rule = FeatureBoundsRule()
+        issues = rule._check_difference_op(operation, parts_dict)
+
+        assert len(issues) == 1
+        assert issues[0].world_position is not None
+        expected = rule._part_center(subtract_part)
+        assert issues[0].world_position == expected
+
+    def test_boolean_gaps_issue_has_world_position_at_midpoint(self, backend):
+        """
+        TCAD-UX-5 follow-on: BooleanGapsRule issues should report
+        world_position as the midpoint between the two parts, since the
+        gap itself sits between them rather than inside either part.
+        """
+        base = backend.create_box(10, 10, 10)
+        add = backend.translate(backend.create_box(10, 10, 10), (15, 0, 0))
+
+        base_part = Part("base", base, backend=backend)
+        add_part = Part("add", add, backend=backend)
+        parts_dict = {"base": base_part, "add": add_part}
+
+        operation = {
+            "type": "boolean",
+            "operation": "union",
+            "base": "base",
+            "add": ["add"],
+        }
+
+        rule = BooleanGapsRule()
+        issues = rule._check_union_gap("union1", operation, parts_dict)
+
+        assert len(issues) == 1
+        assert issues[0].world_position is not None
+        expected = rule._gap_midpoint(base_part, add_part)
+        assert issues[0].world_position == expected
+        # Sanity: midpoint should sit between the two part centers on X.
+        assert 0 < issues[0].world_position[0] < 20
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

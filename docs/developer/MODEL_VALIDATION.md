@@ -257,27 +257,32 @@ These are the highest-value improvements to the current validation model:
    between named references such as `plate.face_top` and `shaft.axis_z`.
 5. **Stepwise summaries:** attach before/after summaries to operations in
    `build_trace.json` so regressions are easier to localize.
-6. ~~**Annotated trust renders**~~ **Shipped 2026-07-18, coverage extended 2026-07-18:**
+6. ~~**Annotated trust renders**~~ **Shipped 2026-07-18, coverage extended 2026-07-18 (twice):**
    `render_trust(doc, ..., issues=...)` (`tiacad_core/visual/trust_renderer.py`)
    projects each issue's `ValidationIssue.world_position` through every panel's own
    camera and draws a crosshair marker at the resulting pixel — so a marker lands in
    the right spot in all 8 views (isometric, ortho, X-ray) even though they're rendered
    from different angles. `create_debug_bundle` wires this in automatically: every
    `final_trust.png` now has the current `AssemblyValidator` findings drawn on it, no
-   extra step required. Three of nine rules populate `world_position`:
+   extra step required. Five of nine rules populate `world_position`:
    `HoleEdgeProximityRule` (the hole's bbox center), `BooleanEffectRule` (the boolean
    result part's bbox center — difference/intersection/union all point at the
-   part the volume check flagged), and `DisconnectedPartsRule` (the centroid of the
+   part the volume check flagged), `DisconnectedPartsRule` (the centroid of the
    smallest disconnected group — the likely "orphan" a modeler needs to look at,
-   not the main body). A shared `ValidationRule._bbox_center`/`_part_center` helper
-   (`tiacad_core/validation/validation_rule.py`) makes adding a fourth rule a small
-   diff. The remaining rules (`FeatureBoundsRule`, `ParameterSanityRule`,
-   `MissingPositionRule`, `BooleanGapsRule`, `UnusedPartsRule`, `BoundingBoxRule`)
-   don't yet compute a 3D failure point, so their issues still show up in the text
-   report but not as a marker — a natural follow-on, not scoped here. See
+   not the main body), `FeatureBoundsRule` (the overflowing feature/subtract part's
+   bbox center, not the base it overflows), and `BooleanGapsRule` (the midpoint
+   between the two ungapped parts' centers, since the gap sits between them rather
+   than inside either one). A shared `ValidationRule._bbox_center`/`_part_center`
+   helper (`tiacad_core/validation/validation_rule.py`) makes adding another rule a
+   small diff. The remaining rules (`ParameterSanityRule`, `MissingPositionRule`,
+   `UnusedPartsRule`, `BoundingBoxRule`) don't yet compute a 3D failure point, so
+   their issues still show up in the text report but not as a marker — tracked as
+   `TCAD-2` rather than a recurring README note. See
    `tiacad_core/tests/test_visualization/test_trust_renderer.py`,
-   `tiacad_core/tests/test_validation/test_boolean_effect_rule.py`, and
-   `tiacad_core/tests/test_validation/test_disconnected_parts_rule.py`.
+   `tiacad_core/tests/test_validation/test_boolean_effect_rule.py`,
+   `tiacad_core/tests/test_validation/test_disconnected_parts_rule.py`, and
+   `tiacad_core/tests/test_validation/test_assembly_validator.py`
+   (`TestBrepGeometryValidation`).
 7. ~~**Negative trust scenarios**~~ **Shipped 2026-07-18:**
    `examples/validation/negative_trust/` holds intentionally-bad models that
    build successfully (unlike the Tier-5 parse/build negative corpus in

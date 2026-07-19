@@ -56,7 +56,8 @@ class FeatureBoundsRule(ValidationRule):
                     part_name=subtract_name,
                     message=f"Feature '{subtract_name}' extends beyond parent '{base_name}'"
                             f"{': ' + ', '.join(overflows) if overflows else ''}",
-                    suggestion="This is often intentional for through-holes, but verify if unexpected"
+                    suggestion="This is often intentional for through-holes, but verify if unexpected",
+                    world_position=self._part_center(subtract_part)
                 ))
         return issues
 

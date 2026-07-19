@@ -40,7 +40,8 @@ class BooleanGapsRule(ValidationRule):
                     severity=Severity.WARNING,
                     category=self.category,
                     message=f"Union '{op_name}': parts '{base_name}' and '{add_name}' may not be touching (gap ≈ {gap:.2f}mm)",
-                    suggestion="Verify parts are positioned to touch or overlap. Union of disconnected parts creates separate bodies."
+                    suggestion="Verify parts are positioned to touch or overlap. Union of disconnected parts creates separate bodies.",
+                    world_position=self._gap_midpoint(base_part, add_part)
                 ))
         return issues
 
@@ -66,6 +67,21 @@ class BooleanGapsRule(ValidationRule):
                 message=f"Boolean gap check skipped: {str(e)}"
             ))
         return issues
+
+    def _gap_midpoint(self, base_part, add_part):
+        """
+        World position for a gap issue: the midpoint between the two
+        parts' centers, since the gap sits between them rather than
+        inside either one. Falls back to whichever center is available
+        if the other part's bbox lookup fails.
+        """
+        base_center = self._part_center(base_part)
+        add_center = self._part_center(add_part)
+        if base_center is None:
+            return add_center
+        if add_center is None:
+            return base_center
+        return tuple((b + a) / 2 for b, a in zip(base_center, add_center))
 
     def _get_gap(self, base_part, add_part, base_bbox, add_bbox) -> float:
         """
