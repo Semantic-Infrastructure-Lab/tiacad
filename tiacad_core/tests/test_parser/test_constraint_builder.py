@@ -307,6 +307,17 @@ class TestConstraintValidation:
                 {'type': 'glue', 'faces': ['base.face_top', 'top.face_bottom']}
             ])
 
+    def test_reserved_type_raises_distinct_error(self, two_box_registry):
+        """'parallel'/'perpendicular'/'angle'/'symmetric' are named and reserved
+        (TCAD-CON-9) so this errors as 'reserved for a future revision', not the
+        generic 'unknown type' a made-up type name gets."""
+        registry = two_box_registry
+        resolver = SpatialResolver(registry)
+        with pytest.raises(ConstraintBuilderError, match="reserved for a future revision"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'parallel', 'faces': ['base.face_top', 'top.face_bottom']}
+            ])
+
     def test_unknown_part_raises(self, two_box_registry):
         registry = two_box_registry
         resolver = SpatialResolver(registry)

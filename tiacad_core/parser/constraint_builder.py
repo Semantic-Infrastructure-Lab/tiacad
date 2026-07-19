@@ -92,7 +92,10 @@ from ..transform_tracker import TransformTracker
 from ..spatial_resolver import SpatialResolver, FACE_SELECTOR_MAP
 
 IMPLEMENTED_CONSTRAINT_TYPES = {'flush', 'offset', 'coaxial', 'tangent'}
-RESERVED_CONSTRAINT_TYPES: set = set()
+# Named and reserved so requesting one of these errors as "planned" rather than
+# "unknown type" (TCAD-CON-9) — none are implemented; see ROADMAP.md
+# 'Constraint Solver' for the shipped flush/offset/coaxial/tangent family.
+RESERVED_CONSTRAINT_TYPES = {'parallel', 'perpendicular', 'angle', 'symmetric'}
 
 # type -> (reference field name in the YAML spec, CadQuery query selector_kind,
 #          CadQuery constraint kinds to apply between the resolved pair)
@@ -304,7 +307,7 @@ class ConstraintBuilder:
         if ctype in RESERVED_CONSTRAINT_TYPES:
             raise ConstraintBuilderError(
                 f"Constraint {index}: type '{ctype}' is reserved for a future revision and "
-                f"not yet implemented (see tt show TCAD-CON-3, or ROADMAP.md 'Constraint Solver').",
+                f"not yet implemented (see tt show TCAD-CON-9, or ROADMAP.md 'Constraint Solver').",
                 constraint_index=index,
             )
         if ctype not in IMPLEMENTED_CONSTRAINT_TYPES:

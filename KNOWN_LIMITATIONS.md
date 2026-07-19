@@ -129,6 +129,9 @@ skip is forced to always-solve) and `tiacad_core/tests/test_dag/test_graph_build
 - Cylinder-to-cylinder tangency, and tangent auto-alignment (forcing the axis parallel to
   the plane instead of requiring it pre-rotated) — no documented use case yet; would need
   hand-rolled solver geometry CadQuery doesn't provide out of the box
+- Angular/relative-orientation constraints (`parallel`, `perpendicular`, `angle`,
+  `symmetric`) — named and reserved (`TCAD-CON-9`, 2026-07-19) so requesting one errors as
+  "reserved for a future revision" rather than "unknown type", but none are implemented
 
 **Workaround (for anything constraints don't cover yet):**
 ```yaml

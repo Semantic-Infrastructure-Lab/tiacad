@@ -861,7 +861,8 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["flush", "coaxial", "offset", "tangent"]
+            "enum": ["flush", "coaxial", "offset", "tangent", "parallel", "perpendicular", "angle", "symmetric"],
+            "description": "'parallel'/'perpendicular'/'angle'/'symmetric' are reserved for a future revision (not yet implemented) — accepted by schema so ConstraintBuilder can give a specific 'reserved' error instead of the schema rejecting them as unknown."
           },
           "faces": {
             "type": "array",
