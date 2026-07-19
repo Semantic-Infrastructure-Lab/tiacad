@@ -650,14 +650,18 @@ _(no notes yet)_
 ## TASK-TCAD-VAL-8 · UnusedPartsRule doesn't check per-part usage — stub since initial commit, only checks for missing export: section
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [validation, bug]
 created: '2026-07-19T08:02:29Z'
-updated: '2026-07-19T08:02:29Z'
+updated: '2026-07-19T08:35:22Z'
 session: sapphire-stone-0719
+links:
+  commits:
+  - d6d11ba6f03520c36846183c4f25eedbbe1f5a8a
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T08:35:22Z session:whispered-demon-0719] Fixed real per-part/per-operation usage detection; also fixed a shared dict-vs-attribute bug in MissingPositionRule/_get_used_parts/_get_exported_parts and restored dropped export.parts parsing. See docs/developer/MODEL_VALIDATION.md item 6.
