@@ -47,29 +47,44 @@ Before limitations, here's what works great:
 
 ## Current Limitations
 
-### 1. No Constraint Solver (Manual Positioning Only)
+### 1. Constraint Solver — flush/offset/coaxial shipped, tangent not yet
+
+**What Works (as of 2026-07-19):**
+```yaml
+constraints:
+  - type: flush
+    faces: [bracket.face_bottom, base.face_top]   # [reference, moving]
+  - type: offset
+    faces: [surface.face_top, mount.face_bottom]
+    distance: 5mm
+  - type: coaxial
+    edges:
+      - {type: edge, part: bearing, selector: "%CIRCLE and >Z"}
+      - {type: edge, part: shaft, selector: "%CIRCLE and >Z"}
+```
+Wraps CadQuery's own `Assembly.constrain()`/`.solve()`; solves once per build and compiles
+to ordinary `transform` operations (rigid propagation, not a live/bidirectional solve). See
+`tiacad_core/parser/constraint_builder.py` and ROADMAP.md "Constraint Solver".
 
 **What's Missing:**
 ```yaml
 # CAN'T DO THIS (yet):
 constraints:
-  - type: flush
-    faces: [bracket.bottom, base.top]
-  - type: coaxial
-    axes: [shaft.axis, bearing.inner_axis]
-  - type: offset
-    distance: 5mm
-    parts: [mount, surface]
-
-# TiaCAD cannot automatically satisfy constraints
+  - type: tangent
+    faces: [roller.face_side, rail.face_top]
 ```
+`tangent` is schema-recognized but not implemented — it needs radius-aware offset math
+(a cylinder tangent to a plane sits one radius off, not coincident/coaxial with it), unlike
+`flush`/`coaxial`'s direct CadQuery constraint-kind mapping. Tracked as `TCAD-1` (`tt show
+TCAD-1`).
 
-**Impact:**
-- Assembly alignment requires manual calculations
-- Cannot specify design intent declaratively
-- No automatic mate/align/flush operations
+**Also missing:**
+- Constraint contradiction validation — CadQuery's solver currently just fails to converge
+  on a contradiction, with no targeted "these two constraints conflict" message
+- ModelGraph/DAG integration — constraints run as a standalone post-operations pass, not DAG
+  edges
 
-**Workaround:**
+**Workaround (for `tangent`, or anything constraints don't cover yet):**
 ```yaml
 # Use spatial references for relative positioning
 parts:
@@ -93,8 +108,6 @@ operations:
 - Use descriptive names (`motor_mount_point` not `point_1`)
 - Comment the intent ("5mm clearance for wiring")
 - Test assembly fit with multiple parameter values
-
-**Future:** Next major milestone — see ROADMAP.md. Target: Q4 2026.
 
 ---
 
