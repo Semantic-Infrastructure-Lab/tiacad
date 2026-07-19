@@ -19,6 +19,7 @@ from tiacad_core.validation.assembly_validator import (
 )
 from tiacad_core.parser.tiacad_parser import TiaCADParser
 from tiacad_core.validation.rules.bounding_box_rule import BoundingBoxRule
+from tiacad_core.validation.rules.hole_edge_proximity_rule import HoleEdgeProximityRule
 
 
 class TestValidationIssue:
@@ -263,6 +264,34 @@ class TestBackendAwareValidation:
         errors = [issue for issue in issues if issue.severity == Severity.WARNING]
 
         assert errors == []
+
+    def test_hole_edge_proximity_uses_real_radius_not_bbox_estimate(self):
+        """A tall, narrow hole should use its true BREP radius, not the
+        larger bbox-derived estimate (max half-dimension), when a backend
+        is attached."""
+        backend = MockBackend()
+        # radius=3 but height=20 -> bbox half-dimension estimate would be 10,
+        # more than 3x the real radius.
+        hole_part = Part("hole", backend.create_cylinder(radius=3, height=20), backend=backend)
+
+        rule = HoleEdgeProximityRule()
+        bbox = rule._get_bounding_box(hole_part)
+        radius = rule._get_hole_radius(hole_part, bbox)
+
+        assert radius == 3
+        assert rule._estimate_hole_radius(bbox) == 10, "sanity check: bbox estimate would have been wrong"
+
+    def test_hole_edge_proximity_falls_back_to_bbox_for_non_cylindrical_geometry(self):
+        """Geometry with no cylindrical face (e.g. a slot cut from a box)
+        has nothing for the backend to query -> bbox estimate."""
+        backend = MockBackend()
+        hole_part = Part("hole", backend.create_box(6, 6, 20), backend=backend)
+
+        rule = HoleEdgeProximityRule()
+        bbox = rule._get_bounding_box(hole_part)
+        radius = rule._get_hole_radius(hole_part, bbox)
+
+        assert radius == rule._estimate_hole_radius(bbox)
 
 
 class TestConnectivityChecks:

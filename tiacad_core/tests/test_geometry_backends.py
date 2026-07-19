@@ -112,6 +112,18 @@ class TestMockBackend:
         assert sphere.shape_type == 'sphere'
         assert sphere.parameters['radius'] == 10
 
+    def test_get_cylindrical_radius(self, backend):
+        """MockBackend reports the tracked radius for a cylinder"""
+        cylinder = backend.create_cylinder(5, 20)
+
+        assert backend.get_cylindrical_radius(cylinder) == 5
+
+    def test_get_cylindrical_radius_non_cylindrical_geometry(self, backend):
+        """A box shape has no radius to report -> None"""
+        box = backend.create_box(10, 10, 10)
+
+        assert backend.get_cylindrical_radius(box) is None
+
     def test_boolean_union(self, backend):
         """Union creates composite geometry"""
         box = backend.create_box(10, 10, 10)
@@ -256,6 +268,30 @@ class TestCadQueryBackend:
         # Box should have 8 vertices (corners)
         # Tessellation may have more for curved approximations
         assert len(vertices) >= 8
+
+    def test_get_cylindrical_radius_straight_cylinder(self, backend):
+        """Radius comes from the real BREP face, matching the creation param"""
+        cylinder = backend.create_cylinder(5, 20)
+
+        assert backend.get_cylindrical_radius(cylinder) == pytest.approx(5)
+
+    def test_get_cylindrical_radius_ignores_orientation(self, backend):
+        """A tilted cylinder's bbox overstates its radius; the real BREP
+        query must still return the true radius regardless of rotation."""
+        cylinder = backend.create_cylinder(5, 20)
+        tilted = backend.rotate(cylinder, (0, 0, 0), (1, 0, 0), 45)
+
+        bbox = tilted.val().BoundingBox()
+        bbox_estimate = max(bbox.xlen, bbox.ylen, bbox.zlen) / 2
+        assert bbox_estimate > 5, "sanity check: bbox estimate should overstate the radius here"
+
+        assert backend.get_cylindrical_radius(tilted) == pytest.approx(5)
+
+    def test_get_cylindrical_radius_non_cylindrical_geometry(self, backend):
+        """A box has no cylindrical face -> None, not a wrong guess."""
+        box = backend.create_box(10, 10, 10)
+
+        assert backend.get_cylindrical_radius(box) is None
 
 
 # ============================================================================

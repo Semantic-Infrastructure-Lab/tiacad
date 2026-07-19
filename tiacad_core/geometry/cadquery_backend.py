@@ -6,7 +6,7 @@ This is the production backend used for real CAD operations.
 """
 
 import cadquery as cq
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Optional
 
 from .base import GeometryBackend
 
@@ -245,6 +245,31 @@ class CadQueryBackend(GeometryBackend):
             )
         else:
             raise ValueError(f"Invalid location '{location}'. Valid: start, end, midpoint")
+
+    def get_cylindrical_radius(self, geom: cq.Workplane) -> Optional[float]:
+        """
+        Get the radius of a cylindrical geometry via its real BREP face.
+
+        Face has no public .radius() in CadQuery, so this selects the
+        cylindrical face's circular boundary edge and reads the radius
+        off that instead (Edge.radius() is public).
+
+        Args:
+            geom: CadQuery Workplane or Shape
+
+        Returns:
+            Radius of the first cylindrical face found, or None if none.
+        """
+        shape = geom.val() if hasattr(geom, 'val') else geom
+        cyl_faces = [f for f in shape.Faces() if f.geomType() == 'CYLINDER']
+        if not cyl_faces:
+            return None
+
+        circle_edges = [e for e in cyl_faces[0].Edges() if e.geomType() == 'CIRCLE']
+        if not circle_edges:
+            return None
+
+        return circle_edges[0].radius()
 
     def get_edge_tangent(self, edge: Any) -> Tuple[float, float, float]:
         """

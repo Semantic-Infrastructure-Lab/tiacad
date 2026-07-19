@@ -11,7 +11,7 @@ Design Goals:
 """
 
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Optional
 
 
 class GeometryBackend(ABC):
@@ -395,6 +395,27 @@ class GeometryBackend(ABC):
         Examples:
             >>> edges = backend.select_edges(box, "|Z")
             >>> midpoint = backend.get_edge_point(edges[0], "midpoint")
+        """
+        pass
+
+    @abstractmethod
+    def get_cylindrical_radius(self, geom: Any) -> Optional[float]:
+        """
+        Get the radius of a cylindrical geometry (e.g. a hole tool part).
+
+        Queries the actual BREP cylindrical face rather than estimating
+        from a bounding box, so non-axis-aligned or non-full-height
+        cylinders still report their true radius.
+
+        Args:
+            geom: Geometry to query
+
+        Returns:
+            Radius of the first cylindrical face found, or None if the
+            geometry has no cylindrical face.
+
+        Examples:
+            >>> radius = backend.get_cylindrical_radius(hole_geom)
         """
         pass
 

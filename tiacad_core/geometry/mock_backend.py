@@ -381,6 +381,12 @@ class MockBackend(GeometryBackend):
     # Spatial Queries (for reference extraction)
     # ========================================================================
 
+    def get_cylindrical_radius(self, geom: MockGeometry) -> Optional[float]:
+        """Get the radius tracked on a mock cylinder, or None if not cylindrical"""
+        if geom.shape_type != 'cylinder':
+            return None
+        return geom.parameters.get('radius')
+
     def get_face_center(self, face: MockFace) -> Tuple[float, float, float]:
         """Get the center point of a mock face"""
         return face.center

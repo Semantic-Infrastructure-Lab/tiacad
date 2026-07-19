@@ -109,7 +109,7 @@ class HoleEdgeProximityRule(ValidationRule):
 
         # Calculate hole properties
         hole_center = self._calculate_bbox_center(hole_bbox)
-        hole_radius = self._estimate_hole_radius(hole_bbox)
+        hole_radius = self._get_hole_radius(hole_part, hole_bbox)
 
         # Check proximity to each face
         edge_warnings = self._check_all_faces(hole_center, hole_radius, base_bbox)
@@ -127,6 +127,19 @@ class HoleEdgeProximityRule(ValidationRule):
         center_y = (bbox.ymin + bbox.ymax) / 2
         center_z = (bbox.zmin + bbox.zmax) / 2
         return (center_x, center_y, center_z)
+
+    def _get_hole_radius(self, hole_part, bbox) -> float:
+        """
+        Get hole radius from the real cylindrical BREP face when available,
+        falling back to a bounding-box estimate for backends/parts that
+        don't expose one (e.g. non-cylindrical holes, no backend attached).
+        """
+        if hole_part.backend is not None:
+            radius = hole_part.backend.get_cylindrical_radius(hole_part.geometry)
+            if radius is not None:
+                return radius
+
+        return self._estimate_hole_radius(bbox)
 
     def _estimate_hole_radius(self, bbox) -> float:
         """Estimate hole radius from bounding box (max of half-dimensions)."""
