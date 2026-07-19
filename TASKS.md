@@ -5,11 +5,11 @@ id_prefix: TCAD
 next_id: 3
 archival: inline
 areas:
-  VAL: 8
+  VAL: 9
   UX: 7
   API: 2
   ARCH: 10
-  CON: 4
+  CON: 6
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -590,15 +590,72 @@ notes_next: 2
 ## TASK-TCAD-2 · Extend trust-render world_position to remaining rules: ParameterSanityRule, MissingPositionRule, UnusedPartsRule, BoundingBoxRule
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [trust-render, validation]
 created: '2026-07-19T06:59:16Z'
-updated: '2026-07-19T06:59:29Z'
+updated: '2026-07-19T08:03:16Z'
 session: earthly-unicorn-0718
 links:
   references:
   - docs/developer/MODEL_VALIDATION.md
+  commits:
+  - 2dc9e4b585cf0fb630cf99d90a4fc3771a063e5e
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-07-19T08:03:16Z session:sapphire-stone-0719] Shipped world_position for the 2 rules that fit (MissingPositionRule, BoundingBoxRule). ParameterSanityRule and UnusedPartsRule excluded — see MODEL_VALIDATION.md item 6 and TCAD-VAL-8.
+
+
+## TASK-TCAD-CON-4 · Constraint contradiction validation — detect conflicting constraints before .solve() fails opaquely
+
+```yaml
+status: backlog
+priority: low
+tags: [constraints]
+created: '2026-07-19T07:53:52Z'
+updated: '2026-07-19T07:53:57Z'
+session: sapphire-stone-0719
+links:
+  references:
+  - KNOWN_LIMITATIONS.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-CON-5 · ModelGraph/DAG integration for constraints — currently a standalone post-operations pass, not real DAG edges
+
+```yaml
+status: backlog
+priority: low
+tags: [constraints, architecture]
+created: '2026-07-19T07:53:53Z'
+updated: '2026-07-19T07:53:57Z'
+session: sapphire-stone-0719
+links:
+  references:
+  - KNOWN_LIMITATIONS.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-8 · UnusedPartsRule doesn't check per-part usage — stub since initial commit, only checks for missing export: section
+
+```yaml
+status: backlog
+priority: medium
+tags: [validation, bug]
+created: '2026-07-19T08:02:29Z'
+updated: '2026-07-19T08:02:29Z'
+session: sapphire-stone-0719
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
