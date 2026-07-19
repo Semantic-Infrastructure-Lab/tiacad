@@ -56,51 +56,6 @@ class MissingPositionRule(ValidationRule):
 
         return issues
 
-    def _get_all_parts(self, document) -> set:
-        """Get set of all defined parts in document."""
-        if hasattr(document.parts, 'list_parts'):
-            return set(document.parts.list_parts())
-        return set()
-
-    def _get_used_parts(self, document) -> set:
-        """Get set of parts referenced in operations."""
-        used_parts = set()
-
-        if not hasattr(document, 'operations') or not document.operations:
-            return used_parts
-
-        for _op_name, operation in document.operations.items():
-            # Add input parts
-            if hasattr(operation, 'input'):
-                used_parts.add(operation.input)
-
-            # Add base parts
-            if hasattr(operation, 'base'):
-                used_parts.add(operation.base)
-
-            # Add subtracted parts (boolean operations)
-            if hasattr(operation, 'subtract') and operation.subtract:
-                used_parts.update(operation.subtract)
-
-        return used_parts
-
-    def _get_exported_parts(self, document) -> set:
-        """Get set of parts listed in export configuration."""
-        exported_parts = set()
-
-        if not hasattr(document, 'export') or not document.export:
-            return exported_parts
-
-        # Get parts from export list
-        if hasattr(document.export, 'parts') and document.export.parts:
-            exported_parts = {p.get('name') or p for p in document.export.parts}
-
-        # Get default export part
-        if hasattr(document.export, 'default_part') and document.export.default_part:
-            exported_parts.add(document.export.default_part)
-
-        return exported_parts
-
     def _filter_out_operations(self, document, parts: set) -> set:
         """Remove operation-generated parts from set."""
         if hasattr(document, 'operations') and document.operations:

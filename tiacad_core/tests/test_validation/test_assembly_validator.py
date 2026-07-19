@@ -26,6 +26,7 @@ from tiacad_core.validation.rules.boolean_gaps_rule import BooleanGapsRule
 from tiacad_core.validation.rules.disconnected_parts_rule import DisconnectedPartsRule
 from tiacad_core.validation.rules.feature_bounds_rule import FeatureBoundsRule
 from tiacad_core.validation.rules.missing_position_rule import MissingPositionRule
+from tiacad_core.validation.rules.unused_parts_rule import UnusedPartsRule
 
 
 class TestValidationIssue:
@@ -228,20 +229,47 @@ class TestValidatorIntegration:
         assert report.error_count == 0
 
     def test_validate_guitar_hanger_broken(self):
-        """Test validation catches issues in broken guitar hanger"""
+        """
+        TCAD-VAL-8: guitar_hanger_with_holes.yaml has no genuinely orphaned
+        part — 'beam' is listed in export.parts, so it's correctly *not*
+        flagged. (Prior to the TCAD-VAL-8 fix, _get_used_parts/_get_exported_parts
+        always returned empty sets due to a dict-vs-attribute mismatch, so
+        every primitive looked unpositioned regardless of real usage — this
+        test used to pass for the wrong reason.) Use a document with a truly
+        unreferenced, unexported part to verify detection still works.
+        """
         validator = AssemblyValidator()
 
-        doc = TiaCADParser.parse_file('examples/guitar_hanger_with_holes.yaml')
+        doc = TiaCADParser.parse_string("""
+metadata:
+  name: orphan_test
+parts:
+  used_box:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+  orphan_box:
+    primitive: box
+    parameters: {width: 5, height: 5, depth: 5}
+    origin: center
+operations:
+  positioned:
+    type: transform
+    input: used_box
+    transforms:
+      - translate: [0, 0, 0]
+export:
+  default_part: positioned
+""")
 
         report = validator.validate_document(doc)
 
-        # Should detect missing beam position
         positioning_warnings = [
             i for i in report.issues
-            if i.category == "positioning" and 'beam' in (i.part_name or '').lower()
+            if i.category == "positioning" and 'orphan_box' in (i.part_name or '').lower()
         ]
 
-        assert len(positioning_warnings) > 0, "Should detect beam not positioned"
+        assert len(positioning_warnings) > 0, "Should detect orphan_box not positioned"
 
     def test_validate_guitar_hanger_fixed(self):
         """Test validation on fixed guitar hanger"""
@@ -572,17 +600,91 @@ class TestBrepGeometryValidation:
         TCAD-2 follow-on: MissingPositionRule issues should report
         world_position at the orphaned part's own (unpositioned) center,
         so a trust render can point at where it sits by default.
+
+        'beam' in guitar_hanger_with_holes.yaml is exported, not orphaned, so
+        (post TCAD-VAL-8 fix) it's no longer a valid orphan fixture — use a
+        synthetic document with a genuinely unreferenced, unexported part.
         """
-        doc = TiaCADParser.parse_file('examples/guitar_hanger_with_holes.yaml')
+        doc = TiaCADParser.parse_string("""
+metadata:
+  name: orphan_test
+parts:
+  used_box:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+  orphan_box:
+    primitive: box
+    parameters: {width: 5, height: 5, depth: 5}
+    origin: center
+operations:
+  positioned:
+    type: transform
+    input: used_box
+    transforms:
+      - translate: [0, 0, 0]
+export:
+  default_part: positioned
+""")
 
         rule = MissingPositionRule()
         issues = rule.check(doc)
 
-        beam_issues = [i for i in issues if i.part_name == 'beam']
-        assert len(beam_issues) == 1
-        assert beam_issues[0].world_position is not None
-        expected = rule._part_center(doc.parts.get('beam'))
-        assert beam_issues[0].world_position == expected
+        orphan_issues = [i for i in issues if i.part_name == 'orphan_box']
+        assert len(orphan_issues) == 1
+        assert orphan_issues[0].world_position is not None
+        expected = rule._part_center(doc.parts.get('orphan_box'))
+        assert orphan_issues[0].world_position == expected
+
+    def test_unused_parts_issue_has_world_position_and_catches_dead_end_operation(self):
+        """
+        TCAD-VAL-8: UnusedPartsRule now does real per-part/per-operation usage
+        detection instead of only checking whether an export: section exists.
+        It should catch both a truly orphaned base part (like MissingPositionRule)
+        and a dead-end operation result — geometry that was built but whose
+        output is never consumed by another operation or exported. That second
+        case is the whole reason this rule is distinct from MissingPositionRule,
+        which deliberately filters operation results out.
+        """
+        doc = TiaCADParser.parse_string("""
+metadata:
+  name: unused_parts_test
+parts:
+  used_box:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+  orphan_box:
+    primitive: box
+    parameters: {width: 5, height: 5, depth: 5}
+    origin: center
+  feeder_box:
+    primitive: box
+    parameters: {width: 3, height: 3, depth: 3}
+    origin: center
+operations:
+  positioned:
+    type: transform
+    input: used_box
+    transforms:
+      - translate: [0, 0, 0]
+  dead_end:
+    type: transform
+    input: feeder_box
+    transforms:
+      - translate: [1, 1, 1]
+export:
+  default_part: positioned
+""")
+
+        rule = UnusedPartsRule()
+        issues = rule.check(doc)
+        flagged = {i.part_name for i in issues}
+
+        assert flagged == {'orphan_box', 'dead_end'}
+        for issue in issues:
+            assert issue.world_position is not None
+            assert issue.world_position == rule._part_center(doc.parts.get(issue.part_name))
 
 
 if __name__ == "__main__":

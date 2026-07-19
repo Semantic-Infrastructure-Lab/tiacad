@@ -136,6 +136,7 @@ def build_export_config(export_spec: Dict) -> Dict:
         'formats': export_spec.get('formats', []),
         'color_mode': export_spec.get('color_mode', 'realistic'),
         'default_color': export_spec.get('default_color', [0.7, 0.7, 0.7]),
+        'parts': export_spec.get('parts', []),
     }
     if cfg['default_part']:
         logger.info(f"Export config: default_part={cfg['default_part']}")

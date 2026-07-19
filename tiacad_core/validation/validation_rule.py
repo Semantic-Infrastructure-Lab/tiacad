@@ -137,6 +137,68 @@ class ValidationRule(ABC):
         else:
             return getattr(operation, attr_name, default)
 
+    def _get_all_parts(self, document) -> set:
+        """Get set of all part names known to the document (primitives and operation results)."""
+        if hasattr(document.parts, 'list_parts'):
+            return set(document.parts.list_parts())
+        return set()
+
+    def _get_used_parts(self, document) -> set:
+        """
+        Get set of part/operation names referenced as an input by any operation.
+
+        Operations are plain dicts in the parsed document, not objects, so this
+        must go through `_get_operation_attr` rather than `hasattr`/`getattr`
+        directly (those always miss on a dict and silently return nothing).
+        """
+        used_parts = set()
+
+        operations = getattr(document, 'operations', None)
+        if not operations:
+            return used_parts
+
+        for operation in operations.values():
+            input_name = self._get_operation_attr(operation, 'input')
+            if input_name:
+                used_parts.add(input_name)
+
+            base_name = self._get_operation_attr(operation, 'base')
+            if base_name:
+                used_parts.add(base_name)
+
+            subtract_names = self._get_operation_attr(operation, 'subtract')
+            if subtract_names:
+                used_parts.update(subtract_names)
+
+            input_names = self._get_operation_attr(operation, 'inputs')
+            if input_names:
+                used_parts.update(input_names)
+
+        return used_parts
+
+    def _get_exported_parts(self, document) -> set:
+        """
+        Get set of part names referenced by the document's export configuration.
+
+        The live document attribute is `export_config` (a dict built by
+        `build_export_config`), not `export` — `hasattr(document, 'export')`
+        always misses.
+        """
+        exported_parts = set()
+
+        export_config = getattr(document, 'export_config', None) or {}
+
+        default_part = export_config.get('default_part')
+        if default_part:
+            exported_parts.add(default_part)
+
+        for entry in export_config.get('parts', None) or []:
+            name = entry.get('name') if isinstance(entry, dict) else entry
+            if name:
+                exported_parts.add(name)
+
+        return exported_parts
+
 
 class _BoundsAdapter:
     """Adapter that gives Part.get_bounds() dicts a BoundingBox-like surface."""
