@@ -98,12 +98,34 @@ just-rebuilt registry as an explicit, non-incremental step in `_rebuild` after t
 incremental parts/operations build. See `tiacad_core/tests/test_dag/test_watcher.py::
 TestFileWatcherIntegration::test_rebuild_applies_constraints`.
 
+**Fixed 2026-07-19 (`TCAD-CON-5`):** ModelGraph/DAG integration for constraints. Constraints
+are now real graph nodes (`NodeType.CONSTRAINT`, `constraint:<index>`) with dependency edges
+to every part they reference (`graph_builder.py`'s `_add_constraint_nodes`/
+`_extract_constraint_dependencies`), so `IncrementalBuilder`'s existing invalidation
+machinery marks a constraint dirty exactly when a part it mates changes (or its own spec
+does). `watcher.py::_rebuild` uses this (`IncrementalResult.constraints_dirty`) to skip
+re-solving entirely when nothing constraint-relevant changed — the common case while
+iterating on an unrelated part. This is deliberately coarse, not per-constraint: solving
+itself is still all constraints together in one joint `Assembly.solve()` call (constraints
+can share a part and are cross-checked for contradictions as a batch — see
+`constraint_builder.py`'s module docstring), so the incrementality is "solve vs. don't",
+not "solve only the changed ones". A real subtlety this fix had to account for: `BuildCache`
+stores *pre*-constraint geometry (parts/operations are cached right after they're built, before
+constraints run), so skipping the solve is only safe because `_rebuild` now also re-`put()`s
+the constraint-baked geometry for every touched part back into the cache immediately after
+solving — otherwise the next clean rebuild would restore stale, unconstrained geometry from
+cache the moment `constraints_dirty` went `False`. See
+`tiacad_core/tests/test_dag/test_watcher.py::TestFileWatcherIntegration::
+test_second_rebuild_skips_unaffected_constraint_solve` (verified non-vacuous: fails if the
+skip is forced to always-solve) and `tiacad_core/tests/test_dag/test_graph_builder.py`'s
+`test_constraint_*` tests.
+
 **Still missing:**
-- ModelGraph/DAG integration (`TCAD-CON-5`) — constraints are now correct under `tiacad
-  watch`, but still run as a standalone, non-incremental post-build pass rather than real DAG
-  edges: every watched rebuild re-solves *all* constraints from scratch (cheap relative to a
-  full re-parse, but not cache-aware like `parts:`/`operations:` are). Making constraints DAG
-  edges would let unaffected constraints be skipped on an incremental rebuild.
+- Per-constraint partitioning — skipping only the specific constraints affected by a change,
+  not the whole batch. Would require splitting constraints into connected components by
+  shared part and solving only dirty components; not attempted, since it touches the
+  joint-solve/contradiction-detection logic (`TCAD-CON-4`) for a benefit no one has reported
+  needing (no perf complaint). See `tt show TCAD-CON-5`.
 - Cylinder-to-cylinder tangency, and tangent auto-alignment (forcing the axis parallel to
   the plane instead of requiring it pre-rotated) — no documented use case yet; would need
   hand-rolled solver geometry CadQuery doesn't provide out of the box

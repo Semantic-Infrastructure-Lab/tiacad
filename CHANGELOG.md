@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-19 (constraint ModelGraph/DAG integration, TCAD-CON-5)
+
+Constraints are now real `ModelGraph` nodes with dependency edges to every part they
+reference, so `IncrementalBuilder`'s existing invalidation machinery can tell whether a
+constraint needs re-solving. `tiacad watch` now skips the constraint-solve step entirely
+when nothing a constraint depends on changed, instead of re-solving all constraints on
+every rebuild regardless. Deliberately coarse — still one joint `Assembly.solve()` call
+for all constraints together (they can share parts and are cross-checked for
+contradictions as a batch, `TCAD-CON-4`), so this is "solve vs. don't", not per-constraint
+skipping; that finer partitioning is explicitly out of scope pending an actual perf need.
+See `tiacad_core/dag/graph_builder.py`, `tiacad_core/dag/incremental_builder.py`,
+`tiacad_core/watcher.py`, KNOWN_LIMITATIONS.md #1, `tt show TCAD-CON-5`.
+
 ### Added/Fixed - 2026-07-19 (constraint contradiction detection + watch-mode bug, TCAD-CON-4/TCAD-CON-6)
 
 `ConstraintBuilder._check_plane_conflicts` now catches, before calling CadQuery's

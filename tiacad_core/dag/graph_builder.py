@@ -14,6 +14,7 @@ import hashlib
 import json
 
 from .model_graph import ModelGraph, GraphNode, NodeType
+from ..parser.constraint_builder import referenced_part_names as _constraint_referenced_part_names
 from ..utils.exceptions import TiaCADError
 
 
@@ -67,6 +68,7 @@ class GraphBuilder:
         self._add_part_nodes(yaml_data.get('parts', {}))
         self._add_operation_nodes(yaml_data.get('operations', {}))
         self._add_reference_nodes(yaml_data.get('references', {}))
+        self._add_constraint_nodes(yaml_data.get('constraints', []))
 
         # Phase 2: Extract dependencies
         self._extract_parameter_dependencies(yaml_data.get('parameters', {}))
@@ -74,6 +76,7 @@ class GraphBuilder:
         self._extract_part_dependencies(yaml_data.get('parts', {}))
         self._extract_operation_dependencies(yaml_data.get('operations', {}))
         self._extract_reference_dependencies(yaml_data.get('references', {}))
+        self._extract_constraint_dependencies(yaml_data.get('constraints', []))
 
         # Phase 3: Validate
         cycles = self.graph.detect_cycles()
@@ -152,6 +155,25 @@ class GraphBuilder:
                 name=ref_name,
                 spec=ref_spec,
                 hash_value=self._hash_spec(ref_spec)
+            )
+            self.graph.add_node(node)
+
+    def _add_constraint_nodes(self, constraints: List[Dict[str, Any]]) -> None:
+        """Add constraint nodes to graph (TCAD-CON-5).
+
+        `constraints:` is a list, not a name-keyed dict like parts/operations,
+        so nodes are indexed positionally (`constraint:0`, `constraint:1`, ...).
+        Reordering constraints without changing their content can therefore
+        misattribute dirtiness to the wrong index — a known, accepted
+        limitation shared with the list's lack of stable identity in the YAML
+        format itself, not something the graph can fix on its own."""
+        for index, spec in enumerate(constraints):
+            node = GraphNode(
+                node_id=f"constraint:{index}",
+                node_type=NodeType.CONSTRAINT,
+                name=str(index),
+                spec=spec,
+                hash_value=self._hash_spec(spec),
             )
             self.graph.add_node(node)
 
@@ -274,6 +296,27 @@ class GraphBuilder:
             # Check for part reference
             if 'part' in ref_spec:
                 part_name = ref_spec['part']
+                part_id = f"part:{part_name}"
+                operation_id = f"operation:{part_name}"
+
+                if part_id in self.graph:
+                    self.graph.add_dependency(dependent_id, part_id)
+                elif operation_id in self.graph:
+                    self.graph.add_dependency(dependent_id, operation_id)
+
+    def _extract_constraint_dependencies(self, constraints: List[Dict[str, Any]]) -> None:
+        """
+        Extract constraint → part/operation dependencies (TCAD-CON-5).
+
+        A constraint depends on every part it mates (both the reference and
+        the moving side): a change to either invalidates the constraint's
+        solved result. This is what lets IncrementalBuilder/watcher.py tell
+        whether a constraint needs re-solving without re-solving all of them
+        every rebuild — see IncrementalBuilder._solve_constraints.
+        """
+        for index, spec in enumerate(constraints):
+            dependent_id = f"constraint:{index}"
+            for part_name in _constraint_referenced_part_names(spec):
                 part_id = f"part:{part_name}"
                 operation_id = f"operation:{part_name}"
 

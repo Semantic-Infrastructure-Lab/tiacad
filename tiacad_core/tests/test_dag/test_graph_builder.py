@@ -345,6 +345,98 @@ class TestGraphBuilder:
         deps = graph.get_dependencies("reference:top_face")
         assert "part:base" in deps
 
+    def test_constraint_nodes(self):
+        """Test adding constraint nodes (TCAD-CON-5)"""
+        builder = GraphBuilder()
+
+        yaml_data = {
+            'parts': {
+                'base': {'type': 'box', 'width': 10, 'height': 10, 'depth': 10},
+                'top': {'type': 'box', 'width': 5, 'height': 5, 'depth': 5},
+            },
+            'constraints': [
+                {'type': 'flush', 'faces': ['base.face_top', 'top.face_bottom']}
+            ],
+        }
+
+        graph = builder.build_graph(yaml_data)
+
+        assert "constraint:0" in graph
+        assert graph.nodes["constraint:0"].node_type == NodeType.CONSTRAINT
+
+    def test_constraint_part_dependencies(self):
+        """A constraint depends on both the reference and moving part it mates
+        (TCAD-CON-5) — either side changing must dirty the constraint."""
+        builder = GraphBuilder()
+
+        yaml_data = {
+            'parts': {
+                'base': {'type': 'box', 'width': 10, 'height': 10, 'depth': 10},
+                'top': {'type': 'box', 'width': 5, 'height': 5, 'depth': 5},
+            },
+            'constraints': [
+                {'type': 'flush', 'faces': ['base.face_top', 'top.face_bottom']}
+            ],
+        }
+
+        graph = builder.build_graph(yaml_data)
+
+        deps = graph.get_dependencies("constraint:0")
+        assert "part:base" in deps
+        assert "part:top" in deps
+
+    def test_constraint_inline_face_ref_dependency(self):
+        """Inline {type: face, part, selector} refs (not just 'part.face_name'
+        strings) must also produce a dependency edge."""
+        builder = GraphBuilder()
+
+        yaml_data = {
+            'parts': {
+                'base': {'type': 'box', 'width': 10, 'height': 10, 'depth': 10},
+                'top': {'type': 'box', 'width': 5, 'height': 5, 'depth': 5},
+            },
+            'constraints': [
+                {
+                    'type': 'flush',
+                    'faces': [
+                        {'type': 'face', 'part': 'base', 'selector': '>Z'},
+                        'top.face_bottom',
+                    ],
+                }
+            ],
+        }
+
+        graph = builder.build_graph(yaml_data)
+
+        deps = graph.get_dependencies("constraint:0")
+        assert "part:base" in deps
+        assert "part:top" in deps
+
+    def test_constraint_operation_result_dependency(self):
+        """A constraint mating an operation's result (not a raw part) must
+        depend on the operation node, not a nonexistent part node."""
+        builder = GraphBuilder()
+
+        yaml_data = {
+            'parts': {
+                'a': {'type': 'box', 'width': 10, 'height': 10, 'depth': 10},
+                'b': {'type': 'box', 'width': 10, 'height': 10, 'depth': 10},
+                'top': {'type': 'box', 'width': 5, 'height': 5, 'depth': 5},
+            },
+            'operations': {
+                'merged': {'type': 'union', 'inputs': ['a', 'b']},
+            },
+            'constraints': [
+                {'type': 'flush', 'faces': ['merged.face_top', 'top.face_bottom']}
+            ],
+        }
+
+        graph = builder.build_graph(yaml_data)
+
+        deps = graph.get_dependencies("constraint:0")
+        assert "operation:merged" in deps
+        assert "part:top" in deps
+
     def test_sketch_nodes(self):
         """Test adding sketch nodes"""
         builder = GraphBuilder()

@@ -81,6 +81,16 @@ class IncrementalResult:
     graph: ModelGraph
     state: IncrementalState
     stats: BuildStats
+    constraints_dirty: bool = True
+    """Whether any `constraint:*` graph node is dirty this build (TCAD-CON-5)
+    — i.e. whether any part a constraint references changed, or a
+    constraint's own spec changed. `build()` only builds parts/operations;
+    it never solves `constraints:` itself (see `watcher.py::_rebuild`). A
+    caller solving constraints after this build can skip re-solving
+    entirely when this is False, since every part a constraint could touch
+    was restored from cache exactly as it was left after the last solve —
+    see `watcher.py::_rebuild` for how the cache is kept in sync with that
+    invariant after solving."""
 
 
 class IncrementalBuilderError(Exception):
@@ -167,6 +177,9 @@ class IncrementalBuilder:
 
         stats.total_ms = (time.monotonic() - t0) * 1000
         new_state = IncrementalState(graph=new_graph, cache=cache)
+        constraints_dirty = old_state is None or any(
+            node_id.startswith('constraint:') for node_id in dirty
+        )
 
         logger.info(f"Build complete: {stats}")
         return IncrementalResult(
@@ -174,6 +187,7 @@ class IncrementalBuilder:
             graph=new_graph,
             state=new_state,
             stats=stats,
+            constraints_dirty=constraints_dirty,
         )
 
     def _build_parts(

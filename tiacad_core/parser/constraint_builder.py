@@ -100,6 +100,36 @@ _CONSTRAINT_QUERY_KIND = {'flush': 'faces', 'offset': 'faces', 'coaxial': 'edges
 _CONSTRAINT_CQ_KINDS = {'flush': ('Plane',), 'offset': ('Plane',), 'coaxial': ('Axis', 'Point')}
 
 
+def referenced_part_names(spec: Dict[str, Any]) -> set:
+    """Best-effort extraction of the part name(s) a single constraint spec
+    references, for DAG dependency-edge purposes (see GraphBuilder /
+    TCAD-CON-5) — tolerant of malformed specs (returns whatever it can
+    parse), unlike ConstraintBuilder._parse_constraint/_parse_tangent, which
+    validate strictly and raise. Graph building runs before parts exist and
+    before the real parse/solve pass, so it can't afford to be strict here;
+    malformed specs still surface their real error later via apply_constraints."""
+    names: set = set()
+
+    def _from_ref(ref: Any) -> None:
+        if isinstance(ref, dict):
+            part = ref.get('part')
+            if isinstance(part, str):
+                names.add(part)
+        elif isinstance(ref, str) and '.' in ref:
+            names.add(ref.split('.', 1)[0])
+
+    for ref in spec.get('faces') or []:
+        _from_ref(ref)
+    for ref in spec.get('edges') or []:
+        _from_ref(ref)
+    if 'face' in spec:
+        _from_ref(spec['face'])
+    if 'edge' in spec:
+        _from_ref(spec['edge'])
+
+    return names
+
+
 class ConstraintBuilderError(Exception):
     """Raised when a constraint spec is invalid or cannot be solved."""
 
@@ -123,11 +153,18 @@ class ConstraintBuilder:
         self.registry = registry
         self.spatial_resolver = spatial_resolver
 
-    def apply_constraints(self, constraints_spec: List[Dict[str, Any]]) -> None:
+    def apply_constraints(self, constraints_spec: List[Dict[str, Any]]) -> set:
         """Solve every constraint in `constraints_spec` and bake the results
-        into the registry. No-op for an empty/missing list."""
+        into the registry. No-op for an empty/missing list.
+
+        Returns the set of part names whose geometry/position was touched
+        (baked into), so a caller like the watcher (TCAD-CON-5) can refresh
+        any incremental-build cache entries for exactly those parts — the
+        cache stores pre-constraint geometry (populated before this runs),
+        so a stale entry would silently un-apply the constraint on the next
+        cache restore."""
         if not constraints_spec:
-            return
+            return set()
 
         parsed = [self._parse_constraint(i, spec) for i, spec in enumerate(constraints_spec)]
 
@@ -153,6 +190,8 @@ class ConstraintBuilder:
 
         self._check_plane_conflicts(solved_indexed)
 
+        touched_parts: set = {mov_part for _ctype, _rp, _rs, mov_part, _ms, _d in tangents}
+
         if solved:
             involved_parts: List[str] = []
             seen = set()
@@ -161,6 +200,8 @@ class ConstraintBuilder:
                     if p not in seen:
                         seen.add(p)
                         involved_parts.append(p)
+
+            touched_parts.update(involved_parts)
 
             assembly = cq.Assembly()
             for part_name in involved_parts:
@@ -195,6 +236,8 @@ class ConstraintBuilder:
         # actual — possibly also-constrained — current pose.
         for _ctype, ref_part, ref_sel, mov_part, mov_sel, radius in tangents:
             self._apply_tangent_translate(mov_part, mov_sel, ref_part, ref_sel, radius)
+
+        return touched_parts
 
     def _check_plane_conflicts(self, solved_indexed: List[Tuple[int, Tuple[str, str, str, str, str, float]]]) -> None:
         """Detect 'flush'/'offset' constraints that mate the same moving face

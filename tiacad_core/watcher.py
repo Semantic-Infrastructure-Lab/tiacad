@@ -247,19 +247,41 @@ class FileWatcher:
 
             self._state = inc_result.state
 
-            # 4. Solve `constraints:` — IncrementalBuilder only knows about
-            # parts/operations, not constraints (they aren't DAG edges yet,
-            # see tt show TCAD-CON-5), so this step is not itself
-            # incremental: every watched rebuild re-solves all constraints
-            # from scratch against the just-rebuilt registry. Cheap relative
-            # to a full re-parse, and correct — the alternative (skipping
-            # this entirely, the prior behavior) silently left every
-            # constrained part at its raw pre-constraint position in watch
-            # mode while the same file built correctly outside watch mode.
+            # 4. Solve `constraints:` (TCAD-CON-5: constraints are now real DAG
+            # nodes/edges — see graph_builder.py's _add_constraint_nodes /
+            # _extract_constraint_dependencies — so `constraints_dirty` tells us
+            # whether any part a constraint references actually changed this
+            # rebuild). Skip re-solving entirely when nothing did: every part a
+            # constraint could touch was either untouched or restored from
+            # cache, and step 4b below keeps that cache holding *post*-constraint
+            # geometry, so a clean restore already reflects the last solve.
+            #
+            # When constraints DO need solving, `apply_constraints` bundles them
+            # all into one joint CadQuery solve (parts can share constraints —
+            # see constraint_builder.py's module docstring), so this step
+            # itself is still all-or-nothing, not per-constraint — the
+            # incrementality TCAD-CON-5 adds is "solve vs. don't", not "solve
+            # only the changed ones".
             constraints_spec = sections.get('constraints', [])
-            if constraints_spec:
+            if constraints_spec and inc_result.constraints_dirty:
                 spatial_resolver = SpatialResolver(context.registry, context.resolved_references)
-                ConstraintBuilder(context.registry, spatial_resolver).apply_constraints(constraints_spec)
+                touched_parts = ConstraintBuilder(context.registry, spatial_resolver).apply_constraints(
+                    constraints_spec
+                )
+
+                # 4b. Refresh the cache entries for every part the solve baked a
+                # position into. BuildCache stores whatever was `put()` right
+                # after the part/operation was built (step 3/4 above), which is
+                # always the *pre*-constraint geometry — without this, the next
+                # rebuild's cache-restore path would silently hand back
+                # unconstrained geometry the moment constraints_dirty goes False.
+                for part_name in touched_parts:
+                    for prefix in ('part', 'operation'):
+                        node_id = f"{prefix}:{part_name}"
+                        node = inc_result.graph.nodes.get(node_id)
+                        if node is not None and node.hash_value is not None:
+                            self._state.cache.put(node_id, node.hash_value, context.registry.get(part_name))
+                            break
 
             result.rebuild_ms = (time.monotonic() - t0) * 1000
             result.rebuilt = inc_result.stats.rebuilt

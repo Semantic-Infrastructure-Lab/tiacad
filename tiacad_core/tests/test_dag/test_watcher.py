@@ -487,3 +487,64 @@ constraints:
         # 10mm cube) it spans z=[5, 10]; unconstrained (raw origin) it would
         # span z=[-2.5, 2.5] instead.
         assert mesh.bounds[:, 2] == pytest.approx([5.0, 10.0], abs=1e-3)
+
+    def test_second_rebuild_skips_unaffected_constraint_solve(self, tmp_path):
+        """Regression test for TCAD-CON-5: constraints are now real DAG nodes/
+        edges (graph_builder.py's _add_constraint_nodes/_extract_constraint_
+        dependencies), so a rebuild triggered by an unrelated part change must
+        not re-solve constraints whose referenced parts didn't change.
+        Also verifies watcher.py's cache-refresh (step 4b) keeps pace: the
+        constrained part's exported position must still reflect the original
+        solve on the second, skipped-solve build — not just that the solve
+        call was skipped."""
+        f = tmp_path / "watch_constraints_skip.yaml"
+        model = """\
+schema_version: "3.0"
+parts:
+  base:
+    primitive: box
+    parameters: {{ width: 10, depth: 10, height: 10 }}
+    origin: center
+  top:
+    primitive: box
+    parameters: {{ width: 5, depth: 5, height: 5 }}
+    origin: center
+  unrelated:
+    primitive: box
+    parameters: {{ width: {unrelated_w}, depth: 1, height: 1 }}
+    origin: center
+export:
+  default_part: top
+constraints:
+  - type: flush
+    faces: [base.face_top, top.face_bottom]
+"""
+        f.write_text(model.format(unrelated_w=1))
+
+        out = tmp_path / "watch_constraints_skip.stl"
+        results = []
+        watcher = FileWatcher(f, on_rebuild=results.append, export_path=out, debounce=0.05)
+
+        from tiacad_core.parser.constraint_builder import ConstraintBuilder
+        real_apply = ConstraintBuilder.apply_constraints
+        call_count = {'n': 0}
+
+        def counting_apply(self, constraints_spec):
+            call_count['n'] += 1
+            return real_apply(self, constraints_spec)
+
+        with patch.object(ConstraintBuilder, 'apply_constraints', counting_apply):
+            watcher._rebuild(is_initial=True)
+            assert results and results[0].ok, results[0].error if results else None
+            assert call_count['n'] == 1
+
+            # Change something the constraint doesn't reference at all.
+            f.write_text(model.format(unrelated_w=2))
+            watcher._rebuild(is_initial=False)
+
+        assert results[-1].ok, results[-1].error
+        assert call_count['n'] == 1, "constraint solve re-ran despite no relevant change"
+
+        import trimesh
+        mesh = trimesh.load_mesh(str(out))
+        assert mesh.bounds[:, 2] == pytest.approx([5.0, 10.0], abs=1e-3)

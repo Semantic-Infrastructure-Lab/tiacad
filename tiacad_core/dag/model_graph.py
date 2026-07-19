@@ -22,6 +22,7 @@ class NodeType(Enum):
     OPERATION = "operation"    # operations: results
     REFERENCE = "reference"    # references: spatial
     SKETCH = "sketch"          # sketches: section
+    CONSTRAINT = "constraint"  # constraints: flush/offset/coaxial/tangent
 
 
 @dataclass
