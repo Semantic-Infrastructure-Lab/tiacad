@@ -199,18 +199,21 @@ notes_next: 2
 status: done
 priority: low
 created: '2026-07-18T02:32:58Z'
-updated: '2026-07-19T06:24:26Z'
+updated: '2026-07-19T06:45:38Z'
 session: electric-glaze-0717
 links:
+  relates_to:
+  - docs/developer/MODEL_VALIDATION.md
   commits:
   - 9b938ab822b0cf726b79506e146a95bb3ada720c
-notes_next: 3
+notes_next: 4
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-18T23:27:10Z session:zatuhipi-0718] Scoped (zatuhipi-0718): tiacad_core/visual/trust_renderer.py (684 lines) already imports PIL ImageDraw and uses it for legend annotations (_draw_parts_legend/_draw_axes_legend/_draw_voids_legend), so image-annotation plumbing exists -- but only for a static legend, not for pointing at a specific failure location on the 3D render. Real gap: ValidationIssue.location (validation_types.py:28) is typed for YAML line:column tracking only, not 3D world coordinates -- rule files compute bboxes/positions internally but don't currently surface a 3D point on the issue object. Implementing this needs (1) rules to attach a 3D failure location, (2) projecting that point through pyvista's active camera transform to a 2D pixel, (3) an ImageDraw arrow/marker at that pixel. Well-defined but nontrivial; low priority is appropriate.
 - [#2 2026-07-19T06:24:26Z session:unsettled-storm-0718] Shipped for HoleEdgeProximityRule only; other rules don't yet compute world_position — see MODEL_VALIDATION.md item 6 for scope.
+- [#3 2026-07-19T06:45:38Z session:descending-asteroid-0718] Extended world_position coverage to BooleanEffectRule + DisconnectedPartsRule (commit 8de1d2e), via shared ValidationRule._bbox_center/_part_center helper. Now 3 of 9 rules populate world_position; remaining 6 (FeatureBoundsRule, ParameterSanityRule, MissingPositionRule, BooleanGapsRule, UnusedPartsRule, BoundingBoxRule) still don't -- see MODEL_VALIDATION.md item 6.
 
 
 ## TASK-TCAD-UX-6 · Negative trust scenarios — intentionally-bad models that must fail visual/trust-render validation
