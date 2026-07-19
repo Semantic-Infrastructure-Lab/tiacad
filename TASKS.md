@@ -776,33 +776,41 @@ notes_next: 2
 ## TASK-TCAD-VAL-9 · CLI command entrypoints mostly untested — cmd_build (primary user path: parse->export->stats), cmd_watch, cmd_info, cmd_check, cmd_validate/cmd_validate_geometry have no direct tests
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [testing, cli]
 created: '2026-07-19T20:39:51Z'
-updated: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T22:11:36Z'
 session: astral-sun-0719
+links:
+  commits:
+  - 4b4d28b38f37184ec9bbe5611bc9493e1fc51bdc
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T22:11:36Z session:astral-sun-0719] Added test_cli_build/info/check/validate/validate_geometry/watch.py (29 tests). cmd_watch tested via mocked FileWatcher since the real loop blocks on a filesystem observer; test_dag/test_watcher.py already covers FileWatcher/IncrementalBuilder directly.
 
 
 ## TASK-TCAD-VAL-10 · Confidence-ladder validation corpus covers only flush constraint — no oracle-backed Tier example for offset/coaxial/tangent; tangent is highest-risk since it bypasses CadQuery's solver with hand-rolled geometry
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [testing, constraints]
 created: '2026-07-19T20:39:51Z'
-updated: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T21:57:39Z'
 session: astral-sun-0719
+links:
+  commits:
+  - c1c28a26fc1aa1eb89740f78c4634c6539623afe
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T21:57:39Z session:astral-sun-0719] Added T4_constraint_offset/coaxial/tangent.tiacad to examples/validation/, all with expect: oracle contracts, discovered by test_embedded_contracts.py's auto-discovery. Golden hashes regenerated. Also surfaced and filed TCAD-CON-10 (flush/offset arbitrary in-plane rotation for some size ratios).
 
 
 ## TASK-TCAD-VAL-11 · No integration test for constraints -> DAG incremental build -> export in the normal (non-watch) cmd_build pipeline — only watch mode is covered, and build/watch use separately-patched code paths (root cause of a prior watch-mode constraint bug)
@@ -828,17 +836,21 @@ notes_next: 2
 ## TASK-TCAD-VAL-12 · Tier-5 negative-input corpus has no malformed/contradictory constraint case, despite TCAD-CON-4's contradiction detector being unit-tested only in isolation
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [testing, constraints]
 created: '2026-07-19T20:39:51Z'
-updated: '2026-07-19T20:39:51Z'
+updated: '2026-07-19T22:05:21Z'
 session: astral-sun-0719
+links:
+  commits:
+  - 41b84acf55e1d1ccf3c3031d66a06993780a750b
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T22:05:21Z session:astral-sun-0719] Added N7_contradictory_constraints.tiacad + TestContradictoryConstraints, folded into cross-cutting typed-error sweep. Also found and fixed a real bug while doing this: ConstraintBuilderError subclassed bare Exception instead of TiaCADError like every sibling builder error — fixed.
 
 
 ## TASK-TCAD-CON-10 · flush/offset constraint solve can converge to an arbitrary in-plane rotation for certain moving-part/reference-size combinations (e.g. 20x20x2 surface + 4x4x4 mount), inflating the AABB and misaligning non-square parts, even though the physical position/gap is still correct — CadQuery's Plane constraint kind leaves rotation-about-normal unconstrained and IPOPT doesn't reliably land on zero. Discovered building the TCAD-VAL-10 offset validation example (20/4 size ratio triggered it; 10/5 and 12/4 did not).
