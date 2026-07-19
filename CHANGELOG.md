@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-07-19 (constraint solver MVP, TCAD-CON-1)
+
+New `constraints:` YAML section — `flush` (mate two faces coincident,
+opposed normals) and `offset` (flush plus a translate along the reference
+face's normal) are implemented, both by wrapping CadQuery's own
+`Assembly.constrain()`/`.solve()` (`casadi`+IPOPT) rather than writing a
+solver from scratch, per the 2026-07-18 scoping investigation in
+ROADMAP.md. `coaxial`/`tangent` are schema-recognized but not yet
+implemented (raise a clear error; filed as `TCAD-CON-3`), since they need
+edge/axis-selector support this round didn't validate. Constraints solve
+once per build and compile to ordinary `transform` operations on the
+constrained parts (no live/bidirectional solve, no DAG change) — see
+`tiacad_core/parser/constraint_builder.py`. Fixed a prerequisite bug first
+(`TCAD-CON-2`): `Part`/`TransformTracker` now track a cumulative
+`current_orientation` rotation matrix, so a rotated part's `axis_x`/
+`axis_y`/`axis_z` references follow its actual applied rotation instead of
+always pointing along world axes — otherwise a constraint-driven rotation
+would silently corrupt any spatial reference chained off that part.
+
 ### Added - 2026-07-18 (`tiacad measure` CLI, TCAD-UX-3)
 
 New `tiacad measure INPUT REF1 REF2` command: reports distance, angle, and

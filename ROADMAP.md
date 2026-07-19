@@ -146,36 +146,53 @@ phase-by-phase history).
 
 ---
 
-## Next Milestone: Constraint Solver (Q4 2026)
+## Constraint Solver — MVP shipped 2026-07-19 (`TCAD-CON-1`)
 
 **Vision:** Declarative assemblies — specify intent, not coordinates
 
 ```yaml
 constraints:
   - type: flush
-    faces: [bracket.bottom, base.top]
-  - type: coaxial
-    axes: [shaft.axis, bearing.inner]
+    faces: [base.face_top, top.face_bottom]   # [reference, moving]
   - type: offset
+    faces: [surface.face_top, mount.face_bottom]
     distance: 5mm
-    parts: [mount, surface]
 ```
 
-**Why now:**
-- Component system + DAG are both done — constraints are the logical next capability
-- Users currently do manual positioning math; constraints eliminate this
-- Enables design intent: "make these flush" vs hardcoded offsets
+`flush` and `offset` are implemented and shipped (`tiacad_core/parser/constraint_builder.py`),
+wrapping CadQuery's own `Assembly.constrain()`/`.solve()` (`casadi`+IPOPT) rather than a
+hand-written solver — see the 2026-07-18 scoping investigation below for why. Both compile
+to ordinary `transform` operations at build time (baked via the same `TransformTracker`
+every other transform uses), matching the original MVP framing: rigid constraint
+propagation, not a live/bidirectional solve. `coaxial` and `tangent` are recognized by the
+schema but intentionally not implemented — they need edge/axis-selector query support this
+round didn't validate; raise a clear error instead of guessing. Follow-up filed as
+`TCAD-CON-3`.
+
+Convention: in `faces: [reference, moving]`, the first face's part is the one CadQuery's
+solver auto-locks (its first-referenced entity); the second is repositioned. `offset`
+requires `faces:` (not the `parts:` shorthand sketched in the original vision below) —
+that shorthand left which two faces get the gap underspecified.
+
+Prerequisite fixed first: `TCAD-CON-2` (`axis_x`/`axis_y`/`axis_z` part-local references
+always pointed along **world** axes regardless of a part's actual rotation) — needed so a
+constraint-driven rotation feeds correctly into any further spatial reference on that part.
+`Part`/`TransformTracker` now track a cumulative `current_orientation` rotation matrix
+alongside position.
 
 **What's required:**
-- Constraint YAML schema (flush, coaxial, offset, tangent)
-- Constraint validator (detect contradictions before solve)
-- Solver: start with geometric constraint propagation, not full symbolic solver
-- Integration with ModelGraph (constraints are just edges)
+- ~~Constraint YAML schema (flush, coaxial, offset, tangent)~~ Done — `flush`/`offset` implemented, `coaxial`/`tangent` schema-recognized (`TCAD-CON-3`)
+- Constraint validator (detect contradictions before solve) — not yet; CadQuery's solver currently just fails to converge on a contradiction
+- ~~Solver~~ Done — CadQuery's `Assembly.constrain()`/`.solve()`, not a hand-written one
+- Integration with ModelGraph (constraints are just edges) — not yet; constraints currently run as a standalone post-operations pass, not DAG edges
 
-**Effort:** ~~10-16 weeks~~ **Revised, see below — likely 2-4 weeks for the MVP.**
-**Timeline:** Q4 2026 (if prioritized)
+**Effort:** ~~10-16 weeks~~ ~~2-4 weeks~~ MVP (flush + offset) shipped in one session, thanks to reusing CadQuery's existing solver.
 
-**Note (2026-07-18 investigation, `TCAD-CON-1`):** Don't build a solver from scratch —
+---
+
+### 2026-07-18 scoping investigation (`TCAD-CON-1`)
+
+**Note:** Don't build a solver from scratch —
 **CadQuery's own `Assembly.constrain()`/`.solve()` already is one**, and it's already a
 working transitive dependency (`casadi`+IPOPT, confirmed importable and correct in this
 repo's venv with zero new installs). Its constraint types (`Plane`, `Point`, `Axis`,
