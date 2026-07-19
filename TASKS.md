@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 3
+next_id: 4
 archival: inline
 areas:
   VAL: 9
@@ -688,3 +688,23 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-19T09:11:49Z session:garnet-gem-0719] Fixed: constraints now re-solved every watched rebuild; see KNOWN_LIMITATIONS.md #1 and ROADMAP.md
+
+
+## TASK-TCAD-3 · Add examples/validation model exercising constraints: with an expect: block
+
+```yaml
+status: done
+priority: low
+tags: [constraints, examples]
+created: '2026-07-19T19:21:16Z'
+updated: '2026-07-19T19:21:27Z'
+session: umber-gem-0719
+links:
+  commits:
+  - c822b2c8d7a3ecb4bf59ec838ead2e6b47463e78
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-07-19T19:21:27Z session:umber-gem-0719] Added T4_constraint_flush.tiacad (ROADMAP.md worked example) + golden hash
