@@ -703,6 +703,17 @@
     "part": "bracket_with_hole",
     "volume": 6973.805328941534
   },
+  "examples/validation/T4_constraint_flush.tiacad": {
+    "bbox": [
+      5.0,
+      5.0,
+      5.0
+    ],
+    "canonical_mesh_hash": "0381cc0472495dc077dfe1e9756cbd4545058e83aacbc35f8b9a4a71adb005dd",
+    "mesh_hash": "7750c00eea27dc05fc543614e58b772d3b5379da0112fd1baaa09861697294bc",
+    "part": "top",
+    "volume": 124.99999999999999
+  },
   "examples/validation/T4_standoff_stack.tiacad": {
     "bbox": [
       6.0,

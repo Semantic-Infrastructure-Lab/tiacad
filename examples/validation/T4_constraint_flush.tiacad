@@ -1,0 +1,66 @@
+# Tier 4 — Declarative `constraints:` flush solve (TCAD-CON-1/CON-4), as distinct
+# from T4_two_boxes_flush.tiacad's manual `translate: {to: ..., offset: ...}`
+# positioning. This is the ROADMAP.md worked example that TCAD-CON-1's scoping
+# and tiacad_core/tests/test_parser/test_constraint_builder.py both verify
+# programmatically (`test_flush_mates_faces_reproduces_roadmap_example`), but
+# until now had zero coverage as an actual .tiacad model file — the constraint
+# solver (`flush`/`offset`/`coaxial`/`tangent`) had unit tests only, no entry
+# in the file-level validation-ladder corpus that `discover_models_with_expect`
+# walks. Also exercises the exact code path TCAD-CON-6 fixed (constraints
+# solved via ConstraintBuilder + a fresh SpatialResolver after parts build).
+#
+# top starts at its default, unconstrained position (center at origin), fully
+# nested inside base — `constraints:` must move it to sit flush on base's top
+# face, or the relations/no_overlap checks below fail.
+#
+# Geometry: base 10mm cube -> X:[-5,5] Y:[-5,5] Z:[-5,5], face_top center (0,0,5).
+# top 5mm cube, unconstrained -> X:[-2.5,2.5] Y:[-2.5,2.5] Z:[-2.5,2.5] (overlaps
+# base). After `flush: [base.face_top, top.face_bottom]` solves, top's center
+# moves to (0,0,7.5) -> Z:[5,10], touching base's top face with zero gap and
+# zero volume overlap.
+schema_version: "3.0"
+
+metadata:
+  name: T4 Constraint Flush
+  description: "Tier 4 assembly ladder: declarative constraints: flush-mates a box onto another via CadQuery's solver, not manual translate:"
+  version: "1.0"
+
+parameters:
+  base_size: 10
+  top_size: 5
+
+parts:
+  base:
+    primitive: box
+    parameters:
+      width: ${base_size}
+      height: ${base_size}
+      depth: ${base_size}
+    origin: center
+
+  top:
+    primitive: box
+    parameters:
+      width: ${top_size}
+      height: ${top_size}
+      depth: ${top_size}
+    origin: center
+
+constraints:
+  - type: flush
+    faces: [base.face_top, top.face_bottom]
+
+export:
+  default_part: top
+
+expect:
+  final: top
+  volume: 125
+  bbox: [5, 5, 5]
+  watertight: true
+  components: 1
+  relations:
+    - { flush: [base.face_top, top.face_bottom], gap: 0 }
+  no_overlap:
+    - [base, top]
+  tol: { length: 0.05, volume: 0.5 }
