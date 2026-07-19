@@ -19,6 +19,8 @@ import logging
 from dataclasses import dataclass
 from typing import List, Dict, Any, Tuple, Union, Optional, TYPE_CHECKING
 
+import numpy as np
+
 from .utils.geometry import get_center
 
 if TYPE_CHECKING:
@@ -66,13 +68,21 @@ class TransformTracker:
         final_geometry = tracker.get_geometry()
     """
 
-    def __init__(self, geometry, backend: Optional['GeometryBackend'] = None):
+    def __init__(
+        self,
+        geometry,
+        backend: Optional['GeometryBackend'] = None,
+        initial_orientation: Optional[np.ndarray] = None,
+    ):
         """
         Initialize tracker with starting geometry
 
         Args:
             geometry: CadQuery Workplane or mock for testing
             backend: Optional geometry backend for transforms and center queries
+            initial_orientation: Starting 3x3 rotation matrix (world -> part-local
+                axes), e.g. a part's already-accumulated orientation when tracking
+                a further transform on top of it. Defaults to identity.
         """
         self._geometry = geometry
         self.backend = backend
@@ -80,6 +90,12 @@ class TransformTracker:
         # Extract initial position from geometry
         self.initial_position = self._get_position(geometry)
         self.current_position = self.initial_position
+
+        # Cumulative rotation (world axes -> part-local axes), identity until rotated
+        self.initial_orientation = (
+            initial_orientation.copy() if initial_orientation is not None else np.eye(3)
+        )
+        self.current_orientation = self.initial_orientation.copy()
 
         # Transform history for debugging
         self.history: List[Dict[str, Any]] = []
@@ -209,6 +225,11 @@ class TransformTracker:
             origin_coords
         )
 
+        # Update cumulative orientation (rotation only affects orientation, not
+        # the rotation origin/position already handled above)
+        rotation_matrix = self._rotation_matrix(angle, axis_vector)
+        self.current_orientation = rotation_matrix @ self.current_orientation
+
     def _resolve_axis(self, axis: Union[str, List[float]]) -> Tuple[float, float, float]:
         """
         Resolve axis specification to normalized vector
@@ -316,6 +337,35 @@ class TransformTracker:
 
         # Translate back
         return (rx + ox, ry + oy, rz + oz)
+
+    @staticmethod
+    def _rotation_matrix(angle: float, axis: Tuple[float, float, float]) -> np.ndarray:
+        """
+        Build the 3x3 rotation matrix for a rotation by `angle` degrees around
+        normalized `axis`, via Rodrigues' rotation formula:
+        R = I*cos(theta) + sin(theta)*[axis]_x + (1-cos(theta))*(axis outer axis)
+
+        Args:
+            angle: Rotation angle in degrees
+            axis: Normalized rotation axis (x, y, z)
+
+        Returns:
+            3x3 rotation matrix
+        """
+        theta = math.radians(angle)
+        ux, uy, uz = axis
+        cos_theta = math.cos(theta)
+        sin_theta = math.sin(theta)
+
+        cross_matrix = np.array([
+            [0.0, -uz, uy],
+            [uz, 0.0, -ux],
+            [-uy, ux, 0.0],
+        ])
+        axis_vec = np.array([ux, uy, uz])
+        outer = np.outer(axis_vec, axis_vec)
+
+        return cos_theta * np.eye(3) + sin_theta * cross_matrix + (1 - cos_theta) * outer
 
     def _get_position(self, geometry) -> Tuple[float, float, float]:
         """

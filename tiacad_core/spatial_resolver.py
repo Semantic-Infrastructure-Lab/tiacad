@@ -405,12 +405,20 @@ class SpatialResolver:
                 'axis_z': [0, 0, 1]
             }
             if ref_name in axis_map:
-                direction = axis_map[ref_name]
+                # Part-local axis: rotate the world-aligned direction by the
+                # part's accumulated orientation, so a rotated part's axis_x/y/z
+                # follow its actual applied rotation instead of always pointing
+                # along world axes (TCAD-CON-2).
+                world_direction = np.array(axis_map[ref_name])
+                orientation = getattr(part, 'current_orientation', None)
+                direction = (
+                    orientation @ world_direction if isinstance(orientation, np.ndarray) else world_direction
+                )
                 # Axis goes through part center
                 center = self._resolve_part_local(part, 'center').position
                 return SpatialRef(
                     position=center,
-                    orientation=np.array(direction),
+                    orientation=direction,
                     ref_type='axis'
                 )
 

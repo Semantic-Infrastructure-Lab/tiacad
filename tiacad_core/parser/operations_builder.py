@@ -190,7 +190,9 @@ class OperationsBuilder:
 
             resolved = self.resolver.resolve(part_def)
             part = self.registry.get(part_name)
-            tracker = TransformTracker(part.geometry, backend=part.backend)
+            tracker = TransformTracker(
+                part.geometry, backend=part.backend, initial_orientation=part.current_orientation
+            )
 
             try:
                 if has_translate:
@@ -210,6 +212,7 @@ class OperationsBuilder:
                 geometry=tracker.get_geometry(),
                 metadata=part.metadata,
                 current_position=tracker.current_position,
+                current_orientation=tracker.current_orientation,
                 backend=part.backend,
             ))
             logger.debug(f"Applied inline translate/rotate to part '{part_name}'")
@@ -313,7 +316,9 @@ class OperationsBuilder:
             )
 
         # Create tracker with initial geometry
-        tracker = TransformTracker(input_part.geometry, backend=input_part.backend)
+        tracker = TransformTracker(
+            input_part.geometry, backend=input_part.backend, initial_orientation=input_part.current_orientation
+        )
 
         # Apply each transform
         for i, transform in enumerate(transforms):
@@ -342,6 +347,7 @@ class OperationsBuilder:
             geometry=tracker.get_geometry(),
             metadata=metadata,
             current_position=tracker.current_position,
+            current_orientation=tracker.current_orientation,
             backend=input_part.backend,
         )
 

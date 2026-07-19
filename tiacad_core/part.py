@@ -17,6 +17,8 @@ Phase 2 Enhancement:
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 
+import numpy as np
+
 # Avoid circular imports
 if TYPE_CHECKING:
     from .geometry import GeometryBackend
@@ -46,6 +48,11 @@ class Part:
             - Custom user data
         transform_history: List of transforms applied (for debugging/undo)
         current_position: Tracked position for "origin: current" support
+        current_orientation: Cumulative rotation applied to the part, as a 3x3
+            rotation matrix (world axis vectors -> part-local axis vectors).
+            Identity if the part has never been rotated. Lets part-local
+            references like 'axis_x'/'axis_y'/'axis_z' reflect the part's
+            actual applied rotation instead of always pointing along world axes.
         backend: Optional geometry backend (for backend-specific operations)
     """
 
@@ -54,12 +61,15 @@ class Part:
     metadata: Dict[str, Any] = field(default_factory=dict)
     transform_history: List[Dict[str, Any]] = field(default_factory=list)
     current_position: Optional[Tuple[float, float, float]] = None
+    current_orientation: Optional[np.ndarray] = None
     backend: Optional['GeometryBackend'] = None
 
     def __post_init__(self):
         """Initialize current_position to geometry center if not set"""
         if self.current_position is None:
             self.current_position = self._calculate_center()
+        if self.current_orientation is None:
+            self.current_orientation = np.eye(3)
 
     def _calculate_center(self) -> Tuple[float, float, float]:
         """Calculate geometric center of current geometry
@@ -140,6 +150,7 @@ class Part:
             metadata=self.metadata.copy(),
             transform_history=self.transform_history.copy(),
             current_position=self.current_position,
+            current_orientation=self.current_orientation.copy(),
             backend=self.backend,  # Preserve backend
         )
 
