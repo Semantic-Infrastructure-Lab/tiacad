@@ -634,20 +634,23 @@ notes_next: 2
 ## TASK-TCAD-CON-5 · ModelGraph/DAG integration for constraints — currently a standalone post-operations pass, not real DAG edges
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [constraints, architecture]
 created: '2026-07-19T07:53:53Z'
-updated: '2026-07-19T07:53:57Z'
+updated: '2026-07-19T19:49:11Z'
 session: sapphire-stone-0719
 links:
   references:
   - KNOWN_LIMITATIONS.md
+  commits:
+  - 4ce3527fc05b29b4a98f25f71852fbb7eb0a1332
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-19T19:49:11Z session:umber-gem-0719] Constraints are now ModelGraph nodes/edges; watch skips re-solve when nothing constraint-relevant changed. Per-constraint partitioning left explicitly out of scope (no perf need).
 
 
 ## TASK-TCAD-VAL-8 · UnusedPartsRule doesn't check per-part usage — stub since initial commit, only checks for missing export: section
