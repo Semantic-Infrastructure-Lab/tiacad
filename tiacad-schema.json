@@ -853,6 +853,39 @@
         "required": ["type", "input"]
       }
     },
+    "constraints": {
+      "type": "array",
+      "description": "Declarative assembly constraints, solved once at build time and compiled into transform operations on the constrained parts (see ROADMAP.md 'Constraint Solver'). 'flush' and 'offset' mate two named faces (auto-generated like 'part.face_top' or inline {type: face, part, selector}); the second face's part is moved to satisfy the constraint, the first stays fixed. 'coaxial' and 'tangent' are reserved for a future revision (not yet implemented).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["flush", "coaxial", "offset", "tangent"]
+          },
+          "faces": {
+            "type": "array",
+            "description": "Exactly two face references: [reference_face, moving_face]",
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "axes": {
+            "type": "array",
+            "description": "Exactly two axis references (reserved for 'coaxial')",
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "distance": {
+            "oneOf": [
+              { "type": "number" },
+              { "type": "string" }
+            ],
+            "description": "Offset distance along the reference face's normal, for type: offset"
+          }
+        },
+        "required": ["type"]
+      }
+    },
     "export": {
       "oneOf": [
         {

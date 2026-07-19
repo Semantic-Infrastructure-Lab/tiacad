@@ -23,6 +23,18 @@ from tiacad_core.part import PartRegistry
 
 logger = logging.getLogger(__name__)
 
+# Auto-generated face reference name -> CadQuery face selector string.
+# Shared with ConstraintBuilder, which needs the raw selector (not a resolved
+# SpatialRef) to build cq.Assembly query strings like "part@faces@>Z".
+FACE_SELECTOR_MAP = {
+    'face_top': '>Z',
+    'face_bottom': '<Z',
+    'face_left': '<X',
+    'face_right': '>X',
+    'face_front': '>Y',
+    'face_back': '<Y',
+}
+
 
 class SpatialResolverError(Exception):
     """Raised when spatial reference resolution fails"""
@@ -379,22 +391,14 @@ class SpatialResolver:
 
         elif ref_name.startswith('face_'):
             # Auto-generated face references
-            face_map = {
-                'face_top': '>Z',
-                'face_bottom': '<Z',
-                'face_left': '<X',
-                'face_right': '>X',
-                'face_front': '>Y',
-                'face_back': '<Y'
-            }
-            selector = face_map.get(ref_name)
+            selector = FACE_SELECTOR_MAP.get(ref_name)
             if selector:
                 return self._extract_face_ref(part, selector, 'center')
 
             # Not a recognized face name
             raise SpatialResolverError(
                 f"Unknown face reference: {ref_name}. "
-                f"Valid faces: {', '.join(face_map.keys())}"
+                f"Valid faces: {', '.join(FACE_SELECTOR_MAP.keys())}"
             )
 
         elif ref_name.startswith('axis_'):

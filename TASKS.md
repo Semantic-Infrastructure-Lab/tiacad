@@ -517,15 +517,19 @@ notes_next: 3
 ## TASK-TCAD-CON-2 · axis_x/y/z part-local spatial references always point along world axes, ignore part's actual rotation
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [bug, spatial-resolver]
 created: '2026-07-19T01:53:01Z'
-updated: '2026-07-19T01:53:21Z'
+updated: '2026-07-19T02:15:50Z'
 session: flux-lens-0718
-notes_next: 2
+links:
+  commits:
+  - 3dbc150e885f83c5fde5463c1f6d942b8cb230ba
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-19T01:53:21Z session:flux-lens-0718] Found during constraint-solver scoping (session flux-lens-0718, 2026-07-18): spatial_resolver.py's _resolve_part_local() handles axis_x/axis_y/axis_z by returning world X/Y/Z unit vectors through the part's bbox center, never consulting the part's actual applied rotation (Part has no persisted orientation state to consult -- see TCAD-CON-1 note #2). Currently latent because nothing rotates a part and then chains an axis_ reference off it in a way that would expose the discrepancy, but it will produce silently wrong results the moment (a) the constraint solver rotates a part and something downstream reads its axis_z, or (b) any existing manual rotate + axis_ chain that happens to rely on this today. Needs Part to track a real pose (position+orientation), then axis_* to derive from that pose rather than hardcoded world unit vectors.
+- [#2 2026-07-19T02:15:50Z session:polar-drought-0718] Fixed by tracking current_orientation (3x3 rotation matrix) on Part/TransformTracker, accumulated across rotate transforms and inline part rotate:, applied in SpatialResolver._resolve_part_local for axis_x/y/z. Regression tests in tiacad_core/tests/test_part_orientation.py.

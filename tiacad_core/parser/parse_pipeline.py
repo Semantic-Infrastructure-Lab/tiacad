@@ -4,11 +4,12 @@ import logging
 import os
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, FrozenSet, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, FrozenSet, List, Optional
 
 from ..spatial_resolver import SpatialResolver
 from ..utils.exceptions import TiaCADError
 from .color_parser import ColorParser
+from .constraint_builder import ConstraintBuilder
 from .errors import TiaCADParserError
 from .operations_builder import OperationsBuilder
 from .parameter_resolver import ParameterResolver
@@ -153,6 +154,7 @@ def extract_yaml_sections(yaml_data: Dict[str, Any]) -> Dict[str, Any]:
         'parts': yaml_data.get('parts', {}),
         'sketches': yaml_data.get('sketches', {}),
         'operations': yaml_data.get('operations', {}),
+        'constraints': yaml_data.get('constraints', []),
         'export': yaml_data.get('export', {}),
         'expect': yaml_data.get('expect', {}),
     }
@@ -328,6 +330,21 @@ def _apply_transforms_and_operations(
     return registry
 
 
+def _apply_constraints(registry, context: PreparedBuildContext, constraints_spec: List[Dict[str, Any]]):
+    """Solve `constraints:` (flush/offset) and bake the result into part transforms.
+
+    Runs after parts + operations so constraints may reference any part (including
+    ones created by `operations:`), and uses a fresh SpatialResolver since
+    `_apply_transforms_and_operations` may have rebuilt `registry` into a new object.
+    """
+    if not constraints_spec:
+        return
+
+    spatial_resolver = SpatialResolver(registry, context.resolved_references)
+    ConstraintBuilder(registry, spatial_resolver).apply_constraints(constraints_spec)
+    logger.info(f"Solved {len(constraints_spec)} constraint(s)")
+
+
 def parse_tiacad_dict(
     yaml_data: Dict[str, Any],
     *,
@@ -353,6 +370,7 @@ def parse_tiacad_dict(
         )
         parts_spec = sections['parts']
         operations_spec = sections['operations']
+        constraints_spec = sections['constraints']
 
         context = prepare_build_context(
             yaml_data,
@@ -366,6 +384,7 @@ def parse_tiacad_dict(
         registry = _apply_transforms_and_operations(
             registry, context, parts_spec, operations_spec, backend=backend
         )
+        _apply_constraints(registry, context, constraints_spec)
 
         doc = document_factory(
             metadata=sections['metadata'],
