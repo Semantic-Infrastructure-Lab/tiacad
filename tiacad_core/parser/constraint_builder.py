@@ -247,6 +247,61 @@ class ConstraintBuilder:
 
         return touched_parts
 
+    def _compute_shortcut_locations(
+        self, component: List[Tuple[str, str, str, str, str, float]], assembly: cq.Assembly
+    ) -> Tuple[Dict[str, cq.Location], set]:
+        """Compute direct-geometry Location overrides for parts where
+        CadQuery/IPOPT's own solved rotation can't be trusted, instead of
+        taking `assembly.objects[part].loc` at face value.
+
+        A flush/offset moving part touched by exactly one constraint in this
+        component gets its Location recomputed via `_flush_swing_location`
+        (TCAD-CON-10). A part touched by exactly two flush/offset constraints
+        on mutually opposite faces (already validated by
+        `_check_multi_moving_flush_offset`) gets the analogous TCAD-CON-11
+        treatment via `_multi_face_swing_location` — which also means both of
+        *that* part's own references need pinning to their true pose here
+        (see the loop below), since CadQuery only locks the very first-added
+        body in the component and a second, independent reference can't
+        otherwise be trusted to bake to identity.
+
+        Returns `(locations, multi_face_parts)`: the override map, and the
+        set of mov_parts handled via the multi-face path (the caller must
+        skip the generic post-bake 'offset' translate for these — their
+        target position, offset distances included, is already baked in)."""
+        touch_count: Dict[str, int] = {}
+        moving_parts: set = set()
+        for _ctype, rp, _rs, mp, _ms, _d in component:
+            touch_count[rp] = touch_count.get(rp, 0) + 1
+            touch_count[mp] = touch_count.get(mp, 0) + 1
+            moving_parts.add(mp)
+
+        flush_offset_by_mov: Dict[str, List[Tuple[str, str, str, str, float]]] = {}
+        for ctype, ref_part, ref_sel, mov_part, mov_sel, distance in component:
+            if ctype in ('flush', 'offset'):
+                flush_offset_by_mov.setdefault(mov_part, []).append(
+                    (ctype, ref_part, ref_sel, mov_sel, distance)
+                )
+
+        locations: Dict[str, cq.Location] = {}
+        multi_face_parts: set = set()
+        for mov_part, entries in flush_offset_by_mov.items():
+            if touch_count[mov_part] == 1:
+                ctype, ref_part, ref_sel, mov_sel, _distance = entries[0]
+                locations[mov_part] = self._flush_swing_location(
+                    ref_part, ref_sel, mov_part, mov_sel, assembly.objects[ref_part].loc
+                )
+            elif touch_count[mov_part] == len(entries) == 2 and entries[0][3] != entries[1][3]:
+                locations[mov_part] = self._multi_face_swing_location(
+                    mov_part, entries, assembly, moving_parts
+                )
+                multi_face_parts.add(mov_part)
+                for _ctype, ref_part, _ref_sel, _mov_sel, _distance in entries:
+                    if ref_part not in moving_parts:
+                        locations.setdefault(ref_part, cq.Location())
+
+        return locations, multi_face_parts
+
     def _solve_and_bake_component(
         self, component: List[Tuple[str, str, str, str, str, float]]
     ) -> List[str]:
@@ -278,20 +333,7 @@ class ConstraintBuilder:
         except Exception as e:
             raise ConstraintBuilderError(f"Constraint solve failed: {e}") from e
 
-        # flush/offset moving parts touched by exactly one constraint in this
-        # component get their Location recomputed directly rather than taken
-        # from IPOPT's solve — see _flush_swing_location (TCAD-CON-10).
-        touch_count: Dict[str, int] = {}
-        for _ctype, rp, _rs, mp, _ms, _d in component:
-            touch_count[rp] = touch_count.get(rp, 0) + 1
-            touch_count[mp] = touch_count.get(mp, 0) + 1
-
-        flush_swing_locs: Dict[str, cq.Location] = {}
-        for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in component:
-            if ctype in ('flush', 'offset') and touch_count[mov_part] == 1:
-                flush_swing_locs[mov_part] = self._flush_swing_location(
-                    ref_part, ref_sel, mov_part, mov_sel, assembly.objects[ref_part].loc
-                )
+        flush_swing_locs, multi_face_parts = self._compute_shortcut_locations(component, assembly)
 
         # Bake the solved position into every involved part (locked parts
         # solve to an identity location, so this is a no-op for them).
@@ -302,8 +344,10 @@ class ConstraintBuilder:
         # 'offset' constraints add a translate on top of the now-baked flush
         # position, along the reference face's normal (resolved fresh, so it
         # reflects the reference part's actual — possibly also-constrained — pose).
+        # Skipped for a multi-face-fit part: _multi_face_swing_location already
+        # baked both faces' target positions (offset distances included).
         for ctype, ref_part, ref_sel, mov_part, _mov_sel, distance in component:
-            if ctype == 'offset':
+            if ctype == 'offset' and mov_part not in multi_face_parts:
                 self._apply_offset_translate(mov_part, ref_part, ref_sel, distance)
 
         return involved_parts
@@ -359,8 +403,9 @@ class ConstraintBuilder:
     def _check_multi_moving_flush_offset(
         self, solved_indexed: List[Tuple[int, Tuple[str, str, str, str, str, float]]]
     ) -> None:
-        """Reject a part that is the *moving* side of two or more flush/offset
-        constraints in the same solve batch (TCAD-CON-11).
+        """Reject a part that is the *moving* side of 3+ flush/offset
+        constraints, or of 2 that don't mate mutually opposite faces, in the
+        same solve batch (TCAD-CON-11).
 
         `_flush_swing_location` (TCAD-CON-10) replaces CadQuery/IPOPT's solved
         rotation with a direct geometric computation, but only for a moving
@@ -368,16 +413,27 @@ class ConstraintBuilder:
         call site in `apply_constraints`. A part moved via two or more
         *different faces* by flush/offset constraints in the same batch (e.g.
         sandwiched between two independently-fixed reference parts, one
-        mating its bottom face and another its top face) falls through to
-        CadQuery's raw joint solve instead, which reintroduces the exact
+        mating its bottom face and another its top face) used to fall through
+        to CadQuery's raw joint solve instead, which reintroduced the exact
         TCAD-CON-10 failure mode: confirmed by reproduction (a mount box
         positioned by an offset off one part and a flush against another
-        swung up to ~44 degrees depending on unrelated part sizes). Properly
-        supporting this shape needs a coupled least-squares rotation fit (and
-        a position-consistency check, since two independently-fixed
-        references aren't guaranteed to agree) that hasn't been built — see
-        TCAD-CON-11. Fail loudly here instead of silently baking a possibly-
-        arbitrary rotation.
+        swung up to ~44 degrees depending on unrelated part sizes).
+
+        The common shape this takes — a part sandwiched between two
+        references via a pair of *mutually opposite* faces (e.g. its bottom
+        and top) — is now handled directly: `_solve_and_bake_component`
+        computes its Location via `_multi_face_swing_location` instead of
+        CadQuery's joint solve, using the same single-rotation shortcut as
+        `_flush_swing_location` (the two faces being exactly opposite means
+        satisfying the first constraint's normal alignment automatically
+        satisfies the second's), plus an explicit position-consistency check
+        (two independently-fixed references aren't guaranteed to actually
+        agree on where this part must land). This method's job narrows to
+        rejecting the shapes that check doesn't cover: 3+ distinct faces, or
+        2 faces that aren't mutually opposite (e.g. adjacent faces of an
+        L-shaped mount against two perpendicular walls) — general coupled
+        multi-axis rotation fitting for those has no reproduced use case and
+        isn't built.
 
         Deliberately narrower than "moving role count > 1": the *same* face
         mated flush/offset against two coincident reference planes (a
@@ -396,16 +452,31 @@ class ConstraintBuilder:
             first_index.setdefault(mov_part, i)
 
         for mov_part, faces in mov_faces.items():
-            if len(faces) > 1:
-                raise ConstraintBuilderError(
-                    f"'{mov_part}' is positioned via {len(faces)} different faces "
-                    f"({', '.join(sorted(faces))}) by flush/offset constraints in the same "
-                    f"constraints: batch. This isn't supported yet — see KNOWN_LIMITATIONS.md "
-                    f"'Constraint Solver' (TCAD-CON-11). Workaround: position '{mov_part}' with one "
-                    f"flush/offset constraint and reposition the other mating part with a `transform` "
-                    f"operation instead.",
-                    constraint_index=first_index[mov_part],
-                )
+            if len(faces) <= 1:
+                continue
+            if len(faces) == 2 and self._mov_faces_are_opposite(mov_part, faces):
+                continue
+            raise ConstraintBuilderError(
+                f"'{mov_part}' is positioned via {len(faces)} different faces "
+                f"({', '.join(sorted(faces))}) by flush/offset constraints in the same "
+                f"constraints: batch. Only two *mutually opposite* faces (e.g. bottom and "
+                f"top) are supported — see KNOWN_LIMITATIONS.md 'Constraint Solver' "
+                f"(TCAD-CON-11). Workaround: position '{mov_part}' with one "
+                f"flush/offset constraint and reposition the other mating part with a `transform` "
+                f"operation instead.",
+                constraint_index=first_index[mov_part],
+            )
+
+    def _mov_faces_are_opposite(self, mov_part: str, faces: set) -> bool:
+        """True if `mov_part`'s two named local faces have exactly opposed
+        normals (e.g. `face_bottom`/`face_top` of a box) — the shape
+        `_multi_face_swing_location` (TCAD-CON-11) knows how to solve."""
+        sel_a, sel_b = sorted(faces)
+        face_a = self.spatial_resolver.resolve({'type': 'face', 'part': mov_part, 'selector': sel_a})
+        face_b = self.spatial_resolver.resolve({'type': 'face', 'part': mov_part, 'selector': sel_b})
+        cross_norm = float(np.linalg.norm(np.cross(face_a.orientation, face_b.orientation)))
+        dot = float(np.dot(face_a.orientation, face_b.orientation))
+        return cross_norm <= 1e-6 and dot < 0
 
     @staticmethod
     def _minimal_rotation(source: np.ndarray, target: np.ndarray) -> Tuple[np.ndarray, float]:
@@ -494,6 +565,98 @@ class ConstraintBuilder:
         axis, angle_rad = self._minimal_rotation(mov_face.orientation, target_normal)
         rotated_centroid = self._rotate_vector(mov_face.position, axis, angle_rad)
         translation = ref_position - rotated_centroid
+
+        return cq.Location(tuple(translation.tolist()), tuple(axis.tolist()), math.degrees(angle_rad))
+
+    def _multi_face_swing_location(
+        self,
+        mov_part: str,
+        entries: List[Tuple[str, str, str, str, float]],
+        assembly: cq.Assembly,
+        moving_parts: set,
+    ) -> cq.Location:
+        """Compute the Location for a part positioned via flush/offset
+        constraints on two mutually opposite faces against two
+        independently-fixed reference parts — e.g. sandwiched between a
+        floor below and a ceiling above (TCAD-CON-11).
+
+        `entries` is the pair of `(ctype, ref_part, ref_sel, mov_sel,
+        distance)` tuples for `mov_part`'s two flush/offset constraints in
+        this component; the caller (`_check_multi_moving_flush_offset`) has
+        already verified `mov_part`'s two named faces are mutually opposite.
+
+        Because the two moving faces are exactly opposite, one rigid
+        rotation satisfying the first constraint's normal alignment
+        (identical shortest-arc computation to `_flush_swing_location`,
+        TCAD-CON-10) automatically satisfies the second's normal alignment
+        too — but only if the two *reference* planes are themselves mutually
+        opposite (facing each other); if they're not, no single rigid
+        placement can satisfy both, so that's checked explicitly and raised
+        as a contradiction rather than assumed. Even when the reference
+        planes do face each other, they aren't guaranteed to be the right
+        *distance* apart for `mov_part`'s own geometry (its face-to-face
+        depth plus both declared offsets) — checked explicitly too, since
+        two independently-fixed references have no way to know about each
+        other. Both checks together are the "position-consistency check"
+        TCAD-CON-11 is filed against.
+
+        `moving_parts` is the set of every part that is a *mov_part* of some
+        constraint in this component. CadQuery's `assembly.solve()` locks
+        only the very first-added body in the whole component as its fixed
+        anchor — for a plain chain (this part's own reference) that's the
+        established, trusted case `_flush_swing_location` relies on too, but
+        here there are *two* independent reference parts, and CadQuery has
+        no way to know both must stay fixed. A reference that's never
+        anyone's mov_part isn't guaranteed to be CadQuery's chosen anchor,
+        so its solved Location can't be trusted — use its true (identity,
+        pre-solve) pose directly instead. A reference that *is* itself
+        chained off another constraint keeps using its solved Location, same
+        as `_flush_swing_location`."""
+        (_ctype_a, ref_part_a, ref_sel_a, mov_sel_a, distance_a), \
+            (_ctype_b, ref_part_b, ref_sel_b, mov_sel_b, distance_b) = entries
+
+        def _world_face(ref_part: str, ref_sel: str) -> Tuple[np.ndarray, np.ndarray]:
+            ref_loc = assembly.objects[ref_part].loc if ref_part in moving_parts else cq.Location()
+            axis, angle, translation = self._decompose_location(ref_loc)
+            face = self.spatial_resolver.resolve({'type': 'face', 'part': ref_part, 'selector': ref_sel})
+            position = self._rotate_vector(face.position, axis, angle) + translation
+            normal = self._rotate_vector(face.orientation, axis, angle)
+            return position, normal
+
+        ref_position_a, ref_normal_a = _world_face(ref_part_a, ref_sel_a)
+        ref_position_b, ref_normal_b = _world_face(ref_part_b, ref_sel_b)
+
+        cross_norm = float(np.linalg.norm(np.cross(ref_normal_a, ref_normal_b)))
+        dot = float(np.dot(ref_normal_a, ref_normal_b))
+        if cross_norm > 1e-6 or dot >= 0:
+            raise ConstraintBuilderError(
+                f"'{mov_part}' is sandwiched between '{ref_part_a}.{ref_sel_a}' and "
+                f"'{ref_part_b}.{ref_sel_b}', but those two reference planes don't face "
+                f"each other — can't satisfy both flush/offset constraints with a single "
+                f"rigid placement."
+            )
+
+        mov_face_a = self.spatial_resolver.resolve({'type': 'face', 'part': mov_part, 'selector': mov_sel_a})
+        mov_face_b = self.spatial_resolver.resolve({'type': 'face', 'part': mov_part, 'selector': mov_sel_b})
+
+        target_normal = -ref_normal_a
+        axis, angle_rad = self._minimal_rotation(mov_face_a.orientation, target_normal)
+
+        rotated_a = self._rotate_vector(mov_face_a.position, axis, angle_rad)
+        translation = (ref_position_a + ref_normal_a * distance_a) - rotated_a
+
+        rotated_b = self._rotate_vector(mov_face_b.position, axis, angle_rad)
+        landed_b = rotated_b + translation
+        actual_gap_b = float(np.dot(landed_b - ref_position_b, ref_normal_b))
+        if abs(actual_gap_b - distance_b) > 1e-4:
+            raise ConstraintBuilderError(
+                f"'{mov_part}' can't satisfy both flush/offset constraints at once: "
+                f"positioning it via '{ref_part_a}.{ref_sel_a}' leaves '{mov_sel_b}' "
+                f"{actual_gap_b:.4f}mm from '{ref_part_b}.{ref_sel_b}', not the declared "
+                f"{distance_b:g}mm. The two reference planes must be exactly "
+                f"{distance_a + distance_b:g}mm apart plus '{mov_part}''s own depth between "
+                f"'{mov_sel_a}' and '{mov_sel_b}' for this to solve."
+            )
 
         return cq.Location(tuple(translation.tolist()), tuple(axis.tolist()), math.degrees(angle_rad))
 

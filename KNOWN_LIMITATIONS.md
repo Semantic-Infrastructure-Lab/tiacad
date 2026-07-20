@@ -141,22 +141,41 @@ registry state) when computing the target plane. Regression test:
 `test_constraint_builder.py::TestOffsetConstraint::test_offset_does_not_introduce_arbitrary_rotation`
 (the exact 20x20x2/4x4x4 ratio that previously rotated ~50°).
 
-**Rejected 2026-07-19 (`TCAD-CON-11`):** a part positioned via two *different* faces by
-flush/offset constraints in the same batch (e.g. sandwiched between two independently-fixed
-reference parts — one mating its bottom face, another its top face) now raises
-`ConstraintBuilderError` naming the part and both faces, instead of silently baking a
-potentially-arbitrary rotation. This is the exact residual gap TCAD-CON-10 left untested:
-reproduced live (a 4x4x4 "mount" offset off a 20x20x2 "surface" below and flush against a
-4x4x2 "cap" above swung up to ~44° depending on unrelated part sizes — same flat-direction
-IPOPT bug as TCAD-CON-10, just on the joint-solve path the geometric shortcut doesn't cover).
-The *same* face mated flush/offset against two coincident reference planes is unaffected —
-that's a legitimate redundant double-mate (see
-`test_same_reference_plane_from_different_parts_does_not_conflict`), not a second independent
-constraint, so it doesn't reopen the ambiguity. See `_check_multi_moving_flush_offset` in
+**Rejected 2026-07-19, partially fixed 2026-07-20 (`TCAD-CON-11`):** a part positioned via
+two *different* faces by flush/offset constraints in the same batch (e.g. sandwiched between
+two independently-fixed reference parts — one mating its bottom face, another its top face)
+originally raised `ConstraintBuilderError` naming the part and both faces unconditionally,
+instead of silently baking a potentially-arbitrary rotation. This was the exact residual gap
+TCAD-CON-10 left untested: reproduced live (a 4x4x4 "mount" offset off a 20x20x2 "surface"
+below and flush against a 4x4x2 "cap" above swung up to ~44° depending on unrelated part
+sizes — same flat-direction IPOPT bug as TCAD-CON-10, just on the joint-solve path the
+geometric shortcut didn't cover).
+
+The common case — exactly two *mutually opposite* faces (e.g. bottom and top) — is now
+solved directly instead of rejected: `_multi_face_swing_location` (`constraint_builder.py`)
+uses the same single-rotation shortcut as `_flush_swing_location` (TCAD-CON-10), since two
+exactly-opposite moving faces mean satisfying the first constraint's normal alignment
+automatically satisfies the second's, *if* the two reference planes are themselves mutually
+opposite — checked explicitly and raised as a contradiction if not, along with a
+position-consistency check (the two references' planes must be exactly the right distance
+apart for the part's own geometry plus both declared offsets) since two independently-fixed
+references have no way to know about each other. A second subtlety: CadQuery's `solve()`
+only locks the very first-added body in a component, so a second, independent reference part
+(e.g. "ceiling" when "floor" got the real lock) can't be trusted to bake to its solved
+Location the normal way — `_compute_shortcut_locations` pins both of a multi-face part's
+references to their true pre-solve pose explicitly instead. The *same* face mated
+flush/offset against two coincident reference planes is unaffected — that's a legitimate
+redundant double-mate (see `test_same_reference_plane_from_different_parts_does_not_conflict`),
+not a second independent constraint, so it doesn't reopen the ambiguity. See
+`_check_multi_moving_flush_offset`/`_mov_faces_are_opposite`/`_multi_face_swing_location` in
 `constraint_builder.py` and
-`test_constraint_builder.py::TestOffsetConstraint::test_moving_part_via_two_different_faces_raises`.
-Properly *supporting* this shape (rather than rejecting it) is tracked as follow-on work —
-see `tt show TCAD-CON-11`.
+`test_constraint_builder.py::TestOffsetConstraint::test_sandwiched_between_two_fixed_references_solves`
+/ `test_sandwiched_between_inconsistent_references_raises`.
+
+**Still rejected:** 3+ distinct faces, or 2 faces that aren't mutually opposite (e.g.
+adjacent faces of an L-shaped mount against two perpendicular walls) — general coupled
+multi-axis rotation fitting for those has no reproduced use case and isn't built. See
+`test_moving_part_via_two_non_opposite_faces_still_raises` and `tt show TCAD-CON-11`.
 
 **Fixed 2026-07-20 (`TCAD-CON-12`):** multiple *independent* constraint groups in the
 same `constraints:` block used to silently corrupt each other's geometry. Root cause:
@@ -197,13 +216,12 @@ See `tt show TCAD-CON-12`.
 - Angular/relative-orientation constraints (`parallel`, `perpendicular`, `angle`,
   `symmetric`) — named and reserved (`TCAD-CON-9`, 2026-07-19) so requesting one errors as
   "reserved for a future revision" rather than "unknown type", but none are implemented
-- A part positioned via two different faces by flush/offset in the same batch is now
-  rejected with a clear error (`TCAD-CON-11`, above) rather than mishandled — actually
-  *solving* that shape (coupled least-squares rotation fit across both face-normal pairs,
-  plus a position-consistency check since two independently-fixed references aren't
-  guaranteed to agree) is unimplemented. `coaxial` in this same shape is untested either way
-  (not covered by the new check, which is scoped to flush/offset only, matching
-  `_check_plane_conflicts`'s existing scope).
+- A part positioned via two *mutually opposite* faces by flush/offset in the same batch now
+  solves directly (`TCAD-CON-11`, above); 3+ faces, or 2 faces that aren't mutually opposite,
+  are still rejected with a clear error rather than mishandled — general coupled multi-axis
+  rotation fitting for those has no reproduced use case. `coaxial` in either shape is
+  untested either way (not covered by `_check_multi_moving_flush_offset`, which is scoped to
+  flush/offset only, matching `_check_plane_conflicts`'s existing scope).
 
 **Workaround (for anything constraints don't cover yet):**
 ```yaml

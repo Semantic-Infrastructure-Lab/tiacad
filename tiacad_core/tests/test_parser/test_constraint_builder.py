@@ -111,9 +111,16 @@ class TestOffsetConstraint:
         this check existed: the same 20x20x2/4x4x4 size ratio that
         previously gave ~50deg on the single-constraint path gave the
         identical class of spurious rotation here too (swinging up to ~44deg
-        across a size sweep) because 'mount' falls through to CadQuery's raw
-        joint solve instead of the TCAD-CON-10 geometric shortcut. Must fail
-        loudly rather than silently bake that rotation."""
+        across a size sweep) because 'mount' fell through to CadQuery's raw
+        joint solve instead of the TCAD-CON-10 geometric shortcut.
+
+        'mount.face_bottom'/'mount.face_top' *are* mutually opposite, so this
+        is now solved via `_multi_face_swing_location` (TCAD-CON-11) rather
+        than rejected outright — but 'surface' and 'cap' here weren't placed
+        to actually agree (that was never the point of this test; it's the
+        pre-TCAD-CON-11 repro), so the fit's position-consistency check
+        correctly reports the resulting contradiction instead of silently
+        baking a spurious rotation."""
         backend = CadQueryBackend()
         registry = PartRegistry()
         registry.add(Part(name='surface', geometry=cq.Workplane('XY').box(20, 20, 2), backend=backend))
@@ -121,10 +128,81 @@ class TestOffsetConstraint:
         registry.add(Part(name='cap', geometry=cq.Workplane('XY').box(4, 4, 2), backend=backend))
         resolver = SpatialResolver(registry)
 
-        with pytest.raises(ConstraintBuilderError, match="different faces"):
+        with pytest.raises(ConstraintBuilderError, match="can't satisfy both"):
             ConstraintBuilder(registry, resolver).apply_constraints([
                 {'type': 'offset', 'faces': ['surface.face_top', 'mount.face_bottom'], 'distance': 5},
                 {'type': 'flush', 'faces': ['cap.face_bottom', 'mount.face_top']},
+            ])
+
+    def test_moving_part_via_two_non_opposite_faces_still_raises(self):
+        """Two *different* faces that aren't mutually opposite (e.g. bottom
+        and a side face) is a genuinely different, harder problem (coupled
+        multi-axis rotation fitting) that TCAD-CON-11 doesn't attempt — still
+        rejected up front, same as the pre-fix behavior for any multi-face
+        case."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='wall_a', geometry=cq.Workplane('XY').box(20, 20, 2), backend=backend))
+        registry.add(Part(name='wall_b', geometry=cq.Workplane('XY').box(20, 2, 20), backend=backend))
+        registry.add(Part(name='bracket', geometry=cq.Workplane('XY').box(4, 4, 4), backend=backend))
+        resolver = SpatialResolver(registry)
+
+        with pytest.raises(ConstraintBuilderError, match="different faces"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'flush', 'faces': ['wall_a.face_top', 'bracket.face_bottom']},
+                {'type': 'flush', 'faces': ['wall_b.face_front', 'bracket.face_front']},
+            ])
+
+    def test_sandwiched_between_two_fixed_references_solves(self):
+        """TCAD-CON-11: 'mount' positioned via an offset off 'floor' (below)
+        AND a flush against 'ceiling' (above) — the documented sandwich
+        shape — now solves directly instead of being rejected, when 'floor'
+        and 'ceiling' actually agree on the gap between them. 'ceiling' is
+        placed so its bottom face sits exactly `distance + mount's own
+        depth` above 'floor's top face, the consistency this class of
+        constraint requires."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='floor', geometry=cq.Workplane('XY').box(40, 40, 10), backend=backend))
+        registry.add(Part(
+            name='ceiling',
+            geometry=cq.Workplane('XY').box(40, 40, 10).translate((0, 0, 19)),
+            backend=backend,
+        ))
+        registry.add(Part(name='mount', geometry=cq.Workplane('XY').box(10, 10, 6), backend=backend))
+        resolver = SpatialResolver(registry)
+
+        ConstraintBuilder(registry, resolver).apply_constraints([
+            {'type': 'offset', 'faces': ['floor.face_top', 'mount.face_bottom'], 'distance': 3},
+            {'type': 'flush', 'faces': ['ceiling.face_bottom', 'mount.face_top']},
+        ])
+
+        # floor.top=5, +3 offset -> mount.bottom=8, mount height 6 -> center z=11
+        _approx(registry.get('mount').get_center(), (0.0, 0.0, 11.0), abs_tol=1e-4)
+        assert np.allclose(registry.get('mount').current_orientation, np.eye(3), atol=1e-6)
+        assert np.allclose(registry.get('floor').current_orientation, np.eye(3), atol=1e-6)
+        assert np.allclose(registry.get('ceiling').current_orientation, np.eye(3), atol=1e-6)
+
+    def test_sandwiched_between_inconsistent_references_raises(self):
+        """Same shape as the passing case above, but 'ceiling' is placed 1mm
+        too high — floor and ceiling disagree on the gap, so no single rigid
+        placement of 'mount' can satisfy both constraints. Must fail loudly
+        with the actual mismatch rather than silently baking a compromise."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='floor', geometry=cq.Workplane('XY').box(40, 40, 10), backend=backend))
+        registry.add(Part(
+            name='ceiling',
+            geometry=cq.Workplane('XY').box(40, 40, 10).translate((0, 0, 20)),
+            backend=backend,
+        ))
+        registry.add(Part(name='mount', geometry=cq.Workplane('XY').box(10, 10, 6), backend=backend))
+        resolver = SpatialResolver(registry)
+
+        with pytest.raises(ConstraintBuilderError, match="can't satisfy both"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'offset', 'faces': ['floor.face_top', 'mount.face_bottom'], 'distance': 3},
+                {'type': 'flush', 'faces': ['ceiling.face_bottom', 'mount.face_top']},
             ])
 
     def test_offset_does_not_introduce_arbitrary_rotation(self):
