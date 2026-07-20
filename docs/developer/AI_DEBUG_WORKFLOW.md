@@ -167,68 +167,27 @@ Prefer JSON output over plain console text.
 
 ---
 
+## Shipped Since This Doc Was Written
+
+The two highest-leverage items originally proposed below are done — noted here
+so this doc stops telling AI readers a capability doesn't exist when it does:
+
+- **Model-local contracts**: `expect:` blocks in YAML (`final`, `volume`, `bbox`,
+  `watertight`, `components`, `relations`, `no_overlap`, `tol`), evaluated by
+  `tiacad verify` (CI-friendly, non-zero exit on failure) and `tiacad check
+  --contract`. See [MODEL_VALIDATION.md](MODEL_VALIDATION.md) and
+  `docs/developer/VALIDATION_STRENGTHENING.md` §4.1 for the authoring workflow
+  (`tiacad audit --write-contract` seeds the block from a reviewed build).
+- **Negative trust scenarios**: `examples/validation/negative/` holds
+  intentionally-broken models (contradictory constraints, disconnected
+  assemblies, etc.) that must fail validation — proving the validators catch
+  real mistakes, not just that positive examples build.
+
 ## Roadmap: Not Yet Implemented
 
-Reusable geometry summaries and the debug bundle command (above) are shipped —
-see [CHANGELOG.md](../../CHANGELOG.md) for that history. Highest-leverage remaining work,
-roughly in priority order:
+Highest-leverage remaining work, roughly in priority order:
 
-### 1. Model-Local Contracts
-
-Let models declare their own reviewable intent directly in YAML:
-
-```yaml
-contracts:
-  final_assembly:
-    extents: {x: 100, y: 80, z: 12, tolerance: 0.2}
-    watertight: true
-    component_count: 1
-  mounting_hole:
-    diameter: 3.2
-    coaxial_with: screw.axis_z
-```
-
-This would let a future `tiacad verify` command evaluate contracts and emit:
-
-- pass/fail/warn status
-- measured values
-- expected values and tolerances
-- implicated parts/references
-- optional annotated trust render callouts
-
-Model-local contracts are especially useful for AI review because the intent
-travels with the YAML instead of living only in a Python test file. This is the
-single highest-value next step — see [MODEL_VALIDATION.md](MODEL_VALIDATION.md#best-next-improvements).
-
-### 2. Negative Trust Scenarios
-
-Keep a small set of intentionally broken trust models that must fail validation:
-
-- disconnected assembly
-- missing boolean cut
-- wrong revolve axis
-- mirrored part on the wrong side
-- imported component floating at origin
-- clearance below required minimum
-
-Positive examples prove TiaCAD can build valid models. Negative examples prove
-the validators catch real mistakes — nothing today proves that.
-
-### 3. Lightweight Contracts (pre-YAML)
-
-Support small assertions that are easy to evaluate and explain, as a stepping
-stone before full model-local contracts:
-
-- part dimensions in range
-- opening width in range
-- parts aligned on an axis
-- final assembly has one connected component
-- selected face normal within angle tolerance
-- left/right features symmetric within tolerance
-
-These are much more realistic than asking AI to infer full functional intent.
-
-### 4. Named Reference Promotion
+### 1. Named Reference Promotion
 
 Encourage models to expose stable, meaningful named references:
 
@@ -239,18 +198,24 @@ Encourage models to expose stable, meaningful named references:
 
 AI and tests both work better when important geometry has stable names.
 
-### 5. Build Diff Support
+### 2. Build Diff Support (partially shipped)
 
-The DAG and incremental build system already know which nodes changed. Expose
-that as a debug artifact:
+`debug --compare PREVIOUS_BUNDLE` already emits `compare_report.json` with
+changed/added/removed parts and operations between two bundles — the
+node-level diff this item originally asked for. Still missing: exposing the
+DAG/incremental builder's own dirty/rebuilt/cached-node classification (from
+`tiacad watch`) as part of that report, so an AI can distinguish "this node
+was recomputed" from "this node's output changed."
 
-- dirty nodes
-- rebuilt nodes
-- cached nodes
-- first node whose output summary changed
+### 3. Render Command Should Surface Validation Issues, Not Just Annotate Them
 
-This gives AI a natural fault-localization path, and would let `compare_report.json`
-report richer node-level diffs than parts/operations alone.
+`tiacad render` already runs `AssemblyValidator` and passes issues into the
+trust-render annotator (so failures get plotted at their `world_position`),
+but it never prints a text summary the way `tiacad debug` does. An agent
+running `render` alone for a quick look can get a PNG for a build that failed
+validation with no console indication anything is wrong — see
+`tt show TCAD-UX-7`. Fix: print the same `N errors, N warnings` line `debug`
+prints, not just draw markers on the image.
 
 ---
 

@@ -5,9 +5,9 @@ id_prefix: TCAD
 next_id: 4
 archival: inline
 areas:
-  VAL: 13
-  UX: 7
-  API: 2
+  VAL: 14
+  UX: 10
+  API: 3
   ARCH: 10
   CON: 12
   FIN: 2
@@ -906,6 +906,96 @@ links:
   references:
   - KNOWN_LIMITATIONS.md
 ```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-13 · check/audit CLI 'W x H x D' table swaps H and D columns vs box primitive's width/height/depth axis convention
+
+```yaml
+status: backlog
+priority: high
+tags: [bug]
+created: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:03:00Z'
+session: cerulean-gradient-0720
+```
+
+get_dimensions() in tiacad_core/testing/dimensions.py:87-91 labels Y-extent as 'height' and Z-extent as 'depth', but the box primitive (cadquery_backend.py:31-33, create_box) maps width->X, depth->Y, height->Z per docs/user/YAML_REFERENCE.md. Result: 'tiacad check'/'tiacad audit' print H and D swapped relative to the part's own declared width/height/depth parameters. Confirmed via a box with height=100,depth=6 (intending tall/thin) printing as '100.0 x 6.0 x 100.0' (H and D reversed). Only affects check/audit's human-readable table -- debug bundle's geometry_summary.py uses raw bbox arrays, not this labeling, so it's unaffected. Fix get_dimensions to use the same X/Y/Z->width/depth/height convention as create_box.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-UX-7 · tiacad render computes validation issues (for PNG annotation) but never prints them to console
+
+```yaml
+status: backlog
+priority: medium
+tags: [usability]
+created: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:03:00Z'
+session: cerulean-gradient-0720
+```
+
+cli/render.py:29 runs AssemblyValidator().validate_document(doc) and passes issues into render_trust() purely for image annotation -- but cmd_render never prints a validation summary line the way 'tiacad debug' does ("Validation failed: N errors, N warnings"). Verified by building a model where a difference operation's subtract tool was mispositioned (removed 0mm^3): 'tiacad render' printed only '✓ Trust render written to ...' with no indication anything was wrong; the only signal was a subtle color change on a small crosshair marker in the PNG, easy to miss. Since render.py already computes 'issues', it should print the same summary debug.py does (or a one-line variant) so a caller isn't silently handed a picture of a failed build.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-API-2 · boolean 'operation: difference' requires field 'subtract:' -- accept 'subtract'/'cut' as operation-name aliases
+
+```yaml
+status: backlog
+priority: low
+tags: [dx]
+created: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:03:00Z'
+session: cerulean-gradient-0720
+```
+
+The natural guess from common CAD vocabulary is 'operation: subtract' with a 'tool:' field; actual required shape is 'operation: difference' with 'base:'+'subtract: [...]' (boolean_builder.py:238-452). The operation-name (difference) not matching its own operand field name (subtract) costs an extra failed round-trip for anyone (human or agent) guessing from standard terminology. Accept 'subtract'/'cut' as aliases for 'difference' at the operation-type level.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-UX-8 · translate 'to: {from: X}' requires explicit offset even for zero-offset moves -- default missing offset to [0,0,0]
+
+```yaml
+status: backlog
+priority: low
+tags: [dx]
+created: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:03:00Z'
+session: cerulean-gradient-0720
+```
+
+Omitting 'offset:' under a derived reference ({from: part.anchor}) errors with "Derived reference must have both 'from' and 'offset' keys" instead of defaulting to [0,0,0]. This is a needless failure on the most common case (move a part flush to a reference point, no additional offset).
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-UX-9 · add a constraints: (flush/offset/coaxial/tangent) example to the main examples/ gallery
+
+```yaml
+status: backlog
+priority: low
+tags: [docs]
+created: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:03:00Z'
+session: cerulean-gradient-0720
+```
+
+The constraint solver shipped 2026-07-19 but its only working examples live in examples/validation/*.tiacad (test-corpus files, .tiacad extension, heavily annotated for internal verification, not a teaching example) -- not discoverable via examples/*.yaml. Since constraints are now the preferred way to position assembly parts (KNOWN_LIMITATIONS.md #5), add a plain examples/*.yaml demo.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
