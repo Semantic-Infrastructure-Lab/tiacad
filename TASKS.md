@@ -981,19 +981,23 @@ The natural guess from common CAD vocabulary is 'operation: subtract' with a 'to
 ## TASK-TCAD-UX-8 · translate 'to: {from: X}' requires explicit offset even for zero-offset moves -- default missing offset to [0,0,0]
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [dx]
 created: '2026-07-20T21:03:00Z'
-updated: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:57:08Z'
 session: cerulean-gradient-0720
+links:
+  commits:
+  - c7acdf4cbe0494d0c2121fba6322bb20517d8dfe
+notes_next: 2
 ```
 
 Omitting 'offset:' under a derived reference ({from: part.anchor}) errors with "Derived reference must have both 'from' and 'offset' keys" instead of defaulting to [0,0,0]. This is a needless failure on the most common case (move a part flush to a reference point, no additional offset).
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-20T21:57:08Z session:descending-protostar-0720] offset now defaults to [0,0,0] when omitted from a derived reference
 
 
 ## TASK-TCAD-UX-9 · add a constraints: (flush/offset/coaxial/tangent) example to the main examples/ gallery
