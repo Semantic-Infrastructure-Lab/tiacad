@@ -10,6 +10,7 @@ areas:
   API: 2
   ARCH: 10
   CON: 12
+  FIN: 2
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -882,6 +883,25 @@ tags: [constraints, solver]
 created: '2026-07-20T02:04:14Z'
 updated: '2026-07-20T02:30:09Z'
 session: kojucese-0719
+links:
+  references:
+  - KNOWN_LIMITATIONS.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-FIN-1 · Localized 'near'/radius edge selector for blend fillets on curved-surface boss seams
+
+```yaml
+status: backlog
+priority: low
+tags: [finishing, selector, backlog]
+created: '2026-07-20T03:40:55Z'
+updated: '2026-07-20T03:40:55Z'
+session: revealed-dimension-0719
 links:
   references:
   - KNOWN_LIMITATIONS.md

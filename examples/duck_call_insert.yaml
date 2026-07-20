@@ -1,0 +1,201 @@
+schema_version: "3.0"
+
+metadata:
+  name: Duck Call Insert
+  description: >
+    A turned insert body (the part that seats a duck-call reed/tone-board
+    inside a barrel), modeled the way a machinist would sequence it on a
+    lathe: one exterior revolve, one interior revolve-cut for the bore, a
+    patterned grip groove, then finishing fillet/chamfer passes. See
+    KNOWN_LIMITATIONS.md #14 for the fillet-collision and seam-blend-fillet
+    lessons this example encodes in its comments and operation ordering.
+  version: "1.0"
+  author: TIA
+
+parameters:
+  # Overall turned profile
+  overall_length: 55
+  insert_length: 18      # section that plugs into the barrel
+  insert_radius: 8       # OD of the barrel-insert section -- the single most
+                          # critical dimension on the whole part
+  body_radius: 11         # OD of the grip/body section
+  neck_start_z: 40
+  neck_radius: 6.5
+  mouth_radius: 9
+  margin: 5               # bore extension past both faces, for a clean through-cut
+
+  # Interior bore (tone-board seat + air channel)
+  bottom_exit_radius: 4.0   # air channel through the insert-length section
+  tone_seat_radius: 9.0     # shoulder the tone board/reed assembly seats against
+  neck_bore_radius: 4.5
+  entrance_radius: 6.5      # mouth-end bore opening
+
+  # Grip grooves (linear pattern along the axis)
+  groove_count: 6
+  groove_pitch: 2.2
+  groove_width: 1.0
+  groove_depth: 0.7
+  groove_start_z: 5
+
+  # Finishing
+  lip_fillet_radius: 1.5
+  base_chamfer_length: 0.6
+
+sketches:
+  exterior_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - - 0
+            - 0
+          - - ${insert_radius}
+            - 0
+          - - ${insert_radius}
+            - ${insert_length}
+          - - ${body_radius}
+            - ${insert_length}
+          - - ${body_radius}
+            - ${neck_start_z}
+          - - ${neck_radius}
+            - ${overall_length - 6}
+          - - ${mouth_radius}
+            - ${overall_length}
+          - - 0
+            - ${overall_length}
+        closed: true
+
+  # NOTE: the shoulder here (bottom_exit_radius -> tone_seat_radius) is
+  # deliberately offset 1.5mm past the exterior_profile's own shoulder
+  # (insert_radius -> body_radius) at the same axis position. If both walls
+  # stepped outward at the *exact* same z, the connecting wall between the
+  # lower and upper sections would have zero radial overlap at that plane
+  # and the boolean difference below would split into two disconnected
+  # solids -- watertight, but `components: 2`. Always leave interior/exterior
+  # shoulders offset from each other, or verify with `tiacad validate-geometry`
+  # (not just `tiacad check`, which won't catch this).
+  interior_profile:
+    plane: XZ
+    origin:
+      - 0
+      - 0
+      - ${-margin}
+    shapes:
+      - type: polygon
+        points:
+          - - 0
+            - 0
+          - - ${bottom_exit_radius}
+            - 0
+          - - ${bottom_exit_radius}
+            - ${margin + insert_length + 1.5}
+          - - ${tone_seat_radius}
+            - ${margin + insert_length + 1.5}
+          - - ${tone_seat_radius}
+            - ${margin + neck_start_z}
+          - - ${neck_bore_radius}
+            - ${margin + overall_length - 6}
+          - - ${entrance_radius}
+            - ${margin + overall_length}
+          - - ${entrance_radius}
+            - ${margin + overall_length + margin}
+          - - 0
+            - ${margin + overall_length + margin}
+        closed: true
+
+  groove_profile:
+    plane: XZ
+    origin:
+      - 0
+      - 0
+      - ${groove_start_z}
+    shapes:
+      - type: rectangle
+        width: ${2 * groove_depth + 3}
+        height: ${groove_width}
+        center:
+          - ${insert_radius - groove_depth + 0.75}
+          - 0
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  body_solid:
+    type: revolve
+    sketch: exterior_profile
+    axis: Z
+    angle: 360
+
+  # Lip fillet applied to the solid exterior BEFORE the bore is cut: at this
+  # point ">Z" matches exactly one edge (the mouth rim). Filleting after
+  # boring would also catch the nearby bore-entrance edge, which sits on the
+  # same top face only ~2.5mm away -- both fillets would try to consume more
+  # radial width than the wall has, and OCCT can silently return
+  # self-intersecting geometry rather than raising (FinishingBuilder now
+  # catches this -- see KNOWN_LIMITATIONS.md #14 -- but ordering the
+  # operations to avoid it in the first place is still the right call).
+  body_lip_filleted:
+    type: finishing
+    finish: fillet
+    input: body_solid
+    radius: ${lip_fillet_radius}
+    edges: {selector: ">Z"}
+
+  bore_solid:
+    type: revolve
+    sketch: interior_profile
+    axis: Z
+    angle: 360
+
+  drilled:
+    type: boolean
+    operation: difference
+    base: body_lip_filleted
+    subtract: [bore_solid]
+
+  groove_ring:
+    type: revolve
+    sketch: groove_profile
+    axis: Z
+    angle: 360
+
+  grooves:
+    type: pattern
+    pattern: linear
+    input: groove_ring
+    count: ${groove_count}
+    spacing: [0, 0, "${groove_pitch}"]
+
+  insert_raw:
+    type: boolean
+    operation: difference
+    base: drilled
+    subtract: [{pattern: grooves}]
+
+  insert:
+    type: finishing
+    finish: chamfer
+    input: insert_raw
+    length: ${base_chamfer_length}
+    edges: {selector: "<Z"}
+
+export:
+  default_part: insert
+
+# Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
+# see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+expect:
+  final: insert
+  volume: 6592.004
+  bbox: [22.0, 22.0, 55.0]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

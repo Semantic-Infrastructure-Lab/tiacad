@@ -55,6 +55,26 @@ def sample_cylinder(part_registry):
     return part
 
 
+@pytest.fixture
+def thin_walled_tube(part_registry):
+    """A tube with only a 1mm-wide top rim wall: outer edge (r=10) and inner
+    bore edge (r=9) sit on the exact same top face, 1mm apart. Mirrors a
+    turned/revolved part whose bore entrance sits close under an outer lip
+    (found while spiking a duck-call-insert-style model: a fillet radius
+    that's fine for one edge alone silently collides with its neighbor)."""
+    geometry = (
+        cq.Workplane("XY")
+        .circle(10)
+        .extrude(5)
+        .faces(">Z")
+        .workplane()
+        .hole(18)  # bore diameter 18 -> radius 9, 1mm wall from the r=10 OD
+    )
+    part = Part(name="test_tube", geometry=geometry, metadata={})
+    part_registry.add(part)
+    return part
+
+
 # ============================================================================
 # FILLET TESTS (15 tests)
 # ============================================================================
@@ -288,6 +308,62 @@ def test_fillet_invalid_edge_selector_error(finishing_builder, sample_box):
         finishing_builder.execute_finishing_operation('fillet_op', spec)
 
     assert "Invalid edge selector" in str(exc_info.value)
+
+
+def test_fillet_colliding_edges_raises_instead_of_silently_breaking(finishing_builder, thin_walled_tube):
+    """A fillet radius too large for the local wall thickness makes OCCT
+    either reject the operation outright or (in other shapes, e.g. a
+    revolved part with more surrounding geometry) silently return
+    self-intersecting (isValid()==False) geometry. Either way,
+    FinishingBuilder must surface a clear FinishingBuilderError instead of
+    registering broken geometry that only surfaces later as a
+    non-watertight mesh at export time."""
+    spec = {
+        'finish': 'fillet',
+        'input': 'test_tube',
+        'radius': 1.5,  # > half the 1mm wall separating the two top edges
+        'edges': {'selector': '>Z'}
+    }
+
+    with pytest.raises(FinishingBuilderError):
+        finishing_builder.execute_finishing_operation('fillet_op', spec)
+
+    assert not finishing_builder.registry.exists('fillet_op')
+
+
+def test_chamfer_colliding_edges_raises_instead_of_silently_breaking(finishing_builder, thin_walled_tube):
+    """Same collision hazard as the fillet case, for chamfer."""
+    spec = {
+        'finish': 'chamfer',
+        'input': 'test_tube',
+        'length': 1.5,
+        'edges': {'selector': '>Z'}
+    }
+
+    with pytest.raises(FinishingBuilderError):
+        finishing_builder.execute_finishing_operation('chamfer_op', spec)
+
+    assert not finishing_builder.registry.exists('chamfer_op')
+
+
+def test_require_valid_result_rejects_shape_flagged_invalid_by_occt(finishing_builder, sample_box):
+    """Directly exercise the isValid() guard (independent of whether a given
+    OCCT version happens to raise on its own for the thin-wall case above)."""
+    from tiacad_core.parser.finishing_builder import FinishingBuilderError as FBE
+
+    class _FakeInvalidShape:
+        def isValid(self):
+            return False
+
+    class _FakeResult:
+        def val(self):
+            return _FakeInvalidShape()
+
+    with pytest.raises(FBE) as exc_info:
+        finishing_builder._require_valid_result(
+            _FakeResult(), 'op', 'Fillet', 'test_box', 'radius 5'
+        )
+    assert "invalid geometry" in str(exc_info.value)
 
 
 def test_fillet_negative_radius_error(finishing_builder, sample_box):

@@ -80,12 +80,13 @@ Multiple parts, transforms, patterns, boolean operations, assemblies.
 | [text_primitive_sign.yaml](#text_primitive_sign) | Text signage | ✅ |
 | [text_primitive_styles.yaml](#text_primitive_styles) | Text styling | ✅ |
 
-### ⭐⭐⭐ Advanced (10 examples)
+### ⭐⭐⭐ Advanced (11 examples)
 
 Complex assemblies, parametric systems, multi-material, advanced features.
 
 | Example | Concepts | Status |
 |---------|----------|--------|
+| [duck_call_insert.yaml](#duck_call_insert) | Machinist-style turned part: revolve + revolve-cut bore + linear-pattern grooves + ordered fillet/chamfer | ✅ |
 | [lego_brick_2x1.yaml](#lego_brick_2x1) | Parametric LEGO, patterns, standards | ✅ |
 | [lego_brick_3x1.yaml](#lego_brick_3x1) | Extended LEGO patterns | ✅ |
 | [awesome_guitar_hanger.yaml](#awesome_guitar_hanger) | Complete assembly, 400+ lines | ✅ |
@@ -116,7 +117,7 @@ Complex assemblies, parametric systems, multi-material, advanced features.
 
 ### Sketches & 2D
 - **Basic extrusion**: simple_extrude, bracket_with_hole
-- **Revolve**: bottle_revolve
+- **Revolve**: bottle_revolve, duck_call_insert (revolve + revolve-cut interior bore)
 - **Loft**: transition_loft
 - **Sweep**: pipe_sweep_simple, pipe_sweep
 
@@ -126,12 +127,12 @@ Complex assemblies, parametric systems, multi-material, advanced features.
 - **Hull**: hull_simple, hull_enclosure
 
 ### Patterns
-- **Linear**: lego_brick_2x1, lego_brick_3x1, multi_material_enclosure
+- **Linear**: lego_brick_2x1, lego_brick_3x1, multi_material_enclosure, duck_call_insert (groove ring pattern)
 - **Circular**: mounting_plate_with_bolt_circle
 
 ### Finishing Operations
-- **Fillet (rounded)**: rounded_mounting_plate
-- **Chamfer (beveled)**: chamfered_bracket, lego_brick_2x1
+- **Fillet (rounded)**: rounded_mounting_plate, duck_call_insert (ordered before boring to avoid edge-collision — see KNOWN_LIMITATIONS.md #14)
+- **Chamfer (beveled)**: chamfered_bracket, lego_brick_2x1, duck_call_insert
 
 ### Positioning & References
 - **Auto-references**: auto_references_box_stack, auto_references_cylinder_assembly, auto_references_rotation, auto_references_with_offsets

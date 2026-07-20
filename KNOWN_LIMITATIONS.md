@@ -609,6 +609,17 @@ regression-risky). See `tiacad_core/tests/test_correctness/test_negative_contrac
 
 ---
 
+### 14. Fixed — `fillet`/`chamfer` could silently register self-intersecting geometry; documented seam-blend fillet hazard
+
+**Found while spiking a machinist-style turned-part workflow** (revolve exterior → revolve-cut interior bore → linear-pattern grooves → fillet/chamfer → boss/flare, see `examples/duck_call_insert.yaml`): applying a lip fillet *after* the interior bore was already cut hit a case where the top rim's outer edge (r=9) and the bore's entrance edge (r=6.5) both sit on the same z-plane, only 2.5mm apart. A 1.5mm fillet radius on both simultaneously (`edges: {selector: ">Z"}` matched both) made OCCT's `.fillet()` return **without raising**, but the resulting shape was self-intersecting: `Shape.isValid()` was `False`, volume came back *higher* than the un-filleted input (physically nonsensical for a material-removing operation), and it stayed silently registered as a normal part all the way through `check`/`build` — only `validate-geometry`'s separate, easy-to-forget mesh check caught it downstream (`Watertight: No`).
+
+**Fix applied:** `FinishingBuilder._execute_fillet`/`_execute_chamfer` now call a shared `_require_valid_result` right after the geometry op and before registering the part — if OCCT flags the result `isValid() == False`, it raises `FinishingBuilderError` naming the operation, radius/length, and the two likely causes (radius too large for the local wall, or the edge selector swept up two edges whose fillets collide), instead of letting broken geometry propagate. Mirrors the "detect and raise a clear error" approach taken for the constraint solver in section 1 (`TCAD-CON-10`/`TCAD-CON-11`), applied to the finishing-operation domain. See `tiacad_core/parser/finishing_builder.py::_require_valid_result` and
+`tiacad_core/tests/test_parser/test_finishing_builder.py::test_fillet_colliding_edges_raises_instead_of_silently_breaking` (+ the chamfer/direct-guard variants).
+
+**Not fixed — separate, harder problem (`TCAD-FIN-1`):** blending an off-axis boss into a curved revolved surface (e.g. an asymmetric thumb bump extruded into a cylindrical body, then unioned) produces a seam edge that OCCT's fillet algorithm rejects outright ("no suitable edges for chamfer or fillet") even when that single edge is isolated and passed directly via a custom CadQuery selector in Python — this reproduces independently of TiaCAD's own code, and is a known-hard case in OCCT-based CAD generally (cylinder-on-curved-surface boss intersections). Workaround for now: fillet the boss's *own* edges before the union rather than the post-union seam, or accept a sharp seam. TiaCAD's YAML `edges:` selector vocabulary (`direction`/`parallel_to`/`perpendicular_to`/raw `selector` string) also has no way to target "the one new edge near point/region X" declaratively — a `near: {part, region}` or radius-from-axis selector would make this class of localized blend fillet reachable from YAML even where OCCT itself can eventually do it. No use case currently needs this; filed as backlog (`TCAD-FIN-1`), not built speculatively.
+
+---
+
 ## Test Health
 
 TiaCAD has broad automated coverage for parser behavior, geometry correctness, DAG rebuild behavior, visualization, and example contracts.

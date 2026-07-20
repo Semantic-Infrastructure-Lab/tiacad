@@ -65,6 +65,34 @@ class FinishingBuilder:
         self.registry = part_registry
         self.resolver = parameter_resolver
 
+    def _require_valid_result(self, result, name: str, op_label: str, input_name: str, size_desc: str) -> None:
+        """
+        Reject a fillet/chamfer result that OCCT itself flags as geometrically
+        invalid (self-intersecting shells, degenerate faces), instead of
+        silently registering broken geometry that only surfaces later as a
+        non-watertight mesh at export/validate-geometry time.
+
+        The most common real-world cause: the requested radius/length is too
+        large relative to the local wall thickness or the edge selector swept
+        up two edges (e.g. an outer rim and a nearby inner bore rim) whose
+        fillets collide with each other.
+        """
+        try:
+            is_valid = result.val().isValid()
+        except Exception:
+            # If validity itself can't be determined, don't block on it --
+            # the original geometry op already succeeded without raising.
+            return
+
+        if not is_valid:
+            raise FinishingBuilderError(
+                f"{op_label} operation '{name}' on '{input_name}' produced invalid geometry "
+                f"({size_desc} is likely too large for the local wall thickness, or the edge "
+                f"selector matched two edges whose {op_label.lower()}s overlap each other). "
+                f"Reduce the size or narrow the 'edges' selector.",
+                operation_name=name
+            )
+
     def execute_finishing_operation(self, name: str, spec: Dict[str, Any]):
         """
         Execute a finishing operation and update part in registry.
@@ -178,6 +206,8 @@ class FinishingBuilder:
                 # Fillet selected edges
                 result = part.geometry.edges(edge_selector).fillet(radius)
 
+            self._require_valid_result(result, name, "Fillet", input_name, f"radius {radius}")
+
             # Register result as a new named part (consistent with all other builders)
             metadata = dict(part.metadata)
             metadata['finishing_ops'] = list(metadata.get('finishing_ops', [])) + [{
@@ -189,6 +219,8 @@ class FinishingBuilder:
 
             logger.debug(f"Fillet: applied radius={radius} to part '{input_name}' → '{name}'")
 
+        except FinishingBuilderError:
+            raise
         except Exception as e:
             raise FinishingBuilderError(
                 f"Fillet operation '{name}' failed applying fillet to '{input_name}': {str(e)}",
@@ -264,6 +296,9 @@ class FinishingBuilder:
                 part.geometry, edge_selector, length, length2
             )
 
+            size_desc = f"length {length}" if length2 is None else f"length {length}/{length2}"
+            self._require_valid_result(result, name, "Chamfer", input_name, size_desc)
+
             # Register result as a new named part (consistent with all other builders)
             op_info = {'type': 'chamfer', 'length': length, 'edges': edges_spec}
             if length2 is not None:
@@ -273,6 +308,8 @@ class FinishingBuilder:
             self.registry.add(Part(name=name, geometry=result, metadata=metadata, backend=part.backend))
             logger.debug(f"Chamfer: applied length={length} to part '{input_name}' → '{name}'")
 
+        except FinishingBuilderError:
+            raise
         except Exception as e:
             raise FinishingBuilderError(
                 f"Chamfer operation '{name}' failed applying chamfer to '{input_name}': {str(e)}",
