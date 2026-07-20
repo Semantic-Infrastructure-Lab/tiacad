@@ -9,7 +9,7 @@ areas:
   UX: 7
   API: 2
   ARCH: 10
-  CON: 11
+  CON: 12
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -871,3 +871,19 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-20T01:18:03Z session:icy-elysium-0719] Fixed: swing-twist post-solve correction in constraint_builder.py's _flush_swing_location; root cause was CadQuery's Plane constraint leaving rotation-about-normal exactly unconstrained + IPOPT's fixed nonzero seed. See KNOWN_LIMITATIONS.md section 1.
+
+
+## TASK-TCAD-CON-11 · Multi-face flush/offset coupling on same moving part: currently rejected, not solved (coupled least-squares rotation fit needed)
+
+```yaml
+status: backlog
+priority: low
+tags: [constraints, solver]
+created: '2026-07-20T02:04:14Z'
+updated: '2026-07-20T02:04:14Z'
+session: kojucese-0719
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_

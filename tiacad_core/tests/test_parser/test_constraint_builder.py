@@ -102,6 +102,30 @@ class TestOffsetConstraint:
         # surface top at z=1; flush would put mount center at z=3; +5 offset -> z=8
         _approx(registry.get('mount').get_center(), (0.0, 0.0, 8.0), abs_tol=1e-4)
 
+    def test_moving_part_via_two_different_faces_raises(self):
+        """TCAD-CON-11: 'mount' positioned via its bottom face (offset off
+        'surface') AND its top face (flush against 'cap') in the same batch
+        is the untested multi-constraint-coupling shape flagged in
+        TCAD-CON-10's KNOWN_LIMITATIONS residual gap. Reproduced live before
+        this check existed: the same 20x20x2/4x4x4 size ratio that
+        previously gave ~50deg on the single-constraint path gave the
+        identical class of spurious rotation here too (swinging up to ~44deg
+        across a size sweep) because 'mount' falls through to CadQuery's raw
+        joint solve instead of the TCAD-CON-10 geometric shortcut. Must fail
+        loudly rather than silently bake that rotation."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='surface', geometry=cq.Workplane('XY').box(20, 20, 2), backend=backend))
+        registry.add(Part(name='mount', geometry=cq.Workplane('XY').box(4, 4, 4), backend=backend))
+        registry.add(Part(name='cap', geometry=cq.Workplane('XY').box(4, 4, 2), backend=backend))
+        resolver = SpatialResolver(registry)
+
+        with pytest.raises(ConstraintBuilderError, match="different faces"):
+            ConstraintBuilder(registry, resolver).apply_constraints([
+                {'type': 'offset', 'faces': ['surface.face_top', 'mount.face_bottom'], 'distance': 5},
+                {'type': 'flush', 'faces': ['cap.face_bottom', 'mount.face_top']},
+            ])
+
     def test_offset_does_not_introduce_arbitrary_rotation(self):
         """TCAD-CON-10 regression: a 20x20x2 surface / 4x4x4 mount is the
         exact size ratio that previously converged to an arbitrary ~50deg

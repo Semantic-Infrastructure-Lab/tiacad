@@ -193,6 +193,7 @@ class ConstraintBuilder:
         tangents = [p for p in parsed if p[0] == 'tangent']
 
         self._check_plane_conflicts(solved_indexed)
+        self._check_multi_moving_flush_offset(solved_indexed)
 
         touched_parts: set = {mov_part for _ctype, _rp, _rs, mov_part, _ms, _d in tangents}
 
@@ -306,6 +307,57 @@ class ConstraintBuilder:
                         f"'{mov_part}' for the second mate, or drop one of the two constraints.",
                         constraint_index=i,
                     )
+
+    def _check_multi_moving_flush_offset(
+        self, solved_indexed: List[Tuple[int, Tuple[str, str, str, str, str, float]]]
+    ) -> None:
+        """Reject a part that is the *moving* side of two or more flush/offset
+        constraints in the same solve batch (TCAD-CON-11).
+
+        `_flush_swing_location` (TCAD-CON-10) replaces CadQuery/IPOPT's solved
+        rotation with a direct geometric computation, but only for a moving
+        part touched by exactly one constraint — see its docstring and the
+        call site in `apply_constraints`. A part moved via two or more
+        *different faces* by flush/offset constraints in the same batch (e.g.
+        sandwiched between two independently-fixed reference parts, one
+        mating its bottom face and another its top face) falls through to
+        CadQuery's raw joint solve instead, which reintroduces the exact
+        TCAD-CON-10 failure mode: confirmed by reproduction (a mount box
+        positioned by an offset off one part and a flush against another
+        swung up to ~44 degrees depending on unrelated part sizes). Properly
+        supporting this shape needs a coupled least-squares rotation fit (and
+        a position-consistency check, since two independently-fixed
+        references aren't guaranteed to agree) that hasn't been built — see
+        TCAD-CON-11. Fail loudly here instead of silently baking a possibly-
+        arbitrary rotation.
+
+        Deliberately narrower than "moving role count > 1": the *same* face
+        mated flush/offset against two coincident reference planes (a
+        legitimate redundant double-mate — see
+        `test_same_reference_plane_from_different_parts_does_not_conflict`)
+        is a single geometric constraint repeated, not a second independent
+        one, so it doesn't reopen the flat-direction ambiguity and is left
+        alone here.
+        """
+        mov_faces: Dict[str, set] = {}
+        first_index: Dict[str, int] = {}
+        for i, (ctype, _ref_part, _ref_sel, mov_part, mov_sel, _distance) in solved_indexed:
+            if ctype not in ('flush', 'offset'):
+                continue
+            mov_faces.setdefault(mov_part, set()).add(mov_sel)
+            first_index.setdefault(mov_part, i)
+
+        for mov_part, faces in mov_faces.items():
+            if len(faces) > 1:
+                raise ConstraintBuilderError(
+                    f"'{mov_part}' is positioned via {len(faces)} different faces "
+                    f"({', '.join(sorted(faces))}) by flush/offset constraints in the same "
+                    f"constraints: batch. This isn't supported yet — see KNOWN_LIMITATIONS.md "
+                    f"'Constraint Solver' (TCAD-CON-11). Workaround: position '{mov_part}' with one "
+                    f"flush/offset constraint and reposition the other mating part with a `transform` "
+                    f"operation instead.",
+                    constraint_index=first_index[mov_part],
+                )
 
     @staticmethod
     def _minimal_rotation(source: np.ndarray, target: np.ndarray) -> Tuple[np.ndarray, float]:

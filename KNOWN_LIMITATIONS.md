@@ -141,6 +141,23 @@ registry state) when computing the target plane. Regression test:
 `test_constraint_builder.py::TestOffsetConstraint::test_offset_does_not_introduce_arbitrary_rotation`
 (the exact 20x20x2/4x4x4 ratio that previously rotated ~50°).
 
+**Rejected 2026-07-19 (`TCAD-CON-11`):** a part positioned via two *different* faces by
+flush/offset constraints in the same batch (e.g. sandwiched between two independently-fixed
+reference parts — one mating its bottom face, another its top face) now raises
+`ConstraintBuilderError` naming the part and both faces, instead of silently baking a
+potentially-arbitrary rotation. This is the exact residual gap TCAD-CON-10 left untested:
+reproduced live (a 4x4x4 "mount" offset off a 20x20x2 "surface" below and flush against a
+4x4x2 "cap" above swung up to ~44° depending on unrelated part sizes — same flat-direction
+IPOPT bug as TCAD-CON-10, just on the joint-solve path the geometric shortcut doesn't cover).
+The *same* face mated flush/offset against two coincident reference planes is unaffected —
+that's a legitimate redundant double-mate (see
+`test_same_reference_plane_from_different_parts_does_not_conflict`), not a second independent
+constraint, so it doesn't reopen the ambiguity. See `_check_multi_moving_flush_offset` in
+`constraint_builder.py` and
+`test_constraint_builder.py::TestOffsetConstraint::test_moving_part_via_two_different_faces_raises`.
+Properly *supporting* this shape (rather than rejecting it) is tracked as follow-on work —
+see `tt show TCAD-CON-11`.
+
 **Still missing:**
 - Per-constraint partitioning — skipping only the specific constraints affected by a change,
   not the whole batch. Would require splitting constraints into connected components by
@@ -153,11 +170,13 @@ registry state) when computing the target plane. Regression test:
 - Angular/relative-orientation constraints (`parallel`, `perpendicular`, `angle`,
   `symmetric`) — named and reserved (`TCAD-CON-9`, 2026-07-19) so requesting one errors as
   "reserved for a future revision" rather than "unknown type", but none are implemented
-- A moving part coupled to *multiple* simultaneous flush/offset/coaxial constraints in the
-  same batch still relies on CadQuery/IPOPT's joint solve for its rotation, so the
-  TCAD-CON-10 arbitrary-rotation class could in principle still surface there (untested — no
-  example currently exercises that shape); the swing-twist shortcut can't easily generalize
-  to true multi-constraint coupling without reimplementing part of IPOPT's job.
+- A part positioned via two different faces by flush/offset in the same batch is now
+  rejected with a clear error (`TCAD-CON-11`, above) rather than mishandled — actually
+  *solving* that shape (coupled least-squares rotation fit across both face-normal pairs,
+  plus a position-consistency check since two independently-fixed references aren't
+  guaranteed to agree) is unimplemented. `coaxial` in this same shape is untested either way
+  (not covered by the new check, which is scoped to flush/offset only, matching
+  `_check_plane_conflicts`'s existing scope).
 
 **Workaround (for anything constraints don't cover yet):**
 ```yaml
