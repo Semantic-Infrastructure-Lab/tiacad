@@ -223,10 +223,26 @@ class ConstraintBuilder:
             except Exception as e:
                 raise ConstraintBuilderError(f"Constraint solve failed: {e}") from e
 
+            # flush/offset moving parts touched by exactly one constraint in
+            # this batch get their Location recomputed directly rather than
+            # taken from IPOPT's solve — see _flush_swing_location (TCAD-CON-10).
+            touch_count: Dict[str, int] = {}
+            for _ctype, rp, _rs, mp, _ms, _d in solved:
+                touch_count[rp] = touch_count.get(rp, 0) + 1
+                touch_count[mp] = touch_count.get(mp, 0) + 1
+
+            flush_swing_locs: Dict[str, cq.Location] = {}
+            for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in solved:
+                if ctype in ('flush', 'offset') and touch_count[mov_part] == 1:
+                    flush_swing_locs[mov_part] = self._flush_swing_location(
+                        ref_part, ref_sel, mov_part, mov_sel, assembly.objects[ref_part].loc
+                    )
+
             # Bake the solved position into every involved part (locked parts
             # solve to an identity location, so this is a no-op for them).
             for part_name in involved_parts:
-                self._bake_location(part_name, assembly.objects[part_name].loc)
+                loc = flush_swing_locs.get(part_name, assembly.objects[part_name].loc)
+                self._bake_location(part_name, loc)
 
             # 'offset' constraints add a translate on top of the now-baked flush
             # position, along the reference face's normal (resolved fresh, so it
@@ -290,6 +306,96 @@ class ConstraintBuilder:
                         f"'{mov_part}' for the second mate, or drop one of the two constraints.",
                         constraint_index=i,
                     )
+
+    @staticmethod
+    def _minimal_rotation(source: np.ndarray, target: np.ndarray) -> Tuple[np.ndarray, float]:
+        """Axis+angle (radians) of the shortest-arc rotation taking unit
+        vector `source` onto unit vector `target`. Well-defined and unique
+        except when the two vectors are exactly antiparallel, where any axis
+        perpendicular to `source` works equally well and one is picked
+        arbitrarily (deterministically, via a fixed fallback vector)."""
+        dot = float(np.clip(np.dot(source, target), -1.0, 1.0))
+        axis = np.cross(source, target)
+        axis_norm = float(np.linalg.norm(axis))
+        if axis_norm < 1e-9:
+            if dot > 0:
+                return np.array([1.0, 0.0, 0.0]), 0.0
+            fallback = np.array([1.0, 0.0, 0.0]) if abs(source[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+            axis = np.cross(source, fallback)
+            axis = axis / np.linalg.norm(axis)
+            return axis, math.pi
+        return axis / axis_norm, math.acos(dot)
+
+    @staticmethod
+    def _rotate_vector(v: np.ndarray, axis: np.ndarray, angle_rad: float) -> np.ndarray:
+        """Rodrigues' rotation formula: `v` rotated about unit `axis` by `angle_rad`."""
+        if abs(angle_rad) < 1e-12:
+            return v
+        return (
+            v * math.cos(angle_rad)
+            + np.cross(axis, v) * math.sin(angle_rad)
+            + axis * np.dot(axis, v) * (1 - math.cos(angle_rad))
+        )
+
+    @staticmethod
+    def _decompose_location(loc: cq.Location) -> Tuple[np.ndarray, float, np.ndarray]:
+        """A cq.Location's rotation (unit axis, radians, about world origin)
+        and translation, in the same convention `_bake_location` extracts."""
+        trsf = loc.wrapped.Transformation()
+        axis_vec = gp_Vec()
+        angle_rad = trsf.GetRotation().GetVectorAndAngle(axis_vec)[0]
+        axis = np.array([axis_vec.X(), axis_vec.Y(), axis_vec.Z()])
+        t = trsf.TranslationPart()
+        translation = np.array([t.X(), t.Y(), t.Z()])
+        return axis, angle_rad, translation
+
+    def _flush_swing_location(
+        self, ref_part: str, ref_sel: str, mov_part: str, mov_sel: str, ref_loc: cq.Location
+    ) -> cq.Location:
+        """Compute a flush/offset moving part's post-solve Location directly
+        from geometry, instead of trusting CadQuery/IPOPT's solved rotation.
+
+        flush/offset's 'Plane' constraint kind (Axis + Point) leaves rotation
+        about the now-aligned normal exactly unconstrained — a true flat
+        direction in the solve objective for axis-aligned/centered parts, not
+        merely loosely constrained. IPOPT's fixed nonzero rotation seed (see
+        CadQuery's `ConstraintSolver.__init__`, `opti.set_initial(R, (1e-2,)*3)`)
+        then decides that free angle from numerical conditioning rather than
+        geometry, producing an arbitrary in-plane rotation for some
+        moving-part/reference-size combinations (TCAD-CON-10) — confirmed by
+        forcing a zero rotation seed, which collapses the spurious rotation to
+        exactly 0 for every size tested. This computes the same rigid
+        transform 'flush' is meant to produce directly: the shortest-arc
+        rotation aligning the moving face's normal with the reference face's
+        opposed normal (zero rotation-about-normal by construction, not by
+        luck), plus the translation that brings the two face centroids into
+        coincidence. Only used for a moving part touched by exactly one
+        solved constraint in the batch (see call site) — a part coupled to
+        multiple simultaneous constraints keeps using CadQuery's joint solve,
+        since this shortcut doesn't account for that coupling.
+
+        `ref_loc` is the reference part's own *solved* Location from the same
+        joint `assembly.solve()` (identity for a locked/untouched reference,
+        but a real transform when the reference is itself the moving side of
+        another constraint in the batch — e.g. a flush then an offset chained
+        off the just-flushed part). The registry isn't updated with any
+        solved position until after this whole loop runs, so resolving the
+        reference face straight from the registry would silently use its
+        pre-solve pose for a chained reference; applying `ref_loc` to the
+        pre-solve face data corrects for that."""
+        ref_axis, ref_angle, ref_translation = self._decompose_location(ref_loc)
+        ref_face = self.spatial_resolver.resolve({'type': 'face', 'part': ref_part, 'selector': ref_sel})
+        ref_position = self._rotate_vector(ref_face.position, ref_axis, ref_angle) + ref_translation
+        ref_normal = self._rotate_vector(ref_face.orientation, ref_axis, ref_angle)
+
+        mov_face = self.spatial_resolver.resolve({'type': 'face', 'part': mov_part, 'selector': mov_sel})
+
+        target_normal = -ref_normal
+        axis, angle_rad = self._minimal_rotation(mov_face.orientation, target_normal)
+        rotated_centroid = self._rotate_vector(mov_face.position, axis, angle_rad)
+        translation = ref_position - rotated_centroid
+
+        return cq.Location(tuple(translation.tolist()), tuple(axis.tolist()), math.degrees(angle_rad))
 
     @staticmethod
     def _planes_coincide(pos1: np.ndarray, normal1: np.ndarray, pos2: np.ndarray, normal2: np.ndarray,

@@ -723,18 +723,18 @@
     "canonical_mesh_hash": "0381cc0472495dc077dfe1e9756cbd4545058e83aacbc35f8b9a4a71adb005dd",
     "mesh_hash": "7750c00eea27dc05fc543614e58b772d3b5379da0112fd1baaa09861697294bc",
     "part": "top",
-    "volume": 124.99999999999999
+    "volume": 124.99999999999997
   },
   "examples/validation/T4_constraint_offset.tiacad": {
     "bbox": [
-      4.000419928172459,
-      4.000419928172855,
-      4.000000000000405
+      4.0,
+      4.0,
+      4.0
     ],
-    "canonical_mesh_hash": "3f307eadfa6a83228dd6aad718d1c6564e975c9d4815949845a37d8a23193453",
-    "mesh_hash": "74da13d0cedfbf16c2a26832f981828021ab22b9f8cc190512d1c467eeb4741c",
+    "canonical_mesh_hash": "3793bb3f1060a62628a7509070c078cec3bd35e553716cca9e62ff20e6c9a561",
+    "mesh_hash": "5888a1f4afce2c63ab1dad813be3eb7515a4bd8b026b413073db0316f71e5a99",
     "part": "mount",
-    "volume": 63.99999999999998
+    "volume": 63.999999999999986
   },
   "examples/validation/T4_constraint_tangent.tiacad": {
     "bbox": [

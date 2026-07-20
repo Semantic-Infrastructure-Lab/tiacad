@@ -102,6 +102,29 @@ class TestOffsetConstraint:
         # surface top at z=1; flush would put mount center at z=3; +5 offset -> z=8
         _approx(registry.get('mount').get_center(), (0.0, 0.0, 8.0), abs_tol=1e-4)
 
+    def test_offset_does_not_introduce_arbitrary_rotation(self):
+        """TCAD-CON-10 regression: a 20x20x2 surface / 4x4x4 mount is the
+        exact size ratio that previously converged to an arbitrary ~50deg
+        in-plane rotation (flush/offset's 'Plane' constraint leaves rotation
+        about the aligned normal unconstrained, and IPOPT's fixed nonzero
+        seed decided that free angle from numerical noise rather than
+        geometry). Both parts are square, so the rotation was invisible to
+        test_offset_adds_gap_along_normal's center-position-only assertion;
+        assert current_orientation stays identity instead."""
+        backend = CadQueryBackend()
+        registry = PartRegistry()
+        registry.add(Part(name='surface', geometry=cq.Workplane('XY').box(20, 20, 2), backend=backend))
+        registry.add(Part(name='mount', geometry=cq.Workplane('XY').box(4, 4, 4), backend=backend))
+        resolver = SpatialResolver(registry)
+
+        ConstraintBuilder(registry, resolver).apply_constraints([{
+            'type': 'offset',
+            'faces': ['surface.face_top', 'mount.face_bottom'],
+            'distance': 5,
+        }])
+
+        assert np.allclose(registry.get('mount').current_orientation, np.eye(3), atol=1e-6)
+
     def test_offset_distance_accepts_mm_suffix(self):
         backend = CadQueryBackend()
         registry = PartRegistry()

@@ -120,6 +120,27 @@ test_second_rebuild_skips_unaffected_constraint_solve` (verified non-vacuous: fa
 skip is forced to always-solve) and `tiacad_core/tests/test_dag/test_graph_builder.py`'s
 `test_constraint_*` tests.
 
+**Fixed 2026-07-19 (`TCAD-CON-10`):** `flush`/`offset` arbitrary in-plane rotation. Root
+cause: CadQuery's `Plane` constraint kind (Axis + Point) leaves rotation-about-the-aligned-
+normal exactly unconstrained for axis-aligned/centered parts — a true flat direction in the
+solve objective, not merely loosely constrained. IPOPT's fixed nonzero rotation seed
+(`ConstraintSolver.__init__`'s `opti.set_initial(R, (1e-2, 1e-2, 1e-2))`) then decided that
+free angle from numerical conditioning rather than geometry — confirmed by forcing a zero
+seed via a monkeypatch, which collapsed the spurious rotation to exactly 0° for every size
+in a repro sweep (10 through 24, including a 20 vs. 20.0001 comparison ruling out simple
+floating-point chaos). Fixed in `ConstraintBuilder._flush_swing_location`
+(`constraint_builder.py`): for a moving part touched by exactly one solved constraint in the
+batch, its post-solve `Location` is now computed directly from geometry — the shortest-arc
+rotation aligning the moving face's normal with the reference's opposed normal (zero
+rotation-about-normal by construction) plus the translation bringing the two face centroids
+into coincidence — instead of trusting CadQuery/IPOPT's solved rotation. A moving part
+touched by more than one constraint in the same batch (chained references, e.g. offset off
+an already-flushed part) still goes through CadQuery's joint solve for coupling correctness,
+but the shortcut correctly reads such a reference's own *solved* pose (not its pre-solve
+registry state) when computing the target plane. Regression test:
+`test_constraint_builder.py::TestOffsetConstraint::test_offset_does_not_introduce_arbitrary_rotation`
+(the exact 20x20x2/4x4x4 ratio that previously rotated ~50°).
+
 **Still missing:**
 - Per-constraint partitioning — skipping only the specific constraints affected by a change,
   not the whole batch. Would require splitting constraints into connected components by
@@ -132,15 +153,11 @@ skip is forced to always-solve) and `tiacad_core/tests/test_dag/test_graph_build
 - Angular/relative-orientation constraints (`parallel`, `perpendicular`, `angle`,
   `symmetric`) — named and reserved (`TCAD-CON-9`, 2026-07-19) so requesting one errors as
   "reserved for a future revision" rather than "unknown type", but none are implemented
-- `flush`/`offset` can converge to an arbitrary in-plane rotation for some
-  moving-part/reference-size combinations — CadQuery's `Plane` constraint kind leaves
-  rotation-about-normal unconstrained, and IPOPT doesn't reliably land on zero (e.g. a
-  20x20x2 reference with a 4x4x4 moving part rotates ~40°; a 12x12x4 reference with the
-  same 4x4x4 part doesn't). Position/gap along the normal is still correct — only the
-  in-plane rotation is affected — but this visibly misaligns a non-square moving part and
-  inflates a square one's AABB. Found building the `TCAD-VAL-10` validation corpus
-  (`examples/validation/T4_constraint_offset.tiacad` uses a 12/4 ratio to avoid it). Not
-  yet root-caused or fixed — see `tt show TCAD-CON-10`.
+- A moving part coupled to *multiple* simultaneous flush/offset/coaxial constraints in the
+  same batch still relies on CadQuery/IPOPT's joint solve for its rotation, so the
+  TCAD-CON-10 arbitrary-rotation class could in principle still surface there (untested — no
+  example currently exercises that shape); the swing-twist shortcut can't easily generalize
+  to true multi-constraint coupling without reimplementing part of IPOPT's job.
 
 **Workaround (for anything constraints don't cover yet):**
 ```yaml
