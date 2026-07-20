@@ -280,13 +280,22 @@ See `tiacad_core/parser/component_importer.py::_fetch_github`.
 
 **What It Means:**
 - When using component imports in an assembly, parts float at their default origin
-- No spatial placement without explicit transforms in the parent YAML
+- No spatial placement without an explicit `transform` or `constraints:` entry in the
+  parent YAML
 
 **Impact:**
 - Visual demos may show parts interpenetrating or floating in space
 - Functional geometry (volume, dimensions) is correct; visual assembly is not
 
-**Workaround:**
+**Workaround — declarative (preferred since the constraint solver shipped, see #1):**
+```yaml
+constraints:
+  - type: flush
+    faces: [bracket.face_bottom, screw.face_top]
+```
+
+**Workaround — manual transform (for anything constraints don't cover yet, e.g. no
+matching planar/cylindrical reference):**
 ```yaml
 operations:
   place_screw:
@@ -296,7 +305,12 @@ operations:
       - translate: {to: bracket.hole_1}
 ```
 
-**Future:** Constraint solver (next milestone) will address this.
+**Status:** The constraint solver (flush/offset/coaxial/tangent, shipped 2026-07-19 —
+see #1) replaces most of what this item originally called out, but it is still opt-in
+per part: you write a `constraints:` entry (or a manual `transform`) for each part that
+needs placing. There is no default/automatic layout for component imports with zero
+specification, and none is planned — no concrete use case has motivated it, and it would
+be ambiguous for TiaCAD to guess intended placement without some anchor from the user.
 
 ---
 

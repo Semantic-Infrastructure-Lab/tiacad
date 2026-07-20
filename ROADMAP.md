@@ -1,20 +1,29 @@
 # TiaCAD Roadmap
 
-**Last Updated:** 2026-07-11
+**Last Updated:** 2026-07-19
 **Current Version:** v3.1.2
 
 ---
 
 ## Current Focus (Q3 2026)
 
-**Status:** 🟢 **Active Development** — Q1 milestones shipped ahead of schedule;
-Q2-Q3 spent hardening the test/validation infrastructure those milestones sit on.
+**Status:** 🟡 **Maintenance mode** — the Q4 2026 headline milestone (Constraint
+Solver) shipped early; no new feature work is queued. Remaining open items are
+backlog/low with no forcing use case (`tt list`) — see BACKLOG.md.
 
 **Completed this quarter (Q3, in progress):**
+- ✅ Constraint Solver — flush/offset/coaxial/tangent shipped 2026-07-19, plus
+  contradiction validation, DAG/incremental-rebuild integration, watch-mode fix,
+  and the flush/offset arbitrary-rotation fix (`TCAD-CON-1` through `TCAD-CON-11`)
+  — see "Constraint Solver" below. Originally scoped as the Q4 2026 milestone;
+  landed a quarter ahead.
 - ✅ Confidence-ladder validation corpus (Tiers 0/1/3/4/5) — see "What Was Built
   (Q2-Q3 2026)" below
 - ✅ `SpatialResolver` longest-prefix-match fix for dotted namespaced part
   references (2026-07-11)
+- ✅ Fillet/chamfer validity guard — `.fillet()`/`.chamfer()` results are now
+  checked for self-intersection instead of silently registering broken geometry
+  (2026-07-19)
 
 **Completed Q1 2026:**
 - ✅ Fixed all 17 test failures (0 failing as of 2026-03-10)
