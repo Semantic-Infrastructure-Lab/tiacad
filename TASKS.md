@@ -937,19 +937,23 @@ get_dimensions() in tiacad_core/testing/dimensions.py:87-91 labels Y-extent as '
 ## TASK-TCAD-UX-7 · tiacad render computes validation issues (for PNG annotation) but never prints them to console
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [usability]
 created: '2026-07-20T21:03:00Z'
-updated: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:55:03Z'
 session: cerulean-gradient-0720
+links:
+  commits:
+  - 7868cda1a72ceee115b7d85d8a6a9c5240198776
+notes_next: 2
 ```
 
 cli/render.py:29 runs AssemblyValidator().validate_document(doc) and passes issues into render_trust() purely for image annotation -- but cmd_render never prints a validation summary line the way 'tiacad debug' does ("Validation failed: N errors, N warnings"). Verified by building a model where a difference operation's subtract tool was mispositioned (removed 0mm^3): 'tiacad render' printed only '✓ Trust render written to ...' with no indication anything was wrong; the only signal was a subtle color change on a small crosshair marker in the PNG, easy to miss. Since render.py already computes 'issues', it should print the same summary debug.py does (or a one-line variant) so a caller isn't silently handed a picture of a failed build.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-20T21:55:03Z session:descending-protostar-0720] render now prints validation pass/fail summary, matching debug's output
 
 
 ## TASK-TCAD-API-2 · boolean 'operation: difference' requires field 'subtract:' -- accept 'subtract'/'cut' as operation-name aliases
