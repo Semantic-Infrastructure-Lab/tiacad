@@ -256,12 +256,8 @@ class SpatialResolver:
             )
 
         if 'from' in spec:
-            if 'offset' not in spec:
-                raise SpatialResolverError(
-                    "Derived reference must have both 'from' and 'offset' keys"
-                )
             base = self.resolve(spec['from'])
-            offset = spec['offset']
+            offset = spec.get('offset', [0.0, 0.0, 0.0])
             if not isinstance(offset, list) or len(offset) != 3:
                 raise SpatialResolverError(
                     f"Offset must be list of 3 values, got: {offset}"

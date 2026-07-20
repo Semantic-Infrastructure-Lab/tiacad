@@ -246,6 +246,15 @@ class TestDerivedReferencesWithOffset:
                 'offset': [10, 20]  # Only 2 values
             })
 
+    def test_offset_defaults_to_zero_when_omitted(self):
+        """A 'from' reference with no 'offset' should resolve at the base position."""
+        spec = {
+            'type': 'point',
+            'from': 'base',
+        }
+        ref = self.resolver.resolve(spec)
+        assert_array_almost_equal(ref.position, [10, 20, 30])
+
     def test_offset_missing_from(self):
         """Test that offset without 'from' raises error"""
         with pytest.raises(SpatialResolverError, match="must have either"):
