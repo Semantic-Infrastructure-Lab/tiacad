@@ -1,0 +1,39 @@
+# Constraints Demo: flush
+#
+# The declarative `constraints:` solver (see docs/user/YAML_REFERENCE.md and
+# KNOWN_LIMITATIONS.md #5) is the preferred way to position assembly parts —
+# instead of computing a translate by hand, you name the faces that should
+# mate and let CadQuery's solver find the transform.
+#
+# `flush` mates two faces together with zero gap. shelf starts centered at
+# the origin, fully overlapping base; after the constraint solves, shelf
+# sits exactly on base's top face instead.
+#
+# NOTE: a document should declare exactly one independent constraint group
+# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
+# same file currently corrupt each other's geometry.
+
+metadata:
+  name: Constraints Demo - Flush
+  description: "flush mates two faces with zero gap"
+  version: "1.0"
+
+parts:
+  base:
+    primitive: box
+    parameters: { width: 40, depth: 40, height: 10 }
+    origin: center
+
+  shelf:
+    primitive: box
+    parameters: { width: 30, depth: 30, height: 4 }
+    origin: center
+
+constraints:
+  - type: flush
+    faces: [base.face_top, shelf.face_bottom]
+
+export:
+  default_part: shelf
+
+# Result: shelf (30x30x4) sits flush on base's (40x40x10) top face, zero gap.

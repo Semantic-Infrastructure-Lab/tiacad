@@ -1,0 +1,51 @@
+# Constraints Demo: tangent
+#
+# See constraints_flush.yaml for the general `constraints:` overview.
+#
+# `tangent` rests a cylindrical part against a reference plane without
+# piercing it or floating clear of it — e.g. a roller resting on a rail.
+# roller_raw starts well clear of rail and with the wrong orientation (axis
+# along Z); it's rotated onto its side (axis along X) before the constraint
+# runs, since tangent never auto-aligns the axis itself. After it solves,
+# the roller's curved surface just touches rail's top face.
+#
+# NOTE: a document should declare exactly one independent constraint group
+# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
+# same file currently corrupt each other's geometry.
+
+metadata:
+  name: Constraints Demo - Tangent
+  description: "tangent rests a roller on a rail's face"
+  version: "1.0"
+
+parts:
+  rail:
+    primitive: box
+    parameters: { width: 50, depth: 50, height: 4 }
+    origin: center
+
+  roller_raw:
+    primitive: cylinder
+    parameters: { radius: 3, height: 12 }
+    origin: center
+
+operations:
+  # Lay the roller on its side (axis along X) and move it clear of rail so
+  # the constraint's effect is visible.
+  roller:
+    type: transform
+    input: roller_raw
+    transforms:
+      - rotate: { angle: 90, axis: Y, origin: [0, 0, 0] }
+      - translate: [60, 5, 40]
+
+constraints:
+  - type: tangent
+    face: rail.face_top
+    edge: { type: edge, part: roller, selector: "%CIRCLE and <X" }
+
+export:
+  default_part: roller
+
+# Result: roller's curved surface just touches rail's top face (axis lands
+# exactly one radius above the face; X/Y untouched).

@@ -1,0 +1,62 @@
+# Constraints Demo: coaxial
+#
+# See constraints_flush.yaml for the general `constraints:` overview.
+#
+# `coaxial` aligns two edges' axes — e.g. a pin mated into a hole. plate has
+# a hole cut through it; pin_raw starts translated off to one side, nowhere
+# near the hole. After the constraint solves, pin's axis is coincident with
+# the hole's axis (only X/Y move — coaxial aligns direction + perpendicular
+# offset, not position along the axis, so Z stays where translate put it).
+#
+# NOTE: a document should declare exactly one independent constraint group
+# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
+# same file currently corrupt each other's geometry.
+
+metadata:
+  name: Constraints Demo - Coaxial
+  description: "coaxial mates a pin's axis onto a plate's hole axis"
+  version: "1.0"
+
+parts:
+  plate:
+    primitive: box
+    parameters: { width: 30, depth: 30, height: 6 }
+    origin: center
+
+  hole_cyl:
+    primitive: cylinder
+    parameters: { radius: 4, height: 10 }
+    origin: center
+
+  pin_raw:
+    primitive: cylinder
+    parameters: { radius: 4, height: 15 }
+    origin: center
+
+operations:
+  # Cut the hole (coaxial needs a real hole edge to align to, not just a
+  # reference cylinder).
+  plate_with_hole:
+    type: boolean
+    operation: difference
+    base: plate
+    subtract:
+      - hole_cyl
+
+  # Start the pin nowhere near the hole, so the constraint's effect is visible.
+  pin:
+    type: transform
+    input: pin_raw
+    transforms:
+      - translate: [20, 20, 0]
+
+constraints:
+  - type: coaxial
+    edges:
+      - { type: edge, part: plate_with_hole, selector: "%CIRCLE and >Z" }
+      - { type: edge, part: pin, selector: "%CIRCLE and >Z" }
+
+export:
+  default_part: pin
+
+# Result: pin's X/Y center lands on plate_with_hole's cut axis (0, 0).

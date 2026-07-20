@@ -1,0 +1,39 @@
+# Constraints Demo: offset
+#
+# See constraints_flush.yaml for the general `constraints:` overview.
+#
+# `offset` is flush plus a fixed additional gap along the reference face's
+# normal. standoff starts centered at the origin, fully overlapping
+# mount_plate; after the constraint solves, standoff floats exactly 8mm
+# clear of mount_plate's top face instead of touching it.
+#
+# NOTE: a document should declare exactly one independent constraint group
+# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
+# same file currently corrupt each other's geometry.
+
+metadata:
+  name: Constraints Demo - Offset
+  description: "offset holds a fixed gap between two faces"
+  version: "1.0"
+
+parts:
+  mount_plate:
+    primitive: box
+    parameters: { width: 40, depth: 40, height: 6 }
+    origin: center
+
+  standoff:
+    primitive: box
+    parameters: { width: 10, depth: 10, height: 10 }
+    origin: center
+
+constraints:
+  - type: offset
+    faces: [mount_plate.face_top, standoff.face_bottom]
+    distance: 8
+
+export:
+  default_part: standoff
+
+# Result: standoff (10x10x10) floats exactly 8mm clear of mount_plate's
+# (40x40x6) top face.
