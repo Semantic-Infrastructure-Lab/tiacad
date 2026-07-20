@@ -34,6 +34,33 @@ def test_collect_visible_part_names_skips_consumed_inputs():
     assert _collect_visible_part_names(FakeDoc()) == ["final"]
 
 
+def test_collect_visible_part_names_expands_pattern_dict_refs():
+    """Regression: subtract:[{pattern: X}] must not crash on unhashable dict.
+
+    Pattern-expanded subtract entries reference the pattern's instances
+    (`X_0`, `X_1`, ...) by prefix, not the literal dict — see
+    boolean_builder.py's _expand_dict_item for the matching expansion used
+    when the operation actually runs.
+    """
+
+    class FakeParts:
+        def list_parts(self):
+            return ["base", "groove_ring_0", "groove_ring_1", "final"]
+
+    class FakeDoc:
+        parts = FakeParts()
+        operations = {
+            "final": {
+                "type": "boolean",
+                "operation": "difference",
+                "base": "base",
+                "subtract": [{"pattern": "groove_ring"}],
+            }
+        }
+
+    assert _collect_visible_part_names(FakeDoc()) == ["final"]
+
+
 def test_maybe_start_xvfb_ignores_startup_errors(monkeypatch):
     def boom():
         raise RuntimeError("xvfb unavailable")

@@ -209,7 +209,14 @@ def _collect_visible_part_names(doc) -> list[str]:
                 consumed.add(op[field])
         for field in ("subtract", "inputs", "tools"):
             for name in op.get(field, []):
-                consumed.add(name)
+                if isinstance(name, dict):
+                    if "pattern" in name:
+                        prefix = f"{name['pattern']}_"
+                        consumed.update(p for p in part_names if p.startswith(prefix))
+                    # {"range": ...} entries reference already-consumed pattern
+                    # instances by name elsewhere in the DAG; nothing new to mark.
+                else:
+                    consumed.add(name)
 
     visible_names = [
         name for name in part_names
