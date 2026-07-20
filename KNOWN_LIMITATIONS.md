@@ -158,6 +158,28 @@ constraint, so it doesn't reopen the ambiguity. See `_check_multi_moving_flush_o
 Properly *supporting* this shape (rather than rejecting it) is tracked as follow-on work —
 see `tt show TCAD-CON-11`.
 
+**Found 2026-07-20 (`TCAD-CON-12`, not yet fixed):** multiple *independent* constraint
+groups in the same `constraints:` block silently corrupt each other's geometry. Root cause:
+`apply_constraints` builds one shared `cq.Assembly()` across every constraint entry in the
+document and calls a single joint `assembly.solve()` (the same joint-solve design
+`TCAD-CON-5` above describes) — but CadQuery's solver locks only the very first-referenced
+part globally as its fixed anchor, not one anchor per disjoint constraint component. Every
+subsequent group's "reference" part is therefore left as a free body in IPOPT's shared
+optimization and gets nudged to help minimize the aggregate residual, even though nothing
+in that group's own constraint should move it. Reproduced live: two unrelated `flush` pairs
+(`a1`/`a2` flush-mated, `b1`/`b2` flush-mated, no parts shared between the pairs) — `a1`/`a2`
+(first-referenced) solve correctly, but `b1`/`b2`'s *declared dimensions* come out
+non-round and inflated (e.g. a 20x20x5 box reports as 21.0x21.0x6.6 afterward) even though
+neither is the "moving" part conceptually. This is worse than the `TCAD-CON-11` case above:
+that one is caught and rejected before `.solve()` runs; this one runs, "succeeds", and
+returns quietly-wrong geometry with no validation signal. Confirmed the existing
+single-constraint-per-file corpus (`examples/validation/T4_constraint_*.tiacad`) is
+unaffected — this only triggers with 2+ constraint entries whose part sets don't overlap,
+which is exactly why the demo files added for `TCAD-UX-9` (`examples/constraints_flush.yaml`
+etc.) are split one-constraint-per-file rather than combined into one assembly. Proper fix
+needs per-connected-component partitioning: group constraints by shared parts (union-find),
+solve each component in its own `cq.Assembly()`/`.solve()` call. See `tt show TCAD-CON-12`.
+
 **Still missing:**
 - Per-constraint partitioning — skipping only the specific constraints affected by a change,
   not the whole batch. Would require splitting constraints into connected components by
