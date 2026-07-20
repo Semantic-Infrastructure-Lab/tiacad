@@ -915,19 +915,23 @@ _(no notes yet)_
 ## TASK-TCAD-VAL-13 · check/audit CLI 'W x H x D' table swaps H and D columns vs box primitive's width/height/depth axis convention
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [bug]
 created: '2026-07-20T21:03:00Z'
-updated: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:50:44Z'
 session: cerulean-gradient-0720
+links:
+  commits:
+  - b8ca20204e985a103c96665d422766fc672d0a4f
+notes_next: 2
 ```
 
 get_dimensions() in tiacad_core/testing/dimensions.py:87-91 labels Y-extent as 'height' and Z-extent as 'depth', but the box primitive (cadquery_backend.py:31-33, create_box) maps width->X, depth->Y, height->Z per docs/user/YAML_REFERENCE.md. Result: 'tiacad check'/'tiacad audit' print H and D swapped relative to the part's own declared width/height/depth parameters. Confirmed via a box with height=100,depth=6 (intending tall/thin) printing as '100.0 x 6.0 x 100.0' (H and D reversed). Only affects check/audit's human-readable table -- debug bundle's geometry_summary.py uses raw bbox arrays, not this labeling, so it's unaffected. Fix get_dimensions to use the same X/Y/Z->width/depth/height convention as create_box.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-20T21:50:44Z session:descending-protostar-0720] Fixed axis mapping in get_dimensions(); tests updated and repro verified
 
 
 ## TASK-TCAD-UX-7 · tiacad render computes validation issues (for PNG annotation) but never prints them to console
