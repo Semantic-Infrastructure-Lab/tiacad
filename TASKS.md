@@ -880,8 +880,11 @@ status: backlog
 priority: low
 tags: [constraints, solver]
 created: '2026-07-20T02:04:14Z'
-updated: '2026-07-20T02:04:14Z'
+updated: '2026-07-20T02:30:09Z'
 session: kojucese-0719
+links:
+  references:
+  - KNOWN_LIMITATIONS.md
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
