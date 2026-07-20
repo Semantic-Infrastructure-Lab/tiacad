@@ -1003,19 +1003,23 @@ Omitting 'offset:' under a derived reference ({from: part.anchor}) errors with "
 ## TASK-TCAD-UX-9 · add a constraints: (flush/offset/coaxial/tangent) example to the main examples/ gallery
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [docs]
 created: '2026-07-20T21:03:00Z'
-updated: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T22:02:59Z'
 session: cerulean-gradient-0720
+links:
+  commits:
+  - 90963e1fe8edc86274a89b2dc5ea0d41c39c0369
+notes_next: 2
 ```
 
 The constraint solver shipped 2026-07-19 but its only working examples live in examples/validation/*.tiacad (test-corpus files, .tiacad extension, heavily annotated for internal verification, not a teaching example) -- not discoverable via examples/*.yaml. Since constraints are now the preferred way to position assembly parts (KNOWN_LIMITATIONS.md #5), add a plain examples/*.yaml demo.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-20T22:02:59Z session:descending-protostar-0720] 4 single-concept example files added, verified via check + render + visual inspection; combined-file attempt surfaced TCAD-CON-12
 
 
 ## TASK-TCAD-CON-12 · Multiple independent constraint groups in one document corrupt each other's geometry (solve() only locks first group's reference)
