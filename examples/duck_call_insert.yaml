@@ -15,10 +15,16 @@ metadata:
 parameters:
   # Overall turned profile
   overall_length: 55
-  insert_length: 18      # section that plugs into the barrel
+  insert_length: 26      # section that plugs into the barrel, incl. taper lead-in
   insert_radius: 8       # OD of the barrel-insert section -- the single most
                           # critical dimension on the whole part
   body_radius: 11         # OD of the grip/body section
+  # Reference photo shows a continuous taper from the grip-groove section into
+  # the body, not a squared-off shoulder -- this is the length over which
+  # insert_radius grows to body_radius, ending exactly at insert_length. Must
+  # stay less than (insert_length - groove_start_z - groove_count*groove_pitch)
+  # so the taper starts after the last groove, not through it.
+  shoulder_taper_length: 8
   neck_start_z: 40
   neck_radius: 6.5
   mouth_radius: 9
@@ -53,7 +59,7 @@ sketches:
           - - ${insert_radius}
             - 0
           - - ${insert_radius}
-            - ${insert_length}
+            - ${insert_length - shoulder_taper_length}
           - - ${body_radius}
             - ${insert_length}
           - - ${body_radius}
@@ -66,15 +72,14 @@ sketches:
             - ${overall_length}
         closed: true
 
-  # NOTE: the shoulder here (bottom_exit_radius -> tone_seat_radius) is
-  # deliberately offset 1.5mm past the exterior_profile's own shoulder
-  # (insert_radius -> body_radius) at the same axis position. If both walls
-  # stepped outward at the *exact* same z, the connecting wall between the
-  # lower and upper sections would have zero radial overlap at that plane
-  # and the boolean difference below would split into two disconnected
-  # solids -- watertight, but `components: 2`. Always leave interior/exterior
-  # shoulders offset from each other, or verify with `tiacad validate-geometry`
-  # (not just `tiacad check`, which won't catch this).
+  # NOTE: the tone-board seat here (bottom_exit_radius -> tone_seat_radius) is
+  # a deliberate squared-off shoulder -- the reed/tone-board assembly needs a
+  # hard stop to seat against, unlike the exterior's continuous taper. It sits
+  # 1.5mm past the end of the exterior's taper (insert_length), so the wall
+  # between the lower and upper sections keeps a consistent radial thickness
+  # instead of pinching to a knife edge at the transition. Always verify wall
+  # thickness changes with `tiacad validate-geometry`, not just `tiacad check`
+  # (which won't catch a split into disconnected components).
   interior_profile:
     plane: XZ
     origin:
@@ -194,7 +199,7 @@ export:
 # see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
 expect:
   final: insert
-  volume: 6592.004
+  volume: 7471.65
   bbox: [22.0, 22.0, 55.0]
   watertight: true
   components: 1
