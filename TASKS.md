@@ -856,14 +856,18 @@ notes_next: 2
 ## TASK-TCAD-CON-10 · flush/offset constraint solve can converge to an arbitrary in-plane rotation for certain moving-part/reference-size combinations (e.g. 20x20x2 surface + 4x4x4 mount), inflating the AABB and misaligning non-square parts, even though the physical position/gap is still correct — CadQuery's Plane constraint kind leaves rotation-about-normal unconstrained and IPOPT doesn't reliably land on zero. Discovered building the TCAD-VAL-10 offset validation example (20/4 size ratio triggered it; 10/5 and 12/4 did not).
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 tags: [constraints, solver, bug]
 created: '2026-07-19T21:57:11Z'
-updated: '2026-07-19T21:57:11Z'
+updated: '2026-07-20T01:18:03Z'
 session: astral-sun-0719
+links:
+  commits:
+  - 3d02925a8a43310688dbdbf4e0d5290c929a7365
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-20T01:18:03Z session:icy-elysium-0719] Fixed: swing-twist post-solve correction in constraint_builder.py's _flush_swing_location; root cause was CadQuery's Plane constraint leaving rotation-about-normal exactly unconstrained + IPOPT's fixed nonzero seed. See KNOWN_LIMITATIONS.md section 1.
