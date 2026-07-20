@@ -18,6 +18,7 @@ from tiacad_core.spatial_resolver import SpatialResolver
 from tiacad_core.geometry.cadquery_backend import CadQueryBackend
 from tiacad_core.parser.constraint_builder import ConstraintBuilder, ConstraintBuilderError
 from tiacad_core.parser.tiacad_parser import TiaCADParser
+from tiacad_core.testing.dimensions import get_dimensions
 
 
 def _approx(actual, expected, abs_tol=1e-6):
@@ -455,6 +456,41 @@ constraints:
 """)
         _approx(doc.parts.get('base').get_center(), (0.0, 0.0, 0.0))
         _approx(doc.parts.get('top').get_center(), (0.0, 0.0, 7.5))
+
+    def test_independent_constraint_groups_do_not_corrupt_each_other(self):
+        """TCAD-CON-12 regression: two flush groups with disjoint part sets
+        used to share one Assembly/solve() call, so CadQuery locked only the
+        first group's reference part and left the second group's reference
+        as a free body — silently distorting its moving part's geometry."""
+        doc = TiaCADParser.parse_string("""
+parts:
+  base1:
+    primitive: box
+    parameters: {width: 40, height: 10, depth: 40}
+    origin: center
+  shelf1:
+    primitive: box
+    parameters: {width: 30, height: 4, depth: 30}
+    origin: center
+  base2:
+    primitive: box
+    parameters: {width: 20, height: 5, depth: 20}
+    origin: center
+  shelf2:
+    primitive: box
+    parameters: {width: 15, height: 3, depth: 15}
+    origin: center
+
+constraints:
+  - type: flush
+    faces: [base1.face_top, shelf1.face_bottom]
+  - type: flush
+    faces: [base2.face_top, shelf2.face_bottom]
+""")
+        dims = get_dimensions(doc.parts.get('base2'))
+        assert abs(dims['width'] - 20.0) < 1e-6
+        assert abs(dims['height'] - 5.0) < 1e-6
+        assert abs(dims['depth'] - 20.0) < 1e-6
 
     def test_constraints_can_reference_operation_output_parts(self):
         """Constraints run after operations, so they may reference a part an

@@ -157,6 +157,39 @@ class ConstraintBuilder:
         self.registry = registry
         self.spatial_resolver = spatial_resolver
 
+    @staticmethod
+    def _partition_into_components(
+        solved: List[Tuple[str, str, str, str, str, float]]
+    ) -> List[List[Tuple[str, str, str, str, str, float]]]:
+        """Group constraints into connected components by shared part name
+        (union-find), so each component can be solved in its own
+        cq.Assembly() — see apply_constraints and TCAD-CON-12."""
+        parent: Dict[str, str] = {}
+
+        def find(name: str) -> str:
+            parent.setdefault(name, name)
+            root = name
+            while parent[root] != root:
+                root = parent[root]
+            while parent[name] != root:
+                parent[name], name = root, parent[name]
+            return root
+
+        def union(a: str, b: str) -> None:
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[ra] = rb
+
+        for _ctype, ref_part, _ref_sel, mov_part, _mov_sel, _distance in solved:
+            union(ref_part, mov_part)
+
+        components: Dict[str, List[Tuple[str, str, str, str, str, float]]] = {}
+        for constraint in solved:
+            ref_part = constraint[1]
+            components.setdefault(find(ref_part), []).append(constraint)
+
+        return list(components.values())
+
     def apply_constraints(self, constraints_spec: List[Dict[str, Any]]) -> set:
         """Solve every constraint in `constraints_spec` and bake the results
         into the registry. No-op for an empty/missing list.
@@ -197,60 +230,14 @@ class ConstraintBuilder:
 
         touched_parts: set = {mov_part for _ctype, _rp, _rs, mov_part, _ms, _d in tangents}
 
-        if solved:
-            involved_parts: List[str] = []
-            seen = set()
-            for _ctype, ref_part, _, mov_part, _, _ in solved:
-                for p in (ref_part, mov_part):
-                    if p not in seen:
-                        seen.add(p)
-                        involved_parts.append(p)
-
-            touched_parts.update(involved_parts)
-
-            assembly = cq.Assembly()
-            for part_name in involved_parts:
-                assembly.add(self.registry.get(part_name).geometry, name=part_name, loc=cq.Location())
-
-            for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in solved:
-                query_kind = _CONSTRAINT_QUERY_KIND[ctype]
-                ref_query = f"{ref_part}@{query_kind}@{ref_sel}"
-                mov_query = f"{mov_part}@{query_kind}@{mov_sel}"
-                for cq_kind in _CONSTRAINT_CQ_KINDS[ctype]:
-                    assembly.constrain(ref_query, mov_query, cq_kind)
-
-            try:
-                assembly.solve()
-            except Exception as e:
-                raise ConstraintBuilderError(f"Constraint solve failed: {e}") from e
-
-            # flush/offset moving parts touched by exactly one constraint in
-            # this batch get their Location recomputed directly rather than
-            # taken from IPOPT's solve — see _flush_swing_location (TCAD-CON-10).
-            touch_count: Dict[str, int] = {}
-            for _ctype, rp, _rs, mp, _ms, _d in solved:
-                touch_count[rp] = touch_count.get(rp, 0) + 1
-                touch_count[mp] = touch_count.get(mp, 0) + 1
-
-            flush_swing_locs: Dict[str, cq.Location] = {}
-            for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in solved:
-                if ctype in ('flush', 'offset') and touch_count[mov_part] == 1:
-                    flush_swing_locs[mov_part] = self._flush_swing_location(
-                        ref_part, ref_sel, mov_part, mov_sel, assembly.objects[ref_part].loc
-                    )
-
-            # Bake the solved position into every involved part (locked parts
-            # solve to an identity location, so this is a no-op for them).
-            for part_name in involved_parts:
-                loc = flush_swing_locs.get(part_name, assembly.objects[part_name].loc)
-                self._bake_location(part_name, loc)
-
-            # 'offset' constraints add a translate on top of the now-baked flush
-            # position, along the reference face's normal (resolved fresh, so it
-            # reflects the reference part's actual — possibly also-constrained — pose).
-            for ctype, ref_part, ref_sel, mov_part, _mov_sel, distance in solved:
-                if ctype == 'offset':
-                    self._apply_offset_translate(mov_part, ref_part, ref_sel, distance)
+        # Solve each connected component (constraints linked by a shared part)
+        # in its own Assembly/solve() call — see TCAD-CON-12. CadQuery's
+        # solve() locks only the first-referenced part in the Assembly as a
+        # fixed anchor; sharing one Assembly across independent components
+        # would leave every component after the first without a real anchor,
+        # so IPOPT's joint optimization is free to silently perturb it.
+        for component in self._partition_into_components(solved):
+            touched_parts.update(self._solve_and_bake_component(component))
 
         # 'tangent' is applied last (after any other constraints in the same
         # batch have been baked), so its reference face is resolved from its
@@ -259,6 +246,67 @@ class ConstraintBuilder:
             self._apply_tangent_translate(mov_part, mov_sel, ref_part, ref_sel, radius)
 
         return touched_parts
+
+    def _solve_and_bake_component(
+        self, component: List[Tuple[str, str, str, str, str, float]]
+    ) -> List[str]:
+        """Solve one connected component of flush/offset/coaxial constraints
+        in its own Assembly and bake the result into the registry. Returns
+        the involved part names. See apply_constraints and TCAD-CON-12 for
+        why each component gets a separate Assembly/solve() call."""
+        involved_parts: List[str] = []
+        seen = set()
+        for _ctype, ref_part, _, mov_part, _, _ in component:
+            for p in (ref_part, mov_part):
+                if p not in seen:
+                    seen.add(p)
+                    involved_parts.append(p)
+
+        assembly = cq.Assembly()
+        for part_name in involved_parts:
+            assembly.add(self.registry.get(part_name).geometry, name=part_name, loc=cq.Location())
+
+        for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in component:
+            query_kind = _CONSTRAINT_QUERY_KIND[ctype]
+            ref_query = f"{ref_part}@{query_kind}@{ref_sel}"
+            mov_query = f"{mov_part}@{query_kind}@{mov_sel}"
+            for cq_kind in _CONSTRAINT_CQ_KINDS[ctype]:
+                assembly.constrain(ref_query, mov_query, cq_kind)
+
+        try:
+            assembly.solve()
+        except Exception as e:
+            raise ConstraintBuilderError(f"Constraint solve failed: {e}") from e
+
+        # flush/offset moving parts touched by exactly one constraint in this
+        # component get their Location recomputed directly rather than taken
+        # from IPOPT's solve — see _flush_swing_location (TCAD-CON-10).
+        touch_count: Dict[str, int] = {}
+        for _ctype, rp, _rs, mp, _ms, _d in component:
+            touch_count[rp] = touch_count.get(rp, 0) + 1
+            touch_count[mp] = touch_count.get(mp, 0) + 1
+
+        flush_swing_locs: Dict[str, cq.Location] = {}
+        for ctype, ref_part, ref_sel, mov_part, mov_sel, _distance in component:
+            if ctype in ('flush', 'offset') and touch_count[mov_part] == 1:
+                flush_swing_locs[mov_part] = self._flush_swing_location(
+                    ref_part, ref_sel, mov_part, mov_sel, assembly.objects[ref_part].loc
+                )
+
+        # Bake the solved position into every involved part (locked parts
+        # solve to an identity location, so this is a no-op for them).
+        for part_name in involved_parts:
+            loc = flush_swing_locs.get(part_name, assembly.objects[part_name].loc)
+            self._bake_location(part_name, loc)
+
+        # 'offset' constraints add a translate on top of the now-baked flush
+        # position, along the reference face's normal (resolved fresh, so it
+        # reflects the reference part's actual — possibly also-constrained — pose).
+        for ctype, ref_part, ref_sel, mov_part, _mov_sel, distance in component:
+            if ctype == 'offset':
+                self._apply_offset_translate(mov_part, ref_part, ref_sel, distance)
+
+        return involved_parts
 
     def _check_plane_conflicts(self, solved_indexed: List[Tuple[int, Tuple[str, str, str, str, str, float]]]) -> None:
         """Detect 'flush'/'offset' constraints that mate the same moving face
