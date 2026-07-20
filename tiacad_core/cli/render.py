@@ -3,7 +3,7 @@
 import traceback
 from pathlib import Path
 
-from .output import Colors, print_error, print_info, print_success
+from .output import Colors, print_error, print_info, print_success, print_warning
 
 
 def _resolve_render_output_path(input_file: Path, output_arg: str | None) -> Path:
@@ -26,9 +26,20 @@ def cmd_render(args):
 
     try:
         doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema)
-        issues = AssemblyValidator().validate_document(doc).issues
-        written_path = render_trust(doc, str(output_path), title=input_file.stem, issues=issues)
+        report = AssemblyValidator().validate_document(doc)
+        written_path = render_trust(doc, str(output_path), title=input_file.stem, issues=report.issues)
         print_success(f"Trust render written to {Colors.CYAN}{written_path}{Colors.RESET}")
+
+        status = "passed" if report.passed else "failed"
+        summary = (
+            f"Validation {status}: {report.error_count} errors, "
+            f"{report.warning_count} warnings, {report.info_count} info"
+        )
+        if report.passed:
+            print_info(summary)
+        else:
+            print_warning(f"{summary} — see annotated markers in the render, or run `tiacad debug` for detail")
+
         return 0
     except Exception as e:
         print_error(f"Render failed: {str(e)}")

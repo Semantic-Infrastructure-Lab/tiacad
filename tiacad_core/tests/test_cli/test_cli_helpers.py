@@ -460,10 +460,41 @@ def test_cmd_render_writes_png(tmp_path, capsys):
     with patch('tiacad_core.parser.tiacad_parser.TiaCADParser.parse_file', return_value=fake_doc), \
          patch('tiacad_core.validation.assembly_validator.AssemblyValidator.validate_document') as mock_validate, \
          patch('tiacad_core.visual.trust_renderer.render_trust', return_value=str(output_path)) as mock_render:
-        mock_validate.return_value = SimpleNamespace(issues=fake_issues)
+        mock_validate.return_value = SimpleNamespace(
+            issues=fake_issues, passed=True, error_count=0, warning_count=0, info_count=0
+        )
         rc = cmd_render(args)
 
     captured = capsys.readouterr()
     assert rc == 0
     assert "Trust render written" in captured.out
+    assert "Validation passed: 0 errors, 0 warnings, 0 info" in captured.out
     mock_render.assert_called_once_with(fake_doc, str(output_path), title="box", issues=fake_issues)
+
+
+def test_cmd_render_prints_validation_failure(tmp_path, capsys):
+    """A render whose build failed validation must say so, not just report success."""
+    input_file = tmp_path / "box.yaml"
+    input_file.write_text("parts: {}\n")
+    output_path = tmp_path / "box_trust.png"
+    args = SimpleNamespace(
+        input=str(input_file),
+        output=str(output_path),
+        validate_schema=False,
+        verbose=False,
+    )
+
+    fake_doc = object()
+    fake_issues = [object()]
+
+    with patch('tiacad_core.parser.tiacad_parser.TiaCADParser.parse_file', return_value=fake_doc), \
+         patch('tiacad_core.validation.assembly_validator.AssemblyValidator.validate_document') as mock_validate, \
+         patch('tiacad_core.visual.trust_renderer.render_trust', return_value=str(output_path)):
+        mock_validate.return_value = SimpleNamespace(
+            issues=fake_issues, passed=False, error_count=1, warning_count=0, info_count=0
+        )
+        rc = cmd_render(args)
+
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "Validation failed: 1 errors, 0 warnings, 0 info" in captured.out
