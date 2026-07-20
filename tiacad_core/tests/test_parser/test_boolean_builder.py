@@ -269,6 +269,23 @@ def test_difference_box_with_hole(builder, registry):
     assert volume < 1000, f"Expected volume < 1000, got {volume}"
 
 
+@pytest.mark.parametrize('alias', ['subtract', 'cut'])
+def test_difference_operation_aliases(builder, registry, alias):
+    """'subtract'/'cut' are accepted as aliases for 'operation: difference'."""
+    spec = {
+        'operation': alias,
+        'base': 'box1',
+        'subtract': ['hole']
+    }
+
+    builder.execute_boolean_operation('box_with_hole_alias', spec)
+
+    assert registry.exists('box_with_hole_alias')
+    result = registry.get('box_with_hole_alias')
+    volume = result.geometry.val().Volume()
+    assert volume < 1000, f"Expected volume < 1000, got {volume}"
+
+
 def test_difference_multiple_subtractions(builder, registry):
     """Test difference: subtract multiple parts."""
     spec = {

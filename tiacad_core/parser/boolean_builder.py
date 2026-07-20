@@ -255,6 +255,8 @@ class BooleanBuilder:
             )
 
         operation = resolved_spec['operation']
+        if operation in ('subtract', 'cut'):
+            operation = 'difference'
 
         try:
             if operation == 'union':
