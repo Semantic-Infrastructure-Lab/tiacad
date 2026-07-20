@@ -959,19 +959,23 @@ cli/render.py:29 runs AssemblyValidator().validate_document(doc) and passes issu
 ## TASK-TCAD-API-2 · boolean 'operation: difference' requires field 'subtract:' -- accept 'subtract'/'cut' as operation-name aliases
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [dx]
 created: '2026-07-20T21:03:00Z'
-updated: '2026-07-20T21:03:00Z'
+updated: '2026-07-20T21:56:05Z'
 session: cerulean-gradient-0720
+links:
+  commits:
+  - 4eb8f0b8a9cb5dbf0b14f400106cb839f805c7eb
+notes_next: 2
 ```
 
 The natural guess from common CAD vocabulary is 'operation: subtract' with a 'tool:' field; actual required shape is 'operation: difference' with 'base:'+'subtract: [...]' (boolean_builder.py:238-452). The operation-name (difference) not matching its own operand field name (subtract) costs an extra failed round-trip for anyone (human or agent) guessing from standard terminology. Accept 'subtract'/'cut' as aliases for 'difference' at the operation-type level.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-20T21:56:05Z session:descending-protostar-0720] subtract/cut now accepted as difference aliases
 
 
 ## TASK-TCAD-UX-8 · translate 'to: {from: X}' requires explicit offset even for zero-offset moves -- default missing offset to [0,0,0]
