@@ -6,10 +6,6 @@
 # normal. standoff starts centered at the origin, fully overlapping
 # mount_plate; after the constraint solves, standoff floats exactly 8mm
 # clear of mount_plate's top face instead of touching it.
-#
-# NOTE: a document should declare exactly one independent constraint group
-# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
-# same file currently corrupt each other's geometry.
 
 metadata:
   name: Constraints Demo - Offset

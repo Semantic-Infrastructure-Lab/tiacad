@@ -1025,15 +1025,19 @@ The constraint solver shipped 2026-07-19 but its only working examples live in e
 ## TASK-TCAD-CON-12 · Multiple independent constraint groups in one document corrupt each other's geometry (solve() only locks first group's reference)
 
 ```yaml
-status: backlog
+status: done
 priority: high
 tags: [bug, constraints]
 created: '2026-07-20T22:01:07Z'
-updated: '2026-07-20T22:01:24Z'
+updated: '2026-07-20T22:29:54Z'
 session: descending-protostar-0720
-notes_next: 2
+links:
+  commits:
+  - f76f74a283c50be269a8482b54a297d6cedeee5e
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-07-20T22:01:24Z session:descending-protostar-0720] Repro: two independent flush groups in one document (a1/a2 flush + b1/b2 flush) -- b1/b2's bounding box comes out non-round (21.0x6.6x21.0 instead of declared 20x5x20). Root cause: apply_constraints() in constraint_builder.py builds one shared cq.Assembly() across every constraint entry in the file and calls a single assembly.solve() -- CadQuery locks only the first-referenced part globally as the fixed anchor, not one anchor per disjoint constraint component, so every subsequent group's reference part is left as a free body in IPOPT's joint optimization and gets silently perturbed. Single-constraint-per-document files (the existing T4_constraint_*.tiacad corpus) are unaffected -- this only triggers with 2+ constraint entries whose part sets don't overlap. Fix needs per-connected-component partitioning: group constraints by shared parts (union-find), solve each component in its own cq.Assembly(). Verified via /tmp/test_two_flush.yaml and /tmp/test_three_flush.yaml during TCAD-UX-9 example-writing work (not committed, reproducible from this note).
+- [#2 2026-07-20T22:29:54Z session:icy-leviathan-0720] Fixed via per-connected-component partitioning: constraints grouped by shared part (union-find), each component solved in its own cq.Assembly(). Regression test added, KNOWN_LIMITATIONS.md updated.

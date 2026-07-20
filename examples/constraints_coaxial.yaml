@@ -7,10 +7,6 @@
 # near the hole. After the constraint solves, pin's axis is coincident with
 # the hole's axis (only X/Y move — coaxial aligns direction + perpendicular
 # offset, not position along the axis, so Z stays where translate put it).
-#
-# NOTE: a document should declare exactly one independent constraint group
-# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
-# same file currently corrupt each other's geometry.
 
 metadata:
   name: Constraints Demo - Coaxial

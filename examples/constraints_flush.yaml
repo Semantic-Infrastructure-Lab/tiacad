@@ -8,10 +8,6 @@
 # `flush` mates two faces together with zero gap. shelf starts centered at
 # the origin, fully overlapping base; after the constraint solves, shelf
 # sits exactly on base's top face instead.
-#
-# NOTE: a document should declare exactly one independent constraint group
-# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
-# same file currently corrupt each other's geometry.
 
 metadata:
   name: Constraints Demo - Flush

@@ -8,10 +8,6 @@
 # along Z); it's rotated onto its side (axis along X) before the constraint
 # runs, since tangent never auto-aligns the axis itself. After it solves,
 # the roller's curved surface just touches rail's top face.
-#
-# NOTE: a document should declare exactly one independent constraint group
-# (see TCAD-CON-12) — multiple unrelated flush/offset/coaxial pairs in the
-# same file currently corrupt each other's geometry.
 
 metadata:
   name: Constraints Demo - Tangent
