@@ -22,8 +22,10 @@ from tiacad_core.cli import (
     _print_part_section,
     _resolve_build_output,
     _resolve_debug_bundle_path,
+    _resolve_render_output_path,
     _resolve_watch_export_path,
     cmd_debug,
+    cmd_render,
     _visible_parts,
 )
 from tiacad_core.watcher import WatchBuildResult
@@ -406,3 +408,62 @@ def test_cmd_debug_prints_manifest_json(tmp_path, capsys):
     assert json_start >= 0
     payload = json.loads(captured.out[json_start:])
     assert payload['summary']['default_part'] == 'box'
+
+
+def test_resolve_render_output_path_defaults_from_input(tmp_path):
+    input_file = tmp_path / "box.yaml"
+    input_file.write_text("parts: {}\n")
+
+    output_path = _resolve_render_output_path(input_file, None)
+
+    assert output_path == (tmp_path / "box_trust.png").resolve()
+
+
+def test_resolve_render_output_path_honors_explicit_arg(tmp_path):
+    input_file = tmp_path / "box.yaml"
+    input_file.write_text("parts: {}\n")
+
+    output_path = _resolve_render_output_path(input_file, str(tmp_path / "custom.png"))
+
+    assert output_path == (tmp_path / "custom.png").resolve()
+
+
+def test_cmd_render_reports_missing_file(tmp_path, capsys):
+    args = SimpleNamespace(
+        input=str(tmp_path / "missing.yaml"),
+        output=None,
+        validate_schema=False,
+        verbose=False,
+    )
+
+    rc = cmd_render(args)
+
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "File not found" in captured.out or "File not found" in captured.err
+
+
+def test_cmd_render_writes_png(tmp_path, capsys):
+    input_file = tmp_path / "box.yaml"
+    input_file.write_text("parts: {}\n")
+    output_path = tmp_path / "box_trust.png"
+    args = SimpleNamespace(
+        input=str(input_file),
+        output=str(output_path),
+        validate_schema=False,
+        verbose=False,
+    )
+
+    fake_doc = object()
+    fake_issues = []
+
+    with patch('tiacad_core.parser.tiacad_parser.TiaCADParser.parse_file', return_value=fake_doc), \
+         patch('tiacad_core.validation.assembly_validator.AssemblyValidator.validate_document') as mock_validate, \
+         patch('tiacad_core.visual.trust_renderer.render_trust', return_value=str(output_path)) as mock_render:
+        mock_validate.return_value = SimpleNamespace(issues=fake_issues)
+        rc = cmd_render(args)
+
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "Trust render written" in captured.out
+    mock_render.assert_called_once_with(fake_doc, str(output_path), title="box", issues=fake_issues)

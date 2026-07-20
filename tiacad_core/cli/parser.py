@@ -9,6 +9,7 @@ from .check import cmd_check
 from .debug import cmd_debug
 from .info import cmd_info
 from .measure import cmd_measure
+from .render import cmd_render
 from .validate import cmd_validate
 from .validate_geometry import cmd_validate_geometry
 from .verify import cmd_verify
@@ -29,6 +30,7 @@ Examples:
   tiacad validate examples/*.yaml
   tiacad info examples/bracket.yaml
   tiacad debug examples/bracket.yaml --bundle out/
+  tiacad render examples/bracket.yaml                 # Outputs bracket_trust.png (8-view inspection render)
 
 Note: 3MF is the recommended format for 3D printing (multi-material, compact, modern).
       STL is supported for legacy compatibility.
@@ -133,6 +135,17 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
         help='Auto-export final part to STL/3MF/STEP on each successful rebuild'
     )
     watch_parser.set_defaults(func=cmd_watch)
+
+    # Render command
+    render_parser = subparsers.add_parser(
+        'render',
+        help='Write the trust-check PNG for a file (8-view: iso/x-ray/orthographic) without a full debug bundle'
+    )
+    render_parser.add_argument('input', help='Input YAML file')
+    render_parser.add_argument('-o', '--output', help='Output PNG path (default: INPUT stem + _trust.png)')
+    render_parser.add_argument('--validate-schema', action='store_true', help='Enable JSON schema validation')
+    render_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
+    render_parser.set_defaults(func=cmd_render)
 
     # Debug command
     debug_parser = subparsers.add_parser(

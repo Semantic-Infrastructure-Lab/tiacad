@@ -203,6 +203,46 @@ Statistics:
 
 ---
 
+### `tiacad render` - Write Trust-Check PNG
+
+Write just the trust-render PNG (8-view: iso front/rear, x-ray, top/bottom/front/rear/side)
+for a model, without the rest of the debug bundle. Use this when you only need a quick
+visual check — `tiacad debug` remains the entry point when you also want the resolved
+model, build trace, or validation report alongside the render.
+
+**Usage:**
+```bash
+tiacad render INPUT [OPTIONS]
+```
+
+**Arguments:**
+- `INPUT` - Input YAML file path
+
+**Options:**
+- `-o, --output PATH` - Output PNG path
+- `--validate-schema` - Enable JSON schema validation before build
+- `-v, --verbose` - Verbose output with traceback on failure
+
+**Default output path:**
+- `INPUT` stem + `_trust.png`
+- Example: `examples/bracket.yaml` → `examples/bracket_trust.png`
+
+**Examples:**
+
+```bash
+# Write the trust render next to the model
+tiacad render examples/bracket.yaml
+
+# Write to an explicit path
+tiacad render examples/bracket.yaml -o /tmp/bracket_check.png
+```
+
+**Notes:**
+- Uses the same renderer as `tiacad debug`'s `final_trust.png`, so `render` and `debug` will
+  always agree on what a given model looks like.
+
+---
+
 ### `tiacad debug` - Write AI/Debug Bundle
 
 Build a stable debug bundle for AI-assisted inspection and iterative debugging.
@@ -630,17 +670,14 @@ fi
 
 ## Future Enhancements
 
-Planned features for future CLI versions (watch mode is already implemented — see above):
+Planned features for future CLI versions (watch mode and a render command are already
+implemented — see above; `render` ships as the fixed 8-view trust check rather than the
+single-view `--view`/`--output` form once sketched here):
 
 ### QW8: Interactive Wizard
 ```bash
 tiacad wizard
 # Interactive prompts to generate YAML
-```
-
-### Render Command
-```bash
-tiacad render examples/bracket.yaml --view isometric --output preview.png
 ```
 
 ### Batch Export

@@ -133,6 +133,7 @@ All contributions should include tests:
 - Check validation errors (provide line numbers)
 - Run specific test: `pytest tiacad_core/tests/test_specific.py::test_function`
 - Use `tiacad check <file>` for fast measured geometry facts
+- Use `tiacad render <file>` for just the 8-view trust-check PNG (no bundle)
 - Use `tiacad debug <file> --bundle out/debug` for structured review artifacts
 - Use visual/trust renders as review evidence, not as the only correctness oracle
 

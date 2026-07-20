@@ -73,13 +73,14 @@ from .audit import (
     cmd_audit,
 )
 from .debug import _print_debug_bundle_summary, _resolve_debug_bundle_path, cmd_debug
+from .render import _resolve_render_output_path, cmd_render
 
 __all__ = [
     'Colors', 'ProgressBar',
     'print_success', 'print_error', 'print_warning', 'print_info', 'print_header',
     'create_parser', 'main',
     'cmd_build', 'cmd_validate', 'cmd_info', 'cmd_validate_geometry', 'cmd_check',
-    'cmd_measure', 'cmd_verify', 'cmd_audit', 'cmd_watch', 'cmd_debug',
+    'cmd_measure', 'cmd_verify', 'cmd_audit', 'cmd_watch', 'cmd_debug', 'cmd_render',
 ]
 
 
