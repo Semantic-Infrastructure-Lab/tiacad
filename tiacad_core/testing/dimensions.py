@@ -39,8 +39,8 @@ def get_dimensions(part: Part) -> Dict[str, float]:
     Returns:
         Dictionary with keys (depending on part type):
             - 'width': X-axis extent (always present)
-            - 'height': Y-axis extent (always present)
-            - 'depth': Z-axis extent (always present)
+            - 'depth': Y-axis extent (always present)
+            - 'height': Z-axis extent (always present)
             - 'volume': Part volume (always present)
             - 'surface_area': Part surface area (always present)
 
@@ -84,11 +84,11 @@ def get_dimensions(part: Part) -> Dict[str, float]:
         min_corner = bounds['min']
         max_corner = bounds['max']
 
-        # Calculate dimensions
+        # Calculate dimensions (matches create_box's width->X, depth->Y, height->Z)
         dimensions = {
             'width': max_corner[0] - min_corner[0],   # X extent
-            'height': max_corner[1] - min_corner[1],  # Y extent
-            'depth': max_corner[2] - min_corner[2],   # Z extent
+            'depth': max_corner[1] - min_corner[1],   # Y extent
+            'height': max_corner[2] - min_corner[2],  # Z extent
         }
 
         # Add volume and surface area

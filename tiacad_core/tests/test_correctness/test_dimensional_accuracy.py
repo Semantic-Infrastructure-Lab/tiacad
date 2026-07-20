@@ -46,8 +46,8 @@ class TestPrimitiveDimensions:
 
         # Verify dimensions to 0.01 unit accuracy
         assert abs(dims['width'] - 50.0) < 0.01
-        assert abs(dims['height'] - 30.0) < 0.01
-        assert abs(dims['depth'] - 20.0) < 0.01
+        assert abs(dims['depth'] - 30.0) < 0.01
+        assert abs(dims['height'] - 20.0) < 0.01
 
     def test_cylinder_radius_accuracy(self):
         """Test cylinder has accurate radius"""
@@ -60,10 +60,10 @@ class TestPrimitiveDimensions:
 
         dims = get_dimensions(cylinder)
 
-        # Cylinder bounding box width/height should be 2*radius = 20
+        # Cylinder bounding box width/depth should be 2*radius = 20
         assert abs(dims['width'] - 20.0) < 0.1
-        assert abs(dims['height'] - 20.0) < 0.1
-        assert abs(dims['depth'] - 50.0) < 0.1
+        assert abs(dims['depth'] - 20.0) < 0.1
+        assert abs(dims['height'] - 50.0) < 0.1
 
     def test_cylinder_height_accuracy(self):
         """Test cylinder has accurate height"""
@@ -77,7 +77,7 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(cylinder)
 
         # Height should be accurate
-        assert abs(dims['depth'] - 100.0) < 0.1
+        assert abs(dims['height'] - 100.0) < 0.1
 
     def test_sphere_radius_accuracy(self):
         """Test sphere has accurate radius"""
@@ -158,8 +158,8 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(plate)
 
         assert abs(dims['width'] - 100.0) < 0.1
-        assert abs(dims['height'] - 100.0) < 0.1
-        assert abs(dims['depth'] - 2.0) < 0.01
+        assert abs(dims['depth'] - 100.0) < 0.1
+        assert abs(dims['height'] - 2.0) < 0.01
 
 
 class TestVolumeCalculations:
