@@ -877,20 +877,23 @@ notes_next: 2
 ## TASK-TCAD-CON-11 · Multi-face flush/offset coupling on same moving part: currently rejected, not solved (coupled least-squares rotation fit needed)
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [constraints, solver]
 created: '2026-07-20T02:04:14Z'
-updated: '2026-07-20T02:30:09Z'
+updated: '2026-07-20T23:45:35Z'
 session: kojucese-0719
 links:
   references:
   - KNOWN_LIMITATIONS.md
+  commits:
+  - c540d48c104cf2c257716aa4f75113eb98cbdabe
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-07-20T23:45:35Z session:icy-leviathan-0720] Solved the common shape: two mutually-opposite flush/offset faces against two independently-fixed references, via _multi_face_swing_location (reuses TCAD-CON-10's shortest-arc shortcut) plus a position-consistency check. 3+ faces or non-opposite face pairs remain rejected (no reproduced use case for general coupled multi-axis fitting). 4 new regression tests, KNOWN_LIMITATIONS.md updated.
 
 
 ## TASK-TCAD-FIN-1 · Localized 'near'/radius edge selector for blend fillets on curved-surface boss seams
