@@ -196,6 +196,35 @@ class PartsBuilder:
                     part_name=name
                 )
 
+    def _resolve_origin_offset(self, origin: Any, reference_offset: tuple) -> Optional[tuple]:
+        """
+        Resolve an `origin:` value to a translate offset, or None for no translation.
+
+        `origin: [x, y, z]` (the "Custom origin point" mode documented in
+        YAML_REFERENCE.md's Box Primitive section, alongside 'center' and the
+        primitive's own named alt-mode) generalizes that alt-mode: it places
+        the SAME reference point the alt-mode uses (a box's min corner, a
+        cylinder/cone's bottom-center) at the given world coordinate, rather
+        than translating the centered primitive by that vector directly --
+        confirmed against `examples/thingiverse_rebuilds/thing38359_wedge.yaml`'s
+        `clip_box`, whose `origin: [-clip_width/2, ..., 0]` only produces its
+        documented "0..height slice" (z starting at 0, not centered on 0)
+        under corner-placement semantics. `reference_offset` is the same
+        offset the primitive's own 'corner'/'base' branch already uses (e.g.
+        `(width/2, depth/2, height/2)` for box, `(0, 0, height/2)` for
+        cylinder/cone) -- added to the literal origin point instead of to the
+        world origin. Primitives with no alt-mode (sphere/torus/polygon/text)
+        should pass `(0, 0, 0)`, i.e. a plain translate to that point.
+        This was previously silently unhandled for every primitive -- see
+        KNOWN_LIMITATIONS.md #17.
+        """
+        if not (isinstance(origin, list) and len(origin) == 3):
+            return None
+        ox, oy, oz = (float(v) for v in origin)
+        rx, ry, rz = reference_offset
+        offset = (ox + rx, oy + ry, oz + rz)
+        return None if offset == (0.0, 0.0, 0.0) else offset
+
     def _build_box(self, name: str, spec: Dict[str, Any]) -> Any:
         """
         Build a box primitive.
@@ -232,6 +261,10 @@ class PartsBuilder:
         box = self.backend.create_box(width, height, depth)
         if origin == 'corner':
             box = self.backend.translate(box, (width / 2, depth / 2, height / 2))
+        else:
+            offset = self._resolve_origin_offset(origin, (width / 2, depth / 2, height / 2))
+            if offset is not None:
+                box = self.backend.translate(box, offset)
         return box
 
     def _build_cylinder(self, name: str, spec: Dict[str, Any]) -> Any:
@@ -269,6 +302,10 @@ class PartsBuilder:
         cylinder = self.backend.create_cylinder(radius, height)
         if origin == 'base':
             cylinder = self.backend.translate(cylinder, (0, 0, height / 2))
+        else:
+            offset = self._resolve_origin_offset(origin, (0, 0, height / 2))
+            if offset is not None:
+                cylinder = self.backend.translate(cylinder, offset)
         return cylinder
 
     def _build_sphere(self, name: str, spec: Dict[str, Any]) -> Any:
@@ -295,10 +332,15 @@ class PartsBuilder:
             )
 
         radius = params['radius']
+        origin = spec.get('origin', 'center')
 
         self._require_positive(name, 'Sphere', radius=radius)
 
-        return self.backend.create_sphere(radius)
+        sphere = self.backend.create_sphere(radius)
+        offset = self._resolve_origin_offset(origin, (0, 0, 0))
+        if offset is not None:
+            sphere = self.backend.translate(sphere, offset)
+        return sphere
 
     def _build_cone(self, name: str, spec: Dict[str, Any]) -> Any:
         """
@@ -367,6 +409,10 @@ class PartsBuilder:
         cone = self.backend.create_cone(radius1, radius2, height)
         if origin == 'base':
             cone = self.backend.translate(cone, (0, 0, height / 2))
+        else:
+            offset = self._resolve_origin_offset(origin, (0, 0, height / 2))
+            if offset is not None:
+                cone = self.backend.translate(cone, offset)
         return cone
 
     def _build_torus(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
@@ -417,7 +463,12 @@ class PartsBuilder:
         # donut lies flat on XY with its hole along +Z (bbox
         # 2(R+r) x 2(R+r) x 2r), the orientation the revolve was meant to produce.
         torus_solid = cq.Solid.makeTorus(major_radius, minor_radius)
-        return cq.Workplane("XY").newObject([torus_solid])
+        torus = cq.Workplane("XY").newObject([torus_solid])
+        origin = spec.get('origin', 'center')
+        offset = self._resolve_origin_offset(origin, (0, 0, 0))
+        if offset is not None:
+            torus = self.backend.translate(torus, offset)
+        return torus
 
     def _build_polygon(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
         """

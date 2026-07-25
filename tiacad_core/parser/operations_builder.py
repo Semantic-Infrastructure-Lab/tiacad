@@ -162,20 +162,27 @@ class OperationsBuilder:
 
     def apply_inline_part_transforms(self, parts_spec: Dict[str, Dict]) -> None:
         """
-        Apply each part's own inline `translate:`/`rotate:` spec (schema v3.0),
-        in place, to the already-built part of the same name in the registry.
+        Apply each part's own inline `translate:`/`rotate:`/`transforms:` spec
+        (schema v3.0), in place, to the already-built part of the same name in
+        the registry.
 
         This is distinct from `operations: type: transform`, which creates a new,
-        separately-named part. Inline part-level translate/rotate re-positions the
-        part itself — e.g. `left_pillar.translate: {to: platform.face_top, ...}` —
-        using the same anchor-resolution machinery (TransformTracker +
-        spatial_resolver) as the transform operation, so `platform.face_top` and
-        other auto-generated/user references resolve identically either way.
+        separately-named part. Inline part-level translate/rotate/transforms
+        re-positions the part itself — e.g. `left_pillar.translate: {to:
+        platform.face_top, ...}` — using the same anchor-resolution machinery
+        (TransformTracker + spatial_resolver) as the transform operation, so
+        `platform.face_top` and other auto-generated/user references resolve
+        identically either way.
+
+        `translate:`/`rotate:` are single-kind shorthands; `transforms:` is a
+        mixed, ordered sequence (`- translate: ...` / `- rotate: ...`) for when
+        order between translate and rotate steps matters. Both forms are applied,
+        in that relative order, if a part specifies more than one.
 
         Must run after every part in `parts_spec` already exists in the registry
         (so any part may anchor to any sibling's auto-generated references) and
         before `operations_spec` executes (so operations see the final position).
-        No-op for parts with neither key.
+        No-op for parts with none of these keys.
 
         Args:
             parts_spec: Dictionary of part_name → part_definition (the YAML `parts:` section)
@@ -185,7 +192,8 @@ class OperationsBuilder:
                 continue
             has_translate = 'translate' in part_def
             has_rotate = 'rotate' in part_def
-            if not has_translate and not has_rotate:
+            has_transforms = 'transforms' in part_def
+            if not has_translate and not has_rotate and not has_transforms:
                 continue
 
             resolved = self.resolver.resolve(part_def)
@@ -201,6 +209,23 @@ class OperationsBuilder:
                 if has_rotate:
                     for rot in self._as_rotate_sequence(resolved['rotate']):
                         self._apply_rotate(tracker, rot, part_name)
+                if has_transforms:
+                    transforms = resolved['transforms']
+                    if not isinstance(transforms, list):
+                        raise OperationsBuilderError(
+                            f"Part '{part_name}' transforms must be a list",
+                            operation_name=part_name
+                        )
+                    for i, transform in enumerate(transforms):
+                        try:
+                            self._apply_transform(tracker, transform, part_name)
+                        except Exception as e:
+                            raise OperationsBuilderError(
+                                f"Part '{part_name}' transforms failed at step {i}: {str(e)}",
+                                operation_name=part_name
+                            ) from e
+            except OperationsBuilderError:
+                raise
             except Exception as e:
                 raise OperationsBuilderError(
                     f"Inline translate/rotate failed for part '{part_name}': {str(e)}",

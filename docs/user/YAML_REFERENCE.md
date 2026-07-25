@@ -22,6 +22,7 @@
    - [Boolean Operations](#boolean-operations)
    - [Pattern Operations](#pattern-operations)
    - [Finishing Operations](#finishing-operations)
+   - [Sketch + Revolve](#sketch--revolve-lathed--rotationally-symmetric-shapes)
 7. [Export](#export)
 8. [Complete Examples](#complete-examples)
 
@@ -540,7 +541,7 @@ parts:
 **Origin modes:**
 - `center`: Center at (0, 0, 0) - default
 - `corner`: Min corner at (0, 0, 0)
-- `[x, y, z]`: Custom origin point
+- `[x, y, z]`: Min corner at this point instead of (0, 0, 0) — i.e. `corner` generalized to an arbitrary point, not a translate of the centered box
 
 ### Cylinder Primitive
 
@@ -551,7 +552,8 @@ parts:
     parameters:
       radius: 10                  # Cylinder radius
       height: 50                  # Cylinder height
-    origin: center                # center, corner, or [x,y,z]
+    origin: center                # center (default), base (bottom-center at 0,0,0),
+                                   # or [x,y,z] (bottom-center at this point instead)
 ```
 
 ### Sphere Primitive
@@ -940,6 +942,53 @@ Example: `bolt_circle` creates `bolt_circle_0`, `bolt_circle_1`, etc.
 **Purpose**: Change the geometry itself - add or remove material, round edges, create 3D shapes from 2D sketches.
 
 Add professional finishing to parts.
+
+#### Sketch + Revolve (Lathed / Rotationally-Symmetric Shapes)
+
+The box/cylinder/sphere/cone/polygon primitives (see [Parts](#parts)) aren't the
+only way to build geometry — a `sketches:` block defines a 2D profile, and a
+`type: revolve` operation spins it around an axis to produce a solid. This is
+the way to model anything a machinist would put on a lathe: bottles, barrels,
+bosses, tapered/flared bodies — shapes the primitives alone can't express.
+
+```yaml
+sketches:
+  bottle_profile:
+    plane: XZ                     # profile lives in this plane
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon              # or: rectangle, circle
+        points:
+          - [0, 0]
+          - [${bottle_radius}, 0]
+          - [${bottle_radius}, ${bottle_height - neck_height}]
+          - [${neck_radius}, ${bottle_height - neck_height}]
+          - [${neck_radius}, ${bottle_height}]
+          - [0, ${bottle_height}]
+        closed: true
+
+operations:
+  bottle:
+    type: revolve
+    sketch: bottle_profile        # required — a name from `sketches:`
+    axis: X | Y | Z                # required
+    angle: 360                     # optional, degrees, default 360 (full revolve)
+    origin: [0, 0, 0]              # optional, revolve axis origin, default [0,0,0]
+```
+
+`parts:` is still required even for sketch-only designs — use a small
+placeholder part (see `examples/bottle_revolve.yaml`) and export the revolved
+operation's result instead. Full worked examples: `examples/bottle_revolve.yaml`,
+`examples/duck_call_insert.yaml` (revolve + interior bore cut + fillet/chamfer
+passes — also see `KNOWN_LIMITATIONS.md` #14 for fillet/chamfer pitfalls on
+lathed seams).
+
+Sketch-based solids aren't limited to revolve — `type: extrude` (straight or
+tapered extrusion), `type: sweep` (profile along a path), `type: loft`
+(blend between profile sections), and `type: hull` (convex hull of parts) all
+build from the same `sketches:` block. See `examples/pipe_sweep.yaml`,
+`examples/bracket_with_hole.yaml`, and the sketch-based `*_builder.py` modules
+under `tiacad_core/parser/` for their specs.
 
 #### Fillet (Round Edges)
 

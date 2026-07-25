@@ -1,5 +1,5 @@
 """
-Tests for part-level inline `translate:`/`rotate:` (schema v3.0).
+Tests for part-level inline `translate:`/`rotate:`/`transforms:` (schema v3.0).
 
 Regression coverage for the 2026-07-10 bug where these documented,
 schema-legal part keys were silently never applied — parts_builder.py never
@@ -9,6 +9,12 @@ OperationsBuilder.apply_inline_part_transforms(), wired into the build
 pipeline in parse_pipeline.py right after all parts + the SpatialResolver
 exist (so any part may anchor to any sibling's auto-generated references)
 and before `operations:` runs. See KNOWN_LIMITATIONS.md #9.
+
+TestInlineTransformsListKey covers a second, later-discovered instance of the
+same failure mode: the `transforms:` list form (also schema-documented) was
+still silently ignored after the #9 fix, since that fix only ever checked for
+`translate`/`rotate` as top-level keys. Found 2026-07-25 while rebuilding
+Thingiverse models in TiaCAD.
 """
 
 import pytest
@@ -160,3 +166,54 @@ parts:
 """)
         from tiacad_core.testing.dimensions import get_volume
         assert abs(get_volume(doc.parts.get("block")) - 40 * 15 * 25) < 0.01
+
+
+class TestInlineTransformsListKey:
+    """The `transforms:` list form (docs/user/YAML_REFERENCE.md "Parts with
+    Transforms") was schema-documented but silently ignored by
+    apply_inline_part_transforms(), which only ever checked for the singular
+    `translate:`/`rotate:` keys -- a sibling of the #9 bug, missed by the
+    original fix because it only tested those two keys. No error, no warning:
+    parts using `transforms:` just built at their untranslated local origin."""
+
+    def test_transforms_list_is_applied_not_silently_ignored(self):
+        doc = TiaCADParser.parse_string("""
+parts:
+  block:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+    transforms:
+      - translate: [50, 0, 0]
+""")
+        bounds = doc.parts.get("block").get_bounds()
+        assert bounds["center"] == _approx_tuple((50.0, 0.0, 0.0))
+
+    def test_transforms_list_applies_translate_then_rotate_in_order(self):
+        # mirrors test_translate_then_rotate_applies_in_key_order, but via the
+        # mixed `transforms:` sequence instead of separate translate/rotate keys.
+        doc = TiaCADParser.parse_string("""
+parts:
+  block:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+    transforms:
+      - translate: [50, 0, 0]
+      - rotate: {angle: 90, axis: Z, origin: [0, 0, 0]}
+""")
+        cx, cy, cz = doc.parts.get("block").get_bounds()["center"]
+        assert abs(cx - 0.0) < 1e-6
+        assert abs(cy - 50.0) < 1e-6
+        assert abs(cz - 0.0) < 1e-6
+
+    def test_transforms_list_rejects_non_list_value(self):
+        with pytest.raises(Exception):
+            TiaCADParser.parse_string("""
+parts:
+  block:
+    primitive: box
+    parameters: {width: 10, height: 10, depth: 10}
+    origin: center
+    transforms: {translate: [50, 0, 0]}
+""")

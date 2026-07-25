@@ -127,6 +127,34 @@ LinePreservingLoader.add_constructor(
 )
 
 
+def _negative_interpolation_hint(yaml_string: str, error: "yaml.YAMLError") -> str:
+    """
+    Detect the `-${expr}` footgun: a negated `${...}` interpolation written
+    unquoted inside a flow sequence (`[-${w/2}, ...]`) is invalid YAML — `-`
+    followed directly by `{` cannot start a plain flow scalar, since `{` is a
+    flow indicator. PyYAML reports this as a generic "while parsing a flow
+    sequence" ParserError pointing at the `{`, which gives no hint that the
+    fix is to quote the whole expression as `"${-expr}"` (or restructure the
+    expression to `${0 - expr}`) rather than anything about brackets/commas.
+
+    Returns an appended hint string (empty if this doesn't look like that case).
+    """
+    mark = getattr(error, "problem_mark", None)
+    if mark is None or not (0 <= mark.line < len(yaml_string.splitlines())):
+        return ""
+    offending_line = yaml_string.splitlines()[mark.line]
+    if "-${" not in offending_line:
+        return ""
+    return (
+        "\n\nHint: a `-${...}` interpolation (negating a template expression) "
+        "must be quoted as a string when it appears unquoted inside a flow "
+        "sequence like `[-${w/2}, ...]`, because YAML treats the leading `{` "
+        "as a flow indicator, not part of a plain scalar. Fix: quote the whole "
+        'value (`"${-w/2}"`) or move the negation inside the expression '
+        "(`${0 - w/2}`)."
+    )
+
+
 def parse_yaml_with_lines(
     yaml_string: str,
     filename: Optional[str] = None
@@ -149,7 +177,8 @@ def parse_yaml_with_lines(
     try:
         data = yaml.load(yaml_string, Loader=LinePreservingLoader)
     except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML: {e}")
+        hint = _negative_interpolation_hint(yaml_string, e)
+        raise ValueError(f"Invalid YAML: {e}{hint}")
 
     # Build line tracker
     tracker = LineTracker()

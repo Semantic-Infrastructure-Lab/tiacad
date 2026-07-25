@@ -111,6 +111,32 @@ class TestBox:
         part = registry.get('box')
         assert part is not None
 
+    def test_box_list_origin_places_corner_not_centered(self):
+        """`origin: [x, y, z]` (schema v3.0's third, documented origin mode)
+        was previously silently ignored by every primitive builder -- a box
+        built this way just sat at its default centered position regardless
+        of the coordinate given. This generalizes 'corner' mode: the box's
+        min corner lands at the given point, not its center. See
+        KNOWN_LIMITATIONS.md #17 (found rebuilding a Thingiverse model whose
+        `wedge` part relies on this exact behavior for a clean 0..height
+        slice)."""
+        params = {}
+        spec = {
+            'box': {
+                'primitive': 'box',
+                'parameters': {'width': 10, 'height': 4, 'depth': 6},
+                'origin': [100, -50, 30],
+            }
+        }
+
+        resolver = ParameterResolver(params)
+        builder = PartsBuilder(resolver)
+        registry = builder.build_parts(spec)
+
+        bounds = registry.get('box').get_bounds()
+        assert bounds['min'] == pytest.approx((100, -50, 30))
+        assert bounds['max'] == pytest.approx((110, -44, 34))
+
     def test_box_missing_size(self):
         """Test box without parameters"""
         params = {}
@@ -213,6 +239,37 @@ class TestCylinder:
 
         assert registry.get('cyl_center') is not None
         assert registry.get('cyl_base') is not None
+
+    def test_cylinder_list_origin_places_base_not_center(self):
+        """`origin: [x, y, z]` generalizes 'base' mode (bottom-center at the
+        given point), not a plain translate of the centered cylinder --
+        confirmed against `examples/thingiverse_rebuilds/thing38359_outside.yaml`'s
+        `bore`, whose `origin: [0, 0, -margin]` is meant to extend the bore's
+        bottom past the solid for a clean cut. Before this fix, list-form
+        origin was silently ignored entirely: `bore` built centered on Z
+        (spanning roughly [-h/2, h/2]) instead of starting at -margin, so it
+        fell short of the model's top and left a chunk of the boolean
+        subtraction un-cut -- a ~15% volume error that looked like an OCCT
+        boolean robustness bug until traced back here. See
+        KNOWN_LIMITATIONS.md #17."""
+        params = {}
+        spec = {
+            'cyl': {
+                'primitive': 'cylinder',
+                'radius': 5,
+                'height': 20,
+                'origin': [3, -2, -10],
+            }
+        }
+
+        resolver = ParameterResolver(params)
+        builder = PartsBuilder(resolver)
+        registry = builder.build_parts(spec)
+
+        bounds = registry.get('cyl').get_bounds()
+        assert bounds['center'] == pytest.approx((3, -2, 0))
+        assert bounds['min'][2] == pytest.approx(-10)
+        assert bounds['max'][2] == pytest.approx(10)
 
     def test_cylinder_missing_radius(self):
         """Test cylinder without radius"""
