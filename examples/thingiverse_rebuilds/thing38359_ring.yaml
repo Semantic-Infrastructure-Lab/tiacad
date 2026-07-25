@@ -1,0 +1,41 @@
+schema_version: "3.0"
+
+metadata:
+  name: Thing 38359 - Ring Rebuild
+  description: >
+    Rebuild of "Ring_fixed.stl" from Thingiverse thing:38359 ("Duck Call" by
+    jamesarm97, https://www.thingiverse.com/thing:38359). A plain tube:
+    outer radius 15.88mm, inner radius 14.9mm, height 12.7mm, constant
+    profile along its axis. See docs/developer/THINGIVERSE_IMPORT.md for how
+    the source was measured.
+
+parameters:
+  outer_radius: 15.88
+  inner_radius: 14.9
+  ring_height: 12.7
+  margin: 2
+
+parts:
+  outer:
+    primitive: cylinder
+    parameters:
+      radius: ${outer_radius}
+      height: ${ring_height}
+    origin: center
+
+  inner:
+    primitive: cylinder
+    parameters:
+      radius: ${inner_radius}
+      height: ${ring_height + 2 * margin}
+    origin: center
+
+operations:
+  ring:
+    type: boolean
+    operation: difference
+    base: outer
+    subtract: [inner]
+
+export:
+  default_part: ring

@@ -1,0 +1,28 @@
+schema_version: "3.0"
+
+metadata:
+  name: Thing 38359 - Reed Rebuild
+  description: >
+    Rebuild of "reed.stl" from Thingiverse thing:38359 ("Duck Call" by
+    jamesarm97, https://www.thingiverse.com/thing:38359). Measured as a flat
+    plate 13.145 x 38.1 x 0.2794mm with one tip tapering from full width
+    (13.145mm) down to 10.6mm over the last ~1.27mm -- approximated here as a
+    plain box (taper omitted; ~3% of the part's length). See
+    docs/developer/THINGIVERSE_IMPORT.md for how the source was measured.
+
+parameters:
+  reed_width: 13.145
+  reed_length: 38.1
+  reed_thickness: 0.2794
+
+parts:
+  reed:
+    primitive: box
+    parameters:
+      width: ${reed_width}
+      depth: ${reed_length}
+      height: ${reed_thickness}
+    origin: center
+
+export:
+  default_part: reed

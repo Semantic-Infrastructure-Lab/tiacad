@@ -1,0 +1,149 @@
+schema_version: "3.0"
+
+metadata:
+  name: Thing 38359 - Inside (Bore Insert) Rebuild
+  description: >
+    Rebuild of "Inside.stl" from Thingiverse thing:38359 ("Duck Call" by
+    jamesarm97, https://www.thingiverse.com/thing:38359), using measured
+    radius-vs-height samples taken from the original mesh (trimesh section
+    slicing, denser near the flanged base where the profile changes fastest).
+    Real part: a flanged collar (OD flares 9.30->14.32mm over the first
+    3.35mm) that mates into the barrel, tapering down to a constant 7.67mm
+    shaft for the rest of the 98.04mm length. The bore is a narrow air
+    channel (5.58mm at the open base, tapering to a constant ~3.1mm) that
+    widens into a shouldered counterbore seat (~6.1mm, z=50.3-60.3), then
+    continues as a roughly-constant ~5.8mm bore for the rest of the shaft
+    before tapering closed near the flat top (z~80-98). NOTE: an initial
+    pass mis-measured this last section as fully solid -- a naive
+    trimesh.section() at those Z heights returns a single non-circular
+    entity rather than two clean nested loops (the bore there isn't quite
+    axisymmetric), which looked like "no inner loop" until a cross-sectional
+    *area* comparison against the solid-disk area exposed the real ~57%
+    void. The circular bore radius used here is an area-equivalent
+    approximation of that irregular cross-section, not its true shape. A
+    small non-axisymmetric feature (likely an alignment tab/vent) was also
+    measured near the top face and is not modeled -- see
+    docs/developer/THINGIVERSE_IMPORT.md for how the source file was pulled
+    and measured.
+
+parameters:
+  overall_height: 98.04
+  margin: 5
+
+sketches:
+  exterior_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - - 0
+            - 0
+          - - 9.30
+            - 0
+          - - 11.30
+            - 1.68
+          - - 13.33
+            - 2.52
+          - - 14.32
+            - 3.35
+          - - 13.59
+            - 5.01
+          - - 12.68
+            - 7.09
+          - - 11.62
+            - 9.99
+          - - 10.16
+            - 15.03
+          - - 8.93
+            - 22.59
+          - - 8.46
+            - 30.14
+          - - 7.92
+            - 37.69
+          - - 7.60
+            - 50.28
+          - - 7.67
+            - 60.34
+          - - 7.67
+            - 98.04
+          - - 0
+            - 98.04
+        closed: true
+
+  interior_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - - 0
+            - "${-margin}"
+          - - 5.58
+            - "${-margin}"
+          - - 5.58
+            - 0
+          - - 5.24
+            - 1.68
+          - - 4.73
+            - 8.34
+          - - 4.06
+            - 15.03
+          - - 3.36
+            - 22.59
+          - - 3.10
+            - 27.62
+          - - 3.09
+            - 42.72
+          - - 3.10
+            - 50.28
+          - - 6.10
+            - 52.79
+          - - 6.15
+            - 57.83
+          - - 5.80
+            - 60.34
+          - - 5.77
+            - 80.00
+          - - 5.92
+            - 82.00
+          - - 6.32
+            - 90.00
+          - - 6.85
+            - 94.00
+          - - 7.37
+            - 97.90
+          - - 0
+            - 97.90
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  outer_solid:
+    type: revolve
+    sketch: exterior_profile
+    axis: Z
+    angle: 360
+
+  bore_solid:
+    type: revolve
+    sketch: interior_profile
+    axis: Z
+    angle: 360
+
+  inside:
+    type: boolean
+    operation: difference
+    base: outer_solid
+    subtract: [bore_solid]
+
+export:
+  default_part: inside

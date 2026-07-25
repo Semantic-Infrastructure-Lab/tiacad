@@ -178,6 +178,7 @@ See [Architecture Documentation](../architecture/) for detailed design docs.
 - **[Architecture Docs](../architecture/)** - System design
 - **[User Docs](../user/)** - User-facing features
 - **[Examples](../../examples/)** - Working code to reference
+- **[Thingiverse Import](THINGIVERSE_IMPORT.md)** - Pulling real-world reference models to test against TiaCAD's YAML language
 
 ---
 

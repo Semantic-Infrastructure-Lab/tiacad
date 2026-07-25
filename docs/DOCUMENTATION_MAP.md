@@ -70,6 +70,7 @@ checked against the actual current file layout.*
 | [CLI](developer/CLI.md) | Command-line interface reference | When using tiacad CLI |
 | [SCHEMA_VALIDATION](developer/SCHEMA_VALIDATION.md) | Schema validation system | When working with validation |
 | [scripts/migrations/README](../scripts/migrations/README.md) | Warning + usage notes for one-off in-place migration scripts | Before running any script in `scripts/migrations/` |
+| [THINGIVERSE_IMPORT](developer/THINGIVERSE_IMPORT.md) | Pulling STL/source files from Thingiverse without official API access | When sourcing real-world models to test/rebuild in TiaCAD |
 
 **Quick Tips:**
 - **Running tests?** → [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md)

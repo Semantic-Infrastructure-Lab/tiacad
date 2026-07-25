@@ -1,0 +1,53 @@
+schema_version: "3.0"
+
+metadata:
+  name: Thing 38359 - Wedge Rebuild
+  description: >
+    Rebuild of "Wedge.stl" from Thingiverse thing:38359 ("Duck Call" by
+    jamesarm97, https://www.thingiverse.com/thing:38359). Measured as a
+    circular-segment wedge: flat bottom (full width 15.19mm), sides curving
+    on a radius-7.595mm arc, clipped by a flat top at z=4.7625mm (below the
+    arc's own apex, so the top is a flat plateau ~10.77mm wide, not a point).
+    Modeled as a cylinder (axis along Y) intersected with a box that keeps
+    only the 0..4.7625mm slice. See docs/developer/THINGIVERSE_IMPORT.md for
+    how the source was measured.
+
+parameters:
+  arc_radius: 7.595
+  wedge_depth: 9.525
+  wedge_height: 4.7625
+  clip_width: 20
+
+parts:
+  arc_cylinder_raw:
+    primitive: cylinder
+    parameters:
+      radius: ${arc_radius}
+      height: ${wedge_depth}
+    origin: center
+
+  clip_box:
+    primitive: box
+    parameters:
+      width: ${clip_width}
+      depth: ${wedge_depth + 2}
+      height: ${wedge_height}
+    origin: ["${-clip_width / 2}", "${-(wedge_depth / 2 + 1)}", 0]
+
+operations:
+  arc_cylinder:
+    type: transform
+    input: arc_cylinder_raw
+    transforms:
+      - rotate:
+          axis: X
+          angle: 90
+          origin: [0, 0, 0]
+
+  wedge:
+    type: boolean
+    operation: intersection
+    inputs: [arc_cylinder, clip_box]
+
+export:
+  default_part: wedge

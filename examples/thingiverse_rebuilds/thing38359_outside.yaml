@@ -1,0 +1,106 @@
+schema_version: "3.0"
+
+metadata:
+  name: Thing 38359 - Outer Barrel Rebuild
+  description: >
+    Rebuild of "outside.stl" from Thingiverse thing:38359 ("Duck Call" by
+    jamesarm97, https://www.thingiverse.com/thing:38359), using measured
+    radius-vs-height samples taken from the original mesh (trimesh section
+    slicing every ~2.65mm along Z). Outer profile is a piecewise-linear
+    approximation of the real bell/flare silhouette; bore is modeled as a
+    constant-radius through-cylinder since the measured bore radius varied
+    only 7.90-7.94mm across the full length. See
+    docs/developer/THINGIVERSE_IMPORT.md for how the source file was pulled
+    and measured.
+
+parameters:
+  bore_radius: 7.92
+  overall_height: 63.49
+  margin: 5
+
+sketches:
+  exterior_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - - 0
+            - 0
+          - - 13.36
+            - 0
+          - - 14.85
+            - 2.65
+          - - 14.25
+            - 5.29
+          - - 13.90
+            - 7.94
+          - - 13.82
+            - 10.58
+          - - 13.93
+            - 13.23
+          - - 14.04
+            - 15.88
+          - - 14.16
+            - 18.52
+          - - 14.27
+            - 21.17
+          - - 14.39
+            - 23.81
+          - - 14.50
+            - 26.46
+          - - 14.65
+            - 29.10
+          - - 15.00
+            - 31.75
+          - - 15.62
+            - 34.40
+          - - 16.53
+            - 37.04
+          - - 17.77
+            - 39.69
+          - - 18.88
+            - 42.33
+          - - 18.85
+            - 44.98
+          - - 17.60
+            - 47.62
+          - - 14.99
+            - 50.27
+          - - 14.99
+            - 63.49
+          - - 0
+            - 63.49
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+  bore:
+    primitive: cylinder
+    parameters:
+      radius: ${bore_radius}
+      height: ${overall_height + 2 * margin}
+    origin: [0, 0, "${-margin}"]
+
+operations:
+  outer_solid:
+    type: revolve
+    sketch: exterior_profile
+    axis: Z
+    angle: 360
+
+  barrel:
+    type: boolean
+    operation: difference
+    base: outer_solid
+    subtract: [bore]
+
+export:
+  default_part: barrel
