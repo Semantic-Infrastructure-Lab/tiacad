@@ -92,8 +92,14 @@ export:
 
 # Reviewed ground-truth contract (seeded via `tiacad audit --write-contract`,
 # see docs/developer/VALIDATION_STRENGTHENING.md section 4.1).
+# Re-seeded 2026-08-02: the TCAD-4 fix (edges: all -> edges: {parallel_to: Z},
+# see KNOWN_LIMITATIONS.md #22) changed which/how many edges are filleted,
+# and thus the removed volume, but this contract wasn't refreshed at the time.
+# 48926.991 matches the analytic value (4 quarter-cylinder corner wedges,
+# r=5, removed over the box's Z-height=50: 50000 - 4*25*(1-pi/4)*50 ~ 48927).
 expect:
   final: demo_box_filleted
-  volume: 49598.678
+  volume: 48926.991
   bbox: [50.0, 20.0, 50.0]
+  watertight: true
   components: 1

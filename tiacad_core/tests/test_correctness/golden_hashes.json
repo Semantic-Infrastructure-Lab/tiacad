@@ -98,16 +98,27 @@
     "part": "stacked",
     "volume": 49999.999999999985
   },
+  "examples/duck_call_insert.yaml": {
+    "bbox": [
+      22.0,
+      22.0,
+      55.0000001
+    ],
+    "canonical_mesh_hash": "2d1578e93d729f9615812812fa3cd325153ca87639871ac1345531e1cf476500",
+    "mesh_hash": "e4a458f68608a7368538d38a079dcd471b4a5b65d991012f5b98e372e4e38562",
+    "part": "insert",
+    "volume": 7471.649970300048
+  },
   "examples/formats_demo.yaml": {
     "bbox": [
       50.0,
       20.0,
       50.0
     ],
-    "canonical_mesh_hash": "74a79765b1a565e6a6d71560392920fad5ee182149cee9486e829f14d9831065",
-    "mesh_hash": "5852b1f4f267d78dfd88cb6f0ae15d9a7df8d0eb1e08862fd6b9ff9c7fab125e",
+    "canonical_mesh_hash": "ab53834ee1075d227a8edda64619e0910c3e2c5f429d95da0c58e46a3b71fd21",
+    "mesh_hash": "8b7e873e713cfd992d9e108de36f9c427e5de41549c1919c79e5464fef61b914",
     "part": "demo_box_filleted",
-    "volume": 49598.67834798908
+    "volume": 48926.990816987236
   },
   "examples/guitar_hanger_named_points.yaml": {
     "bbox": [
