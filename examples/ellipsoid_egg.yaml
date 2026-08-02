@@ -1,0 +1,61 @@
+schema_version: "3.0"
+
+metadata:
+  name: Ellipsoid Egg (Path2D ellipse_arc demo)
+  description: >
+    Demonstrates the `ellipse_arc` Path2D segment (TCAD-DSL-2): an egg
+    profile built from two elliptical arcs -- a blunt half and a pointed
+    half, sharing the same equatorial radius -- rather than the ~50 hand-
+    computed points examples/egg.yaml needed before this segment type
+    existed. The recipe (documented in tiacad_core/sketch.py's Path2D
+    docstring): model each half as its own ellipse centered on the revolve
+    axis, and use quarter arcs at the standard angle boundaries (pole to
+    equator is angle1=270/angle2=360, equator to pole is angle1=0/
+    angle2=90). This gives a perpendicular tangent at each pole and a
+    matching tangent direction at the equator with no per-case tuning.
+    Like examples/egg.yaml, the profile touches the revolve axis at both
+    poles, which triggers the known STL apex-tessellation advisory warning
+    from `tiacad build` (KNOWN_LIMITATIONS.md #19) -- cosmetic only, not a
+    build failure, and identical to what a pure line/arc profile touching
+    the axis would also show.
+  version: "1.0"
+  author: TIA
+
+parameters:
+  length: 58              # blunt tip to pointed tip, mm
+  max_diameter: 44         # widest point, mm
+  blunt_fraction: 0.40     # fraction of length from blunt end to the equator
+
+sketches:
+  egg_profile:
+    plane: XZ              # profile in XZ plane, revolved around Z (vertical)
+    origin: [0, 0, 0]
+    shapes:
+      - type: path
+        start: [0, "${-length * blunt_fraction}"]
+        segments:
+          - ellipse_arc:
+              x_radius: "${max_diameter / 2}"
+              y_radius: "${length * blunt_fraction}"
+              angle1: 270
+              angle2: 360
+          - ellipse_arc:
+              x_radius: "${max_diameter / 2}"
+              y_radius: "${length * (1 - blunt_fraction)}"
+              angle1: 0
+              angle2: 90
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters: {width: 1, height: 1, depth: 1}
+
+operations:
+  egg:
+    type: revolve
+    sketch: egg_profile
+    axis: Z
+
+export:
+  default_part: egg

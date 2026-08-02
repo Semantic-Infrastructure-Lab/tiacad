@@ -7,6 +7,7 @@ End-to-end coverage (full YAML -> revolve -> watertight solid) lives in
 examples/curved_vase.yaml and tiacad_core/tests/test_cli/test_cli_build.py.
 """
 
+import cadquery as cq
 import pytest
 
 from tiacad_core.parser.sketch_builder import SketchBuilder, SketchBuilderError
@@ -100,18 +101,28 @@ class TestBuildPath:
             })
         assert "start must be [x, y]" in str(exc_info.value)
 
-    def test_unsupported_spline_segment_type_raises_at_shape_construction(self, builder):
+    def test_builds_path_with_spline_segment(self, builder):
         """
-        'spline' is a deliberately unsupported Path2D segment (see the
-        Path2D docstring in tiacad_core/sketch.py) -- SketchBuilder passes
-        segments through untouched, so the rejection happens in Path2D's
-        own validation, surfaced here as a wrapped SketchBuilderError.
+        'spline' is a supported Path2D segment (TCAD-DSL-2) -- SketchBuilder
+        passes segments through untouched to Path2D, which builds it.
         """
+        shape = builder.build_shape('s', 0, {
+            'type': 'path', 'start': [0, 0],
+            'segments': [
+                {'line': [10, 0]},
+                {'spline': {'points': [[10, 5], [5, 10]]}},
+                {'line': [0, 10]},
+            ],
+        })
+        wp = shape.build(cq.Workplane("XY"))
+        assert wp.vals()[0].IsClosed()
+
+    def test_still_rejects_unknown_segment_type_at_shape_construction(self, builder):
         with pytest.raises(SketchBuilderError) as exc_info:
             builder.build_shape('s', 0, {
-                'type': 'path', 'start': [0, 0], 'segments': [{'spline': [[1, 1]]}],
+                'type': 'path', 'start': [0, 0], 'segments': [{'bezier': [[1, 1]]}],
             })
-        assert "unknown type 'spline'" in str(exc_info.value)
+        assert "unknown type 'bezier'" in str(exc_info.value)
 
     def test_unknown_shape_type_lists_path_and_ellipse(self, builder):
         with pytest.raises(SketchBuilderError) as exc_info:

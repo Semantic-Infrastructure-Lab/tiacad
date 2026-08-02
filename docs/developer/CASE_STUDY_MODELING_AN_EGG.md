@@ -158,6 +158,18 @@ verification tooling — in
 [KNOWN_LIMITATIONS.md #18](../../KNOWN_LIMITATIONS.md#18-fixed-partially--sketch-dsl-had-no-arcellipsespline-primitive)
 and `tiacad_core/sketch.py`'s `Path2D` docstring. Tracked as `TCAD-DSL-2`.
 
+**Update (same day, TCAD-DSL-2 re-investigation):** both blockers above
+turned out to be misdiagnoses. The "spline produces a non-watertight solid"
+finding was actually the axis-touching apex artifact from §3 above/
+`KNOWN_LIMITATIONS.md` #19 — reproducible with plain `line`/`arc` segments,
+nothing to do with `spline`. And the `ellipse_arc` `angle1`/`angle2`/`sense`
+derivation this section says "took more iteration than fit in this
+session" worked correctly on the first straightforward attempt (quarter
+arcs at the standard angle boundaries, ellipse centered on the axis) —
+verified numerically, not just visually. Both `spline` and `ellipse_arc`
+are now shipped `Path2D` segments; see `KNOWN_LIMITATIONS.md` #18 and
+`examples/ellipsoid_egg.yaml` for the corrected story and a working demo.
+
 ---
 
 ## 5. The required placeholder part for sketch-only designs generates permanent spurious warnings

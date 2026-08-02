@@ -313,44 +313,58 @@ class Polygon2D(Shape2D):
 
 class Path2D(Shape2D):
     """
-    2D Path shape built from a sequence of line/arc segments — the general
-    mechanism for profiles that mix straight edges with true circular
-    curves, partially closing the "Sketch DSL has no arc/ellipse/spline
-    primitive" gap (KNOWN_LIMITATIONS.md #18 / TCAD-DSL-1). Where Polygon2D
-    only connects points with straight lines, Path2D's segments can be:
+    2D Path shape built from a sequence of line/arc/ellipse_arc/spline
+    segments — the general mechanism for profiles that mix straight edges
+    with true curves, closing the "Sketch DSL has no arc/ellipse/spline
+    primitive" gap (KNOWN_LIMITATIONS.md #18 / TCAD-DSL-1, TCAD-DSL-2).
+    Where Polygon2D only connects points with straight lines, Path2D's
+    segments can be:
 
     - ``{line: [x, y]}`` — straight line to (x, y)
     - ``{arc: {through: [x, y], to: [x, y]}}`` — circular arc from the
       current point, through one point, ending at another
+    - ``{ellipse_arc: {x_radius, y_radius, angle1, angle2, rotation_angle:
+      0.0, sense: 1}}`` — an elliptical arc from the current point, using
+      OCCT's raw angle convention (angle1/angle2 in degrees measured from
+      the ellipse's local +x axis, `sense=1` counter-clockwise). The
+      recipe that produces a correct, tangent-continuous rounded cap (e.g.
+      an egg/ellipsoid end) when revolved around an axis the profile
+      touches: model each half as its own ellipse centered ON the axis,
+      and use *quarter* arcs at the standard boundaries — bottom pole to
+      equator is ``angle1=270, angle2=360``, equator to top pole is
+      ``angle1=0, angle2=90`` — with `x_radius` (the shared equatorial
+      radius) constant across both halves and `y_radius` set to each
+      half's own length. This gives perpendicular tangents at both poles
+      and a shared tangent direction at the equator automatically; no
+      per-case root-finding needed.
+    - ``{spline: {points: [[x, y], ...]}}`` — a spline from the current
+      point, interpolated through the given points in order (current
+      point is included as the spline's start automatically).
 
-    Both were verified exact against analytic areas (a semicircle arc and a
-    line+arc+line profile both matched pi*r^2/2 and independently-integrated
-    reference areas to within floating-point precision), and produce
-    genuinely watertight, valid solids when extruded/revolved.
+    All four were verified exact against analytic areas (semicircle,
+    line+arc+line, and ellipse-arc profiles all matched pi*r^2/2-style
+    references to within floating-point precision) and produce genuinely
+    watertight, valid solids when extruded/revolved — *provided* the
+    profile doesn't touch the revolve axis at a vertex. Revolve profiles
+    that do touch the axis (egg/ellipsoid caps, bicones, ...) hit the
+    pre-existing, already-accepted apex-tessellation artifact described in
+    KNOWN_LIMITATIONS.md #19 (STL export produces a few disconnected mesh
+    fragments at the pole despite a topologically valid solid) — this is
+    not specific to `ellipse_arc`/`spline`; a pure `line`- or `arc`-only
+    profile touching the axis exhibits the identical signature. `tiacad
+    build` already warns on this (never fails); no new handling was added
+    here.
 
-    Two segment types were deliberately left out after failing verification,
-    not because they were never tried:
-
-    - ``spline``: works correctly as a *standalone*, fully-periodic closed
-      curve (see Ellipse2D-style use), but mixing a `spline` segment with
-      `line`/`arc` segments in the same chained path — exactly the natural
-      way to use it here — produced a non-watertight, invalid solid on
-      every construction tried, including ones with no near-degenerate
-      edges. This is a real, reproducible geometry defect, not a rough edge.
-    - ``ellipse_arc`` (true elliptical arc): `cq.Workplane.ellipseArc()`
-      itself works, but composing two differently-scaled elliptical arcs
-      into a profile whose curve meets the revolve axis the way a real
-      ellipsoid cap does (tangent *perpendicular* to the axis, like an egg's
-      rounded end) requires the ellipse's own center to sit ON the axis;
-      getting `angle1`/`angle2`/`sense` right for that reliably took more
-      iteration than fit in this session, and a wrong choice silently
-      produces a differently-shaped (cusp-tangent, not perpendicular-tangent)
-      curve with no error or warning.
-
-    Both failure modes are exactly what this session's other fixes exist to
-    catch — silently wrong geometry, not a thrown error — so neither was
-    worth shipping half-verified. Tracked as TCAD-DSL-2. See
-    docs/developer/CASE_STUDY_MODELING_AN_EGG.md for the full investigation.
+    An earlier investigation session (2026-08-02) attempted `spline` and
+    `ellipse_arc` and did not ship them, believing both hit new geometry
+    defects specific to mixing curve types. Re-investigation (TCAD-DSL-2,
+    same day) isolated the actual cause of the "non-watertight" result to
+    the axis-touching apex artifact above (reproducible with plain
+    lines/arcs, unrelated to spline/ellipse_arc), and found the "hard"
+    angle1/angle2/sense derivation works correctly on the first
+    straightforward attempt (see recipe above). Full detail in
+    KNOWN_LIMITATIONS.md #18 and
+    docs/developer/CASE_STUDY_MODELING_AN_EGG.md.
 
     Attributes:
         start: Starting point [x, y]
@@ -359,7 +373,7 @@ class Path2D(Shape2D):
         operation: 'add' or 'subtract'
     """
 
-    SEGMENT_TYPES = ('line', 'arc')
+    SEGMENT_TYPES = ('line', 'arc', 'ellipse_arc', 'spline')
 
     def __init__(self, start: Tuple[float, float], segments: List[dict],
                  closed: bool = True,
@@ -418,9 +432,22 @@ class Path2D(Shape2D):
         try:
             if seg_type == 'line':
                 return wp.lineTo(value[0], value[1])
-            # seg_type == 'arc' -- the only remaining SEGMENT_TYPES member
-            through, to = value['through'], value['to']
-            return wp.threePointArc((through[0], through[1]), (to[0], to[1]))
+            if seg_type == 'arc':
+                through, to = value['through'], value['to']
+                return wp.threePointArc((through[0], through[1]), (to[0], to[1]))
+            if seg_type == 'ellipse_arc':
+                return wp.ellipseArc(
+                    x_radius=value['x_radius'],
+                    y_radius=value['y_radius'],
+                    angle1=value['angle1'],
+                    angle2=value['angle2'],
+                    rotation_angle=value.get('rotation_angle', 0.0),
+                    sense=value.get('sense', 1),
+                    startAtCurrent=True,
+                )
+            # seg_type == 'spline' -- the only remaining SEGMENT_TYPES member
+            points = [(p[0], p[1]) for p in value['points']]
+            return wp.spline(points, includeCurrent=True)
         except (KeyError, IndexError, TypeError) as e:
             raise SketchError(f"Invalid '{seg_type}' segment at index {index}: {e}") from e
 
