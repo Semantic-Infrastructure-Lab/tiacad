@@ -1194,21 +1194,22 @@ _(no notes yet)_
 ## TASK-TCAD-DSL-2 · ellipse_arc/spline as Path2D segments: both attempted, both hit real geometry defects, not shipped
 
 ```yaml
-status: held
+status: backlog
 priority: medium
 owner: unassigned
 effort: 4h
 tags: [sketch, revolve, ellipse, spline]
 created: '2026-08-02T19:15:16Z'
-updated: '2026-08-02T19:16:20Z'
+updated: '2026-08-02T19:16:31Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
   - KNOWN_LIMITATIONS.md
-notes_next: 2
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-08-02T19:16:20Z session:luminous-shade-0802] Blocked on: (a) correct angle1/angle2/sense derivation for ellipse_arc so composed arcs meet the axis perpendicular like a real ellipsoid cap; (b) root-causing why spline mixed with other Path2D segment types produces a non-watertight solid. Both need dedicated investigation time, not a quick fix.
+- [#2 2026-08-02T19:16:31Z session:luminous-shade-0802] Correcting status: this is unscoped future work with no forcing use case, matching TCAD-BUG-5/TCAD-FIN-1/TCAD-API-1 convention -- not blocked on anyone, so 'held' was the wrong status, not 'blocked'. Re-filed as backlog.
