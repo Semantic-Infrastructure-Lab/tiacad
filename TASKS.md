@@ -11,7 +11,7 @@ areas:
   ARCH: 10
   CON: 13
   FIN: 2
-  BUG: 4
+  BUG: 5
   DSL: 2
 ---
 
@@ -1122,6 +1122,26 @@ links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
   - KNOWN_LIMITATIONS.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-BUG-4 · Sketch-only designs require a placeholder part that permanently generates 2 spurious dead-work warnings
+
+```yaml
+status: backlog
+priority: low
+effort: 1h
+tags: [validation, sketch, noise]
+created: '2026-08-02T18:27:01Z'
+updated: '2026-08-02T18:27:01Z'
+session: luminous-shade-0802
+links:
+  references:
+  - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
