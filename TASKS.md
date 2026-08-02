@@ -11,6 +11,8 @@ areas:
   ARCH: 10
   CON: 13
   FIN: 2
+  BUG: 4
+  DSL: 2
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -1044,3 +1046,84 @@ notes_next: 3
 ### Notes
 - [#1 2026-07-20T22:01:24Z session:descending-protostar-0720] Repro: two independent flush groups in one document (a1/a2 flush + b1/b2 flush) -- b1/b2's bounding box comes out non-round (21.0x6.6x21.0 instead of declared 20x5x20). Root cause: apply_constraints() in constraint_builder.py builds one shared cq.Assembly() across every constraint entry in the file and calls a single assembly.solve() -- CadQuery locks only the first-referenced part globally as the fixed anchor, not one anchor per disjoint constraint component, so every subsequent group's reference part is left as a free body in IPOPT's joint optimization and gets silently perturbed. Single-constraint-per-document files (the existing T4_constraint_*.tiacad corpus) are unaffected -- this only triggers with 2+ constraint entries whose part sets don't overlap. Fix needs per-connected-component partitioning: group constraints by shared parts (union-find), solve each component in its own cq.Assembly(). Verified via /tmp/test_two_flush.yaml and /tmp/test_three_flush.yaml during TCAD-UX-9 example-writing work (not committed, reproducible from this note).
 - [#2 2026-07-20T22:29:54Z session:icy-leviathan-0720] Fixed via per-connected-component partitioning: constraints grouped by shared part (union-find), each component solved in its own cq.Assembly(). Regression test added, KNOWN_LIMITATIONS.md updated.
+
+
+## TASK-TCAD-BUG-1 · python -m tiacad_core.cli fails (no __main__.py); tiacad console script not runnable in dev venv
+
+```yaml
+status: backlog
+priority: medium
+effort: 30m
+tags: [cli, dx]
+created: '2026-08-02T18:26:21Z'
+updated: '2026-08-02T18:26:27Z'
+session: luminous-shade-0802
+links:
+  references:
+  - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-BUG-2 · No lint for parameters: declared but never referenced via ${...} -- silently ships fake-parametric files
+
+```yaml
+status: backlog
+priority: medium
+effort: 2h
+tags: [validation, parameters]
+created: '2026-08-02T18:26:21Z'
+updated: '2026-08-02T18:26:27Z'
+session: luminous-shade-0802
+links:
+  references:
+  - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-BUG-3 · tiacad build/validate never check mesh watertightness -- degenerate revolve apex (r=0 tip) silently exports non-manifold STL
+
+```yaml
+status: backlog
+priority: high
+effort: 3h
+tags: [validation, revolve, stl]
+created: '2026-08-02T18:26:21Z'
+updated: '2026-08-02T18:26:27Z'
+session: luminous-shade-0802
+links:
+  references:
+  - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-DSL-1 · Sketch DSL has no arc/ellipse/spline primitive -- curved profiles must be hand-faceted outside TiaCAD
+
+```yaml
+status: backlog
+priority: medium
+effort: 1d
+tags: [sketch, revolve, feature]
+created: '2026-08-02T18:26:22Z'
+updated: '2026-08-02T18:26:27Z'
+session: luminous-shade-0802
+links:
+  references:
+  - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+  - KNOWN_LIMITATIONS.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
