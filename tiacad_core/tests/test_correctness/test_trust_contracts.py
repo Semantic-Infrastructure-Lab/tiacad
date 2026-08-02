@@ -20,10 +20,12 @@ target) and whose value is in the *relationships between parts* — flush
 contact, centering, symmetric placement, per-instance dimensions — which the
 single-part contract mechanism doesn't express.
 
-Axis mapping (box primitive → get_dimensions):
+Axis mapping (box primitive → get_dimensions) — direct, no swap
+(tiacad_core/testing/dimensions.py's get_dimensions() docstring is
+authoritative; verified against actual BoundingBox() extents 2026-08-02):
   YAML width  → X → dims['width']
-  YAML depth  → Y → dims['height']
-  YAML height → Z → dims['depth']
+  YAML depth  → Y → dims['depth']
+  YAML height → Z → dims['height']
 """
 
 import math
@@ -56,8 +58,8 @@ class TestTrustStackedBoxes:
     def test_bottom_dimensions(self):
         dims = get_dimensions(self._doc().parts.get("bottom"))
         assert dims["width"]  == pytest.approx(60.0, abs=TOL)
-        assert dims["height"] == pytest.approx(40.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(20.0, abs=TOL)
+        assert dims["depth"]  == pytest.approx(40.0, abs=TOL)
+        assert dims["height"] == pytest.approx(20.0, abs=TOL)
 
     def test_bottom_volume(self):
         dims = get_dimensions(self._doc().parts.get("bottom"))
@@ -66,8 +68,8 @@ class TestTrustStackedBoxes:
     def test_top_dimensions(self):
         dims = get_dimensions(self._doc().parts.get("top"))
         assert dims["width"]  == pytest.approx(40.0, abs=TOL)
-        assert dims["height"] == pytest.approx(30.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(15.0, abs=TOL)
+        assert dims["depth"]  == pytest.approx(30.0, abs=TOL)
+        assert dims["height"] == pytest.approx(15.0, abs=TOL)
 
     def test_top_volume(self):
         dims = get_dimensions(self._doc().parts.get("top"))
@@ -91,11 +93,11 @@ class TestTrustCylinderOnPlate:
         return _parse("cylinder_on_plate.yaml")
 
     def test_plate_dimensions(self):
-        # YAML: width=80(X), depth=60(Y→height), height=5(Z→depth)
+        # YAML: width=80(X), depth=60(Y), height=5(Z)
         dims = get_dimensions(self._doc().parts.get("plate"))
         assert dims["width"]  == pytest.approx(80.0, abs=TOL)
-        assert dims["height"] == pytest.approx(60.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(5.0,  abs=TOL)
+        assert dims["depth"]  == pytest.approx(60.0, abs=TOL)
+        assert dims["height"] == pytest.approx(5.0,  abs=TOL)
 
     def test_plate_volume(self):
         dims = get_dimensions(self._doc().parts.get("plate"))
@@ -105,8 +107,8 @@ class TestTrustCylinderOnPlate:
         # Cylinder r=10, h=25: bbox 20×20 in XY, 25 in Z
         dims = get_dimensions(self._doc().parts.get("post"))
         assert dims["width"]  == pytest.approx(20.0, abs=TOL)
-        assert dims["height"] == pytest.approx(20.0, abs=TOL)
-        assert dims["depth"]  == pytest.approx(25.0, abs=TOL)
+        assert dims["depth"]  == pytest.approx(20.0, abs=TOL)
+        assert dims["height"] == pytest.approx(25.0, abs=TOL)
 
     def test_post_volume(self):
         dims = get_dimensions(self._doc().parts.get("post"))
@@ -186,8 +188,8 @@ class TestTrustThreePartAssembly:
     def test_base_dimensions(self):
         dims = get_dimensions(self._doc().parts.get("base"))
         assert dims["width"]  == pytest.approx(100.0, abs=TOL)
-        assert dims["height"] == pytest.approx(40.0,  abs=TOL)
-        assert dims["depth"]  == pytest.approx(8.0,   abs=TOL)
+        assert dims["depth"]  == pytest.approx(40.0,  abs=TOL)
+        assert dims["height"] == pytest.approx(8.0,   abs=TOL)
 
     def test_base_volume(self):
         dims = get_dimensions(self._doc().parts.get("base"))
@@ -269,22 +271,22 @@ class TestTrustPcbStandoffAssembly:
         return _parse("pcb_standoff_assembly.yaml")
 
     def test_plate_dimensions(self):
-        """plate: W=100(X), H=80(Y, YAML depth→Y), D=5(Z, YAML height→Z, the thickness)."""
+        """plate: W=100(X), D=80(Y, the plate_height param), H=5(Z, the thickness)."""
         dims = get_dimensions(self._doc().parts.get("plate"))
         assert dims["width"]  == pytest.approx(100.0, abs=TOL)
-        assert dims["height"] == pytest.approx(80.0,  abs=TOL)
-        assert dims["depth"]  == pytest.approx(5.0,   abs=TOL)
+        assert dims["depth"]  == pytest.approx(80.0,  abs=TOL)
+        assert dims["height"] == pytest.approx(5.0,   abs=TOL)
 
     def test_plate_volume(self):
         dims = get_dimensions(self._doc().parts.get("plate"))
         assert dims["volume"] == pytest.approx(40_000.0, abs=VOL_TOL)
 
     def test_standoffs_correct_height(self):
-        """All 4 standoffs: h=10mm (depth in get_dims since height→Z)."""
+        """All 4 standoffs: h=10mm (Z-extent, dims['height'])."""
         doc = self._doc()
         for name in ("standoff_fl", "standoff_fr", "standoff_bl", "standoff_br"):
             dims = get_dimensions(doc.parts.get(name))
-            assert dims["depth"] == pytest.approx(10.0, abs=TOL), f"{name} wrong height"
+            assert dims["height"] == pytest.approx(10.0, abs=TOL), f"{name} wrong height"
 
     def test_all_parts_positive_volume(self):
         doc = self._doc()
