@@ -1128,19 +1128,22 @@ priority: medium
 effort: 1d
 tags: [sketch, revolve, feature]
 created: '2026-08-02T18:26:22Z'
-updated: '2026-08-02T19:15:24Z'
+updated: '2026-08-02T19:16:20Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
   - KNOWN_LIMITATIONS.md
-notes_next: 3
+  commits:
+  - 47a5fb57ebb13889d25b2a054f9a583d98dcd125
+notes_next: 4
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-08-02T18:49:53Z session:luminous-shade-0802] starting: add Arc2D/Ellipse2D/Spline2D shape types to sketch DSL
 - [#2 2026-08-02T19:15:24Z session:luminous-shade-0802] Shipped Ellipse2D (standalone) and Path2D (line/arc segments) -- both verified exact against analytic areas and confirmed watertight through revolve/extrude. New example: examples/curved_vase.yaml. spline and ellipse_arc segments were attempted but both hit real, reproducible geometry defects (non-watertight solid; cusp-tangent instead of rounded cap) and were deliberately not shipped -- filed as follow-on TCAD-DSL-2. Full detail in KNOWN_LIMITATIONS.md #18 and docs/developer/CASE_STUDY_MODELING_AN_EGG.md. Tests: tiacad_core/tests/test_sketch.py (TestEllipse2D, TestPath2D), tiacad_core/tests/test_parser/test_sketch_builder_curves.py (new file). All passing. Code uncommitted pending user approval.
+- [#3 2026-08-02T19:16:20Z session:luminous-shade-0802] Committed in 47a5fb5
 
 
 ## TASK-TCAD-BUG-4 · Sketch-only designs require a placeholder part that permanently generates 2 spurious dead-work warnings
@@ -1191,19 +1194,21 @@ _(no notes yet)_
 ## TASK-TCAD-DSL-2 · ellipse_arc/spline as Path2D segments: both attempted, both hit real geometry defects, not shipped
 
 ```yaml
-status: backlog
+status: held
 priority: medium
+owner: unassigned
 effort: 4h
 tags: [sketch, revolve, ellipse, spline]
 created: '2026-08-02T19:15:16Z'
-updated: '2026-08-02T19:15:16Z'
+updated: '2026-08-02T19:16:20Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
   - KNOWN_LIMITATIONS.md
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-08-02T19:16:20Z session:luminous-shade-0802] Blocked on: (a) correct angle1/angle2/sense derivation for ellipse_arc so composed arcs meet the axis perpendicular like a real ellipsoid cap; (b) root-causing why spline mixed with other Path2D segment types produces a non-watertight solid. Both need dedicated investigation time, not a quick fix.
