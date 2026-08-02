@@ -53,20 +53,42 @@ def _check_stl_watertight(output_file: Path) -> None:
     mesh silently produces slicing errors or bad prints downstream with no
     signal from `tiacad build` itself (see KNOWN_LIMITATIONS.md #18 / TCAD-BUG-3
     — a revolve profile touching its own axis at a tip is a common way to
-    trigger this). This check is advisory only: never raises, never fails the
-    build, and any import/read error is swallowed so a missing `trimesh` or an
-    exotic mesh trimesh can't parse doesn't turn a successful build into a
-    failure. `tiacad validate-geometry` remains the authoritative, detailed
-    check (components, volume, vertex/face counts).
+    trigger this). A pole-touching revolve is usually not a real defect: the
+    B-Rep solid is valid, and OCCT's mesher just leaves a degenerate,
+    zero-volume shard at the pinch point (KNOWN_LIMITATIONS.md #19), so this
+    strips that kind of artifact via `strip_degenerate_shards` and re-exports
+    the cleaned mesh before deciding whether to warn. This check is advisory
+    only: never raises, never fails the build, and any import/read error is
+    swallowed so a missing `trimesh` or an exotic mesh trimesh can't parse
+    doesn't turn a successful build into a failure. `tiacad validate-geometry`
+    remains the authoritative, detailed check (components, volume, vertex/face
+    counts).
     """
     try:
         import trimesh
+        from ..utils.mesh_repair import strip_degenerate_shards
+
         mesh = trimesh.load(str(output_file))
-        if not mesh.is_watertight:
-            print_warning(
-                "Mesh is not watertight — may cause slicer errors or bad prints. "
-                "Run `tiacad validate-geometry` for details."
-            )
+        if mesh.is_watertight:
+            return
+
+        cleaned, changed = strip_degenerate_shards(mesh)
+        if changed:
+            cleaned.export(str(output_file))
+            mesh = cleaned
+
+        if mesh.is_watertight:
+            if changed:
+                print_info(
+                    "Removed degenerate pole-tessellation shard(s); re-exported "
+                    "STL is watertight (KNOWN_LIMITATIONS.md #19)."
+                )
+            return
+
+        print_warning(
+            "Mesh is not watertight — may cause slicer errors or bad prints. "
+            "Run `tiacad validate-geometry` for details."
+        )
     except Exception:
         pass
 

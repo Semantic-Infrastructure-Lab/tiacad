@@ -80,12 +80,14 @@ def test_build_stl_watertight_mesh_prints_no_warning(simple_model, tmp_path, cap
     assert "not watertight" not in capsys.readouterr().out
 
 
-def test_build_stl_non_watertight_mesh_warns(tmp_path, capsys):
-    """TCAD-BUG-3: a revolve profile whose tips touch the axis at exactly r=0
-    can produce a degenerate, non-watertight STL export (the bug found while
-    modeling examples/egg.yaml — see
-    docs/developer/CASE_STUDY_MODELING_AN_EGG.md). `tiacad build` must warn,
-    not silently ship a non-manifold mesh."""
+def test_build_stl_pole_touching_revolve_auto_repairs_to_watertight(tmp_path, capsys):
+    """TCAD-BUG-3 / KNOWN_LIMITATIONS.md #19: a revolve profile whose tips
+    touch the axis at exactly r=0 makes OCCT's mesher leave a degenerate,
+    zero-volume shard at each pole (the bug found while modeling
+    examples/egg.yaml — see docs/developer/CASE_STUDY_MODELING_AN_EGG.md).
+    The underlying B-Rep solid is valid; `tiacad build` now strips the
+    tessellation shard(s) and re-exports a genuinely watertight STL instead
+    of just warning about a broken one."""
     model = tmp_path / "bicone.tiacad"
     model.write_text("""
 sketches:
@@ -113,7 +115,29 @@ export:
 """)
     output = tmp_path / "bicone.stl"
     exit_code = cmd_build(_args(model, output=str(output)))
-    assert exit_code == 0  # advisory warning, not a build failure
+    assert exit_code == 0
+    out = capsys.readouterr().out
+    assert "not watertight" not in out
+    assert "Removed degenerate pole-tessellation shard" in out
+
+    import trimesh
+    assert trimesh.load(str(output)).is_watertight
+
+
+def test_check_stl_watertight_still_warns_when_unrepairable(tmp_path, capsys):
+    """A single-component mesh that's genuinely open (a missing face, not a
+    pole-tessellation artifact) has nothing for shard-stripping to remove --
+    `_check_stl_watertight` must still warn rather than silently accept it."""
+    import trimesh
+    from tiacad_core.cli.build import _check_stl_watertight
+
+    box = trimesh.creation.box(extents=[10, 10, 10])
+    open_box = trimesh.Trimesh(vertices=box.vertices, faces=box.faces[:-2])
+    assert not open_box.is_watertight
+    output = tmp_path / "open_box.stl"
+    open_box.export(str(output))
+
+    _check_stl_watertight(output)
     assert "not watertight" in capsys.readouterr().out
 
 

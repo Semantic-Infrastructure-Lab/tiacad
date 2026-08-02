@@ -113,6 +113,15 @@ def cmd_validate_geometry(args):
             export_time = time.time() - export_start
 
             mesh = trimesh.load(str(tmp_path))
+            from ..utils.mesh_repair import strip_degenerate_shards
+            mesh, shards_removed = strip_degenerate_shards(mesh)
+            if shards_removed:
+                print_info(
+                    "Stripped degenerate pole-tessellation shard(s) from the mesh "
+                    "before analysis (KNOWN_LIMITATIONS.md #19) — the results "
+                    "below reflect the repaired geometry."
+                )
+
             components = mesh.split(only_watertight=False)
             stats = {
                 'vertices': len(mesh.vertices),

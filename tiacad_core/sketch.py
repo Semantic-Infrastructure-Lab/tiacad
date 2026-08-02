@@ -347,12 +347,14 @@ class Path2D(Shape2D):
     watertight, valid solids when extruded/revolved — *provided* the
     profile doesn't touch the revolve axis at a vertex. Revolve profiles
     that do touch the axis (egg/ellipsoid caps, bicones, ...) hit the
-    pre-existing, already-accepted apex-tessellation artifact described in
+    pre-existing apex-tessellation artifact described in
     KNOWN_LIMITATIONS.md #19 (STL export produces a few disconnected mesh
     fragments at the pole despite a topologically valid solid) — this is
     not specific to `ellipse_arc`/`spline`; a pure `line`- or `arc`-only
     profile touching the axis exhibits the identical signature. `tiacad
-    build` already warns on this (never fails); no new handling was added
+    build`/`validate-geometry` now strip that fragment automatically
+    (`strip_degenerate_shards`, `tiacad_core/utils/mesh_repair.py`) and
+    export a genuinely watertight STL; no per-model handling was needed
     here.
 
     An earlier investigation session (2026-08-02) attempted `spline` and

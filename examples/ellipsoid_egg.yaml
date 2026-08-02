@@ -14,10 +14,10 @@ metadata:
     angle2=90). This gives a perpendicular tangent at each pole and a
     matching tangent direction at the equator with no per-case tuning.
     Like examples/egg.yaml, the profile touches the revolve axis at both
-    poles, which triggers the known STL apex-tessellation advisory warning
-    from `tiacad build` (KNOWN_LIMITATIONS.md #19) -- cosmetic only, not a
-    build failure, and identical to what a pure line/arc profile touching
-    the axis would also show.
+    poles, which used to trigger the known STL apex-tessellation warning
+    from `tiacad build` (KNOWN_LIMITATIONS.md #19). `tiacad build` now
+    strips the degenerate pole shard(s) automatically and exports a
+    genuinely watertight STL -- no warning, no manual cleanup needed.
   version: "1.0"
   author: TIA
 

@@ -803,6 +803,25 @@ coverage in `tiacad_core/tests/test_cli/test_cli_build.py`
 `examples/egg.yaml` (silent) and the original exact-zero-tip variant
 (warns). Tracked as `TCAD-BUG-3`.
 
+**Update (2026-08-02, TCAD-DSL-2 follow-up):** the advisory-warning-only fix
+above left a real gap — `examples/ellipsoid_egg.yaml` (the `ellipse_arc`
+Path2D demo, which touches the axis at both poles by construction, since the
+quarter-arc boundaries required for pole tangency land exactly on `r=0`)
+shipped with a genuinely non-watertight STL and only a warning to show for
+it. Confirmed the B-Rep solid is always valid in this class of case
+(`Shape.isValid() == True`); OCCT's mesher just leaves a degenerate,
+zero-volume sliver triangle at the pinch point, which `trimesh` reports as a
+disconnected, non-watertight "island". `strip_degenerate_shards`
+(`tiacad_core/utils/mesh_repair.py`) now drops exactly that kind of
+fragment — only if it's both non-watertight *and* negligible in volume
+relative to the largest component, so a real multi-body assembly is never
+touched — and both `tiacad build`'s `_check_stl_watertight` and
+`tiacad validate-geometry` apply it before deciding whether to warn.
+`examples/ellipsoid_egg.yaml` now exports and validates as genuinely
+watertight; the advisory warning still fires for meshes the repair can't
+fix. New coverage in `tiacad_core/tests/test_utils/test_mesh_repair.py` and
+updated tests in `test_cli_build.py`.
+
 ### 20. Fixed — the documented sketch-only-design placeholder part permanently triggered 2 spurious "dead work" warnings
 
 **Found while modeling `examples/egg.yaml`** (2026-08-02): `YAML_REFERENCE.md`
