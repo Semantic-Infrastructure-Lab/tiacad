@@ -63,6 +63,7 @@ checked against the actual current file layout.*
 | [TESTING_QUICK_REFERENCE](developer/TESTING_QUICK_REFERENCE.md) | Quick test commands | When you just need the command |
 | [MODEL_VALIDATION](developer/MODEL_VALIDATION.md) | Correctness evidence model for numeric, visual, and AI review | When deciding how to prove a model is right |
 | [VALIDATION_CASE_STUDY_MOUNTING_HOLES](developer/VALIDATION_CASE_STUDY_MOUNTING_HOLES.md) | Worked example: a real boolean-that-did-nothing bug, how it was found, why tests missed it | When you want the validation model made concrete |
+| [CASE_STUDY_MODELING_AN_EGG](developer/CASE_STUDY_MODELING_AN_EGG.md) | Worked example: modeling a biconic-revolve egg surfaced 5 silent-failure gaps (watertightness, dead params, placeholder warnings, sketch DSL curve support) — includes a retracted false "OCCT bug" claim traced to broken verification tooling | Before touching sketch/revolve, validation rules, or `tiacad build`'s STL export path |
 | [AI_DEBUG_WORKFLOW](developer/AI_DEBUG_WORKFLOW.md) | AI-assisted model debugging and debug bundle workflow | When reviewing model behavior with structured artifacts |
 | [TERMINOLOGY_GUIDE](developer/TERMINOLOGY_GUIDE.md) | Canonical terminology decisions | When writing docs or code |
 | [MIGRATION_GUIDE_V3](developer/MIGRATION_GUIDE_V3.md) | Upgrading from v0.3.0 to v3.x | When migrating old YAML files |

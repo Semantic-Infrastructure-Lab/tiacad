@@ -957,7 +957,7 @@ sketches:
     plane: XZ                     # profile lives in this plane
     origin: [0, 0, 0]
     shapes:
-      - type: polygon              # or: rectangle, circle
+      - type: polygon              # or: rectangle, circle, ellipse, path, text
         points:
           - [0, 0]
           - [${bottle_radius}, 0]
@@ -977,11 +977,25 @@ operations:
 ```
 
 `parts:` is still required even for sketch-only designs — use a small
-placeholder part (see `examples/bottle_revolve.yaml`) and export the revolved
-operation's result instead. Full worked examples: `examples/bottle_revolve.yaml`,
-`examples/duck_call_insert.yaml` (revolve + interior bore cut + fillet/chamfer
-passes — also see `KNOWN_LIMITATIONS.md` #14 for fillet/chamfer pitfalls on
-lathed seams).
+placeholder part named with a leading underscore (e.g. `_placeholder`, see
+`examples/bottle_revolve.yaml`) and export the revolved operation's result
+instead. The underscore prefix isn't cosmetic — `UnusedPartsRule` and
+`MissingPositionRule` specifically recognize it and skip validation warnings
+for it (see `KNOWN_LIMITATIONS.md` #20); a placeholder named anything else
+will generate 2 permanent spurious warnings. Full worked examples:
+`examples/bottle_revolve.yaml`, `examples/duck_call_insert.yaml` (revolve +
+interior bore cut + fillet/chamfer passes — also see `KNOWN_LIMITATIONS.md`
+#14 for fillet/chamfer pitfalls on lathed seams).
+
+Beyond `polygon`'s straight-line points, `type: ellipse` (`x_radius`,
+`y_radius`, `center`, `rotation`) draws a standalone closed ellipse, and
+`type: path` (`start`, `segments`, `closed`) builds a profile from mixed
+`line`/`arc` segments — e.g. `segments: [{line: [x,y]}, {arc: {through:
+[x,y], to: [x,y]}}]` — for profiles with a genuinely curved edge instead of
+a hand-faceted polygon corner. See `examples/curved_vase.yaml`. Note
+`spline` and `ellipse_arc` are deliberately *not* supported as `path`
+segments — both hit real geometry defects in development; see
+`KNOWN_LIMITATIONS.md` #18 and `tiacad_core/sketch.py`'s `Path2D` docstring.
 
 Sketch-based solids aren't limited to revolve — `type: extrude` (straight or
 tapered extrusion), `type: sweep` (profile along a path), `type: loft`

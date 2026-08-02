@@ -47,7 +47,7 @@ Simple primitives, basic operations, single parts. **Start here!**
 | [text_primitive_simple.yaml](#text_primitive_simple) | 3D text basics | ✅ |
 | [pipe_sweep_simple.yaml](#pipe_sweep_simple) | Simple sweep path | ✅ |
 
-### ⭐⭐ Intermediate (26 examples)
+### ⭐⭐ Intermediate (28 examples)
 
 Multiple parts, transforms, patterns, boolean operations, assemblies.
 
@@ -79,6 +79,8 @@ Multiple parts, transforms, patterns, boolean operations, assemblies.
 | [text_engraved.yaml](#text_engraved) | Text engraving | ✅ |
 | [text_primitive_sign.yaml](#text_primitive_sign) | Text signage | ✅ |
 | [text_primitive_styles.yaml](#text_primitive_styles) | Text styling | ✅ |
+| [egg.yaml](#egg) | Revolve of a biconic (two-half-ellipse) polygon profile, dimensionally matched to a real chicken egg | ✅ |
+| [curved_vase.yaml](#curved_vase) | `path` sketch shape: revolve of a profile mixing `line` and `arc` segments for a genuinely curved shoulder | ✅ |
 
 ### ⭐⭐⭐ Advanced (11 examples)
 
@@ -117,9 +119,10 @@ Complex assemblies, parametric systems, multi-material, advanced features.
 
 ### Sketches & 2D
 - **Basic extrusion**: simple_extrude, bracket_with_hole
-- **Revolve**: bottle_revolve, duck_call_insert (revolve + revolve-cut interior bore)
+- **Revolve**: bottle_revolve, duck_call_insert (revolve + revolve-cut interior bore), egg (biconic polygon profile), curved_vase (`path` shape with `line`+`arc` segments)
 - **Loft**: transition_loft
 - **Sweep**: pipe_sweep_simple, pipe_sweep
+- **Ellipse / Path shapes** (TCAD-DSL-1): egg (polygon-faceted ellipse approximation), curved_vase (`path` with true `arc` segments — see KNOWN_LIMITATIONS.md #18 for what `path` does/doesn't support)
 
 ### Boolean Operations
 - **Union**: awesome_guitar_hanger (full assembly)
