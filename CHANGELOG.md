@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 2026-08-02 (Path2D `ellipse_arc`/`spline` segments, TCAD-DSL-2)
+
+`Path2D` sketch profiles can now mix `ellipse_arc` and `spline` segments with
+`line`/`arc`, closing the last gap from KNOWN_LIMITATIONS.md #18. Both were
+scoped out of an earlier session as blocked on real geometry defects; a
+same-day re-investigation found neither defect was real — the "spline causes
+a non-watertight solid" finding was actually the pre-existing axis-touching
+revolve-apex artifact (#19), reproducible with plain `line`/`arc` segments
+too, and the `ellipse_arc` `angle1`/`angle2`/`sense` derivation for a
+tangent-continuous cap works correctly with the straightforward quarter-arc
+convention on the first attempt (verified via tangent continuity, not just
+visually). See `tiacad_core/sketch.py`'s `Path2D` docstring for the recipe
+and `examples/ellipsoid_egg.yaml` for a working demo (an egg profile from 2
+`ellipse_arc` segments instead of ~50 hand-computed points).
+
 ### Added - 2026-07-19 (constraint ModelGraph/DAG integration, TCAD-CON-5)
 
 Constraints are now real `ModelGraph` nodes with dependency edges to every part they
