@@ -11,7 +11,7 @@ areas:
   ARCH: 10
   CON: 13
   FIN: 2
-  BUG: 5
+  BUG: 6
   DSL: 2
 ---
 
@@ -1051,61 +1051,67 @@ notes_next: 3
 ## TASK-TCAD-BUG-1 · python -m tiacad_core.cli fails (no __main__.py); tiacad console script not runnable in dev venv
 
 ```yaml
-status: backlog
+status: rejected
 priority: medium
 effort: 30m
 tags: [cli, dx]
 created: '2026-08-02T18:26:21Z'
-updated: '2026-08-02T18:26:27Z'
+updated: '2026-08-02T18:29:57Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-08-02T18:29:02Z session:luminous-shade-0802] starting: add __main__.py, fix console script install
+- [#2 2026-08-02T18:29:57Z session:luminous-shade-0802] False positive: ./tiacad and 'python -m tiacad_core' both work perfectly with plain system python3, no venv/install needed. I had guessed 'python -m tiacad_core.cli' (wrong module -- __main__.py lives at tiacad_core/__main__.py, not tiacad_core/cli/__main__.py) and 'poetry run tiacad' (project doesn't use poetry) instead of checking CLI.md's documented Installation section first. Not a TiaCAD defect -- my own process error in the prior session. Corrected in CASE_STUDY_MODELING_AN_EGG.md.
 
 
 ## TASK-TCAD-BUG-2 · No lint for parameters: declared but never referenced via ${...} -- silently ships fake-parametric files
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 effort: 2h
 tags: [validation, parameters]
 created: '2026-08-02T18:26:21Z'
-updated: '2026-08-02T18:26:27Z'
+updated: '2026-08-02T18:47:49Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-08-02T18:37:45Z session:luminous-shade-0802] starting: add unused-parameter check
+- [#2 2026-08-02T18:47:49Z session:luminous-shade-0802] Fixed: new UnusedParametersRule (tiacad_core/validation/rules/unused_parameters_rule.py) scans raw yaml_string for ${...} spans and warns on any declared parameter never referenced -- correctly treats reference from within another parameter's own formula as legitimate use. Wired into AssemblyValidator. Confirmed on egg.yaml (flags length/max_diameter/blunt_fraction as designed) and clean on bottle_revolve.yaml. Running against all 91 committed examples found 8 pre-existing files with genuinely dead parameters -- filed as TCAD-BUG-5 follow-on. New test in test_assembly_validator.py, all 50 validation tests pass. Code uncommitted pending user approval.
 
 
 ## TASK-TCAD-BUG-3 · tiacad build/validate never check mesh watertightness -- degenerate revolve apex (r=0 tip) silently exports non-manifold STL
 
 ```yaml
-status: backlog
+status: done
 priority: high
 effort: 3h
 tags: [validation, revolve, stl]
 created: '2026-08-02T18:26:21Z'
-updated: '2026-08-02T18:26:27Z'
+updated: '2026-08-02T18:33:57Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-08-02T18:30:27Z session:luminous-shade-0802] starting: wire watertightness check into tiacad build
+- [#2 2026-08-02T18:33:57Z session:luminous-shade-0802] Fixed: tiacad build now runs a best-effort trimesh watertightness check after .stl export and warns (never fails) on non-manifold meshes. See KNOWN_LIMITATIONS.md #19 and docs/developer/CASE_STUDY_MODELING_AN_EGG.md #3. Code changes uncommitted pending user approval (tiacad_core/cli/build.py + new tests in test_cli_build.py, both passing).
 
 
 ## TASK-TCAD-DSL-1 · Sketch DSL has no arc/ellipse/spline primitive -- curved profiles must be hand-faceted outside TiaCAD
@@ -1132,12 +1138,34 @@ _(no notes yet)_
 ## TASK-TCAD-BUG-4 · Sketch-only designs require a placeholder part that permanently generates 2 spurious dead-work warnings
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 1h
 tags: [validation, sketch, noise]
 created: '2026-08-02T18:27:01Z'
-updated: '2026-08-02T18:27:01Z'
+updated: '2026-08-02T18:36:59Z'
+session: luminous-shade-0802
+links:
+  references:
+  - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+notes_next: 3
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-08-02T18:34:05Z session:luminous-shade-0802] starting: suppress dead-work warning for documented _placeholder convention
+- [#2 2026-08-02T18:36:59Z session:luminous-shade-0802] Fixed: UnusedPartsRule and MissingPositionRule now skip leading-underscore part names (_placeholder, _dummy), the documented sketch-only-design convention. Confirmed 0 warnings on examples/egg.yaml (was 2) and 16 other placeholder-using examples; genuine unrelated warnings (e.g. text_simple.yaml's disconnected-groups) still fire correctly. New test in test_assembly_validator.py, all 34 tests pass. Code uncommitted pending user approval.
+
+
+## TASK-TCAD-BUG-5 · Triage 8 pre-existing example files with dead (unreferenced) parameters, found by new UnusedParametersRule
+
+```yaml
+status: backlog
+priority: low
+effort: 1h
+tags: [parameters, examples, cleanup]
+created: '2026-08-02T18:47:43Z'
+updated: '2026-08-02T18:47:43Z'
 session: luminous-shade-0802
 links:
   references:
