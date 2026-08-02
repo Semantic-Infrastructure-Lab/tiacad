@@ -644,25 +644,25 @@
             "description": "Base part for boolean operation",
             "oneOf": [
               { "type": "string" },
-              { "type": "array", "items": { "type": "string" } }
+              { "type": "array", "items": { "$ref": "#/$defs/partListItem" } }
             ]
           },
           "union": {
             "description": "Parts to union",
             "type": "array",
-            "items": { "type": "string" }
+            "items": { "$ref": "#/$defs/partListItem" }
           },
           "subtract": {
             "description": "Parts to subtract",
             "oneOf": [
               { "type": "string" },
-              { "type": "array", "items": { "type": "string" } }
+              { "type": "array", "items": { "$ref": "#/$defs/partListItem" } }
             ]
           },
           "intersect": {
             "description": "Parts to intersect",
             "type": "array",
-            "items": { "type": "string" }
+            "items": { "$ref": "#/$defs/partListItem" }
           },
           "pattern": {
             "type": "string",
@@ -1073,5 +1073,25 @@
     }
   },
   "required": ["parts"],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "partListItem": {
+      "description": "An entry in a boolean operation's base/union/subtract/intersect list: a plain part name, a wildcard string (\"bolt_*\"), a {pattern: name} reference to every instance of a named pattern operation, or a {range: \"name[0..5]\"} / {range: \"name[*]\"} reference.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": { "pattern": { "type": "string" } },
+          "required": ["pattern"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": { "range": { "type": "string" } },
+          "required": ["range"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
 }
