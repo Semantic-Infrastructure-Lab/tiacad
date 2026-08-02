@@ -27,6 +27,7 @@ from .rules import (
     BooleanEffectRule,
     FeatureBoundsRule,
     UnusedPartsRule,
+    UnusedParametersRule,
 )
 
 # Re-export for backward compatibility
@@ -62,6 +63,7 @@ class AssemblyValidator:
             MissingPositionRule(tolerance),
             ParameterSanityRule(tolerance),
             UnusedPartsRule(tolerance),
+            UnusedParametersRule(tolerance),
             BoundingBoxRule(tolerance),
             DisconnectedPartsRule(tolerance),
             HoleEdgeProximityRule(tolerance),

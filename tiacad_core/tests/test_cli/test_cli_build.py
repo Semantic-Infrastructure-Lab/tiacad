@@ -72,6 +72,51 @@ def test_build_parse_error_fails(tmp_path, capsys):
     assert exit_code == 1
 
 
+def test_build_stl_watertight_mesh_prints_no_warning(simple_model, tmp_path, capsys):
+    """TCAD-BUG-3: a clean STL export should not trigger the watertightness warning."""
+    output = tmp_path / "out.stl"
+    exit_code = cmd_build(_args(simple_model, output=str(output)))
+    assert exit_code == 0
+    assert "not watertight" not in capsys.readouterr().out
+
+
+def test_build_stl_non_watertight_mesh_warns(tmp_path, capsys):
+    """TCAD-BUG-3: a revolve profile whose tips touch the axis at exactly r=0
+    can produce a degenerate, non-watertight STL export (the bug found while
+    modeling examples/egg.yaml — see
+    docs/developer/CASE_STUDY_MODELING_AN_EGG.md). `tiacad build` must warn,
+    not silently ship a non-manifold mesh."""
+    model = tmp_path / "bicone.tiacad"
+    model.write_text("""
+sketches:
+  profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - [0, 0]
+          - [5, 5]
+          - [0, 10]
+        closed: true
+parts:
+  _placeholder:
+    primitive: box
+    parameters: {width: 1, height: 1, depth: 1}
+operations:
+  bicone:
+    type: revolve
+    sketch: profile
+    axis: Z
+export:
+  default_part: bicone
+""")
+    output = tmp_path / "bicone.stl"
+    exit_code = cmd_build(_args(model, output=str(output)))
+    assert exit_code == 0  # advisory warning, not a build failure
+    assert "not watertight" in capsys.readouterr().out
+
+
 def test_build_with_constraints_exports_constrained_geometry(tmp_path):
     """The exact scenario TCAD-VAL-11 added parser-level coverage for, now
     through the real CLI entrypoint end to end."""

@@ -13,6 +13,7 @@ from .boolean_gaps_rule import BooleanGapsRule
 from .boolean_effect_rule import BooleanEffectRule
 from .feature_bounds_rule import FeatureBoundsRule
 from .unused_parts_rule import UnusedPartsRule
+from .unused_parameters_rule import UnusedParametersRule
 
 __all__ = [
     'MissingPositionRule',
@@ -24,4 +25,5 @@ __all__ = [
     'BooleanEffectRule',
     'FeatureBoundsRule',
     'UnusedPartsRule',
+    'UnusedParametersRule',
 ]

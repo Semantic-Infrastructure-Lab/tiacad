@@ -1,0 +1,155 @@
+schema_version: "3.0"
+
+metadata:
+  name: Dimensionally Accurate Egg
+  description: >
+    A 3D-printable egg built by revolving a biconic (two-half-ellipse) profile
+    around the vertical axis. The profile is a smooth, tangent-continuous
+    curve (horizontal slope at the equator on both sides) that matches a real
+    chicken egg's two defining measurements: overall length and max
+    diameter, plus the asymmetry ratio (how far the widest point sits from
+    the blunt end vs. the pointed end). Default parameters below correspond
+    to a USDA "large" chicken egg (length ~58mm, max diameter ~44mm, widest
+    point ~40% of the length from the blunt end). Profile points are
+    pre-computed samples of:
+      r(z) = R * sqrt(1 - (z/h)^2)
+    with h = blunt_length on the blunt side of the equator and
+    h = pointed_length on the pointed side -- i.e. two half-ellipses of the
+    same max radius R sharing a common equator, which is the standard model
+    for approximating true egg ovoids. To resize, regenerate the points list
+    for new length/diameter/asymmetry values rather than editing points by
+    hand (see the session README / script that generated this file).
+  version: "1.0"
+  author: TIA
+
+parameters:
+  length: 58              # blunt tip to pointed tip, mm
+  max_diameter: 44         # widest point, mm
+  blunt_fraction: 0.40     # fraction of length from blunt end to the equator
+
+sketches:
+  egg_profile:
+    plane: XZ              # profile in XZ plane, revolved around Z (vertical)
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - - 0.02
+            - 0.0
+          - - 6.284
+            - 0.967
+          - - 8.792
+            - 1.933
+          - - 10.651
+            - 2.9
+          - - 12.161
+            - 3.867
+          - - 13.441
+            - 4.833
+          - - 14.552
+            - 5.8
+          - - 15.529
+            - 6.767
+          - - 16.398
+            - 7.733
+          - - 17.174
+            - 8.7
+          - - 17.869
+            - 9.667
+          - - 18.493
+            - 10.633
+          - - 19.053
+            - 11.6
+          - - 19.553
+            - 12.567
+          - - 19.999
+            - 13.533
+          - - 20.395
+            - 14.5
+          - - 20.742
+            - 15.467
+          - - 21.043
+            - 16.433
+          - - 21.301
+            - 17.4
+          - - 21.517
+            - 18.367
+          - - 21.692
+            - 19.333
+          - - 21.827
+            - 20.3
+          - - 21.923
+            - 21.267
+          - - 21.981
+            - 22.233
+          - - 22.0
+            - 23.2
+          - - 21.981
+            - 24.65
+          - - 21.923
+            - 26.1
+          - - 21.827
+            - 27.55
+          - - 21.692
+            - 29.0
+          - - 21.517
+            - 30.45
+          - - 21.301
+            - 31.9
+          - - 21.043
+            - 33.35
+          - - 20.742
+            - 34.8
+          - - 20.395
+            - 36.25
+          - - 19.999
+            - 37.7
+          - - 19.553
+            - 39.15
+          - - 19.053
+            - 40.6
+          - - 18.493
+            - 42.05
+          - - 17.869
+            - 43.5
+          - - 17.174
+            - 44.95
+          - - 16.398
+            - 46.4
+          - - 15.529
+            - 47.85
+          - - 14.552
+            - 49.3
+          - - 13.441
+            - 50.75
+          - - 12.161
+            - 52.2
+          - - 10.651
+            - 53.65
+          - - 8.792
+            - 55.1
+          - - 6.284
+            - 56.55
+          - - 0.02
+            - 58.0
+        closed: true
+
+# parts: is required even for sketch-only designs -- placeholder is ignored on export
+parts:
+  _placeholder:
+    primitive: box
+    parameters:
+      width: 1
+      height: 1
+      depth: 1
+    origin: center
+
+operations:
+  egg:
+    type: revolve
+    sketch: egg_profile
+    axis: Z
+    angle: 360
+
+export:
+  default_part: egg

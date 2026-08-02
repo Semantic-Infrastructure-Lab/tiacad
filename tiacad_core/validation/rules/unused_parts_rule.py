@@ -39,6 +39,13 @@ class UnusedPartsRule(ValidationRule):
         exported_parts = self._get_exported_parts(document)
         unused = set(parts_dict.keys()) - used_parts - exported_parts
 
+        # Leading-underscore names (e.g. `_placeholder`, `_dummy`) are the
+        # documented convention for the placeholder part sketch-only designs
+        # are currently required to declare (YAML_REFERENCE.md, "Sketch +
+        # Revolve") — intentionally unused by design, not dead work. See
+        # KNOWN_LIMITATIONS.md #20 / TCAD-BUG-4.
+        unused = {name for name in unused if not name.startswith('_')}
+
         for part_name in sorted(unused):
             issues.append(ValidationIssue(
                 severity=Severity.WARNING,

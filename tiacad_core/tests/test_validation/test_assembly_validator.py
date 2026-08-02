@@ -27,6 +27,7 @@ from tiacad_core.validation.rules.disconnected_parts_rule import DisconnectedPar
 from tiacad_core.validation.rules.feature_bounds_rule import FeatureBoundsRule
 from tiacad_core.validation.rules.missing_position_rule import MissingPositionRule
 from tiacad_core.validation.rules.unused_parts_rule import UnusedPartsRule
+from tiacad_core.validation.rules.unused_parameters_rule import UnusedParametersRule
 
 
 class TestValidationIssue:
@@ -685,6 +686,81 @@ export:
         for issue in issues:
             assert issue.world_position is not None
             assert issue.world_position == rule._part_center(doc.parts.get(issue.part_name))
+
+    def test_underscore_prefixed_placeholder_not_flagged_as_unused_or_unpositioned(self):
+        """
+        TCAD-BUG-4: sketch-only designs (revolve/extrude/sweep/loft/hull) are
+        currently required to declare a `parts:` block even though the real
+        geometry comes from the sketch operation — YAML_REFERENCE.md's
+        documented workaround is a placeholder part named with a leading
+        underscore (`_placeholder`, `_dummy` — see examples/bottle_revolve.yaml,
+        examples/egg.yaml, examples/text_simple.yaml). That placeholder used to
+        get flagged by both UnusedPartsRule and MissingPositionRule every
+        single time, permanently, for every sketch-only file — 2 spurious
+        "dead work" warnings baked into the validation baseline. Both rules
+        should recognize the convention and stay silent for it.
+        """
+        doc = TiaCADParser.parse_string("""
+metadata:
+  name: placeholder_test
+parts:
+  _placeholder:
+    primitive: box
+    parameters: {width: 1, height: 1, depth: 1}
+  real_orphan:
+    primitive: box
+    parameters: {width: 5, height: 5, depth: 5}
+    origin: center
+""")
+
+        unused_flagged = {i.part_name for i in UnusedPartsRule().check(doc)}
+        missing_pos_flagged = {i.part_name for i in MissingPositionRule().check(doc)}
+
+        assert '_placeholder' not in unused_flagged
+        assert '_placeholder' not in missing_pos_flagged
+        # A genuinely unreferenced part must still be caught -- this isn't a
+        # blanket suppression, only underscore-prefixed names are exempt.
+        assert 'real_orphan' in unused_flagged
+        assert 'real_orphan' in missing_pos_flagged
+
+    def test_unused_parameters_rule_flags_dead_parameters_not_live_ones(self):
+        """
+        TCAD-BUG-2: a file can declare `parameters:` that look load-bearing
+        (plausible names, sane values) while nothing in the sketch/parts
+        actually references them via ${...} -- the exact shape of the bug
+        found building examples/egg.yaml's first draft, where `length`,
+        `max_diameter`, and `blunt_fraction` were declared but the sketch's
+        points were 49 hardcoded literals. `tiacad validate` reported this
+        as a perfectly fine parametric file. UnusedParametersRule should
+        flag the dead ones and stay silent on parameters that are actually
+        referenced -- including a parameter referenced only from within
+        another parameter's own definition, which is a legitimate dependency,
+        not dead work.
+        """
+        doc = TiaCADParser.parse_string("""
+metadata:
+  name: unused_parameters_test
+parameters:
+  live_width: 10
+  dead_length: 58
+  derived_from_live: "${live_width * 2}"
+parts:
+  box:
+    primitive: box
+    parameters: {width: 5, height: 5, depth: "${derived_from_live}"}
+    origin: center
+export:
+  default_part: box
+""")
+
+        issues = UnusedParametersRule().check(doc)
+        flagged = {i.message.split("'")[1] for i in issues}
+
+        # live_width is never referenced directly by any part -- only from
+        # within derived_from_live's own definition -- and must NOT be
+        # flagged: that's a legitimate dependency chain, not dead work.
+        assert flagged == {'dead_length'}
+        assert issues[0].severity == Severity.WARNING
 
 
 if __name__ == "__main__":

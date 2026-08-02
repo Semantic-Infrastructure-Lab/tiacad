@@ -699,6 +699,149 @@ Bisecting which shape (`tia_outer` vs `tia_bore`) caused the wrong result by cro
 
 **Real-world impact of the fix:** `thing38359_outside`'s volume delta dropped from +15.6% to +0.20%; `thing38359_wedge` (which also uses list origin on a box) dropped from +9.6% to +3.65% (its remaining delta is genuinely the unmodeled-fillet gap described in #14/`TCAD-FIN-1`, not this bug). Full non-visual test suite compared before/after via `git stash`: identical 52 pre-existing failures (unrelated, environment-dependent — see Test Health below), zero regressions, zero incidental fixes among existing tests (no shipped example happened to depend on the old ignored-origin behavior).
 
+### 18. Sketch DSL has no arc/ellipse/spline primitive
+
+**Found while modeling `examples/egg.yaml`** (2026-08-02, see
+`docs/developer/CASE_STUDY_MODELING_AN_EGG.md`): `tiacad_core/sketch.py`
+implements exactly four `Shape2D` subclasses — `Rectangle2D`, `Circle2D`,
+`Polygon2D` (straight line segments only), and `Text2D`. There is no
+`Arc2D`, `Ellipse2D`, or `Spline2D`, even though the CadQuery/OCC backend
+underneath already supports all three natively (`.ellipseArc()`, `.spline()`,
+`.threePointArc()`, etc.) — this is a gap in the YAML schema/builder layer,
+not a backend capability limit.
+
+**What Works:**
+- ✅ Straight-edged profiles of any complexity via `polygon` (bottles, bosses,
+  tapered bodies — see `examples/bottle_revolve.yaml`, `examples/duck_call_insert.yaml`)
+- ✅ Circles and rectangles as sketch primitives
+
+**What's Missing:**
+- ❌ True arc segments within a profile (fillet-like rounds on a lathed/revolved part)
+- ❌ Ellipse as a first-class sketch shape
+- ❌ Spline/bezier curves through control points
+- ❌ Any `segments:`/`tolerance:` knob to control facet density when a curve
+  must be approximated
+
+**Impact:** any organic or smoothly-curved profile (an egg, a bottle's
+shoulder curve, an ergonomic grip) must be hand-faceted into a `polygon`
+outside TiaCAD — typically a throwaway script that samples a parametric
+curve and pastes literal float coordinates into the YAML. This defeats
+TiaCAD's parametric-design value proposition for exactly this shape class:
+the resulting file has no live relationship between its declared `parameters:`
+and the curve's actual shape (see `TCAD-BUG-2` — unreferenced parameters
+aren't even flagged), so "resizing" means regenerating points externally, not
+editing YAML.
+
+**Workaround:**
+- Precompute profile points in a standalone script (e.g. sample
+  `r(z) = R·sqrt(1 - (z/h)²)` for an ellipse arc) and paste literal
+  coordinates into a `polygon` sketch's `points:` list
+- Keep the generating script/formula in a comment or companion doc so the
+  "parametric" intent is at least discoverable, since the YAML itself won't
+  express it
+
+**Future:** tracked as `TCAD-DSL-1` — add `Arc2D`/`Ellipse2D`/`Spline2D` to
+`tiacad_core/sketch.py`, wrapping the CadQuery calls that already exist one
+layer down.
+
+### 19. Fixed — `tiacad build` never checked STL watertightness; a degenerate revolve apex silently exported a non-manifold mesh
+
+**Found while modeling `examples/egg.yaml`** (2026-08-02, see
+`docs/developer/CASE_STUDY_MODELING_AN_EGG.md`): a revolve profile whose tip
+points sit at exactly `r=0` (on the revolve axis) can produce a degenerate
+apex in the CadQuery/OCC-generated mesh — confirmed on the egg model as 4
+broken faces and 2 open edge loops at the poles. `tiacad build` reported
+success with no indication anything was wrong; `tiacad validate` (schema-only)
+also passed clean. Only `tiacad validate-geometry`, a separate command not
+run by default, would have caught it — and nothing prompted a user to run it.
+A minimal repro (a 3-point bicone profile, both tips on the axis) reproduces
+the same failure.
+
+**Fix applied:** `tiacad build` now runs a best-effort watertightness check
+via `trimesh` immediately after any `.stl` export (`_check_stl_watertight` in
+`tiacad_core/cli/build.py`) and prints an advisory warning — never a build
+failure — pointing at `tiacad validate-geometry` for detail. Any error inside
+the check itself (missing `trimesh`, a mesh format trimesh can't parse) is
+swallowed, so this can only add a warning, never break an otherwise-successful
+build. `.3mf`/`.step` outputs are intentionally out of scope for now — `.stl`
+is the format most directly consumed by slicers, and 3MF's multi-material/
+multi-solid semantics need separate handling that wasn't required here. New
+coverage in `tiacad_core/tests/test_cli/test_cli_build.py`
+(`test_build_stl_watertight_mesh_prints_no_warning`,
+`test_build_stl_non_watertight_mesh_warns`), confirmed against the fixed
+`examples/egg.yaml` (silent) and the original exact-zero-tip variant
+(warns). Tracked as `TCAD-BUG-3`.
+
+### 20. Fixed — the documented sketch-only-design placeholder part permanently triggered 2 spurious "dead work" warnings
+
+**Found while modeling `examples/egg.yaml`** (2026-08-02): `YAML_REFERENCE.md`
+("Sketch + Revolve") documents that `parts:` is currently required even for
+sketch-only designs, and prescribes a minimal, unexported placeholder part
+(the convention used consistently across 17 committed examples, named
+`_placeholder` or `_dummy`). But `UnusedPartsRule` and `MissingPositionRule`
+each independently flagged that same placeholder as dead work — 2 identical-
+looking warnings, permanently, in every sketch-only file
+(`examples/bottle_revolve.yaml`, `examples/duck_call_insert.yaml`, and this
+egg model all carried them). `tiacad render`'s one-line summary
+(`0 errors, 2 warnings, 0 info`) gave no way to tell "2 warnings about a
+documented, harmless workaround" from "2 warnings about your actual model"
+without opening `validation_report.json`.
+
+**Fix applied:** both rules (`tiacad_core/validation/rules/unused_parts_rule.py`,
+`tiacad_core/validation/rules/missing_position_rule.py`) now skip any part
+whose name starts with `_` — the convention already in consistent real-world
+use, not a new one invented for this fix. Confirmed `examples/egg.yaml` now
+reports `0 errors, 0 warnings, 0 info`; spot-checked 8 other placeholder-using
+examples, all lost their placeholder warnings with zero change to any
+unrelated, legitimate warning (e.g. `text_simple.yaml`'s real "disconnected
+groups" warning still fires). This is a narrow exemption, not a blanket
+suppression: a genuinely unreferenced non-underscore part is still flagged
+exactly as before. New test in
+`test_assembly_validator.py::test_underscore_prefixed_placeholder_not_flagged_as_unused_or_unpositioned`,
+asserting both the exemption and that it doesn't over-reach. Tracked as
+`TCAD-BUG-4`.
+
+**Note:** this treats the symptom, not the root cause named in
+`YAML_REFERENCE.md` itself — `parts:` still shouldn't be required at all when
+a `revolve`/`extrude`/`sweep`/`loft`/`hull` operation is present. That deeper
+schema change is a larger undertaking than this fix and remains open.
+
+### 21. Fixed — no lint for `parameters:` declared but never referenced by `${...}`
+
+**Found while modeling `examples/egg.yaml`** (2026-08-02): the file's first
+draft declared `parameters: {length: 58, max_diameter: 44, blunt_fraction:
+0.40}` as if it were parametric, but the sketch's `points:` list was 49
+hardcoded literal coordinates — none of the three parameters were referenced
+by any `${...}` expression anywhere in the document. `tiacad validate` and
+`tiacad build --stats` (`Parameters: 3`) both reported this as a normal,
+healthy file. A parameter that's declared, plausibly named, and sanely
+valued, but functionally inert, is invisible without manually grepping the
+whole document — resizing the "parametric" egg by editing `max_diameter`
+would silently do nothing.
+
+**Fix applied:** a new `UnusedParametersRule`
+(`tiacad_core/validation/rules/unused_parameters_rule.py`), wired into
+`AssemblyValidator` alongside the existing `ParameterSanityRule`. It scans
+`document.yaml_string` (the raw source — by resolution time there's no trace
+left of which `${...}` expressions were written) for every `${...}` span,
+and warns on any declared parameter never appearing inside one. A parameter
+referenced only from within another parameter's own definition (e.g.
+`blunt_length: "${length * blunt_fraction}"`) correctly still counts as
+used — that's a real dependency, not dead work; covered by
+`test_unused_parameters_rule_flags_dead_parameters_not_live_ones`.
+
+**Real-world impact:** running the new rule directly against every committed
+example (bypassing full geometry build/render — seconds, not minutes) found
+this wasn't hypothetical: **8 pre-existing shipped files** already had
+genuinely dead parameters, including `examples/lego_brick_2x1.yaml`/
+`lego_brick_3x1.yaml` (`inner_post_height`, `inner_post_radius` — one with a
+whole unused formula), `examples/pcb_standoff_assembly.yaml` (and its
+`examples/trust/` copy), `examples/formats_demo.yaml`,
+`examples/thingiverse_rebuilds/thing38359_inside.yaml`, and
+`examples/week5_assembly.yaml`. None of these are cleaned up as part of this
+fix — the rule now exists to catch them; triaging 8 existing files is
+follow-on work. Tracked as `TCAD-BUG-2`.
+
 ---
 
 ## Test Health

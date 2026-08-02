@@ -4,7 +4,7 @@ import time
 import traceback
 from pathlib import Path
 
-from .output import Colors, print_error, print_header, print_info, print_success
+from .output import Colors, print_error, print_header, print_info, print_success, print_warning
 
 
 def _show_dep_graph(args, doc, input_file: Path) -> None:
@@ -43,6 +43,32 @@ def _export_document(doc, output_file: Path, part_name: str | None) -> None:
         doc.export_3mf(str(output_file), part_name=part_name)
     elif output_ext == '.step':
         doc.export_step(str(output_file), part_name=part_name)
+
+
+def _check_stl_watertight(output_file: Path) -> None:
+    """
+    Best-effort post-export watertightness check for STL output.
+
+    STL is the format most directly consumed by slicers, and a non-watertight
+    mesh silently produces slicing errors or bad prints downstream with no
+    signal from `tiacad build` itself (see KNOWN_LIMITATIONS.md #18 / TCAD-BUG-3
+    — a revolve profile touching its own axis at a tip is a common way to
+    trigger this). This check is advisory only: never raises, never fails the
+    build, and any import/read error is swallowed so a missing `trimesh` or an
+    exotic mesh trimesh can't parse doesn't turn a successful build into a
+    failure. `tiacad validate-geometry` remains the authoritative, detailed
+    check (components, volume, vertex/face counts).
+    """
+    try:
+        import trimesh
+        mesh = trimesh.load(str(output_file))
+        if not mesh.is_watertight:
+            print_warning(
+                "Mesh is not watertight — may cause slicer errors or bad prints. "
+                "Run `tiacad validate-geometry` for details."
+            )
+    except Exception:
+        pass
 
 
 def _print_build_stats(doc) -> None:
@@ -106,6 +132,9 @@ def cmd_build(args):
 
         total_time = time.time() - start_time
         _print_build_success(output_file, parse_time, export_time, total_time)
+
+        if output_file.suffix.lower() == '.stl':
+            _check_stl_watertight(output_file)
 
         if args.stats:
             _print_build_stats(doc)

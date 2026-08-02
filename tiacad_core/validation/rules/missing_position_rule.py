@@ -49,6 +49,13 @@ class MissingPositionRule(ValidationRule):
         # Filter out operations (they're generated parts, not base parts)
         unpositioned = self._filter_out_operations(document, unpositioned)
 
+        # Leading-underscore names (e.g. `_placeholder`, `_dummy`) are the
+        # documented convention for the placeholder part sketch-only designs
+        # are currently required to declare (YAML_REFERENCE.md, "Sketch +
+        # Revolve") — intentionally unused by design, not dead work. See
+        # KNOWN_LIMITATIONS.md #20 / TCAD-BUG-4.
+        unpositioned = {name for name in unpositioned if not name.startswith('_')}
+
         # Create issues for each unpositioned part
         parts_dict = self._get_parts_dict(document)
         for part_name in unpositioned:
