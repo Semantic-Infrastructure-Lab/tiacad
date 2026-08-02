@@ -12,7 +12,7 @@ areas:
   CON: 13
   FIN: 2
   BUG: 6
-  DSL: 2
+  DSL: 3
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -1123,22 +1123,24 @@ notes_next: 4
 ## TASK-TCAD-DSL-1 · Sketch DSL has no arc/ellipse/spline primitive -- curved profiles must be hand-faceted outside TiaCAD
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 effort: 1d
 tags: [sketch, revolve, feature]
 created: '2026-08-02T18:26:22Z'
-updated: '2026-08-02T18:26:27Z'
+updated: '2026-08-02T19:15:24Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
   - KNOWN_LIMITATIONS.md
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-08-02T18:49:53Z session:luminous-shade-0802] starting: add Arc2D/Ellipse2D/Spline2D shape types to sketch DSL
+- [#2 2026-08-02T19:15:24Z session:luminous-shade-0802] Shipped Ellipse2D (standalone) and Path2D (line/arc segments) -- both verified exact against analytic areas and confirmed watertight through revolve/extrude. New example: examples/curved_vase.yaml. spline and ellipse_arc segments were attempted but both hit real, reproducible geometry defects (non-watertight solid; cusp-tangent instead of rounded cap) and were deliberately not shipped -- filed as follow-on TCAD-DSL-2. Full detail in KNOWN_LIMITATIONS.md #18 and docs/developer/CASE_STUDY_MODELING_AN_EGG.md. Tests: tiacad_core/tests/test_sketch.py (TestEllipse2D, TestPath2D), tiacad_core/tests/test_parser/test_sketch_builder_curves.py (new file). All passing. Code uncommitted pending user approval.
 
 
 ## TASK-TCAD-BUG-4 · Sketch-only designs require a placeholder part that permanently generates 2 spurious dead-work warnings
@@ -1179,6 +1181,27 @@ session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-DSL-2 · ellipse_arc/spline as Path2D segments: both attempted, both hit real geometry defects, not shipped
+
+```yaml
+status: backlog
+priority: medium
+effort: 4h
+tags: [sketch, revolve, ellipse, spline]
+created: '2026-08-02T19:15:16Z'
+updated: '2026-08-02T19:15:16Z'
+session: luminous-shade-0802
+links:
+  references:
+  - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+  - KNOWN_LIMITATIONS.md
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
