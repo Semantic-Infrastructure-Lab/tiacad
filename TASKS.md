@@ -1195,25 +1195,28 @@ notes_next: 2
 ## TASK-TCAD-DSL-2 · ellipse_arc/spline as Path2D segments: both attempted, both hit real geometry defects, not shipped
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 owner: unassigned
 effort: 4h
 tags: [sketch, revolve, ellipse, spline]
 created: '2026-08-02T19:15:16Z'
-updated: '2026-08-02T19:16:31Z'
+updated: '2026-08-02T20:31:58Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
   - KNOWN_LIMITATIONS.md
-notes_next: 3
+  commits:
+  - 75e2d8959aafb93fa1d9d2d4eac0db378b64b990
+notes_next: 4
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-08-02T19:16:20Z session:luminous-shade-0802] Blocked on: (a) correct angle1/angle2/sense derivation for ellipse_arc so composed arcs meet the axis perpendicular like a real ellipsoid cap; (b) root-causing why spline mixed with other Path2D segment types produces a non-watertight solid. Both need dedicated investigation time, not a quick fix.
 - [#2 2026-08-02T19:16:31Z session:luminous-shade-0802] Correcting status: this is unscoped future work with no forcing use case, matching TCAD-BUG-5/TCAD-FIN-1/TCAD-API-1 convention -- not blocked on anyone, so 'held' was the wrong status, not 'blocked'. Re-filed as backlog.
+- [#3 2026-08-02T20:31:58Z session:cunning-throne-0802] Both blockers misdiagnosed: 'spline non-watertight' = pre-existing axis-apex artifact (#19), unrelated to spline; ellipse_arc angle1/angle2/sense worked on first straightforward attempt. Shipped both segment types + examples/ellipsoid_egg.yaml demo.
 
 
 ## TASK-TCAD-4 · formats_demo.yaml exports non-watertight mesh (fillet on box, pre-existing)
