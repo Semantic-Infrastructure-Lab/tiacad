@@ -11,7 +11,8 @@ import pytest
 import cadquery as cq
 
 from tiacad_core.sketch import (
-    Sketch2D, Shape2D, Rectangle2D, Circle2D, Polygon2D, Text2D, SketchError
+    Sketch2D, Shape2D, Rectangle2D, Circle2D, Ellipse2D, Polygon2D, Path2D,
+    Text2D, SketchError
 )
 
 
@@ -107,6 +108,115 @@ class TestCircle2D:
         wp = cq.Workplane("XY")
         result = circle.build(wp)
         assert result is not None
+
+
+class TestEllipse2D:
+    """Tests for Ellipse2D shape (TCAD-DSL-1)"""
+
+    def test_ellipse_basic_creation(self):
+        """Create a basic ellipse"""
+        ellipse = Ellipse2D(x_radius=20, y_radius=10)
+        assert ellipse.x_radius == 20
+        assert ellipse.y_radius == 10
+        assert ellipse.center == (0, 0)
+        assert ellipse.rotation == 0.0
+        assert ellipse.operation == 'add'
+
+    def test_ellipse_with_center_and_rotation(self):
+        """Create ellipse with custom center and rotation"""
+        ellipse = Ellipse2D(x_radius=20, y_radius=10, center=(5, 5), rotation=30)
+        assert ellipse.center == (5, 5)
+        assert ellipse.rotation == 30
+
+    def test_ellipse_negative_x_radius_rejected(self):
+        with pytest.raises(SketchError) as exc_info:
+            Ellipse2D(x_radius=-20, y_radius=10)
+        assert "x_radius must be positive" in str(exc_info.value)
+
+    def test_ellipse_negative_y_radius_rejected(self):
+        with pytest.raises(SketchError) as exc_info:
+            Ellipse2D(x_radius=20, y_radius=-10)
+        assert "y_radius must be positive" in str(exc_info.value)
+
+    def test_ellipse_build_produces_correct_area(self):
+        """Built wire encloses the analytic ellipse area (pi * a * b)."""
+        ellipse = Ellipse2D(x_radius=20, y_radius=10)
+        wp = cq.Workplane("XY")
+        result = ellipse.build(wp)
+        face = cq.Face.makeFromWires(result.ctx.pendingWires[0])
+        assert face.Area() == pytest.approx(3.14159265 * 20 * 10, rel=1e-4)
+
+
+class TestPath2D:
+    """Tests for Path2D shape (TCAD-DSL-1) -- line/arc/spline segments"""
+
+    def test_path_requires_at_least_one_segment(self):
+        with pytest.raises(SketchError) as exc_info:
+            Path2D(start=(0, 0), segments=[])
+        assert "at least one segment" in str(exc_info.value)
+
+    def test_path_rejects_malformed_segment(self):
+        with pytest.raises(SketchError) as exc_info:
+            Path2D(start=(0, 0), segments=[{'line': [1, 0], 'extra': 1}])
+        assert "single-key dict" in str(exc_info.value)
+
+    def test_path_rejects_unknown_segment_type(self):
+        with pytest.raises(SketchError) as exc_info:
+            Path2D(start=(0, 0), segments=[{'bezier': [1, 0]}])
+        assert "unknown type 'bezier'" in str(exc_info.value)
+
+    def test_path_line_only_builds_closed_wire(self):
+        """A path of only 'line' segments is equivalent to Polygon2D."""
+        path = Path2D(
+            start=(0, 0),
+            segments=[{'line': [10, 0]}, {'line': [10, 10]}, {'line': [0, 10]}],
+            closed=True,
+        )
+        wp = cq.Workplane("XY")
+        result = path.build(wp)
+        wire = result.vals()[0]
+        assert wire.IsClosed()
+        face = cq.Face.makeFromWires(wire)
+        assert face.Area() == pytest.approx(100.0)
+
+    def test_path_arc_segment_produces_correct_area(self):
+        """A semicircle (start -> arc through top -> close) matches pi*r^2/2 exactly."""
+        path = Path2D(
+            start=(-10, 0),
+            segments=[{'arc': {'through': [0, 10], 'to': [10, 0]}}],
+            closed=True,
+        )
+        wp = cq.Workplane("XY")
+        result = path.build(wp)
+        face = cq.Face.makeFromWires(result.vals()[0])
+        assert face.Area() == pytest.approx(3.14159265 * 100 / 2, rel=1e-6)
+
+    def test_path_spline_segment_type_not_supported(self):
+        """
+        'spline' is intentionally NOT a supported Path2D segment type.
+        Mixing a spline with line/arc segments in one chained path produced
+        a non-watertight, invalid solid on every construction tried during
+        development -- a real geometry defect, not a rough edge -- so it was
+        scoped out rather than shipped half-verified. See the Path2D
+        docstring and docs/developer/CASE_STUDY_MODELING_AN_EGG.md.
+        """
+        with pytest.raises(SketchError) as exc_info:
+            Path2D(start=(0, 0), segments=[{'spline': [[10, 5], [5, 10]]}])
+        assert "unknown type 'spline'" in str(exc_info.value)
+
+    def test_path_open_when_not_closed(self):
+        path = Path2D(start=(0, 0), segments=[{'line': [10, 0]}], closed=False)
+        wp = cq.Workplane("XY")
+        result = path.build(wp)
+        # Without close(), no wire is assembled onto pendingWires -- only the
+        # raw edge is on the stack, matching Polygon2D's closed=False behavior.
+        assert len(result.ctx.pendingWires) == 0
+
+    def test_path_invalid_arc_segment_raises_sketch_error(self):
+        with pytest.raises(SketchError) as exc_info:
+            path = Path2D(start=(0, 0), segments=[{'arc': {'through': [1, 1]}}])  # missing 'to'
+            path.build(cq.Workplane("XY"))
+        assert "Invalid 'arc' segment" in str(exc_info.value)
 
 
 class TestPolygon2D:

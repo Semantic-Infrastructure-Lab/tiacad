@@ -699,50 +699,81 @@ Bisecting which shape (`tia_outer` vs `tia_bore`) caused the wrong result by cro
 
 **Real-world impact of the fix:** `thing38359_outside`'s volume delta dropped from +15.6% to +0.20%; `thing38359_wedge` (which also uses list origin on a box) dropped from +9.6% to +3.65% (its remaining delta is genuinely the unmodeled-fillet gap described in #14/`TCAD-FIN-1`, not this bug). Full non-visual test suite compared before/after via `git stash`: identical 52 pre-existing failures (unrelated, environment-dependent — see Test Health below), zero regressions, zero incidental fixes among existing tests (no shipped example happened to depend on the old ignored-origin behavior).
 
-### 18. Sketch DSL has no arc/ellipse/spline primitive
+### 18. Fixed (partially) — Sketch DSL had no arc/ellipse/spline primitive
 
 **Found while modeling `examples/egg.yaml`** (2026-08-02, see
 `docs/developer/CASE_STUDY_MODELING_AN_EGG.md`): `tiacad_core/sketch.py`
-implements exactly four `Shape2D` subclasses — `Rectangle2D`, `Circle2D`,
-`Polygon2D` (straight line segments only), and `Text2D`. There is no
-`Arc2D`, `Ellipse2D`, or `Spline2D`, even though the CadQuery/OCC backend
-underneath already supports all three natively (`.ellipseArc()`, `.spline()`,
-`.threePointArc()`, etc.) — this is a gap in the YAML schema/builder layer,
-not a backend capability limit.
+implemented exactly four `Shape2D` subclasses — `Rectangle2D`, `Circle2D`,
+`Polygon2D` (straight line segments only), and `Text2D`. There was no
+`Ellipse2D` or a way to mix curves into a profile at all, even though the
+CadQuery/OCC backend underneath already supports arcs/ellipses/splines
+natively — this was a gap in the YAML schema/builder layer, not a backend
+capability limit.
 
-**What Works:**
-- ✅ Straight-edged profiles of any complexity via `polygon` (bottles, bosses,
-  tapered bodies — see `examples/bottle_revolve.yaml`, `examples/duck_call_insert.yaml`)
-- ✅ Circles and rectangles as sketch primitives
+**Fix applied (same session):** two additions to `tiacad_core/sketch.py` and
+`tiacad_core/parser/sketch_builder.py`:
+- **`Ellipse2D`** (`type: ellipse`) — a standalone closed ellipse shape,
+  direct analog of `Circle2D`. Verified exact against the analytic
+  `pi * x_radius * y_radius` area, and confirmed working through both
+  `extrude` (a 15×8mm elliptical boss, volume matched analytically) and the
+  existing `revolve` pipeline.
+- **`Path2D`** (`type: path`) — a profile built from `line` and `arc`
+  (three-point circular arc) segments, e.g.
+  `segments: [{line: [x,y]}, {arc: {through: [x,y], to: [x,y]}}]`. This is
+  the general mechanism for a profile that mixes straight edges with true
+  curves — see `examples/curved_vase.yaml`, a revolved vase with a smoothly
+  curved shoulder (impossible with `polygon` alone without hand-faceting).
+  Verified exact against analytic areas (a semicircle matched
+  `pi*r^2/2` to float precision) and confirmed genuinely watertight when
+  extruded/revolved, not just "looks right in 2D."
 
-**What's Missing:**
-- ❌ True arc segments within a profile (fillet-like rounds on a lathed/revolved part)
-- ❌ Ellipse as a first-class sketch shape
-- ❌ Spline/bezier curves through control points
-- ❌ Any `segments:`/`tolerance:` knob to control facet density when a curve
-  must be approximated
+**What's still missing** — deliberately scoped out after failing
+verification, not simply unattempted (tracked as `TCAD-DSL-2`, see
+`tiacad_core/sketch.py`'s `Path2D` docstring for full detail):
+- ❌ **`spline` as a `Path2D` segment.** A periodic, fully-closed spline used
+  *alone* works correctly (matches Ellipse2D-style usage), but mixing a
+  `spline` segment with `line`/`arc` segments in one chained path — the
+  natural way to want to use it — produced a **non-watertight, invalid
+  solid on every construction tried**, including profiles with no
+  near-degenerate edges. This is a real, reproducible defect (confirmed via
+  `trimesh.is_watertight` on the exported STL, the same check `TCAD-BUG-3`
+  added to `tiacad build`), not a rough edge — shipping it would mean
+  silently producing wrong geometry, which is exactly what this session's
+  other fixes exist to catch.
+- ❌ **`ellipse_arc` as a `Path2D` segment** (a true elliptical arc, as
+  opposed to the standalone closed `Ellipse2D`). `cq.Workplane.ellipseArc()`
+  itself works, and an early attempt to rebuild the egg profile using two
+  `ellipse_arc` segments instead of hand-computed points *seemed* to fail
+  with a wildly wrong volume — initially misdiagnosed as an upstream
+  CadQuery/OCCT bug in `Face.makeFromWires`. That diagnosis was **wrong**
+  and retracted: the actual bug was in the investigation's own verification
+  script (an unordered `wire.Edges()` iteration silently scrambling the
+  numeric cross-check — a plain 10×10 square measured as 149mm² instead of
+  100mm² with the same buggy method, which is what exposed it). Once
+  corrected, `Face.Area()` matched independent numeric integration exactly.
+  The *real* problem was geometric: composing two differently-scaled
+  `ellipseArc()` calls so the curve meets the revolve axis tangent
+  *perpendicular* to it (the way a real ellipsoid/egg cap does) requires the
+  ellipse's own center to sit on the axis; getting `angle1`/`angle2`/`sense`
+  right for that reliably took more iteration than fit in this session, and
+  a wrong choice silently produces a cusp-tangent (pointed) curve instead of
+  the intended rounded cap — again, no error, just wrong geometry.
+- ❌ Any `segments:`/`tolerance:` knob to control facet density in the
+  eventual mesh (orthogonal to the segment-type gap above).
 
-**Impact:** any organic or smoothly-curved profile (an egg, a bottle's
-shoulder curve, an ergonomic grip) must be hand-faceted into a `polygon`
-outside TiaCAD — typically a throwaway script that samples a parametric
-curve and pastes literal float coordinates into the YAML. This defeats
-TiaCAD's parametric-design value proposition for exactly this shape class:
-the resulting file has no live relationship between its declared `parameters:`
-and the curve's actual shape (see `TCAD-BUG-2` — unreferenced parameters
-aren't even flagged), so "resizing" means regenerating points externally, not
-editing YAML.
+**Impact:** an ellipse-based egg/ellipsoid profile, or any curve needing a
+spline mixed with straight/circular edges, still needs hand-faceting into a
+`polygon` today (see `TCAD-BUG-2` for the related "declared parameter never
+used" risk that creates). A profile mixing straight lines with **circular**
+arcs — bottles, bosses, rounded-shoulder vases — no longer does.
 
-**Workaround:**
-- Precompute profile points in a standalone script (e.g. sample
-  `r(z) = R·sqrt(1 - (z/h)²)` for an ellipse arc) and paste literal
-  coordinates into a `polygon` sketch's `points:` list
-- Keep the generating script/formula in a comment or companion doc so the
-  "parametric" intent is at least discoverable, since the YAML itself won't
-  express it
-
-**Future:** tracked as `TCAD-DSL-1` — add `Arc2D`/`Ellipse2D`/`Spline2D` to
-`tiacad_core/sketch.py`, wrapping the CadQuery calls that already exist one
-layer down.
+**Future:** `TCAD-DSL-2` — (a) figure out the correct general
+`angle1`/`angle2`/`sense` derivation for `ellipse_arc` given arbitrary start
+point + radii, ideally exposed as a simpler "arc from A to B with these
+radii" helper rather than requiring the caller to reason in OCCT's raw angle
+convention; (b) investigate why mixing `spline` with other edge types in one
+wire produces a non-watertight solid — likely a tangency/continuity mismatch
+at the join that OCCT's face-building doesn't reconcile automatically.
 
 ### 19. Fixed — `tiacad build` never checked STL watertightness; a degenerate revolve apex silently exported a non-manifold mesh
 

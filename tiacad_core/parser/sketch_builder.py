@@ -11,7 +11,10 @@ Version: 0.1.0-alpha (Phase 3)
 import logging
 from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
 
-from ..sketch import Sketch2D, Shape2D, Rectangle2D, Circle2D, Polygon2D, Text2D, SketchError
+from ..sketch import (
+    Sketch2D, Shape2D, Rectangle2D, Circle2D, Ellipse2D, Polygon2D, Path2D,
+    Text2D, SketchError,
+)
 from .parameter_resolver import ParameterResolver
 
 if TYPE_CHECKING:
@@ -241,8 +244,12 @@ class SketchBuilder:
                 return self._build_rectangle(sketch_name, shape_index, spec, operation)
             elif shape_type == 'circle':
                 return self._build_circle(sketch_name, shape_index, spec, operation)
+            elif shape_type == 'ellipse':
+                return self._build_ellipse(sketch_name, shape_index, spec, operation)
             elif shape_type == 'polygon':
                 return self._build_polygon(sketch_name, shape_index, spec, operation)
+            elif shape_type == 'path':
+                return self._build_path(sketch_name, shape_index, spec, operation)
             elif shape_type == 'text':
                 return self._build_text(sketch_name, shape_index, spec, operation)
             else:
@@ -252,7 +259,7 @@ class SketchBuilder:
                 raise SketchBuilderError(
                     f"Unknown shape type '{shape_type}' for shape {shape_index} "
                     f"in sketch '{sketch_name}'. "
-                    f"Supported types: rectangle, circle, polygon, text",
+                    f"Supported types: rectangle, circle, ellipse, polygon, path, text",
                     sketch_name=sketch_name,
                     line=line,
                     column=col
@@ -357,6 +364,100 @@ class SketchBuilder:
         return Circle2D(
             radius=radius,
             center=tuple(center),
+            operation=operation
+        )
+
+    def _build_ellipse(self, sketch_name: str, shape_index: int,
+                      spec: Dict[str, Any], operation: str) -> Ellipse2D:
+        """Build Ellipse2D from spec."""
+        for field in ('x_radius', 'y_radius'):
+            if field not in spec:
+                line, col = self._get_line_info(
+                    ['sketches', sketch_name, 'shapes', shape_index, field]
+                )
+                raise SketchBuilderError(
+                    f"Ellipse shape {shape_index} in sketch '{sketch_name}' "
+                    f"missing '{field}' field",
+                    sketch_name=sketch_name,
+                    line=line,
+                    column=col
+                )
+
+        center = spec.get('center', [0, 0])
+        if not isinstance(center, list) or len(center) != 2:
+            line, col = self._get_line_info(
+                ['sketches', sketch_name, 'shapes', shape_index, 'center']
+            )
+            raise SketchBuilderError(
+                f"Ellipse center must be [x, y], got {center}",
+                sketch_name=sketch_name,
+                line=line,
+                column=col
+            )
+
+        return Ellipse2D(
+            x_radius=spec['x_radius'],
+            y_radius=spec['y_radius'],
+            center=tuple(center),
+            rotation=spec.get('rotation', 0.0),
+            operation=operation
+        )
+
+    def _build_path(self, sketch_name: str, shape_index: int,
+                   spec: Dict[str, Any], operation: str) -> Path2D:
+        """Build Path2D from spec."""
+        if 'start' not in spec:
+            line, col = self._get_line_info(
+                ['sketches', sketch_name, 'shapes', shape_index, 'start']
+            )
+            raise SketchBuilderError(
+                f"Path shape {shape_index} in sketch '{sketch_name}' "
+                f"missing 'start' field",
+                sketch_name=sketch_name,
+                line=line,
+                column=col
+            )
+
+        if 'segments' not in spec:
+            line, col = self._get_line_info(
+                ['sketches', sketch_name, 'shapes', shape_index, 'segments']
+            )
+            raise SketchBuilderError(
+                f"Path shape {shape_index} in sketch '{sketch_name}' "
+                f"missing 'segments' field",
+                sketch_name=sketch_name,
+                line=line,
+                column=col
+            )
+
+        start = spec['start']
+        if not isinstance(start, list) or len(start) != 2:
+            line, col = self._get_line_info(
+                ['sketches', sketch_name, 'shapes', shape_index, 'start']
+            )
+            raise SketchBuilderError(
+                f"Path start must be [x, y], got {start}",
+                sketch_name=sketch_name,
+                line=line,
+                column=col
+            )
+
+        segments = spec['segments']
+        if not isinstance(segments, list) or not segments:
+            line, col = self._get_line_info(
+                ['sketches', sketch_name, 'shapes', shape_index, 'segments']
+            )
+            raise SketchBuilderError(
+                f"Path 'segments' must be a non-empty list, got {segments!r}",
+                sketch_name=sketch_name,
+                line=line,
+                column=col
+            )
+
+        return Path2D(
+            start=tuple(start),
+            segments=segments,
+            closed=spec.get('closed', True),
             operation=operation
         )
 

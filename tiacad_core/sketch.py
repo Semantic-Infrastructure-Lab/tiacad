@@ -7,7 +7,9 @@ revolved, swept, or lofted into 3D geometry.
 Supported Shapes:
 - Rectangle: Basic rectangular profiles
 - Circle: Circular profiles
-- Polygon: Custom polygonal profiles from points
+- Ellipse: Elliptical profiles
+- Polygon: Custom polygonal profiles from points (straight edges only)
+- Path: Custom profiles mixing straight lines and circular arcs
 - Text: 2D text that can be extruded into 3D
 
 Author: TIA
@@ -187,6 +189,73 @@ class Circle2D(Shape2D):
         )
 
 
+class Ellipse2D(Shape2D):
+    """
+    2D Ellipse shape.
+
+    Direct analog of Circle2D for the non-circular case (elliptical holes,
+    bosses, or as a building block for organic profiles) — see
+    KNOWN_LIMITATIONS.md #18 / TCAD-DSL-1, which this closes for the
+    standalone-shape case. For curves embedded within a larger profile (an
+    ellipse *arc* as one edge of a multi-segment outline, as opposed to a
+    complete closed ellipse), see Path2D below.
+
+    Attributes:
+        x_radius: Radius along the sketch plane's local X axis
+        y_radius: Radius along the sketch plane's local Y axis
+        center: Center point in 2D sketch space [x, y]
+        rotation: Rotation of the ellipse's own axes, in degrees
+        operation: 'add' or 'subtract'
+    """
+
+    def __init__(self, x_radius: float, y_radius: float,
+                 center: Tuple[float, float] = (0, 0),
+                 rotation: float = 0.0,
+                 operation: str = 'add'):
+        """
+        Create a 2D ellipse.
+
+        Args:
+            x_radius: Radius along local X axis
+            y_radius: Radius along local Y axis
+            center: Center point [x, y] (default: [0, 0])
+            rotation: Rotation in degrees (default: 0)
+            operation: 'add' or 'subtract' (default: 'add')
+        """
+        super().__init__('ellipse', operation)
+        self.x_radius = x_radius
+        self.y_radius = y_radius
+        self.center = center
+        self.rotation = rotation
+
+        if x_radius <= 0:
+            raise SketchError(f"Ellipse x_radius must be positive, got {x_radius}")
+        if y_radius <= 0:
+            raise SketchError(f"Ellipse y_radius must be positive, got {y_radius}")
+
+    def build(self, workplane: cq.Workplane) -> cq.Workplane:
+        """Build ellipse on workplane."""
+        wp = workplane.workplane(offset=0)
+
+        if self.center != (0, 0):
+            wp = wp.center(self.center[0], self.center[1])
+
+        wp = wp.ellipse(self.x_radius, self.y_radius, rotation_angle=self.rotation)
+
+        logger.debug(
+            f"Built ellipse x_radius={self.x_radius} y_radius={self.y_radius} "
+            f"at {self.center}, rotation={self.rotation}, operation={self.operation}"
+        )
+
+        return wp
+
+    def __repr__(self) -> str:
+        return (
+            f"Ellipse2D(x_radius={self.x_radius}, y_radius={self.y_radius}, "
+            f"center={self.center}, rotation={self.rotation}, operation={self.operation})"
+        )
+
+
 class Polygon2D(Shape2D):
     """
     2D Polygon shape from points.
@@ -239,6 +308,126 @@ class Polygon2D(Shape2D):
         return (
             f"Polygon2D(points={len(self.points)}, closed={self.closed}, "
             f"operation={self.operation})"
+        )
+
+
+class Path2D(Shape2D):
+    """
+    2D Path shape built from a sequence of line/arc segments — the general
+    mechanism for profiles that mix straight edges with true circular
+    curves, partially closing the "Sketch DSL has no arc/ellipse/spline
+    primitive" gap (KNOWN_LIMITATIONS.md #18 / TCAD-DSL-1). Where Polygon2D
+    only connects points with straight lines, Path2D's segments can be:
+
+    - ``{line: [x, y]}`` — straight line to (x, y)
+    - ``{arc: {through: [x, y], to: [x, y]}}`` — circular arc from the
+      current point, through one point, ending at another
+
+    Both were verified exact against analytic areas (a semicircle arc and a
+    line+arc+line profile both matched pi*r^2/2 and independently-integrated
+    reference areas to within floating-point precision), and produce
+    genuinely watertight, valid solids when extruded/revolved.
+
+    Two segment types were deliberately left out after failing verification,
+    not because they were never tried:
+
+    - ``spline``: works correctly as a *standalone*, fully-periodic closed
+      curve (see Ellipse2D-style use), but mixing a `spline` segment with
+      `line`/`arc` segments in the same chained path — exactly the natural
+      way to use it here — produced a non-watertight, invalid solid on
+      every construction tried, including ones with no near-degenerate
+      edges. This is a real, reproducible geometry defect, not a rough edge.
+    - ``ellipse_arc`` (true elliptical arc): `cq.Workplane.ellipseArc()`
+      itself works, but composing two differently-scaled elliptical arcs
+      into a profile whose curve meets the revolve axis the way a real
+      ellipsoid cap does (tangent *perpendicular* to the axis, like an egg's
+      rounded end) requires the ellipse's own center to sit ON the axis;
+      getting `angle1`/`angle2`/`sense` right for that reliably took more
+      iteration than fit in this session, and a wrong choice silently
+      produces a differently-shaped (cusp-tangent, not perpendicular-tangent)
+      curve with no error or warning.
+
+    Both failure modes are exactly what this session's other fixes exist to
+    catch — silently wrong geometry, not a thrown error — so neither was
+    worth shipping half-verified. Tracked as TCAD-DSL-2. See
+    docs/developer/CASE_STUDY_MODELING_AN_EGG.md for the full investigation.
+
+    Attributes:
+        start: Starting point [x, y]
+        segments: List of single-key segment dicts (see above)
+        closed: Whether to close the path back to `start` (default: True)
+        operation: 'add' or 'subtract'
+    """
+
+    SEGMENT_TYPES = ('line', 'arc')
+
+    def __init__(self, start: Tuple[float, float], segments: List[dict],
+                 closed: bool = True,
+                 operation: str = 'add'):
+        """
+        Create a 2D path.
+
+        Args:
+            start: Starting point [x, y]
+            segments: List of single-key segment dicts
+            closed: Whether to close the path (default: True)
+            operation: 'add' or 'subtract' (default: 'add')
+        """
+        super().__init__('path', operation)
+        self.start = start
+        self.segments = segments
+        self.closed = closed
+
+        if not segments:
+            raise SketchError("Path must have at least one segment")
+
+        for i, seg in enumerate(segments):
+            if not isinstance(seg, dict) or len(seg) != 1:
+                raise SketchError(
+                    f"Path segment {i} must be a single-key dict naming its "
+                    f"type (one of {self.SEGMENT_TYPES}), got {seg!r}"
+                )
+            seg_type = next(iter(seg))
+            if seg_type not in self.SEGMENT_TYPES:
+                raise SketchError(
+                    f"Path segment {i} has unknown type '{seg_type}'. "
+                    f"Must be one of {self.SEGMENT_TYPES}"
+                )
+
+    def build(self, workplane: cq.Workplane) -> cq.Workplane:
+        """Build path on workplane."""
+        wp = workplane.workplane(offset=0)
+        wp = wp.moveTo(self.start[0], self.start[1])
+
+        for index, seg in enumerate(self.segments):
+            seg_type, value = next(iter(seg.items()))
+            wp = self._build_segment(wp, seg_type, value, index)
+
+        if self.closed:
+            wp = wp.close()
+
+        logger.debug(
+            f"Built path with {len(self.segments)} segments from {self.start}, "
+            f"closed={self.closed}, operation={self.operation}"
+        )
+
+        return wp
+
+    def _build_segment(self, wp: cq.Workplane, seg_type: str, value, index: int) -> cq.Workplane:
+        """Apply a single path segment to the workplane, chaining from its current point."""
+        try:
+            if seg_type == 'line':
+                return wp.lineTo(value[0], value[1])
+            # seg_type == 'arc' -- the only remaining SEGMENT_TYPES member
+            through, to = value['through'], value['to']
+            return wp.threePointArc((through[0], through[1]), (to[0], to[1]))
+        except (KeyError, IndexError, TypeError) as e:
+            raise SketchError(f"Invalid '{seg_type}' segment at index {index}: {e}") from e
+
+    def __repr__(self) -> str:
+        return (
+            f"Path2D(start={self.start}, segments={len(self.segments)}, "
+            f"closed={self.closed}, operation={self.operation})"
         )
 
 

@@ -143,9 +143,20 @@ There is also no `segments:`/`tolerance:` knob anywhere in the sketch or
 revolve schema to control facet density — accuracy is entirely a function of
 how many points a human (or AI) decides to precompute by hand.
 
-Filed as a limitation (not just a bug) in
-[KNOWN_LIMITATIONS.md](../../KNOWN_LIMITATIONS.md#18-sketch-dsl-has-no-arcellipsespline-primitive)
-and tracked as `TCAD-DSL-1`.
+**Fixed (partially), same session:** added `Ellipse2D` (standalone shape,
+verified exact against `pi*x_radius*y_radius`) and `Path2D` (`line`+`arc`
+segments, verified exact against analytic areas and genuinely watertight
+when revolved/extruded — see `examples/curved_vase.yaml`, a curved-shoulder
+vase impossible to build from `polygon` alone). `spline` and `ellipse_arc`
+were attempted and deliberately **not** shipped — both produced silently
+wrong geometry (a non-watertight solid for spline mixed with other
+segments; a cusp-tangent instead of rounded cap for `ellipse_arc`) rather
+than a clean error, so shipping either would have reintroduced exactly the
+failure mode the rest of this session was fixing. Full detail — including a
+retracted false "OCCT bug" claim from the investigation's own broken
+verification tooling — in
+[KNOWN_LIMITATIONS.md #18](../../KNOWN_LIMITATIONS.md#18-fixed-partially--sketch-dsl-had-no-arcellipsespline-primitive)
+and `tiacad_core/sketch.py`'s `Path2D` docstring. Tracked as `TCAD-DSL-2`.
 
 ---
 

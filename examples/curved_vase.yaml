@@ -1,0 +1,53 @@
+schema_version: "3.0"
+
+metadata:
+  name: Curved Vase (Path2D line/arc demo)
+  description: >
+    Demonstrates the `path` sketch shape (TCAD-DSL-1): a profile built from
+    a sequence of `line` and `arc` segments, revolved into a vase with a
+    genuinely curved shoulder -- something the `polygon` shape (straight
+    edges only) cannot express without hand-faceting the curve into many
+    points. Compare to examples/bottle_revolve.yaml, whose neck transition
+    is a sharp polygon corner rather than a smooth curve.
+  version: "1.0"
+  author: TIA
+
+parameters:
+  base_radius: 20
+  base_height: 25
+  shoulder_arc_mid_radius: 18   # arc control point -- how far the shoulder bulges
+  shoulder_arc_mid_height: 32
+  neck_radius: 8
+  neck_height: 40
+  lip_height: 45
+
+sketches:
+  vase_profile:
+    plane: XZ
+    origin: [0, 0, 0]
+    shapes:
+      - type: path
+        start: [0, 0]
+        segments:
+          - line: ["${base_radius}", 0]
+          - line: ["${base_radius}", "${base_height}"]
+          - arc:
+              through: ["${shoulder_arc_mid_radius}", "${shoulder_arc_mid_height}"]
+              to: ["${neck_radius}", "${neck_height}"]
+          - line: ["${neck_radius}", "${lip_height}"]
+          - line: [0, "${lip_height}"]
+        closed: true
+
+parts:
+  _placeholder:
+    primitive: box
+    parameters: {width: 1, height: 1, depth: 1}
+
+operations:
+  vase:
+    type: revolve
+    sketch: vase_profile
+    axis: Z
+
+export:
+  default_part: vase
