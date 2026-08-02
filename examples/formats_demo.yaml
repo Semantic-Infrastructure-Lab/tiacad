@@ -67,7 +67,7 @@ operations:
     finish: fillet
     input: demo_box
     radius: '${corner_radius}'
-    edges: all
+    edges: {parallel_to: Z}
 
 export:
   default_part: demo_box_filleted

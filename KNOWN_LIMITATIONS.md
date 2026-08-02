@@ -873,6 +873,47 @@ whole unused formula), `examples/pcb_standoff_assembly.yaml` (and its
 fix — the rule now exists to catch them; triaging 8 existing files is
 follow-on work. Tracked as `TCAD-BUG-2`.
 
+**Follow-on triage (2026-08-02, `TCAD-BUG-5`):** all 8 files resolved. Two
+had genuinely dead params, deleted (`lego_brick_2x1`/`3x1`'s `inner_post_*`,
+superseded years ago by `connection_tube_*`; `week5_assembly`'s
+`gear_spacing`, a single-gear file with nothing to space). Four had the
+param declared with a comment showing the exact formula but the dependent
+value hardcoded as a literal instead of a real `${...}` expression —
+rewired so the value stays parametric (`pcb_standoff_assembly.yaml` + its
+`trust/` copy, `formats_demo.yaml`, `thing38359_inside.yaml`). All rewired
+values evaluate to the same numbers as before, so no `expect:` contract
+changed.
+
+### 22. Fixed (example only, not upstream) — filleting all 12 edges of a box exports a non-watertight STL, even though the underlying solid is topologically valid
+
+**Found while fixing `TCAD-BUG-5`'s wiring of `formats_demo.yaml`'s
+`corner_radius`** (2026-08-02): `edges: all` on a box fillet operation
+builds a perfectly valid OCCT solid (`BRepCheck_Analyzer` reports valid;
+CadQuery itself never errors) — but `Shape.exportStl()` reproducibly
+tessellates it into a mesh with 8 disconnected fragments (one per box
+corner) plus the body: 9 components, not watertight, regardless of
+`tolerance`/`angularTolerance`/`relative`/`parallel` export settings tried,
+and regardless of fillet radius (reproduced at radius 1 through 9mm on a
+50×50×20mm box). The crack sits at the ~0.01mm seam where three
+mutually-perpendicular edge fillets meet at a corner and OCCT's
+independent per-face tessellation doesn't produce conforming triangles
+across that boundary — a real upstream CadQuery/OCCT STL-export
+limitation, not a tiacad bug, and not fixable by adjusting mesh tolerance
+(confirmed: finer tolerance changes triangle count, not the crack).
+Filleting edges that don't all share a common vertex — e.g. only the 4
+edges `{parallel_to: Z}` on a box, the realistic "rounded pillar" case —
+tessellates cleanly with zero cracks.
+
+**Fix applied:** `examples/formats_demo.yaml` changed its fillet operation
+from `edges: all` to `edges: {parallel_to: Z}` (vertical edges only) —
+still demonstrates the fillet finishing operation and all three export
+formats, now exports watertight. No code fix exists for the general
+"fillet all edges of a box" case; avoid that specific edge-selector
+pattern (all edges around a shared vertex) until/unless the upstream OCCT
+tessellation limitation is worked around with a mesh-repair pass. Tracked
+as `TCAD-4` (closed as this example fix; the general limitation itself is
+not separately tracked since there's no forcing use case for it yet).
+
 ---
 
 ## Test Health
