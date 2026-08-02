@@ -1219,18 +1219,19 @@ notes_next: 3
 ## TASK-TCAD-4 · formats_demo.yaml exports non-watertight mesh (fillet on box, pre-existing)
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 30m
 tags: [bug, examples, watertightness]
 created: '2026-08-02T19:31:44Z'
-updated: '2026-08-02T19:31:51Z'
+updated: '2026-08-02T19:43:43Z'
 session: airless-antimatter-0802
 links:
   references:
   - examples/formats_demo.yaml
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-08-02T19:43:43Z session:airless-antimatter-0802] Root-caused: filleting all 12 edges of a box builds a valid OCCT solid but exports a non-watertight STL (9 fragments) regardless of tessellation tolerance/radius -- upstream CadQuery/OCCT tessellation limitation at corner seams, not a tiacad bug. Confirmed via BRepCheck_Analyzer (solid valid) and swept tolerance/radius (crack persists at every setting tried). Fixed formats_demo.yaml by changing edges: all -> edges: {parallel_to: Z} (vertical edges only), which tessellates cleanly. Documented as KNOWN_LIMITATIONS.md #22.
