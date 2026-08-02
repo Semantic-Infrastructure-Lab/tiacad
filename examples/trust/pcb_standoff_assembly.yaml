@@ -58,10 +58,10 @@ parameters:
   pcb_thickness: 2
   corner_x: 38
   corner_y: 30
-  plate_top_z: 2.5
+  plate_top_z: '${plate_thickness / 2}'
   standoff_height: 10
-  standoff_center_z: 7.5
-  pcb_center_z: 13.5
+  standoff_center_z: '${plate_top_z + standoff_height / 2}'
+  pcb_center_z: '${plate_top_z + standoff_height + pcb_thickness / 2}'
 
 parts:
   plate:

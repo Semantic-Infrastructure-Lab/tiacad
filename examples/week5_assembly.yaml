@@ -6,7 +6,6 @@ description: Build a simple mechanism using orientation-aware transforms
 
 parameters:
   bracket_height: 25
-  gear_spacing: 10
 
 parts:
   # Base platform

@@ -66,7 +66,7 @@ operations:
     type: finishing
     finish: fillet
     input: demo_box
-    radius: 2.0
+    radius: '${corner_radius}'
     edges: all
 
 export:

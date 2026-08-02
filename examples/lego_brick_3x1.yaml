@@ -63,8 +63,6 @@ parameters:
   # Hollow underside structure
   wall_thickness: 1.5               # Wall thickness for hollow bottom
   bottom_thickness: 1.0             # Floor thickness
-  inner_post_radius: 3.25           # Support posts under studs
-  inner_post_height: '${brick_height - bottom_thickness - 0.1}'
 
   # Connection geometry (underside)
   connection_tube_outer_radius: 3.25    # Tubes that grip onto other studs

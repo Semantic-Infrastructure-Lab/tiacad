@@ -84,9 +84,9 @@ parameters:
 
   # Derived Z positions (see diagram in header)
   standoff_height: 10
-  plate_top_z: 2.5     # plate_thickness / 2
-  standoff_center_z: 7.5   # plate_top_z + standoff_height / 2
-  pcb_center_z: 13.5   # plate_top_z + standoff_height + pcb_thickness / 2
+  plate_top_z: '${plate_thickness / 2}'
+  standoff_center_z: '${plate_top_z + standoff_height / 2}'
+  pcb_center_z: '${plate_top_z + standoff_height + pcb_thickness / 2}'
 
 parts:
   # Base mounting plate — flat (thickness in Z so standoffs align naturally)

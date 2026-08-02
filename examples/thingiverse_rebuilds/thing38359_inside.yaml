@@ -66,9 +66,9 @@ sketches:
           - - 7.67
             - 60.34
           - - 7.67
-            - 98.04
+            - "${overall_height}"
           - - 0
-            - 98.04
+            - "${overall_height}"
         closed: true
 
   interior_profile:

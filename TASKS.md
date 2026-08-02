@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 4
+next_id: 5
 archival: inline
 areas:
   VAL: 14
@@ -1174,21 +1174,22 @@ notes_next: 4
 ## TASK-TCAD-BUG-5 · Triage 8 pre-existing example files with dead (unreferenced) parameters, found by new UnusedParametersRule
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 1h
 tags: [parameters, examples, cleanup]
 created: '2026-08-02T18:47:43Z'
-updated: '2026-08-02T18:47:43Z'
+updated: '2026-08-02T19:31:51Z'
 session: luminous-shade-0802
 links:
   references:
   - docs/developer/CASE_STUDY_MODELING_AN_EGG.md
+notes_next: 2
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-08-02T19:31:51Z session:airless-antimatter-0802] All 8 files triaged and fixed: lego_brick_2x1/3x1 (dead inner_post_* params, superseded by connection_tube_* — deleted), week5_assembly (dead gear_spacing, single gear no pattern — deleted), pcb_standoff_assembly.yaml + trust/ copy (plate_top_z/standoff_height wired into standoff_center_z/pcb_center_z expressions, same numeric result), formats_demo.yaml (corner_radius wired into fillet radius), thing38359_inside.yaml (overall_height wired into polygon points). Verified: 0 remaining unused-param warnings, all expect: contracts still pass, test_assembly_validator.py 35/35 green. Filed TCAD-4 for an unrelated pre-existing non-watertight formats_demo.yaml export found during verification.
 
 
 ## TASK-TCAD-DSL-2 · ellipse_arc/spline as Path2D segments: both attempted, both hit real geometry defects, not shipped
@@ -1213,3 +1214,23 @@ notes_next: 3
 ### Notes
 - [#1 2026-08-02T19:16:20Z session:luminous-shade-0802] Blocked on: (a) correct angle1/angle2/sense derivation for ellipse_arc so composed arcs meet the axis perpendicular like a real ellipsoid cap; (b) root-causing why spline mixed with other Path2D segment types produces a non-watertight solid. Both need dedicated investigation time, not a quick fix.
 - [#2 2026-08-02T19:16:31Z session:luminous-shade-0802] Correcting status: this is unscoped future work with no forcing use case, matching TCAD-BUG-5/TCAD-FIN-1/TCAD-API-1 convention -- not blocked on anyone, so 'held' was the wrong status, not 'blocked'. Re-filed as backlog.
+
+
+## TASK-TCAD-4 · formats_demo.yaml exports non-watertight mesh (fillet on box, pre-existing)
+
+```yaml
+status: backlog
+priority: low
+effort: 30m
+tags: [bug, examples, watertightness]
+created: '2026-08-02T19:31:44Z'
+updated: '2026-08-02T19:31:51Z'
+session: airless-antimatter-0802
+links:
+  references:
+  - examples/formats_demo.yaml
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
