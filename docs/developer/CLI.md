@@ -437,12 +437,22 @@ tiacad audit examples/*.yaml --verbose
 
 ### `tiacad validate-geometry` - Check Printability
 
-Validates that geometry is watertight and has no disconnected parts.
+Validates that geometry is watertight and has no disconnected parts, then prints an
+advisory **Printability** section. The advisory checks never change the exit code.
 
 **Usage:**
 ```bash
-tiacad validate-geometry INPUT [-p PART] [-v]
+tiacad validate-geometry INPUT [-p PART] [-v] [--bed XxYxZ] [--min-wall MM] [--overhang-angle DEG]
 ```
+
+- `--bed XxYxZ` - printer build volume in mm. Reports whether the part fits as modeled, or
+  only when rotated (which model axis goes to which bed axis), or not at all.
+- `--min-wall MM` - warn when the thinnest sampled wall is below this (default 0.8).
+  Thickness is estimated by casting rays inward from 20,000 sampled surface points, so a
+  feature thinner than the sampling density can be missed; treat it as an estimate.
+- `--overhang-angle DEG` - faces overhanging more than this from vertical count as needing
+  support (default 45). The report gives the area and share of the surface, with +Z up as
+  modeled; faces resting on the bed are excluded.
 
 ```bash
 # Validate geometry of a model
@@ -450,6 +460,9 @@ tiacad validate-geometry examples/bracket.yaml
 
 # Check a specific part
 tiacad validate-geometry examples/assembly.yaml --part final_assembly
+
+# Will it print on a 250x210x200 bed, and is anything too thin?
+tiacad validate-geometry examples/sticker_drawer/sticker_bin.yaml --bed 250x210x200
 ```
 
 ---

@@ -75,6 +75,9 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
     validate_geom_parser.add_argument('input', help='Input YAML file')
     validate_geom_parser.add_argument('-p', '--part', help='Specific part to validate (default: last operation)')
     validate_geom_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with component details')
+    validate_geom_parser.add_argument('--bed', metavar='XxYxZ', help='Printer build volume in mm, e.g. 250x210x200: report whether the part fits (as modeled, or rotated)')
+    validate_geom_parser.add_argument('--min-wall', type=float, metavar='MM', help='Warn when the thinnest sampled wall is below this (default 0.8)')
+    validate_geom_parser.add_argument('--overhang-angle', type=float, metavar='DEG', help='Faces overhanging more than this from vertical count as needing support (default 45)')
     validate_geom_parser.set_defaults(func=cmd_validate_geometry)
 
     # Check command

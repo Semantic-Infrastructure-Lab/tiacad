@@ -63,6 +63,32 @@ def _print_geometry_outcome(stats: dict, issues: list, parse_time: float, export
         return 1
 
 
+def _print_printability(mesh, args) -> None:
+    """Advisory print checks (build volume, wall thickness, overhangs); never changes the exit code."""
+    from ..validation.printability import (
+        DEFAULT_MIN_WALL, DEFAULT_OVERHANG_ANGLE, printability_warnings,
+    )
+
+    print_header("🖨  Printability (advisory)")
+    print()
+    try:
+        info, warnings = printability_warnings(
+            mesh,
+            bed=getattr(args, 'bed_dims', None),
+            min_wall=getattr(args, 'min_wall', None) or DEFAULT_MIN_WALL,
+            overhang_angle=getattr(args, 'overhang_angle', None) or DEFAULT_OVERHANG_ANGLE,
+        )
+    except Exception as e:  # advisory: a failed estimate must not fail validation
+        print_warning(f"Printability checks skipped: {e}")
+        print()
+        return
+    for line in info:
+        print(f"  {line}")
+    for line in warnings:
+        print_warning(line)
+    print()
+
+
 def cmd_validate_geometry(args):
     """
     Validate geometry of built parts for 3D printing.
@@ -72,6 +98,9 @@ def cmd_validate_geometry(args):
     - Watertight meshes (no holes or gaps)
     - Positive volumes
     - No degenerate faces
+
+    Then reports advisory printability: build-volume fit (--bed), thinnest sampled
+    wall (--min-wall) and overhang area (--overhang-angle). These never fail the run.
     """
     from ..backend_support import require_cadquery_part
     from ..parser.tiacad_parser import TiaCADParser
@@ -87,6 +116,14 @@ def cmd_validate_geometry(args):
     if not input_file.exists():
         print_error(f"File not found: {input_file}")
         return 1
+
+    if getattr(args, 'bed', None):
+        from ..validation.printability import parse_bed_spec
+        try:
+            args.bed_dims = parse_bed_spec(args.bed)
+        except ValueError as e:
+            print_error(str(e))
+            return 1
 
     print_info(f"Validating {Colors.CYAN}{input_file.name}{Colors.RESET}")
     print()
@@ -131,7 +168,9 @@ def cmd_validate_geometry(args):
                 'components': len(components),
             }
             issues = _collect_geometry_issues(stats, components, args)
-            return _print_geometry_outcome(stats, issues, parse_time, export_time)
+            status = _print_geometry_outcome(stats, issues, parse_time, export_time)
+            _print_printability(mesh, args)
+            return status
 
         finally:
             tmp_path.unlink(missing_ok=True)
