@@ -1289,17 +1289,19 @@ _(no notes yet)_
 ## TASK-TCAD-UX-12 · Trust render: add depth cues/cross-section view; anchor markers clutter; PNG lands next to the input YAML
 
 ```yaml
-status: in_progress
+status: done
 priority: low
 effort: 1d
 tags: [render, dx]
 created: '2026-10-16T18:29:16Z'
-updated: '2026-10-16T19:12:03Z'
+updated: '2026-10-16T19:33:04Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/sticker_bin_trust.png
-notes_next: 3
+  commits:
+  - b2fd9abbfc5882ef5fd1dd860aa8b135ed41a892
+notes_next: 4
 ```
 
 Flat shading makes the Top/Bottom views of an open box a solid rectangle (cavity invisible). Wants a section view and/or light shading. Anchor crosshairs dominate small parts. Default output writes <stem>_trust.png into the source directory (dropped 3 PNGs into examples/); consider a build-output dir or documenting -o.
@@ -1308,6 +1310,7 @@ Flat shading makes the Top/Bottom views of an open box a solid rectangle (cavity
 ### Notes
 - [#1 2026-10-16T18:53:08Z session:turbo-nexus-1016] Correction: the crosshair markers are validation-issue markers (orange=warning, blue=info), NOT anchors; the 4 warnings on the sticker bin are false positives (filed as the VAL task). Implemented: (1) depth-shaded ortho panels (darker = farther, floor 55%), (2) render --section AXIS=VALUE: capped cutaway, cap = slice + vtkContourTriangulator (vtkClipClosedSurface mis-fills concave U profiles; cap areas verified exact vs hand calc 226.08/304.16/569.28 mm2), (3) render --no-markers, (4) -o/default-path documented in CLI.md. Default output path deliberately NOT changed: examples/trust and thingiverse_rebuilds commit *_trust.png beside the YAML. Tests: 91 pass in test_visualization/test_trust_renderer.py + test_cli. Not yet committed.
 - [#2 2026-10-16T19:12:03Z session:turbo-nexus-1016] Final: also widened tiacad-schema.json (parts required unless the doc imports; if/then keeps the 'Missing required field parts' message) because the import-only fit_check.yaml was rejected by test_every_example_validates_against_schema; +2 schema tests, +get_schema_info reads then.required. Determinism goldens added for the 4 sticker_drawer models only. Test sweep (correctness, schema, docs, visualization, cli, visual_regression): 855 pass; 14 fail, none from this change: 13 differential tests need manifold3d (not installed here), and v3_bracket_mount golden_volume differs in the last float digit (255576.8426929166 vs ...163). Found while verifying: TCAD-UX-13 (render of import-heavy models), TCAD-VAL-14 (false-positive hole warnings). Awaiting commit approval; then tt done --commit.
+- [#3 2026-10-16T19:33:04Z session:cobalt-flash-1016] render --section, depth-shaded panels, --no-markers shipped
 
 
 ## TASK-TCAD-DSL-3 · Inline cut shorthand: collapse cutter-part + difference boilerplate for pockets/slots
