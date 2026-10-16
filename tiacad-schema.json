@@ -1038,6 +1038,23 @@
               "gap": {
                 "type": "number",
                 "description": "Expected gap along the normal for a flush relation (default 0)"
+              },
+              "clearance": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "Two part names whose true solid-to-solid minimum distance must lie within [min, max] (0 when touching or overlapping)"
+              },
+              "min": {
+                "type": "number",
+                "description": "Lower bound (mm) for a clearance relation, within tol.length"
+              },
+              "max": {
+                "type": "number",
+                "description": "Upper bound (mm) for a clearance relation, within tol.length"
               }
             },
             "additionalProperties": false

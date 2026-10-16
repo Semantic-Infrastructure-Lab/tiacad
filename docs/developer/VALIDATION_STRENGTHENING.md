@@ -308,8 +308,18 @@ expect:                        # <-- the model declares its own ground truth
   relations:                   # for assemblies (Tier 4)
     - { flush: [top.face_bottom, base.face_top], gap: 0 }
     - { coaxial: [screw.axis_z, hole.axis_z] }
+    - { clearance: [lid, base], min: 0.15, max: 0.25 }   # true solid-to-solid distance
   tol: { length: 0.5, volume: 50 }
 ```
+
+`clearance: [partA, partB]` (with `min:` and/or `max:`, within `tol.length`) asserts the exact
+minimum distance between two named parts' solids (`GeometryBackend.get_distance`; 0 when they
+touch or interpenetrate). Where `no_overlap` only proves a gap is not negative, this proves it
+is the designed value. Caveat: it is a *whole-part* minimum, so a gap is invisible while the
+parts touch elsewhere (a divider resting on a bin floor measures 0). Probe it by measuring a
+translated copy that breaks the incidental contact; see
+`examples/sticker_drawer/fit_check_clearance.yaml`, which imports `fit_check.yaml` and asserts
+the 0.2 mm slot and 0.15 mm clip-leg gaps that way.
 
 Then **one** generic, parametrized test discovers every `.tiacad` with an
 `expect:` block and validates it — no per-example test code ever again:

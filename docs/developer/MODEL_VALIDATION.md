@@ -108,7 +108,8 @@ For a new or changed model, review in this order:
 
 1. **Build it** with normal parser/schema checks when appropriate.
 2. **Measure the final/default part**: extents, center, volume, mesh facts.
-3. **Check explicit relationships**: contact, alignment, symmetry, clearance.
+3. **Check explicit relationships**: contact, alignment, symmetry, clearance. Clearance is a contract relation (`clearance: [a, b], min:, max:`, see
+   [VALIDATION_STRENGTHENING.md](VALIDATION_STRENGTHENING.md) section 4.1).
 4. **Inspect the trust render** for spatial mistakes that have no contract yet.
 5. **Compare against a prior debug bundle** when reviewing a regression.
 6. **Promote repeated manual checks into contracts** once intent is clear.

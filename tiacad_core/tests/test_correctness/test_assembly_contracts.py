@@ -111,6 +111,63 @@ class TestNoOverlapEngine:
         assert any(v.check == "no_overlap" for v in result.violations)
 
 
+class TestClearanceEngine:
+    """Synthetic coverage for contracts.py::_check_clearance (relations: - clearance: [a, b])."""
+
+    @staticmethod
+    def _doc(relation, offset=12.0, tol=None):
+        # Two 10mm cubes along X: centres `offset` apart, so the true gap is offset - 10.
+        a = _cq_part("a", cq.Workplane("XY").box(10, 10, 10))
+        b = _cq_part("b", cq.Workplane("XY").center(offset, 0).box(10, 10, 10))
+        expect = {"final": "a", "relations": [relation]}
+        if tol:
+            expect["tol"] = tol
+        return TestNoOverlapEngine._FakeDoc({"a": a, "b": b}, expect)
+
+    def test_gap_inside_min_max_passes(self):
+        result = check_contract(self._doc({"clearance": ["a", "b"], "min": 1.5, "max": 2.5}))
+        assert result.ok, result.summary()
+
+    def test_gap_below_min_fails(self):
+        result = check_contract(self._doc({"clearance": ["a", "b"], "min": 2.5}))
+        assert not result.ok
+        assert any(v.check == "clearance" and "below min" in v.message for v in result.violations)
+
+    def test_gap_above_max_fails(self):
+        result = check_contract(self._doc({"clearance": ["a", "b"], "max": 1.5}))
+        assert not result.ok
+        assert any(v.check == "clearance" and "above max" in v.message for v in result.violations)
+
+    def test_tight_length_tol_distinguishes_close_values(self):
+        # true gap 2.0: min=2.05 passes at the default 0.1 tol, fails at 0.01
+        rel = {"clearance": ["a", "b"], "min": 2.05}
+        assert check_contract(self._doc(rel)).ok
+        assert not check_contract(self._doc(rel, tol={"length": 0.01})).ok
+
+    def test_touching_parts_fail_a_positive_min_with_note(self):
+        result = check_contract(self._doc({"clearance": ["a", "b"], "min": 0.5}, offset=10.0))
+        assert not result.ok
+        assert "touch or interpenetrate" in result.violations[0].message
+
+    def test_interpenetrating_parts_measure_zero(self):
+        result = check_contract(self._doc({"clearance": ["a", "b"], "min": 0.5}, offset=5.0))
+        assert not result.ok
+
+    def test_requires_min_or_max(self):
+        result = check_contract(self._doc({"clearance": ["a", "b"]}))
+        assert not result.ok
+        assert "min / max" in result.violations[0].message
+
+    def test_missing_part_is_a_violation_not_a_crash(self):
+        result = check_contract(self._doc({"clearance": ["a", "nope"], "min": 1}))
+        assert not result.ok
+        assert any(v.check == "clearance" for v in result.violations)
+
+    def test_bad_pair_is_a_violation(self):
+        result = check_contract(self._doc({"clearance": ["a"], "min": 1}))
+        assert not result.ok
+
+
 class TestT4CorpusHandVerified:
     """Second, independently-derived check on the Tier 4 corpus's relational
     claims -- direct get_bounds() math, not a call through check_contract().

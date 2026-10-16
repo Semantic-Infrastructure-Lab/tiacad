@@ -252,6 +252,17 @@
     "part": "assembly",
     "volume": 167338.60800000068
   },
+  "examples/sticker_drawer/fit_check_clearance.yaml": {
+    "bbox": [
+      72.0,
+      2.0,
+      50.45
+    ],
+    "canonical_mesh_hash": "cf6111559027f52595e58b40008c64304bd30d75b60bdf0feb8f7d644491ad9a",
+    "mesh_hash": "1d69914ea8c92ce28d3ec1bb2d854fe8f59a7c9d2b897e0c1a99782f19115c8b",
+    "part": "divider_probe",
+    "volume": 6688.800000000001
+  },
   "examples/sticker_drawer/sticker_bin.yaml": {
     "bbox": [
       74.0,

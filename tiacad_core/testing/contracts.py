@@ -184,6 +184,47 @@ def _check_relation(
     return ContractViolation('relation', f"unrecognized relation keys: {list(relation.keys())}")
 
 
+def _check_clearance(doc, relation: Dict[str, Any], tol_length: float) -> Optional[ContractViolation]:
+    """Solid-to-solid minimum distance between two named parts must lie in [min, max].
+
+    Complements ``no_overlap``: that proves a clearance is not negative, this
+    proves it is the designed value. Uses the backend's exact minimum distance
+    (0.0 for touching or interpenetrating parts), with ``tol.length`` slack on
+    both bounds. At least one of ``min`` / ``max`` is required.
+    """
+    pair = relation['clearance']
+    if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+        return ContractViolation('clearance', f"expected a 2-element [partA, partB] pair, got {pair!r}")
+    lo, hi = relation.get('min'), relation.get('max')
+    if lo is None and hi is None:
+        return ContractViolation('clearance', f"{list(pair)!r} needs at least one of min / max")
+    a_name, b_name = pair
+    if not doc.parts.exists(a_name) or not doc.parts.exists(b_name):
+        return ContractViolation(
+            'clearance',
+            f"part(s) not found: {a_name!r}={doc.parts.exists(a_name)}, {b_name!r}={doc.parts.exists(b_name)}",
+        )
+    a_part = doc.parts.get(a_name)
+    b_part = doc.parts.get(b_name)
+    try:
+        distance = float(a_part.backend.get_distance(a_part.geometry, b_part.geometry))
+    except Exception as e:  # noqa: BLE001 - surface any measure failure as a violation
+        return ContractViolation('clearance', f"could not measure {a_name!r}/{b_name!r}: {e}")
+
+    if lo is not None and distance < lo - tol_length:
+        note = " (parts touch or interpenetrate)" if distance <= tol_length else ""
+        return ContractViolation(
+            'clearance',
+            f"{a_name!r}/{b_name!r} distance={distance:.4f} below min {lo} (tol {tol_length}){note}",
+        )
+    if hi is not None and distance > hi + tol_length:
+        return ContractViolation(
+            'clearance',
+            f"{a_name!r}/{b_name!r} distance={distance:.4f} above max {hi} (tol {tol_length})",
+        )
+    return None
+
+
 def _check_no_overlap(doc, pair: List[str], tol_volume: float) -> Optional[ContractViolation]:
     """No-interpenetration check: sum of two named parts' volumes must equal
     the volume of their union, within tolerance. Parts that only touch (or
@@ -292,7 +333,10 @@ def check_contract(doc) -> ContractResult:
     if expect.get('relations'):
         resolver = SpatialResolver(doc.parts, doc.references)
         for relation in expect['relations']:
-            violation = _check_relation(resolver, relation, tol_length)
+            if 'clearance' in relation:
+                violation = _check_clearance(doc, relation, tol_length)
+            else:
+                violation = _check_relation(resolver, relation, tol_length)
             if violation is not None:
                 violations.append(violation)
 

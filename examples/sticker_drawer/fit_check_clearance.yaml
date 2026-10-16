@@ -1,0 +1,47 @@
+schema_version: "3.0"
+
+metadata:
+  name: Sticker Drawer Fit Check - Designed Clearances
+  description: >
+    Asserts the DESIGNED gaps of fit_check.yaml (divider-in-slot 0.2 mm/side, clip legs
+    0.15 mm/leg) as real solid-to-solid distances. In the assembly itself the divider rests
+    on the bin floor and the clip plate on the rim, so whole-part distance there is 0.0 by
+    design; lifting a copy 1 mm clears those contacts and leaves only the lateral gap, which
+    is what each `clearance` relation then measures. Probes live here (not in fit_check.yaml)
+    so the assembly's render and extents stay clean. Units mm.
+
+imports:
+  - path: ./fit_check.yaml
+    as: fc
+
+operations:
+  divider_probe:
+    type: transform
+    input: fc.divider_placed
+    transforms:
+      - translate: [0, 0, 1]
+
+  clip_probe:
+    type: transform
+    input: fc.clip_placed
+    transforms:
+      - translate: [0, 0, 1]
+
+export:
+  default_part: divider_probe
+
+expect:
+  final: divider_probe
+  tol: { length: 0.01 }
+  relations:
+    # divider slot: 72 mm divider in a 72.4 mm slot -> 0.2 mm per side (X); Y clearance equal
+    - clearance: [divider_probe, fc.bin_a.sticker_bin]
+      min: 0.2
+      max: 0.2
+    # clip legs: clip_gap 0.3 total -> 0.15 mm per leg against each bin's inside wall face
+    - clearance: [clip_probe, fc.bin_a.sticker_bin]
+      min: 0.15
+      max: 0.15
+    - clearance: [clip_probe, fc.bin_b_placed]
+      min: 0.15
+      max: 0.15
