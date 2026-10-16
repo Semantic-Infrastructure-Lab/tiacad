@@ -4,13 +4,28 @@ TiaCAD CLI entry point
 
 Makes it easy to run: ./tiacad build examples/plate.yaml
 Or install with: pip install -e . (then just 'tiacad')
+
+When the repo has a .venv, this launcher re-runs itself under it, so a checkout always uses
+the pinned stack (Python >= 3.11, cadquery >= 2.8, manifold3d) even if the shell's python3 is
+older. Set TIACAD_NO_VENV=1 to run under whatever interpreter started it.
 """
 
 import sys
 import os
 
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_VENV = os.path.join(_HERE, '.venv')
+_VENV_PYTHON = os.path.join(_VENV, 'bin', 'python')
+
+if (
+    os.path.exists(_VENV_PYTHON)
+    and os.path.realpath(sys.prefix) != os.path.realpath(_VENV)
+    and not os.environ.get('TIACAD_NO_VENV')
+):
+    os.execv(_VENV_PYTHON, [_VENV_PYTHON, os.path.abspath(__file__), *sys.argv[1:]])
+
 # Add tiacad_core to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _HERE)
 
 from tiacad_core.cli import main
 

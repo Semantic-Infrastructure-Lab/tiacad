@@ -15,6 +15,11 @@ cd tiacad
 ./tiacad --help
 ```
 
+If the checkout has a `.venv`, `./tiacad` re-runs itself under it, so it uses the pinned stack
+(Python >= 3.11, cadquery >= 2.8, manifold3d) even when the shell's `python3` is older. Set
+`TIACAD_NO_VENV=1` to use whichever interpreter started it. Run tests the same way:
+`.venv/bin/python -m pytest tiacad_core`.
+
 ### Option 2: Python Module
 
 ```bash
