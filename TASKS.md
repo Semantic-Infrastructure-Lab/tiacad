@@ -1243,17 +1243,19 @@ notes_next: 2
 ## TASK-TCAD-UX-10 · Flow-style YAML with ${...} fails with an unhelpful parse error (parameters: {width: ${w}}, origin: [${x}, ...])
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 2h
 tags: [dx, yaml]
 created: '2026-10-16T18:29:13Z'
-updated: '2026-10-16T20:39:27Z'
+updated: '2026-10-16T20:55:23Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/sticker_bin.yaml
-notes_next: 4
+  commits:
+  - 5e2c71b5a951210e8bde8b1f0b0150a6997e36dd
+notes_next: 5
 ```
 
 Found modeling the sticker-drawer bin. Inline mappings/sequences containing ${param} are invalid YAML because '{' opens a flow mapping, and the error ('expected , or } but got {') never mentions ${}. Options: pre-quote ${...} spans before yaml.safe_load, or catch the parse error and add a hint to use block style. Repro: parameters: {width: ${a}, depth: 5, height: 5} on a box part.
@@ -1263,6 +1265,7 @@ Found modeling the sticker-drawer bin. Inline mappings/sequences containing ${pa
 - [#1 2026-10-16T18:35:30Z session:turbo-nexus-1016] Correction after reading YAML_REFERENCE: docs quote every template ('${w}') and quoted flow-style works (tested). Real gap is only the error text and that the docs never state why quoting is needed; KNOWN_LIMITATIONS #16 covers the -${expr} case. Fix = hint in the parse error + one sentence in YAML_REFERENCE Parameters.
 - [#2 2026-10-16T19:25:23Z session:turbo-nexus-1016] Docs half done 2026-10-16: YAML_REFERENCE.md Parameters now has 'Quoting ${...} in inline YAML' (and the Document Structure block says parts is required unless imports). Remaining: the parse-error hint in code.
 - [#3 2026-10-16T20:39:27Z session:cobalt-flash-1016] Started by mistake in turbo/cobalt session 2026-10-16 (command interrupted); no work done. Docs half already shipped (YAML_REFERENCE 'Quoting ${...}').
+- [#4 2026-10-16T20:55:23Z session:babewugo-1016] Parse-error hint added in yaml_with_lines.py; docs half shipped earlier. 5 tests.
 
 
 ## TASK-TCAD-UX-11 · Add a section/probe CLI command (e.g. tiacad section FILE --plane y=79.5) reporting wall/floor/slot thicknesses
@@ -1343,20 +1346,24 @@ sticker_bin.yaml needs 4 cutter box parts (cavity, 2 slots, finger cut) each wit
 ## TASK-TCAD-DSL-4 · Declare units in metadata (units: mm|in) and warn on mismatch
 
 ```yaml
-status: future
+status: done
 priority: low
 effort: 1d
 tags: [dsl, units]
 created: '2026-10-16T18:29:19Z'
-updated: '2026-10-16T18:29:20Z'
+updated: '2026-10-16T21:02:02Z'
 session: turbo-nexus-1016
+links:
+  commits:
+  - 44061ce44124670325c5ea825bbe8839d60a6656
+notes_next: 2
 ```
 
 All values are implicitly mm. Inch-spec'd designs (sticker-drawer spec) are converted by hand. A units field (with optional conversion) would catch silent mm/inch mix-ups. Idea; confirm there is demand first.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-16T21:02:02Z session:babewugo-1016] Implemented option B: unit-suffixed literals in parameter values, ${...} expressions and --set. No metadata.units field or mismatch lint (bare numbers stay mm). 16 tests; full suite 2334 passed.
 
 
 ## TASK-TCAD-VAL-14 · Validation false positives on box-shaped cutters: HoleEdgeProximity warns 'very close to edge' (37mm!) on pockets/slots; FeatureBounds INFO on intentional overshoot
