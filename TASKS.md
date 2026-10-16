@@ -1267,23 +1267,26 @@ Found modeling the sticker-drawer bin. Inline mappings/sequences containing ${pa
 ## TASK-TCAD-UX-11 · Add a section/probe CLI command (e.g. tiacad section FILE --plane y=79.5) reporting wall/floor/slot thicknesses
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 1d
 tags: [cli, validation]
 created: '2026-10-16T18:29:14Z'
-updated: '2026-10-16T18:29:14Z'
+updated: '2026-10-16T20:15:17Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/sticker_bin.yaml
+  commits:
+  - 0ec2a88e5fe9859a3fe8cc0a8e143f7bdff72fa5
+notes_next: 2
 ```
 
 Verifying wall (1.6), slot skin (0.8), floor (2.0) and cutout height on the sticker bin required hand-slicing the STL with trimesh; its ray queries failed without rtree. check only reports bbox+volume per part and measure works between named references. A section command that lists material intervals along an axis line or plane would make thin-feature verification routine.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-16T20:15:17Z session:cobalt-flash-1016] tiacad section --plane/--line; verified 0.8 skin/1.6 wall/2.0 floor/14 cutout on sticker_bin; 26 tests
 
 
 ## TASK-TCAD-UX-12 · Trust render: add depth cues/cross-section view; anchor markers clutter; PNG lands next to the input YAML
@@ -1358,23 +1361,27 @@ _(no notes yet)_
 ## TASK-TCAD-VAL-14 · Validation false positives on box-shaped cutters: HoleEdgeProximity warns 'very close to edge' (37mm!) on pockets/slots; FeatureBounds INFO on intentional overshoot
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 3h
 tags: [validation, false-positive]
 created: '2026-10-16T18:53:08Z'
-updated: '2026-10-16T18:53:08Z'
+updated: '2026-10-16T20:12:22Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/sticker_bin.yaml
+  commits:
+  - 2f3015417b2469b44a8e01618618fe2692f05f42
+notes_next: 3
 ```
 
 sticker_bin.yaml (cavity, 2 slots, finger_cut: box cutters in a difference) yields 4 WARNINGs + 2 INFOs, every one intended. Hole 'cavity' 'very close to edge(s)' with distances of 37 mm: the rule treats any subtracted part as a round hole, estimates radius from the bbox (half the cutter width), so a 70 mm pocket is 'close' to a 74 mm wall. Rectangular pockets/slots/notches are not holes. Also 'extends beyond parent' INFO fires for cutters that deliberately overshoot the shell so the cut is clean (standard CAD practice). Fix direction: only apply HoleEdgeProximity to cutters that are actually cylindrical (backend.get_cylindrical_radius already exists, TCAD-ARCH-7), and don't flag deliberate through-cut overshoot. The warnings were the orange/blue crosshair markers on the render, which is why they read as clutter (TCAD-UX-12).
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-16T20:12:22Z session:cobalt-flash-1016] Residual: finger_cut (corner notch exiting -Y and +Z) still gets one INFO, deliberately: overshoot on 2+ axes cannot be told apart from a cutter partly off the part without an intent signal. Volume outside the base does not separate them (cavity 4%, notch 52%).
+- [#2 2026-10-16T20:12:22Z session:cobalt-flash-1016] HoleEdgeProximity cylinder-only; FeatureBounds skips single-axis face openings; bin 4W+2I -> 0W+1I
 
 
 ## TASK-TCAD-UX-13 · Trust render of a model that imports components draws the components' internal parts (cutters, shells) as solids
@@ -1430,25 +1437,28 @@ build/check/render/verify cannot override a parameter; only imports: can. Fit-te
 ## TASK-TCAD-VAL-15 · validate-geometry printability report: min wall thickness, overhangs, build-volume fit (--bed XxYxZ)
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 effort: 1d
 tags: [validation, printing]
 created: '2026-10-16T19:17:00Z'
-updated: '2026-10-16T19:17:08Z'
+updated: '2026-10-16T20:03:57Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/sticker_bin.yaml
   relates_to:
   - TCAD-VAL-17
+  commits:
+  - 83b47e79cf0c153e433bbe05b324ee95775dd446
+notes_next: 2
 ```
 
 validate-geometry only checks watertight + component count. For print work it should also report: minimum wall thickness (the sticker bin's 0.8 mm slot skin is the weak point), faces steeper than a configurable overhang angle needing support, and whether the part fits a build volume (--bed 250x210x200, trying axis-aligned orientations). Had to ask the user their bed size because nothing could check the 236 mm bin. Keep it advisory (warnings), with thresholds as flags.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-16T20:03:57Z session:cobalt-flash-1016] printability section in validate-geometry (--bed/--min-wall/--overhang-angle); hand-computed tests; bin 0.80 mm skin and clip 49.0 mm2 overhang match closed form
 
 
 ## TASK-TCAD-VAL-16 · Contract relation: clearance (true minimum distance between two parts)
@@ -1480,21 +1490,24 @@ no_overlap proves a clearance is not negative but not that it is the designed 0.
 ## TASK-TCAD-VAL-17 · Contract: min thickness assertion (thickness: {min: 0.8}) for walls, floors and slot skins
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 1d
 tags: [contracts, validation]
 created: '2026-10-16T19:17:03Z'
-updated: '2026-10-16T19:17:08Z'
+updated: '2026-10-16T20:22:36Z'
 session: turbo-nexus-1016
 depends_on: [TCAD-UX-11]
 links:
   references:
   - examples/sticker_drawer/sticker_bin.yaml
+  commits:
+  - f488d3b7abc4837d29c56b10c14236806e7410c3
+notes_next: 2
 ```
 
 Thin features in the sticker bin (1.6 wall, 2.0 floor, 0.8 slot skin) are verified only by volume and by eye in a --section render. A numeric min-thickness contract would make them regress-proof. Pairs with TCAD-UX-11 (section/probe command) which can share the sampling code; the printability report task can reuse it for min wall reporting.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-16T20:22:36Z session:cobalt-flash-1016] thickness contract; sticker_bin asserts 0.8 skin; --set slot_d=1.0 fails with location
