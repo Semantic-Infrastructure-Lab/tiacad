@@ -10,7 +10,9 @@ from .component_importer import ComponentImporter
 from .parameter_resolver import ParameterResolver
 from .yaml_with_lines import parse_yaml_with_lines, LineTracker
 from .errors import TiaCADParserError
-from .parse_pipeline import parse_tiacad_dict, normalize_yaml_aliases, extract_yaml_sections
+from .parse_pipeline import (
+    apply_parameter_overrides, parse_tiacad_dict, normalize_yaml_aliases, extract_yaml_sections,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -273,6 +275,7 @@ class TiaCADParser:
         validate_schema: bool = False,
         build_graph: bool = False,
         backend: Optional["GeometryBackend"] = None,
+        param_overrides: Optional[Dict[str, Any]] = None,
     ) -> TiaCADDocument:
         """
         Parse a TiaCAD YAML file.
@@ -281,6 +284,7 @@ class TiaCADParser:
             file_path: Path to YAML file
             validate_schema: If True, validate against JSON schema before parsing
             build_graph: If True, build dependency graph (for DAG features)
+            param_overrides: Replace declared top-level parameters (unknown names rejected)
 
         Returns:
             TiaCADDocument ready for export
@@ -311,6 +315,7 @@ class TiaCADParser:
             line_tracker=line_tracker,
             yaml_string=yaml_string,
             backend=backend,
+            param_overrides=param_overrides,
         )
 
     @staticmethod
@@ -410,10 +415,11 @@ class TiaCADParser:
         line_tracker: Optional[LineTracker] = None,
         yaml_string: Optional[str] = None,
         backend: Optional["GeometryBackend"] = None,
+        param_overrides: Optional[Dict[str, Any]] = None,
     ) -> TiaCADDocument:
         """Parse TiaCAD data from a dict; returns TiaCADDocument or raises TiaCADParserError."""
         return parse_tiacad_dict(
-            yaml_data,
+            apply_parameter_overrides(yaml_data, param_overrides, file_path=file_path),
             document_factory=TiaCADDocument,
             supported_schema_versions=TiaCADParser.SUPPORTED_SCHEMA_VERSIONS,
             load_imports=ComponentImporter.load_imports,

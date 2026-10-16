@@ -3,6 +3,7 @@
 import traceback
 from pathlib import Path
 
+from ._common import _echo_overrides, _override_tag, _parse_set_args
 from .output import Colors, print_error, print_info, print_success, print_warning
 
 
@@ -18,8 +19,12 @@ def _render_section(args, input_file: Path) -> int:
 
     try:
         axis, value = parse_section_spec(args.section)
-        output_path = _resolve_render_output_path(input_file, args.output, suffix="_section")
-        doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema)
+        overrides = _parse_set_args(getattr(args, 'set', None))
+        _echo_overrides(overrides)
+        output_path = _resolve_render_output_path(
+            input_file, args.output, suffix="_section" + _override_tag(overrides))
+        doc = TiaCADParser.parse_file(
+            str(input_file), validate_schema=args.validate_schema, param_overrides=overrides)
         written_path = render_section(doc, str(output_path), axis, value, title=input_file.stem)
         print_success(f"Section render written to {Colors.CYAN}{written_path}{Colors.RESET}")
         return 0
@@ -44,10 +49,13 @@ def cmd_render(args):
     if getattr(args, "section", None):
         return _render_section(args, input_file)
 
-    output_path = _resolve_render_output_path(input_file, args.output)
-
     try:
-        doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema)
+        overrides = _parse_set_args(getattr(args, 'set', None))
+        _echo_overrides(overrides)
+        output_path = _resolve_render_output_path(
+            input_file, args.output, suffix="_trust" + _override_tag(overrides))
+        doc = TiaCADParser.parse_file(
+            str(input_file), validate_schema=args.validate_schema, param_overrides=overrides)
         report = AssemblyValidator().validate_document(doc)
         written_path = render_trust(
             doc, str(output_path), title=input_file.stem,

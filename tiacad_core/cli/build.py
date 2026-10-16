@@ -4,6 +4,7 @@ import time
 import traceback
 from pathlib import Path
 
+from ._common import _echo_overrides, _override_tag, _parse_set_args
 from .output import Colors, print_error, print_header, print_info, print_success, print_warning
 
 
@@ -23,9 +24,9 @@ def _show_dep_graph(args, doc, input_file: Path) -> None:
         print()
 
 
-def _resolve_build_output(input_file: Path, output_arg: str | None) -> Path | None:
-    """Resolve and validate the build output path."""
-    output_file = Path(output_arg) if output_arg else input_file.with_suffix('.3mf')
+def _resolve_build_output(input_file: Path, output_arg: str | None, tag: str = "") -> Path | None:
+    """Resolve and validate the build output path (tag keeps a --set variant off the default file)."""
+    output_file = Path(output_arg) if output_arg else input_file.with_name(f"{input_file.stem}{tag}.3mf")
     output_ext = output_file.suffix.lower()
     if output_ext not in ['.stl', '.3mf', '.step']:
         print_error(f"Unsupported output format: {output_ext}")
@@ -132,7 +133,13 @@ def cmd_build(args):
         print_error(f"File not found: {input_file}")
         return 1
 
-    output_file = _resolve_build_output(input_file, args.output)
+    try:
+        overrides = _parse_set_args(getattr(args, 'set', None))
+    except ValueError as e:
+        print_error(str(e))
+        return 1
+
+    output_file = _resolve_build_output(input_file, args.output, _override_tag(overrides))
     if output_file is None:
         return 1
 
@@ -140,9 +147,11 @@ def cmd_build(args):
     try:
         build_graph = (args.show_deps is not None)
         print_info(f"Building {Colors.CYAN}{input_file}{Colors.RESET}")
+        _echo_overrides(overrides)
         start_time = time.time()
 
-        doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema, build_graph=build_graph)
+        doc = TiaCADParser.parse_file(str(input_file), validate_schema=args.validate_schema, build_graph=build_graph,
+                                     param_overrides=overrides)
         parse_time = time.time() - start_time
 
         _show_dep_graph(args, doc, input_file)

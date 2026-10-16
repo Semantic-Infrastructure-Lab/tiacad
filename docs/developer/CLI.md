@@ -509,6 +509,27 @@ tiacad --help
 tiacad build --help
 ```
 
+### Parameter overrides (`--set`)
+
+`build`, `check`, `render` and `verify` accept `--set NAME=VALUE` (repeatable) to build a
+variant of one model without editing the YAML:
+
+```bash
+tiacad check examples/sticker_drawer/sticker_clip.yaml --set gap=0.4
+tiacad build examples/sticker_drawer/sticker_clip.yaml --set gap=0.2 --set leg_t=1.0 -o clip_g02.stl
+```
+
+- Values are read as YAML, so `0.4` is a number, `true` a boolean, anything else a string.
+- Overrides replace top-level `parameters:` and go through normal resolution, so derived
+  parameters (`${2 * wall + gap}`) recompute.
+- An unknown name is an error that lists the valid parameters (a typo never silently builds the default).
+- Applied overrides are echoed (`Overrides: gap=0.4`).
+- With no `-o`, `build` and `render` add the overrides to the default filename
+  (`sticker_clip_gap-0.4.3mf`, `sticker_clip_trust_gap-0.4.png`) so a variant cannot overwrite
+  the committed default output.
+- `verify` / `check --contract` still evaluate the file's `expect:` block, which is written for the
+  default values, so a variant can legitimately fail it (`verify` prints a reminder).
+
 ---
 
 ## Features

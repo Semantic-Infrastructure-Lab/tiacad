@@ -161,6 +161,31 @@ def extract_yaml_sections(yaml_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def apply_parameter_overrides(
+    yaml_data: Dict[str, Any],
+    overrides: Optional[Dict[str, Any]],
+    *,
+    file_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Return yaml_data with top-level parameters replaced by overrides.
+
+    Overrides go through the normal parameter resolution (derived ${...}
+    parameters recompute). Unknown names are rejected with the valid list so a
+    typo cannot silently build the default model. Input is not mutated.
+    """
+    if not overrides:
+        return yaml_data
+    declared = yaml_data.get('parameters') or {}
+    unknown = sorted(set(overrides) - set(declared))
+    if unknown:
+        raise TiaCADParserError(
+            f"Unknown parameter override(s): {', '.join(unknown)}. "
+            f"Valid parameters: {', '.join(sorted(declared)) or '(none declared)'}",
+            file_path=file_path,
+        )
+    return {**yaml_data, 'parameters': {**declared, **overrides}}
+
+
 def prepare_build_context(
     yaml_data: Dict[str, Any],
     *,

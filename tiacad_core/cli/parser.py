@@ -53,6 +53,7 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
     build_parser.add_argument('--validate-schema', action='store_true', help='Enable JSON schema validation')
     build_parser.add_argument('--show-deps', choices=['text', 'dot', 'both'], help='Show dependency graph (text summary or Graphviz DOT)')
     build_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
+    build_parser.add_argument('--set', action='append', metavar='NAME=VALUE', help="Override a top-level parameter, e.g. --set gap=0.4 (repeatable; derived ${...} parameters recompute; unknown names are rejected)")
     build_parser.set_defaults(func=cmd_build)
 
     # Validate command
@@ -87,6 +88,7 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
         '--contract', action='store_true',
         help="Also check the file's embedded expect: block against the built geometry"
     )
+    check_parser.add_argument('--set', action='append', metavar='NAME=VALUE', help="Override a top-level parameter, e.g. --set gap=0.4 (repeatable; derived ${...} parameters recompute; unknown names are rejected)")
     check_parser.set_defaults(func=cmd_check)
 
     # Measure command
@@ -109,6 +111,7 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
     verify_parser.add_argument('input', help='Input YAML file')
     verify_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback on error')
     verify_parser.add_argument('--json', action='store_true', help='Print machine-readable result JSON to stdout')
+    verify_parser.add_argument('--set', action='append', metavar='NAME=VALUE', help="Override a top-level parameter, e.g. --set gap=0.4 (repeatable; derived ${...} parameters recompute; unknown names are rejected)" + " - note: the file's expect: contract is written for the default values and may legitimately fail on a variant")
     verify_parser.set_defaults(func=cmd_verify)
 
     # Audit command
@@ -147,6 +150,7 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
     render_parser.add_argument('--no-markers', action='store_true', help='Hide validation-issue markers (the orange/blue crosshairs) on the overview render')
     render_parser.add_argument('--validate-schema', action='store_true', help='Enable JSON schema validation')
     render_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
+    render_parser.add_argument('--set', action='append', metavar='NAME=VALUE', help="Override a top-level parameter, e.g. --set gap=0.4 (repeatable; derived ${...} parameters recompute; unknown names are rejected)")
     render_parser.set_defaults(func=cmd_render)
 
     # Debug command

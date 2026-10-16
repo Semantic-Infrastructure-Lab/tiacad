@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from .output import Colors, print_error, print_warning
+from .output import Colors, print_error, print_info, print_warning
 
 
 def _resolve_file_list(patterns):
@@ -79,3 +79,35 @@ def _format_parameter_summary(parameters: dict) -> str:
     """Format resolved parameters for compact CLI display."""
     pairs = [f"{Colors.CYAN}{key}{Colors.RESET}={value}" for key, value in parameters.items()]
     return "  " + "  ".join(pairs)
+
+
+def _parse_set_args(items):
+    """Turn repeated --set NAME=VALUE flags into a {name: value} dict.
+
+    VALUE is read as YAML so numbers and booleans keep their type (0.4 -> float,
+    true -> bool); anything else stays a string. Raises ValueError on a bad item.
+    """
+    import yaml
+
+    overrides = {}
+    for item in items or []:
+        name, sep, raw = item.partition('=')
+        name = name.strip()
+        if not sep or not name:
+            raise ValueError(f"--set expects NAME=VALUE, got '{item}'")
+        value = yaml.safe_load(raw)
+        if isinstance(value, (dict, list)) or value is None:
+            raise ValueError(f"--set {name}: value must be a number, boolean or string, got '{raw}'")
+        overrides[name] = value
+    return overrides
+
+
+def _echo_overrides(overrides):
+    """Print applied overrides so a printed variant stays traceable."""
+    if overrides:
+        print_info("Overrides: " + ", ".join(f"{k}={v}" for k, v in overrides.items()))
+
+
+def _override_tag(overrides):
+    """Filename suffix for a parameter variant, e.g. '_gap-0.4' ('' when none)."""
+    return "".join(f"_{k}-{v}" for k, v in sorted(overrides.items()))

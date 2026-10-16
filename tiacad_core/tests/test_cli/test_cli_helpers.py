@@ -559,3 +559,113 @@ def test_cmd_render_section_rejects_bad_spec(tmp_path, capsys):
 
     assert rc == 1
     assert "Invalid section" in capsys.readouterr().err
+
+
+# --- --set parameter overrides (TCAD-UX-14) ---
+
+_SET_MODEL = """
+schema_version: "3.0"
+parameters:
+  w: 10
+  h: 4
+  area_w: ${w * 2}
+parts:
+  slab:
+    primitive: box
+    parameters:
+      width: ${area_w}
+      depth: 5
+      height: ${h}
+    origin: corner
+"""
+
+
+def _write_set_model(tmp_path):
+    f = tmp_path / "slab.yaml"
+    f.write_text(_SET_MODEL)
+    return f
+
+
+def test_parse_set_args_types_values():
+    from tiacad_core.cli._common import _parse_set_args
+
+    assert _parse_set_args(["gap=0.4", "n=3", "on=true", "name=abc"]) == {
+        "gap": 0.4, "n": 3, "on": True, "name": "abc",
+    }
+    assert _parse_set_args(None) == {}
+
+
+def test_parse_set_args_rejects_malformed():
+    import pytest
+    from tiacad_core.cli._common import _parse_set_args
+
+    for bad in ("gap", "=3", "gap=", "gap=[1,2]"):
+        with pytest.raises(ValueError):
+            _parse_set_args([bad])
+
+
+def test_override_tag_is_sorted_and_empty_without_overrides():
+    from tiacad_core.cli._common import _override_tag
+
+    assert _override_tag({}) == ""
+    assert _override_tag({"b": 2, "a": 0.4}) == "_a-0.4_b-2"
+
+
+def test_parse_file_override_recomputes_derived_parameter(tmp_path):
+    f = _write_set_model(tmp_path)
+
+    default = TiaCADParser.parse_file(str(f))
+    variant = TiaCADParser.parse_file(str(f), param_overrides={"w": 20})
+
+    assert default.parameters["area_w"] == 20
+    assert variant.parameters["area_w"] == 40
+    from tiacad_core.testing.dimensions import get_dimensions
+
+    assert get_dimensions(default.get_part("slab"))["width"] == 20
+    assert get_dimensions(variant.get_part("slab"))["width"] == 40
+
+
+def test_parse_file_override_unknown_name_lists_valid(tmp_path):
+    import pytest
+    from tiacad_core.parser.errors import TiaCADParserError
+
+    f = _write_set_model(tmp_path)
+
+    with pytest.raises(TiaCADParserError, match=r"Unknown parameter override.*ww.*Valid parameters: area_w, h, w"):
+        TiaCADParser.parse_file(str(f), param_overrides={"ww": 1})
+
+
+def test_parse_file_override_does_not_mutate_input_dict(tmp_path):
+    from tiacad_core.parser.parse_pipeline import apply_parameter_overrides
+
+    data = {"parameters": {"a": 1}}
+    out = apply_parameter_overrides(data, {"a": 2})
+
+    assert out["parameters"] == {"a": 2}
+    assert data["parameters"] == {"a": 1}
+
+
+def test_resolve_build_output_tags_variant(tmp_path):
+    out = _resolve_build_output(tmp_path / "box.yaml", None, "_gap-0.4")
+
+    assert out == tmp_path / "box_gap-0.4.3mf"
+
+
+def test_cmd_check_set_unknown_parameter_fails(tmp_path, capsys):
+    from tiacad_core.cli import cmd_check
+
+    f = _write_set_model(tmp_path)
+    rc = cmd_check(SimpleNamespace(input=str(f), contract=False, verbose=False, set=["nope=1"]))
+
+    assert rc == 1
+    assert "Unknown parameter override" in capsys.readouterr().err + ""
+
+
+def test_cmd_check_set_echoes_override(tmp_path, capsys):
+    from tiacad_core.cli import cmd_check
+
+    f = _write_set_model(tmp_path)
+    rc = cmd_check(SimpleNamespace(input=str(f), contract=False, verbose=False, set=["w=20"]))
+
+    assert rc == 0
+    assert "Overrides: w=20" in capsys.readouterr().out

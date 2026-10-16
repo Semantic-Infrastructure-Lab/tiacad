@@ -5,6 +5,8 @@ import time
 from pathlib import Path
 
 from ._common import (
+    _echo_overrides,
+    _parse_set_args,
     _format_parameter_summary,
     _get_default_part_name,
     _get_part_display_type,
@@ -105,8 +107,10 @@ def cmd_check(args):
     print()
 
     try:
+        overrides = _parse_set_args(getattr(args, 'set', None))
+        _echo_overrides(overrides)
         start_time = time.time()
-        doc = TiaCADParser.parse_file(str(input_file))
+        doc = TiaCADParser.parse_file(str(input_file), param_overrides=overrides)
         parse_time = time.time() - start_time
 
         if getattr(args, 'contract', False):

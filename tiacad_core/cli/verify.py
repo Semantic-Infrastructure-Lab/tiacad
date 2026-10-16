@@ -4,7 +4,8 @@ import json
 import traceback
 from pathlib import Path
 
-from .output import print_error, print_success
+from ._common import _echo_overrides, _parse_set_args
+from .output import print_error, print_success, print_warning
 
 
 def cmd_verify(args):
@@ -25,7 +26,9 @@ def cmd_verify(args):
         return 1
 
     try:
-        doc = TiaCADParser.parse_file(str(input_file))
+        overrides = _parse_set_args(getattr(args, 'set', None))
+        _echo_overrides(overrides)
+        doc = TiaCADParser.parse_file(str(input_file), param_overrides=overrides)
         result = check_contract(doc)
     except ContractError as e:
         print_error(f"{input_file.name}: {e}")
@@ -42,6 +45,8 @@ def cmd_verify(args):
         print_success(result.summary())
     else:
         print_error(result.summary())
+        if overrides:
+            print_warning("Contract is written for the default parameter values; failures under --set may be expected")
 
     if args.json:
         print(json.dumps({
