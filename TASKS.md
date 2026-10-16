@@ -1380,45 +1380,51 @@ _(no notes yet)_
 ## TASK-TCAD-UX-13 · Trust render of a model that imports components draws the components' internal parts (cutters, shells) as solids
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 effort: 4h
 tags: [render, imports]
 created: '2026-10-16T18:58:17Z'
-updated: '2026-10-16T18:58:17Z'
+updated: '2026-10-16T19:59:50Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/fit_check.yaml
+  commits:
+  - 715ad8e931004d435948a2706b8d75318a2d7fbf
+notes_next: 2
 ```
 
 Repro: examples/sticker_drawer/fit_check.yaml imports sticker_bin.yaml twice + divider + clip and unions the finished parts. tiacad render shows a 22-entry legend (bin_a.shell, bin_a.cavity, bin_a.slot, bin_a.finger_cut, ...) and scene extents Z=64.8/Y=237.6 vs the real assembly 52.8/236 (build, verify and validate-geometry all agree on 52.8/236). Cause: ComponentImporter._import_file clones every part of the component into the importer's registry as 'ns.part' but drops the component's operations, so _collect_visible_part_names (trust_renderer.py) never sees that ns.cavity etc. were consumed by ns.sticker_bin; it then falls back to rendering all unconsumed parts, and _collect_component_parts treats ns.sticker_bin as an opaque leaf instead of the difference it is. --section is affected too (cavity box shows as solid). Fix direction: have the importer record which imported parts the component's own ops consume (or the component's default part) and have the renderer hide those; do not hide imported parts merely for being unreferenced (a doc may display an imported part directly). Add a test with a component whose op consumes helper parts.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-16T19:59:50Z session:cobalt-flash-1016] importer flags component-internal parts; fit_check legend 22->4, extents 148x236x52.8; 6 new tests
 
 
 ## TASK-TCAD-UX-14 · CLI parameter overrides: --set NAME=VALUE on build/check/render/verify
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 effort: 3h
 tags: [cli, parameters]
 created: '2026-10-16T19:16:58Z'
-updated: '2026-10-16T19:16:58Z'
+updated: '2026-10-16T19:43:16Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/sticker_clip.yaml
+  commits:
+  - a33fed173eed56efa1e0c47b87ba755be424b5f2
+notes_next: 2
 ```
 
 build/check/render/verify cannot override a parameter; only imports: can. Fit-testing wants variants of one model (clips at gap 0.2/0.3/0.4) without editing the YAML or writing a wrapper. Overrides must flow through the same parameter resolution as imports (so derived ${...} parameters recompute), reject unknown names with the list of valid ones, and be echoed in the output so a printed variant is traceable. Note an expect: contract written for the default values will legitimately fail on a variant; decide whether verify should skip or warn.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-16T19:43:16Z session:cobalt-flash-1016] --set on build/check/render/verify; variant filenames tagged; 11 new tests; full CLI/parser/docs/correctness suites show only the 14 known unrelated failures
 
 
 ## TASK-TCAD-VAL-15 · validate-geometry printability report: min wall thickness, overhangs, build-volume fit (--bed XxYxZ)
@@ -1448,17 +1454,19 @@ _(no notes yet)_
 ## TASK-TCAD-VAL-16 · Contract relation: clearance (true minimum distance between two parts)
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 effort: 3h
 tags: [contracts, validation]
 created: '2026-10-16T19:17:02Z'
-updated: '2026-10-16T19:17:08Z'
+updated: '2026-10-16T19:52:00Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/fit_check.yaml
-notes_next: 2
+  commits:
+  - aee22d1ff1ce1b8b3a15cd7c94f358141b88a3d8
+notes_next: 3
 ```
 
 no_overlap proves a clearance is not negative but not that it is the designed 0.2 mm, so fit_check.yaml's slot (0.2/side) and clip (0.15/leg) gaps are asserted only indirectly. Add relations: clearance: [partA, partB], min: 0.15 (optionally max) using the real solid-to-solid distance already available on the backend (Shape.distance(), see TCAD-ARCH-7 / get_distance). Include a negative-contract fixture so the check is proven able to fail.
@@ -1466,6 +1474,7 @@ no_overlap proves a clearance is not negative but not that it is the designed 0.
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-16T19:17:08Z session:turbo-nexus-1016] Related: TCAD-UX-3 shipped 'tiacad measure' (distance between two named spatial references). That is reference-point distance; this task is solid-to-solid minimum distance (gap between surfaces), so check whether measure can share the backend call before adding a second code path.
+- [#2 2026-10-16T19:52:00Z session:cobalt-flash-1016] clearance relation + schema + 9 tests; fit_check_clearance.yaml asserts measured 0.2/0.15 mm; negative control fails as expected
 
 
 ## TASK-TCAD-VAL-17 · Contract: min thickness assertion (thickness: {min: 0.8}) for walls, floors and slot skins
