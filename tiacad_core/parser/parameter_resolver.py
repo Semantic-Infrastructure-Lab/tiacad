@@ -33,6 +33,21 @@ class ParameterResolutionError(TiaCADError):
         self.is_circular = is_circular
 
 
+# Length units accepted as literal suffixes (9.5in); everything internal is mm.
+UNIT_TO_MM = {'mm': 1.0, 'cm': 10.0, 'in': 25.4, 'ft': 304.8}
+
+# `9.5in` inside an expression. No whitespace allowed (`3 in x` is Python membership),
+# and not preceded by a word char or '.', so identifiers like `x5mm` are left alone.
+_UNIT_LITERAL = re.compile(r"(?<![\w.])(\d+(?:\.\d*)?|\.\d+)(mm|cm|in|ft)(?!\w)")
+
+# A whole parameter value written as a unit literal: `9.5in`, `9.5 in`, `-2mm`.
+_UNIT_VALUE = re.compile(r"\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*(mm|cm|in|ft)\s*")
+
+
+def _to_mm(number: str, unit: str) -> float:
+    return round(float(number) * UNIT_TO_MM[unit], 9)
+
+
 class ParameterResolver:
     """
     Resolves ${...} expressions in parameter values.
@@ -168,12 +183,17 @@ class ParameterResolver:
             ParameterResolutionError: If evaluation fails
         """
         try:
+            # Convert unit literals (9.5in -> 241.3) before evaluation
+            converted = _UNIT_LITERAL.sub(
+                lambda m: repr(_to_mm(m.group(1), m.group(2))), expression
+            )
+
             # Build names dict with resolved parameters
             names = self._build_names_dict()
 
             # Evaluate using simpleeval (safe evaluation)
             result = simple_eval(
-                expression,
+                converted,
                 names=names,
                 functions=self.functions
             )
@@ -273,7 +293,11 @@ class ParameterResolver:
         try:
             self.resolution_stack.append(name)
             raw_value = self.raw_parameters[name]
-            resolved_value = self.resolve(raw_value)
+            unit_match = _UNIT_VALUE.fullmatch(raw_value) if isinstance(raw_value, str) else None
+            if unit_match:
+                resolved_value = _to_mm(*unit_match.groups())
+            else:
+                resolved_value = self.resolve(raw_value)
 
             # Cache result
             self.resolved_cache[name] = resolved_value

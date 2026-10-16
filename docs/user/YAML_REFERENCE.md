@@ -256,6 +256,24 @@ parameters:
 - Exponentiation: `${a ** b}`
 - Modulo: `${a % b}`
 
+### Units
+
+All lengths are millimetres internally. To write a dimension in other units, give it a unit
+suffix: `mm`, `cm`, `in` or `ft`. It is converted to mm when parameters are resolved.
+
+```yaml
+parameters:
+  drawer_len: 9.5in                  # whole value: 241.3
+  gap: 0.016in
+  inner: '${drawer_len - 2 * 0.1in}' # inside ${...}: no space between number and unit
+  tab: '${3mm + 1in}'                # units can be mixed
+```
+
+Unit suffixes work in `parameters:` values, inside `${...}` expressions, and with
+`--set NAME=9.5in`. They are not converted in other fields (a bare `9.5in` in `size:` or in
+text content stays a string); put the value in a parameter and reference it. A bare number
+is always mm. Inside `${...}` the number and unit must touch (`9.5in`, not `9.5 in`).
+
 ### Quoting `${...}` in inline YAML
 
 Inside an inline mapping or list (`{...}` / `[...]`), a bare `${w}` is invalid YAML because
