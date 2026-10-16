@@ -1015,6 +1015,19 @@
           "minimum": 1,
           "description": "Expected number of connected components"
         },
+        "thickness": {
+          "type": "object",
+          "description": "Minimum wall/floor/skin thickness of the final part, from a sampled inward-ray estimate (see `tiacad validate-geometry`). Checked within tol.length.",
+          "properties": {
+            "min": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Thinnest allowed wall in mm"
+            }
+          },
+          "required": ["min"],
+          "additionalProperties": false
+        },
         "relations": {
           "type": "array",
           "description": "Relational contracts between named parts (Tier 4 — assemblies)",

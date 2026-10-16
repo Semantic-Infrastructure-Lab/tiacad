@@ -321,6 +321,13 @@ translated copy that breaks the incidental contact; see
 `examples/sticker_drawer/fit_check_clearance.yaml`, which imports `fit_check.yaml` and asserts
 the 0.2 mm slot and 0.15 mm clip-leg gaps that way.
 
+`thickness: {min: mm}` (a sibling of `volume:`/`bbox:`, not a relation) asserts the final part's
+thinnest wall, floor or skin, within `tol.length`. It uses the same sampled inward-ray estimate
+as the Printability section of `tiacad validate-geometry`, with a fixed seed so the verdict is
+repeatable; it is an estimate (a feature thinner than the sampling density can be missed), so
+tighten `tol.length` when the minimum is a hard print limit. `examples/sticker_drawer/sticker_bin.yaml`
+asserts its 0.8 mm slot skin this way; `tiacad section` shows the individual thicknesses.
+
 Then **one** generic, parametrized test discovers every `.tiacad` with an
 `expect:` block and validates it — no per-example test code ever again:
 

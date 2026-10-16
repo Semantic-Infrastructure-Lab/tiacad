@@ -168,6 +168,43 @@ class TestClearanceEngine:
         assert not result.ok
 
 
+class TestThicknessContract:
+    """expect: thickness: {min: mm} (contracts.py::_check_thickness), against a shelled box
+    whose every wall is exactly 1.0 mm."""
+
+    @staticmethod
+    def _doc(thickness, tol=None, wall=1.0):
+        shelled = cq.Workplane("XY").box(20, 20, 20).faces(">Z").shell(-wall)
+        expect = {"final": "box", "thickness": thickness}
+        if tol:
+            expect["tol"] = tol
+        return TestNoOverlapEngine._FakeDoc({"box": _cq_part("box", shelled)}, expect)
+
+    def test_wall_at_or_above_min_passes(self):
+        assert check_contract(self._doc({"min": 0.8})).ok
+        assert check_contract(self._doc({"min": 1.0})).ok
+
+    def test_wall_below_min_fails_with_measured_value_and_location(self):
+        result = check_contract(self._doc({"min": 1.5}))
+        assert not result.ok
+        violation = next(v for v in result.violations if v.check == "thickness")
+        assert "1.0" in violation.message and "below min 1.5" in violation.message and "near (" in violation.message
+
+    def test_length_tol_is_slack_on_the_minimum(self):
+        # 1.0 mm wall vs min 1.05: passes at the default 0.1 tol, fails at 0.01
+        assert check_contract(self._doc({"min": 1.05})).ok
+        assert not check_contract(self._doc({"min": 1.05}, tol={"length": 0.01})).ok
+
+    def test_thinner_wall_is_caught(self):
+        assert not check_contract(self._doc({"min": 0.8}, wall=0.5)).ok
+
+    @pytest.mark.parametrize("bad", [{}, {"min": "thin"}, {"max": 2}, "0.8", None])
+    def test_malformed_spec_is_a_violation_not_a_crash(self, bad):
+        result = check_contract(self._doc(bad))
+        assert not result.ok
+        assert any(v.check == "thickness" for v in result.violations)
+
+
 class TestT4CorpusHandVerified:
     """Second, independently-derived check on the Tier 4 corpus's relational
     claims -- direct get_bounds() math, not a call through check_contract().

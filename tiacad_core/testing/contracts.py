@@ -225,6 +225,36 @@ def _check_clearance(doc, relation: Dict[str, Any], tol_length: float) -> Option
     return None
 
 
+def _check_thickness(part: Part, spec: Dict[str, Any], tol_length: float) -> Optional[ContractViolation]:
+    """Thinnest wall/floor/skin of the part must be at least ``min`` mm.
+
+    Uses the sampled inward-ray estimate behind `validate-geometry`'s printability report
+    (fixed seed, so the verdict is repeatable). It is an estimate: a feature thinner than the
+    sampling density can be missed, so a pass is strong evidence, not proof. ``tol.length``
+    slack applies, so tighten it (e.g. 0.01) when the minimum is a hard print limit.
+    """
+    from ..validation.printability import min_wall_thickness
+    from ..validation.section_probe import part_to_mesh
+
+    minimum = spec.get('min') if isinstance(spec, dict) else None
+    if not isinstance(minimum, (int, float)) or isinstance(minimum, bool):
+        return ContractViolation('thickness', f"expected thickness: {{min: <mm>}}, got {spec!r}")
+    try:
+        wall = min_wall_thickness(part_to_mesh(part))
+    except Exception as e:  # noqa: BLE001 - surface any measure failure as a violation
+        return ContractViolation('thickness', f"could not measure thickness: {e}")
+    if wall.min_thickness is None:
+        return ContractViolation('thickness', "no wall found by sampling; cannot confirm the minimum")
+    if wall.min_thickness < minimum - tol_length:
+        return ContractViolation(
+            'thickness',
+            f"thinnest sampled {wall.min_thickness:.4f} mm near "
+            f"({wall.location[0]:.2f}, {wall.location[1]:.2f}, {wall.location[2]:.2f}) "
+            f"below min {minimum} (tol {tol_length}, {wall.samples} samples)",
+        )
+    return None
+
+
 def _check_no_overlap(doc, pair: List[str], tol_volume: float) -> Optional[ContractViolation]:
     """No-interpenetration check: sum of two named parts' volumes must equal
     the volume of their union, within tolerance. Parts that only touch (or
@@ -314,6 +344,11 @@ def check_contract(doc) -> ContractResult:
                     'bbox',
                     f"{axis_name} actual={actual:.4f} expected={expected} (tol {tol_length})",
                 ))
+
+    if 'thickness' in expect:
+        violation = _check_thickness(part, expect['thickness'], tol_length)
+        if violation is not None:
+            violations.append(violation)
 
     if 'watertight' in expect or 'components' in expect:
         try:
