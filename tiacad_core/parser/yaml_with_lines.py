@@ -24,6 +24,7 @@ Usage:
     )
 """
 
+import re
 import yaml
 from typing import Dict, Any, Tuple, Optional, List
 
@@ -127,6 +128,10 @@ LinePreservingLoader.add_constructor(
 )
 
 
+# `${` directly after a flow/mapping indicator, i.e. not inside quotes.
+_UNQUOTED_INTERPOLATION = re.compile(r"(?:^|[:\[,{]\s*)\$\{")
+
+
 def _negative_interpolation_hint(yaml_string: str, error: "yaml.YAMLError") -> str:
     """
     Detect the `-${expr}` footgun: a negated `${...}` interpolation written
@@ -155,6 +160,29 @@ def _negative_interpolation_hint(yaml_string: str, error: "yaml.YAMLError") -> s
     )
 
 
+def _unquoted_interpolation_hint(yaml_string: str, error: "yaml.YAMLError") -> str:
+    """
+    Detect an unquoted `${...}` template inside inline (flow-style) YAML, e.g.
+    `parameters: {width: ${w}, depth: 5}` or `origin: [${x}, 0, 0]`. The `{`
+    after `$` opens a flow mapping, so PyYAML reports only "expected ',' or '}',
+    but got '{'", which never mentions the template. Quoting ('${w}') fixes it.
+
+    Returns an appended hint string (empty if this doesn't look like that case).
+    """
+    lines = yaml_string.splitlines()
+    for mark in (getattr(error, "problem_mark", None), getattr(error, "context_mark", None)):
+        if mark is None or not (0 <= mark.line < len(lines)):
+            continue
+        if _UNQUOTED_INTERPOLATION.search(lines[mark.line]):
+            return (
+                "\n\nHint: an unquoted `${...}` template inside inline YAML "
+                "(`{...}` or `[...]`) is invalid, because the `{` after `$` opens "
+                "a YAML mapping. Quote each template: `{width: '${w}'}`, "
+                "`['${x}', 0, 0]`, or use block style."
+            )
+    return ""
+
+
 def parse_yaml_with_lines(
     yaml_string: str,
     filename: Optional[str] = None
@@ -177,7 +205,7 @@ def parse_yaml_with_lines(
     try:
         data = yaml.load(yaml_string, Loader=LinePreservingLoader)
     except yaml.YAMLError as e:
-        hint = _negative_interpolation_hint(yaml_string, e)
+        hint = _negative_interpolation_hint(yaml_string, e) or _unquoted_interpolation_hint(yaml_string, e)
         raise ValueError(f"Invalid YAML: {e}{hint}")
 
     # Build line tracker
