@@ -124,6 +124,17 @@ manifold. See `KNOWN_LIMITATIONS.md` #19 for the full writeup and
 `test_build_stl_non_watertight_mesh_warns` — the latter using a minimal
 3-point bicone repro, not the full egg model).
 
+**Update (2026-08-02, TCAD-DSL-2 follow-up):** the advisory-warning-only fix
+above left a real gap for `examples/ellipsoid_egg.yaml` (the `ellipse_arc`
+Path2D demo, which touches the axis at both poles by construction) — it
+shipped a genuinely non-watertight STL with only a warning to show for it.
+The B-Rep solid is always valid in this class of case; OCCT's mesher just
+leaves a degenerate, zero-volume shard at the pinch point. `tiacad build`/
+`validate-geometry` now strip that shard automatically
+(`strip_degenerate_shards`, `tiacad_core/utils/mesh_repair.py`) and export a
+genuinely watertight STL instead of just warning about a broken one — see
+`KNOWN_LIMITATIONS.md` #19's own update note for detail.
+
 ---
 
 ## 4. Sketch DSL has no arc/ellipse/spline primitive — see `KNOWN_LIMITATIONS.md` #18
