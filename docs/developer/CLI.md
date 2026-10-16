@@ -254,6 +254,39 @@ tiacad render examples/sticker_drawer/sticker_bin.yaml --section y=79.5
 
 ---
 
+### `tiacad section` - Probe Thin Features at a Plane or Line
+
+Reports where a part is solid, so wall, floor and slot-skin thicknesses can be verified by
+number instead of by eye.
+
+**Usage:**
+```bash
+tiacad section INPUT --plane AXIS=VALUE [--step MM] [-p PART] [--set NAME=VALUE] [--json]
+tiacad section INPUT --line AXIS@A=V,B=V  [-p PART] [--set NAME=VALUE] [--json]
+```
+
+- `--plane y=79.5` scans lines every `--step` mm (default 1.0) across the plane, parallel to
+  each in-plane axis, and groups the solid interval lengths: thickness, how many lines saw
+  it, and where it was first seen.
+- `--line x@y=79.5,z=25.4` lists the solid intervals along one X line.
+- Exit code 1 when nothing is solid at the plane or line, or on a bad spec.
+- Thickness is the *axis-aligned* interval length: exact for walls, floors and skins
+  perpendicular to a scan axis, over-reported for oblique walls. For a whole-part minimum
+  that follows surface normals, see the Printability section of `validate-geometry`.
+
+```bash
+$ tiacad section examples/sticker_drawer/sticker_bin.yaml --plane y=79.5
+  Along X (solid interval lengths):
+    thickness mm    lines   first seen at (x, y, z)
+    0.80               96   (0.40, 79.50, 2.54)     # the slot skins
+    74.00               2   (37.00, 79.50, 0.51)    # across the floor
+  Along Z (solid interval lengths):
+    2.00               72   (1.50, 79.50, 1.00)     # the floor
+    50.80               2   (0.50, 79.50, 25.40)    # the side walls
+```
+
+---
+
 ### `tiacad debug` - Write AI/Debug Bundle
 
 Build a stable debug bundle for AI-assisted inspection and iterative debugging.

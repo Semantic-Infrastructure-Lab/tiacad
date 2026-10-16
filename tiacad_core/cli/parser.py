@@ -10,6 +10,7 @@ from .debug import cmd_debug
 from .info import cmd_info
 from .measure import cmd_measure
 from .render import cmd_render
+from .section import cmd_section
 from .validate import cmd_validate
 from .validate_geometry import cmd_validate_geometry
 from .verify import cmd_verify
@@ -155,6 +156,21 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
     render_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
     render_parser.add_argument('--set', action='append', metavar='NAME=VALUE', help="Override a top-level parameter, e.g. --set gap=0.4 (repeatable; derived ${...} parameters recompute; unknown names are rejected)")
     render_parser.set_defaults(func=cmd_render)
+
+    # Section command
+    section_parser = subparsers.add_parser(
+        'section',
+        help='Report where a part is solid (thin walls, floors, skins) at a plane or along a line'
+    )
+    section_parser.add_argument('input', help='Input YAML file')
+    section_parser.add_argument('-p', '--part', help='Specific part to probe (default: last operation)')
+    section_parser.add_argument('--plane', metavar='AXIS=VALUE', help='Scan the plane AXIS=VALUE (mm) along both in-plane axes and group solid thicknesses, e.g. y=79.5')
+    section_parser.add_argument('--line', metavar='AXIS@A=V,B=V', help='List solid intervals along one line, e.g. x@y=79.5,z=25.4')
+    section_parser.add_argument('--step', type=float, default=1.0, help='Spacing of scan lines for --plane, mm (default 1.0)')
+    section_parser.add_argument('--set', action='append', metavar='NAME=VALUE', help='Override a top-level parameter (repeatable)')
+    section_parser.add_argument('--json', action='store_true', help='Print machine-readable result JSON to stdout')
+    section_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
+    section_parser.set_defaults(func=cmd_section)
 
     # Debug command
     debug_parser = subparsers.add_parser(
