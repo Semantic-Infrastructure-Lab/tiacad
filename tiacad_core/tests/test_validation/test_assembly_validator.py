@@ -316,17 +316,52 @@ class TestBackendAwareValidation:
         assert radius == 3
         assert rule._estimate_hole_radius(bbox) == 10, "sanity check: bbox estimate would have been wrong"
 
-    def test_hole_edge_proximity_falls_back_to_bbox_for_non_cylindrical_geometry(self):
-        """Geometry with no cylindrical face (e.g. a slot cut from a box)
-        has nothing for the backend to query -> bbox estimate."""
+    def test_hole_edge_proximity_non_cylindrical_cutter_is_not_a_round_hole(self):
+        """A box-shaped cutter (slot/pocket) with a backend attached has no
+        cylindrical face: it is not a round hole, so there is no radius (TCAD-VAL-14)."""
         backend = MockBackend()
         hole_part = Part("hole", backend.create_box(6, 6, 20), backend=backend)
 
         rule = HoleEdgeProximityRule()
         bbox = rule._get_bounding_box(hole_part)
-        radius = rule._get_hole_radius(hole_part, bbox)
 
-        assert radius == rule._estimate_hole_radius(bbox)
+        assert rule._get_hole_radius(hole_part, bbox) is None
+
+    def test_hole_edge_proximity_without_backend_still_estimates_from_bbox(self):
+        hole_part = Part("hole", cq.Workplane("XY").box(6, 6, 20))  # no backend attached
+
+        rule = HoleEdgeProximityRule()
+        bbox = rule._get_bounding_box(hole_part)
+
+        assert rule._get_hole_radius(hole_part, bbox) == rule._estimate_hole_radius(bbox)
+
+    def test_hole_edge_proximity_large_box_pocket_is_not_flagged(self):
+        """Regression (TCAD-VAL-14): a 70 mm box pocket in a 74 mm part used to read as a
+        'hole' of radius 35 sitting 2 mm from the edge."""
+        backend = MockBackend()
+        base = Part("base", backend.create_box(74, 74, 20), backend=backend)
+        pocket = Part("pocket", backend.create_box(70, 70, 10), backend=backend)
+
+        rule = HoleEdgeProximityRule()
+        issues = rule._check_hole_proximity(
+            "pocket", {"base": base, "pocket": pocket}, "base", rule._get_bounding_box(base)
+        )
+
+        assert issues == []
+
+    def test_hole_edge_proximity_round_hole_near_edge_is_still_flagged(self):
+        """Positive control: the rule can still fire for a real cylindrical hole."""
+        backend = MockBackend()
+        base = Part("base", backend.create_box(20, 20, 20), backend=backend)
+        near_edge = backend.translate(backend.create_cylinder(radius=3, height=30), (8, 0, 0))
+        hole = Part("hole", near_edge, backend=backend)
+
+        rule = HoleEdgeProximityRule()
+        issues = rule._check_hole_proximity(
+            "hole", {"base": base, "hole": hole}, "base", rule._get_bounding_box(base)
+        )
+
+        assert len(issues) == 1
 
 
 class TestConnectivityChecks:
@@ -549,6 +584,26 @@ class TestBrepGeometryValidation:
         assert issues[0].world_position is not None
         expected = rule._part_center(subtract_part)
         assert issues[0].world_position == expected
+
+    def _fb_issues(self, backend, cutter_size, cutter_offset, base_size=(10, 10, 10)):
+        base = Part("base", backend.create_box(*base_size), backend=backend)
+        cutter = Part("cutter", backend.translate(backend.create_box(*cutter_size), cutter_offset), backend=backend)
+        operation = {"type": "boolean", "operation": "difference", "base": "base", "subtract": ["cutter"]}
+        return FeatureBoundsRule()._check_difference_op(operation, {"base": base, "cutter": cutter})
+
+    def test_feature_bounds_open_top_pocket_is_not_reported(self, backend):
+        """TCAD-VAL-14: overshooting one face with the other axes inside the base is a clean cut."""
+        # 6x6 footprint centred, 8 tall, raised so it pokes out of the +Z face only
+        assert self._fb_issues(backend, (6, 6, 8), (0, 0, 4)) == []
+
+    def test_feature_bounds_through_hole_traversing_both_ends_is_not_reported(self, backend):
+        assert self._fb_issues(backend, (4, 4, 30), (0, 0, 0)) == []
+
+    def test_feature_bounds_corner_notch_poking_two_axes_is_still_reported(self, backend):
+        assert len(self._fb_issues(backend, (6, 6, 6), (4, 4, 0))) == 1  # exits +X and +Y
+
+    def test_feature_bounds_cutter_wholly_beyond_base_is_still_reported(self, backend):
+        assert len(self._fb_issues(backend, (4, 4, 4), (20, 0, 0))) == 1  # removes nothing
 
     def test_boolean_gaps_issue_has_world_position_at_midpoint(self, backend):
         """

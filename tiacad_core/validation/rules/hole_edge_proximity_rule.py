@@ -4,7 +4,7 @@ Hole Edge Proximity Rule for TiaCAD Assembly Validator
 Detects holes positioned too close to edges that may get chopped off.
 """
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from ..validation_rule import ValidationRule
 from ..validation_types import ValidationIssue, Severity
 
@@ -110,6 +110,11 @@ class HoleEdgeProximityRule(ValidationRule):
         # Calculate hole properties
         hole_center = self._bbox_center(hole_bbox)
         hole_radius = self._get_hole_radius(hole_part, hole_bbox)
+        if hole_radius is None:
+            # A rectangular pocket/slot/notch is not a round hole: a radius estimated from
+            # its bbox (half the widest side) would flag any large pocket as "close to the
+            # edge" (a 70 mm pocket in a 74 mm wall reads as 37 mm from it). TCAD-VAL-14.
+            return issues
 
         # Check proximity to each face
         edge_warnings = self._check_all_faces(hole_center, hole_radius, base_bbox)
@@ -121,16 +126,14 @@ class HoleEdgeProximityRule(ValidationRule):
 
         return issues
 
-    def _get_hole_radius(self, hole_part, bbox) -> float:
+    def _get_hole_radius(self, hole_part, bbox) -> Optional[float]:
         """
-        Get hole radius from the real cylindrical BREP face when available,
-        falling back to a bounding-box estimate for backends/parts that
-        don't expose one (e.g. non-cylindrical holes, no backend attached).
+        Get hole radius from the real cylindrical BREP face. Returns None when a backend
+        is attached and the cutter is not cylindrical (not a round hole: skip it). Without
+        a backend there is nothing to query, so fall back to the bounding-box estimate.
         """
         if hole_part.backend is not None:
-            radius = hole_part.backend.get_cylindrical_radius(hole_part.geometry)
-            if radius is not None:
-                return radius
+            return hole_part.backend.get_cylindrical_radius(hole_part.geometry)
 
         return self._estimate_hole_radius(bbox)
 

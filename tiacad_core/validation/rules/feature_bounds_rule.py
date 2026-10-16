@@ -28,6 +28,30 @@ class FeatureBoundsRule(ValidationRule):
         ]
         return [msg for cond, msg in checks if cond]
 
+    def _is_clean_face_opening(self, subtract_bbox, base_bbox, tol) -> bool:
+        """True when the cutter crosses the base on exactly one axis and stays inside it on the other two.
+
+        That is a through-hole/through-slot or an open-top pocket: the overshoot is what
+        makes the cut clean, so it is not worth reporting. A cutter that pokes out on
+        several axes (a corner notch, or one partly off the part) still reports, as does
+        one that lies wholly beyond the base on its overflow axis (it removes nothing).
+        """
+        lo = (subtract_bbox.xmin, subtract_bbox.ymin, subtract_bbox.zmin)
+        hi = (subtract_bbox.xmax, subtract_bbox.ymax, subtract_bbox.zmax)
+        base_lo = (base_bbox.xmin, base_bbox.ymin, base_bbox.zmin)
+        base_hi = (base_bbox.xmax, base_bbox.ymax, base_bbox.zmax)
+        overflow_axes = [
+            a for a in range(3) if lo[a] < base_lo[a] - tol or hi[a] > base_hi[a] + tol
+        ]
+        if len(overflow_axes) != 1:
+            return False
+        axis = overflow_axes[0]
+        if not (lo[axis] < base_hi[axis] and hi[axis] > base_lo[axis]):
+            return False  # no overlap with the base along the overflow axis
+        return all(
+            lo[a] >= base_lo[a] - tol and hi[a] <= base_hi[a] + tol for a in range(3) if a != axis
+        )
+
     def _check_difference_op(self, operation, parts_dict) -> List[ValidationIssue]:
         """Check one boolean-difference operation for bound overflows. Returns any issues found."""
         base_name = self._get_operation_attr(operation, 'base') or self._get_operation_attr(operation, 'input')
@@ -48,6 +72,8 @@ class FeatureBoundsRule(ValidationRule):
             if not hasattr(subtract_part, 'geometry') or subtract_part.geometry is None:
                 continue
             subtract_bbox = self._get_bounding_box(subtract_part)
+            if self._is_clean_face_opening(subtract_bbox, base_bbox, tol):
+                continue
             overflows = self._bound_overflows(subtract_bbox, base_bbox, tol)
             if self._really_overflows(base_part, subtract_part, overflows):
                 issues.append(ValidationIssue(
