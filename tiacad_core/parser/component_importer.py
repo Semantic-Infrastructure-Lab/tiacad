@@ -314,10 +314,19 @@ class ComponentImporter:
             ) from e
 
         # Namespace all parts: {namespace}.{original_name}
+        # The component's own operations consume helper parts (shells, cutters);
+        # flag them so renderers draw only what the component finished with.
+        from .operation_inputs import consumed_part_names
+
+        part_names = doc.parts.list_parts()
+        internal = consumed_part_names(doc.operations, part_names)
+
         namespaced = PartRegistry()
-        for part_name in doc.parts.list_parts():
+        for part_name in part_names:
             part = doc.parts.get(part_name)
             namespaced_part = part.clone(f"{namespace}.{part_name}")
+            if part_name in internal:
+                namespaced_part.metadata['component_internal'] = True
             namespaced.add(namespaced_part)
 
         logger.info(
@@ -350,5 +359,6 @@ class ComponentImporter:
 class _ImportedComponentDocument:
     """Minimal parse result for imported component files."""
 
-    def __init__(self, parts: PartRegistry, **_kwargs):
+    def __init__(self, parts: PartRegistry, operations: Optional[Dict[str, Any]] = None, **_kwargs):
         self.parts = parts
+        self.operations = operations or {}

@@ -201,29 +201,20 @@ def _maybe_start_xvfb() -> None:
 
 def _collect_visible_part_names(doc) -> list[str]:
     """Return visible part names for trust rendering."""
-    part_names = doc.parts.list_parts()
-    consumed = set()
-    for op in (doc.operations or {}).values():
-        for field in ("base", "tool", "input"):
-            if field in op:
-                consumed.add(op[field])
-        for field in ("subtract", "inputs", "tools"):
-            for name in op.get(field, []):
-                if isinstance(name, dict):
-                    if "pattern" in name:
-                        prefix = f"{name['pattern']}_"
-                        consumed.update(p for p in part_names if p.startswith(prefix))
-                    # {"range": ...} entries reference already-consumed pattern
-                    # instances by name elsewhere in the DAG; nothing new to mark.
-                else:
-                    consumed.add(name)
+    from ..parser.operation_inputs import consumed_part_names
 
-    visible_names = [
-        name for name in part_names
-        if not name.startswith("_") and name not in consumed
-    ]
+    part_names = doc.parts.list_parts()
+    consumed = consumed_part_names(doc.operations, part_names)
+
+    def hidden(name: str) -> bool:
+        # component_internal: consumed by an imported component's own operations
+        # (its shells, cutters, helpers); the component's finished part stays visible.
+        part = doc.parts.get(name)
+        return name.startswith("_") or bool((part.metadata or {}).get("component_internal"))
+
+    visible_names = [name for name in part_names if not hidden(name) and name not in consumed]
     if not visible_names:
-        visible_names = [name for name in part_names if not name.startswith("_")]
+        visible_names = [name for name in part_names if not hidden(name)]
     return visible_names
 
 

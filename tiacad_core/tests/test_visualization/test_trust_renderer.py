@@ -27,6 +27,9 @@ def test_collect_visible_part_names_skips_consumed_inputs():
         def list_parts(self):
             return ["base", "hole", "final"]
 
+        def get(self, name):
+            return Part(name=name, geometry=MockBackend().create_box(1, 1, 1))
+
     class FakeDoc:
         parts = FakeParts()
         operations = {
@@ -53,6 +56,9 @@ def test_collect_visible_part_names_expands_pattern_dict_refs():
     class FakeParts:
         def list_parts(self):
             return ["base", "groove_ring_0", "groove_ring_1", "final"]
+
+        def get(self, name):
+            return Part(name=name, geometry=MockBackend().create_box(1, 1, 1))
 
     class FakeDoc:
         parts = FakeParts()
@@ -195,3 +201,43 @@ def test_depth_shaded_darkens_far_points_and_keeps_near_points_full_colour():
     assert tuple(near) == (255, 127, 0)
     assert far[0] == pytest.approx(255 * _DEPTH_SHADE_MIN, abs=1)
     assert "depth_rgb" not in box.point_data  # input mesh untouched
+
+
+def test_collect_visible_part_names_hides_component_internal_parts(tmp_path):
+    from tiacad_core.parser.tiacad_parser import TiaCADParser
+
+    (tmp_path / "comp.yaml").write_text(
+        'schema_version: "3.0"\n'
+        "parts:\n"
+        "  block: {primitive: box, parameters: {width: 10, depth: 10, height: 10}, origin: corner}\n"
+        "  cutter: {primitive: box, parameters: {width: 2, depth: 2, height: 20}, origin: corner}\n"
+        "operations:\n"
+        "  holed: {type: boolean, operation: difference, base: block, subtract: [cutter]}\n"
+    )
+    (tmp_path / "main.yaml").write_text(
+        "imports:\n  - {path: ./comp.yaml, as: c}\n"
+        "operations:\n"
+        "  moved: {type: transform, input: c.holed, transforms: [{translate: [20, 0, 0]}]}\n"
+        "  both: {type: boolean, operation: union, inputs: [c.holed, moved]}\n"
+    )
+    doc = TiaCADParser.parse_file(str(tmp_path / "main.yaml"))
+
+    assert _collect_visible_part_names(doc) == ["both"]
+
+
+def test_collect_visible_part_names_keeps_unreferenced_imported_part(tmp_path):
+    from tiacad_core.parser.tiacad_parser import TiaCADParser
+
+    (tmp_path / "comp.yaml").write_text(
+        'schema_version: "3.0"\n'
+        "parts:\n"
+        "  block: {primitive: box, parameters: {width: 10, depth: 10, height: 10}, origin: corner}\n"
+    )
+    (tmp_path / "main.yaml").write_text(
+        "imports:\n  - {path: ./comp.yaml, as: c}\n"
+        "parts:\n"
+        "  base: {primitive: box, parameters: {width: 5, depth: 5, height: 5}, origin: corner}\n"
+    )
+    doc = TiaCADParser.parse_file(str(tmp_path / "main.yaml"))
+
+    assert set(_collect_visible_part_names(doc)) == {"c.block", "base"}

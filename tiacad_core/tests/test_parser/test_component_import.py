@@ -779,3 +779,81 @@ parts:
         part_names = doc.parts.list_parts()
         assert "peg.shaft" in part_names
         assert "base" in part_names
+
+
+# --- component-internal parts (TCAD-UX-13) ---
+
+HELPER_COMPONENT = """
+schema_version: "3.0"
+parameters:
+  size: 10
+parts:
+  block:
+    primitive: box
+    parameters: {width: '${size}', depth: '${size}', height: '${size}'}
+    origin: corner
+  cutter:
+    primitive: box
+    parameters: {width: 2, depth: 2, height: 20}
+    origin: corner
+  spare:
+    primitive: box
+    parameters: {width: 1, depth: 1, height: 1}
+    origin: corner
+operations:
+  holed:
+    type: boolean
+    operation: difference
+    base: block
+    subtract: [cutter]
+"""
+
+HELPER_MAIN = """
+imports:
+  - path: ./comp.yaml
+    as: c
+parts:
+  base:
+    primitive: box
+    parameters: {width: 30, depth: 30, height: 2}
+    origin: corner
+"""
+
+
+class TestComponentInternalFlag:
+    def _doc(self, tmp_path, main=HELPER_MAIN):
+        write_yaml(str(tmp_path), 'comp.yaml', HELPER_COMPONENT)
+        return TiaCADParser.parse_file(write_yaml(str(tmp_path), 'main.yaml', main))
+
+    def test_parts_consumed_by_component_ops_are_flagged(self, tmp_path):
+        doc = self._doc(tmp_path)
+
+        assert doc.get_part('c.block').metadata.get('component_internal') is True
+        assert doc.get_part('c.cutter').metadata.get('component_internal') is True
+
+    def test_component_result_and_unconsumed_parts_are_not_flagged(self, tmp_path):
+        doc = self._doc(tmp_path)
+
+        # the component's finished part, and a helper nothing consumes, stay unflagged
+        assert not doc.get_part('c.holed').metadata.get('component_internal')
+        assert not doc.get_part('c.spare').metadata.get('component_internal')
+        assert not doc.get_part('base').metadata.get('component_internal')
+
+    def test_flag_does_not_propagate_to_derived_parts(self, tmp_path):
+        main = HELPER_MAIN + """
+operations:
+  moved:
+    type: transform
+    input: c.block
+    transforms:
+      - translate: [50, 0, 0]
+"""
+        doc = self._doc(tmp_path, main)
+
+        assert not doc.get_part('moved').metadata.get('component_internal')
+
+    def test_importer_keeps_component_operations_on_document(self, tmp_path):
+        from tiacad_core.parser.component_importer import _ImportedComponentDocument
+
+        assert _ImportedComponentDocument(parts=None, operations={'x': {}}).operations == {'x': {}}
+        assert _ImportedComponentDocument(parts=None).operations == {}
