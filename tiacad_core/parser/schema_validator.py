@@ -186,7 +186,9 @@ class SchemaValidator:
             "path": str(self.schema_path),
             "title": self.schema.get("title", "Unknown"),
             "version": self.schema.get("$id", "Unknown"),
-            "required_fields": self.schema.get("required", [])
+            # `parts` is required unless the document imports components (an
+            # import-only assembly has none), expressed in the schema as if/then.
+            "required_fields": self.schema.get("required") or self.schema.get("then", {}).get("required", [])
         }
 
 

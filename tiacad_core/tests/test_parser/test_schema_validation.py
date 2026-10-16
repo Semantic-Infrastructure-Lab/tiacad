@@ -162,6 +162,25 @@ class TestSchemaValidator:
         assert len(errors) > 0
         assert "parts" in errors[0].lower()
 
+    def test_imports_only_assembly_is_valid_without_parts(self):
+        """An assembly built purely from imported components has no `parts:` of its own."""
+        validator = SchemaValidator()
+        data = {
+            "schema_version": "3.0",
+            "imports": [{"path": "./bin.yaml", "as": "bin_a"}],
+            "operations": {},
+        }
+
+        assert validator.validate(data) == []
+
+    def test_operations_without_parts_or_imports_still_fails(self):
+        """The imports exemption must not open a hole for docs with neither."""
+        validator = SchemaValidator()
+
+        errors = validator.validate({"schema_version": "3.0", "operations": {}})
+
+        assert errors == ["Missing required field 'parts' at root"]
+
     def test_invalid_primitive_type(self):
         """Invalid primitive type fails validation"""
         validator = SchemaValidator()

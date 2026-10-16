@@ -220,12 +220,14 @@ tiacad render INPUT [OPTIONS]
 
 **Options:**
 - `-o, --output PATH` - Output PNG path
+- `--section AXIS=VALUE` - Render a capped cutaway at that plane (mm) instead of the 8-view overview
+- `--no-markers` - Hide the validation-issue crosshairs (orange = warning, blue = info) on the overview
 - `--validate-schema` - Enable JSON schema validation before build
 - `-v, --verbose` - Verbose output with traceback on failure
 
-**Default output path:**
-- `INPUT` stem + `_trust.png`
-- Example: `examples/bracket.yaml` → `examples/bracket_trust.png`
+**Default output path** (written next to the input file; pass `-o` to send it elsewhere):
+- Overview: `INPUT` stem + `_trust.png`, e.g. `examples/bracket.yaml` → `examples/bracket_trust.png`
+- `--section`: `INPUT` stem + `_section.png`
 
 **Examples:**
 
@@ -235,11 +237,20 @@ tiacad render examples/bracket.yaml
 
 # Write to an explicit path
 tiacad render examples/bracket.yaml -o /tmp/bracket_check.png
+
+# Cutaway through a wall/slot at y = 79.5 mm (viewed from +Y; cut face drawn in yellow)
+tiacad render examples/sticker_drawer/sticker_bin.yaml --section y=79.5
 ```
 
 **Notes:**
 - Uses the same renderer as `tiacad debug`'s `final_trust.png`, so `render` and `debug` will
   always agree on what a given model looks like.
+- In the orthographic panels, surfaces farther from the camera are drawn darker (down to 55%
+  brightness), so a pocket floor reads apart from the rim around it. Top/Bottom views of an
+  open box are no longer a flat colour.
+- `--section` is the quickest way to check wall, floor and slot thickness by eye: the yellow cut
+  face is the solid material at that plane. It is a visual aid only — assert thicknesses in an
+  `expect:` contract (see [MODEL_VALIDATION.md](MODEL_VALIDATION.md)).
 
 ---
 

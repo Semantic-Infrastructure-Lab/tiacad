@@ -142,7 +142,9 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
         help='Write the trust-check PNG for a file (8-view: iso/x-ray/orthographic) without a full debug bundle'
     )
     render_parser.add_argument('input', help='Input YAML file')
-    render_parser.add_argument('-o', '--output', help='Output PNG path (default: INPUT stem + _trust.png)')
+    render_parser.add_argument('-o', '--output', help='Output PNG path (default: INPUT stem + _trust.png, written next to the input file; use -o to send it elsewhere)')
+    render_parser.add_argument('--section', metavar='AXIS=VALUE', help='Render a capped cutaway at this plane instead of the 8-view overview, e.g. y=79.5 (mm); default output INPUT stem + _section.png')
+    render_parser.add_argument('--no-markers', action='store_true', help='Hide validation-issue markers (the orange/blue crosshairs) on the overview render')
     render_parser.add_argument('--validate-schema', action='store_true', help='Enable JSON schema validation')
     render_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output with traceback')
     render_parser.set_defaults(func=cmd_render)

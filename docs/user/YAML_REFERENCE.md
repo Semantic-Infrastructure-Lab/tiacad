@@ -56,7 +56,7 @@ references:         # Optional (v3.0): named spatial references
     part: base
     selector: ">Z"
 
-parts:             # Required: define primitive parts
+parts:             # Required (unless the file imports components): define primitive parts
   part_name:
     primitive: box
     parameters:
@@ -255,6 +255,20 @@ parameters:
 - Division: `${a / b}`
 - Exponentiation: `${a ** b}`
 - Modulo: `${a % b}`
+
+### Quoting `${...}` in inline YAML
+
+Inside an inline mapping or list (`{...}` / `[...]`), a bare `${w}` is invalid YAML because
+`{` opens a flow mapping, and the parse error never mentions `${}`. Quote every template:
+
+```yaml
+parameters: {width: '${base_width}', depth: 5, height: 5}   # ✅
+origin: ['${wall}', 0, '${floor}']                           # ✅
+parameters: {width: ${base_width}}                           # ❌ "expected ',' or '}'"
+```
+
+In block style (one key or `- item` per line) the quotes are optional but harmless; the
+examples quote them consistently.
 
 ### Using Parameters
 

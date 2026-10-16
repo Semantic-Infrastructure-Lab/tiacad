@@ -1,0 +1,105 @@
+schema_version: "3.0"
+
+metadata:
+  name: Sticker Drawer Bin (prototype)
+  description: >
+    One of 10 removable bins per tool-chest drawer. 3 compartments via 2 removable
+    dividers that slide into wall slots; finger cutout in the front end wall.
+    Units mm. Bins are joined with sticker_clip.yaml (no connector features here);
+    the divider is sticker_divider.yaml.
+
+parameters:
+  bin_w: 74.0          # X. 5 across the 381 mm drawer -> 370 mm, 11 mm slack
+  bin_l: 236.0         # Y. 2 deep in the 489 mm drawer -> 472 mm, 17 mm slack
+  bin_h: 50.8          # Z. 2.00 in -- verify the 63.5 mm clearance first
+  wall: 1.6
+  floor: 2.0
+  div_t: 2.0           # divider thickness (sticker_divider.yaml div_t)
+  slot_clear: 0.4      # total slot clearance around the divider
+  slot_w: '${div_t + slot_clear}'
+  slot_d: 0.8          # groove depth into each side wall (0.8 mm skin left)
+  comp_l: '${(bin_l - 2 * wall - 2 * div_t) / 3}'   # 76.27 mm = 3.0 in compartment
+  slot_pitch: '${comp_l + div_t}'
+  tab_w: 40.0          # finger cutout width, front wall
+  tab_floor: 14.0      # cutout starts this far above the outside bottom
+
+parts:
+  shell:
+    primitive: box
+    parameters:
+      width: '${bin_w}'
+      depth: '${bin_l}'
+      height: '${bin_h}'
+    origin: corner
+
+  cavity:
+    primitive: box
+    parameters:
+      width: '${bin_w - 2 * wall}'
+      depth: '${bin_l - 2 * wall}'
+      height: '${bin_h}'
+    origin:
+      - '${wall}'
+      - '${wall}'
+      - '${floor}'
+
+  # First divider slot, centred on where divider 1 sits; the pattern below makes
+  # the second one a compartment-pitch further along Y.
+  slot:
+    primitive: box
+    parameters:
+      width: '${bin_w - 2 * wall + 2 * slot_d}'
+      depth: '${slot_w}'
+      height: '${bin_h - floor}'
+    origin:
+      - '${wall - slot_d}'
+      - '${wall + comp_l - slot_clear / 2}'
+      - '${floor}'
+
+  finger_cut:
+    primitive: box
+    parameters:
+      width: '${tab_w}'
+      depth: '${wall * 3}'
+      height: '${bin_h}'
+    origin:
+      - '${(bin_w - tab_w) / 2}'
+      - '${-wall}'
+      - '${tab_floor}'
+
+operations:
+  slots:
+    type: pattern
+    pattern: linear
+    input: slot
+    count: 2
+    spacing:
+      - 0
+      - '${slot_pitch}'
+      - 0
+
+  sticker_bin:
+    type: boolean
+    operation: difference
+    base: shell
+    subtract:
+      - cavity
+      - slots_0
+      - slots_1
+      - finger_cut
+
+export:
+  default_part: sticker_bin
+
+# Closed-form contract (from the parameters, not frozen output):
+#   removed = cavity 70.8 x 232.8 x 48.8 (it overshoots the rim; only 48.8 is inside)
+#           + 2 slots x (2 x 0.8 side grooves) x 2.4 x 48.8
+#           + finger cut through the 1.6 mm front wall: 40 x 1.6 x (50.8 - 14)
+#   volume  = 74 x 236 x 50.8 - removed = 80107.904
+expect:
+  final: sticker_bin
+  volume: 80107.904
+  bbox: [74.0, 236.0, 50.8]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

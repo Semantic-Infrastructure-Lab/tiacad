@@ -5,8 +5,15 @@ import pyvista as pv
 from tiacad_core.geometry import MockBackend
 from tiacad_core.part import Part
 from tiacad_core.validation.validation_types import Severity, ValidationIssue
+import numpy as np
+import pytest
+
 from tiacad_core.visual.trust_renderer import (
+    _DEPTH_SHADE_MIN,
     _annotate_issues,
+    _cap_at_plane,
+    _depth_shaded,
+    parse_section_spec,
     _collect_visible_part_names,
     _maybe_start_xvfb,
     _part_to_pyvista,
@@ -143,3 +150,48 @@ def test_annotate_issues_draws_marker_in_correct_subplot():
     assert pixels[60, 50] != (255, 255, 255)
     assert all(pixels[x, y] == (255, 255, 255) for x in (150, 199) for y in (0, 99))
     plotter.close()
+
+
+def test_parse_section_spec_accepts_axis_and_value():
+    assert parse_section_spec("y=79.5") == ("y", 79.5)
+    assert parse_section_spec("Z=-3") == ("z", -3.0)
+
+
+@pytest.mark.parametrize("spec", ["", "y", "w=1", "y=abc", "=5"])
+def test_parse_section_spec_rejects_malformed_specs(spec):
+    with pytest.raises(ValueError, match="Invalid section"):
+        parse_section_spec(spec)
+
+
+def _u_prism(depth=10.0):
+    """U-shaped (concave) solid extruded along +Y; its XZ outline area is 226.0."""
+    outline = [(0, 0), (74, 0), (74, 50), (73.2, 50), (73.2, 2), (0.8, 2), (0.8, 50), (0, 50)]
+    pts = np.array([(x, 0.0, z) for x, z in outline])
+    face = [len(pts), *range(len(pts))]
+    solid = pv.PolyData(pts, np.array(face)).extrude((0, depth, 0), capping=True)
+    return solid.triangulate().clean()
+
+
+def test_cap_at_plane_fills_concave_profile_exactly():
+    cap = _cap_at_plane(_u_prism(), axis_idx=1, value=5.0)
+
+    area = cap.compute_cell_sizes(length=False, volume=False).cell_data["Area"].sum()
+    # 74*2 floor + 2 * (0.8 * 48) walls; a convex fill would also cover the notch.
+    assert area == pytest.approx(74 * 2 + 2 * 0.8 * 48)
+
+
+def test_cap_at_plane_returns_none_when_plane_misses_the_solid():
+    assert _cap_at_plane(_u_prism(), axis_idx=1, value=999.0) is None
+
+
+def test_depth_shaded_darkens_far_points_and_keeps_near_points_full_colour():
+    box = pv.Box(bounds=(0, 1, 0, 1, 0, 10)).triangulate()
+
+    shaded = _depth_shaded(box, (1.0, 0.5, 0.0), view_dir=(0, 0, 1))
+
+    rgb = shaded.point_data["depth_rgb"].astype(float)
+    near = rgb[box.points[:, 2] == 10][0]
+    far = rgb[box.points[:, 2] == 0][0]
+    assert tuple(near) == (255, 127, 0)
+    assert far[0] == pytest.approx(255 * _DEPTH_SHADE_MIN, abs=1)
+    assert "depth_rgb" not in box.point_data  # input mesh untouched

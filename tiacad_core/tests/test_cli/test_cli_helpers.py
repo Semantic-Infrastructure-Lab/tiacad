@@ -498,3 +498,64 @@ def test_cmd_render_prints_validation_failure(tmp_path, capsys):
     captured = capsys.readouterr()
     assert rc == 0
     assert "Validation failed: 1 errors, 0 warnings, 0 info" in captured.out
+
+
+def test_resolve_render_output_path_uses_suffix_for_section(tmp_path):
+    input_file = tmp_path / "box.yaml"
+
+    assert _resolve_render_output_path(input_file, None, suffix="_section") == (tmp_path / "box_section.png").resolve()
+
+
+def test_cmd_render_no_markers_omits_issue_annotations(tmp_path):
+    input_file = tmp_path / "box.yaml"
+    input_file.write_text("parts: {}\n")
+    output_path = tmp_path / "box_trust.png"
+    args = SimpleNamespace(
+        input=str(input_file), output=str(output_path),
+        validate_schema=False, verbose=False, no_markers=True, section=None,
+    )
+    fake_doc = object()
+
+    with patch('tiacad_core.parser.tiacad_parser.TiaCADParser.parse_file', return_value=fake_doc), \
+         patch('tiacad_core.validation.assembly_validator.AssemblyValidator.validate_document') as mock_validate, \
+         patch('tiacad_core.visual.trust_renderer.render_trust', return_value=str(output_path)) as mock_render:
+        mock_validate.return_value = SimpleNamespace(
+            issues=["something"], passed=True, error_count=0, warning_count=0, info_count=0
+        )
+        rc = cmd_render(args)
+
+    assert rc == 0
+    mock_render.assert_called_once_with(fake_doc, str(output_path), title="box", issues=None)
+
+
+def test_cmd_render_section_writes_section_png(tmp_path, capsys):
+    input_file = tmp_path / "box.yaml"
+    input_file.write_text("parts: {}\n")
+    args = SimpleNamespace(
+        input=str(input_file), output=None,
+        validate_schema=False, verbose=False, no_markers=False, section="y=12.5",
+    )
+    fake_doc = object()
+    expected = tmp_path / "box_section.png"
+
+    with patch('tiacad_core.parser.tiacad_parser.TiaCADParser.parse_file', return_value=fake_doc), \
+         patch('tiacad_core.visual.trust_renderer.render_section', return_value=str(expected)) as mock_section:
+        rc = cmd_render(args)
+
+    assert rc == 0
+    assert "Section render written" in capsys.readouterr().out
+    mock_section.assert_called_once_with(fake_doc, str(expected.resolve()), "y", 12.5, title="box")
+
+
+def test_cmd_render_section_rejects_bad_spec(tmp_path, capsys):
+    input_file = tmp_path / "box.yaml"
+    input_file.write_text("parts: {}\n")
+    args = SimpleNamespace(
+        input=str(input_file), output=None,
+        validate_schema=False, verbose=False, no_markers=False, section="q=1",
+    )
+
+    rc = cmd_render(args)
+
+    assert rc == 1
+    assert "Invalid section" in capsys.readouterr().err

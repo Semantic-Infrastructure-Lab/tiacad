@@ -372,7 +372,28 @@ def _create_plotter(width: int, height: int) -> pv.Plotter:
 _VOID_COLOR = (0.85, 0.15, 0.15)  # translucent red for subtracted (cutout) parts
 
 
-def _add_view_meshes(plotter: pv.Plotter, parts_data, voids_data, mode: str) -> None:
+# Darkest fraction of a part's colour applied to the farthest surface in an
+# orthographic view. Orthographic lighting alone renders every face that points at
+# the camera identically, so a pocket floor and the rim around it read as one flat
+# colour; scaling brightness by depth along the view axis restores that cue.
+_DEPTH_SHADE_MIN = 0.55
+
+
+def _depth_shaded(mesh: pv.PolyData, color, view_dir) -> pv.PolyData:
+    """Return a copy of `mesh` with per-point RGB darkened by distance from the camera."""
+    shaded = mesh.copy()
+    direction = np.asarray(view_dir, dtype=float)
+    direction = direction / np.linalg.norm(direction)
+    depth = shaded.points @ direction  # larger = closer to the camera
+    span = depth.max() - depth.min()
+    nearness = (depth - depth.min()) / span if span > 1e-9 else np.ones_like(depth)
+    scale = _DEPTH_SHADE_MIN + (1.0 - _DEPTH_SHADE_MIN) * nearness
+    rgb = np.clip(np.asarray(color, dtype=float)[None, :] * scale[:, None] * 255, 0, 255)
+    shaded.point_data["depth_rgb"] = rgb.astype(np.uint8)
+    return shaded
+
+
+def _add_view_meshes(plotter: pv.Plotter, parts_data, voids_data, mode: str, view_dir=None) -> None:
     """Add all part meshes to the current subplot using the requested mode.
 
     Subtracted parts (voids) are drawn only in the X-Ray panel: they sit inside
@@ -392,6 +413,18 @@ def _add_view_meshes(plotter: pv.Plotter, parts_data, voids_data, mode: str) -> 
             )
             dark = tuple(max(0.0, c - 0.3) for c in color)
             _add_feature_edges(plotter, mesh, color=dark, line_width=1.5)
+        elif mode == "ortho" and view_dir is not None:
+            plotter.add_mesh(
+                _depth_shaded(mesh, color, view_dir),
+                scalars="depth_rgb",
+                rgb=True,
+                show_edges=False,
+                opacity=1.0,
+                smooth_shading=False,
+                ambient=0.35,
+                diffuse=0.65,
+            )
+            _add_feature_edges(plotter, mesh, color=(0, 0, 0), line_width=1.5)
         else:
             plotter.add_mesh(
                 mesh,
@@ -473,7 +506,7 @@ def _render_view(plotter: pv.Plotter, idx: int, parts_data, voids_data, metrics:
     row, col = divmod(idx, GRID_COLS)
     plotter.subplot(row, col)
 
-    _add_view_meshes(plotter, parts_data, voids_data, mode)
+    _add_view_meshes(plotter, parts_data, voids_data, mode, view_dir=pos_dir)
     _add_axes_widget(plotter)
     _maybe_add_view_labels(plotter, parts_data, mode)
     _maybe_add_dimension_overlay(plotter, view_label, mode, metrics)
@@ -749,3 +782,145 @@ def _add_legend(
     _draw_description_legend(draw, x0, y, description, legend_width, height)
 
     return final
+
+
+_SECTION_AXES = {
+    # axis -> (plane normal toward the camera, view-up)
+    "x": ((1.0, 0.0, 0.0), (0, 0, 1)),
+    "y": ((0.0, 1.0, 0.0), (0, 0, 1)),
+    "z": ((0.0, 0.0, 1.0), (0, 1, 0)),
+}
+
+
+# Cut faces are drawn in one contrasting colour so the material profile reads
+# apart from the (depth-shaded) interior surfaces seen beyond the cut.
+_SECTION_CAP_COLOR = (1.0, 0.78, 0.2)
+
+
+def _cap_at_plane(mesh: pv.PolyData, axis_idx: int, value: float) -> Optional[pv.PolyData]:
+    """Triangulate the solid cross-section of `mesh` at the plane `axis=value`.
+
+    Slices the surface into closed contours and fills them (holes and concave
+    outlines included). vtkClipClosedSurface's own cap mis-fills concave U-shaped
+    profiles, so the cap is built independently from the slice.
+    """
+    normal = [0.0, 0.0, 0.0]
+    normal[axis_idx] = 1.0
+    origin = [0.0, 0.0, 0.0]
+    origin[axis_idx] = value
+    contour = mesh.slice(normal=normal, origin=origin)
+    if contour.n_points == 0:
+        return None
+    stripper = vtk.vtkStripper()
+    stripper.SetInputData(contour)
+    stripper.Update()
+    triangulator = vtk.vtkContourTriangulator()
+    triangulator.SetInputConnection(stripper.GetOutputPort())
+    triangulator.Update()
+    cap = pv.wrap(triangulator.GetOutput())
+    return cap if cap.n_cells > 0 else None
+
+
+def parse_section_spec(spec: str) -> Tuple[str, float]:
+    """Parse 'y=79.5' into ('y', 79.5). Raises ValueError on a malformed spec."""
+    axis, sep, raw = spec.partition("=")
+    axis = axis.strip().lower()
+    if not sep or axis not in _SECTION_AXES:
+        raise ValueError(f"Invalid section '{spec}': expected AXIS=VALUE with AXIS one of x, y, z (e.g. y=79.5)")
+    try:
+        return axis, float(raw)
+    except ValueError:
+        raise ValueError(f"Invalid section '{spec}': '{raw}' is not a number") from None
+
+
+def _clip_to_section(mesh: pv.PolyData, normal, origin, axis_idx: int, value: float):
+    """Return (body, cap) for the half of `mesh` behind the plane.
+
+    `normal` points toward the camera; the half on the opposite side is kept.
+    Render meshes carry split per-face vertices for flat shading;
+    they are welded first so the slice yields closed contours.
+    """
+    welded = mesh.copy()
+    welded.clear_data()
+    welded = welded.clean()
+    body = welded.clip(normal=normal, origin=origin, invert=True)
+    return (body if body.n_points > 0 else None), _cap_at_plane(welded, axis_idx, value)
+
+
+def render_section(
+    doc,
+    output_path: str,
+    axis: str,
+    value: float,
+    title: Optional[str] = None,
+    width: int = 1400,
+    height: int = 800,
+) -> str:
+    """Render a cutaway of the document at `axis=value`, viewed from the +axis side.
+
+    The model is clipped at the plane and the cut face is capped, so wall, floor
+    and slot thicknesses read directly as profile outlines. Opt-in companion to
+    `render_trust` (which stays an 8-panel overview).
+
+    Returns:
+        Absolute path to the written PNG
+    """
+    _maybe_start_xvfb()
+    parts_data, voids_data = _collect_render_data(doc)
+    if not parts_data:
+        raise ValueError("No renderable geometry found in document")
+
+    normal, view_up = _SECTION_AXES[axis]
+    idx = "xyz".index(axis)
+    origin = [0.0, 0.0, 0.0]
+    origin[idx] = value
+    # Keep the half behind the plane; the camera sits on the +axis side of the
+    # cut, looking back at the cap.
+    clipped_parts = []  # (name, body, color) -- body bounds drive the camera framing
+    caps = []
+    for name, mesh, color in parts_data:
+        body, cap = _clip_to_section(mesh, normal, origin, idx, value)
+        if body is not None:
+            clipped_parts.append((name, body, color))
+        if cap is not None:
+            caps.append(cap)
+    if not caps:
+        raise ValueError(f"Section {axis}={value:g} does not cut any solid material")
+
+    metrics = _compute_scene_metrics(clipped_parts, doc.parameters)
+    plotter = pv.Plotter(off_screen=True, window_size=[width, height])
+    plotter.set_background("white")
+    for _name, body, color in clipped_parts:
+        plotter.add_mesh(
+            _depth_shaded(body, color, normal),
+            scalars="depth_rgb",
+            rgb=True,
+            show_edges=False,
+            smooth_shading=False,
+            ambient=0.35,
+            diffuse=0.65,
+        )
+        _add_feature_edges(plotter, body, color=(0, 0, 0), line_width=1.0)
+    for cap in caps:
+        plotter.add_mesh(cap, color=_SECTION_CAP_COLOR, show_edges=False,
+                         smooth_shading=False, ambient=0.7, diffuse=0.3)
+        plotter.add_mesh(cap.extract_feature_edges(feature_angle=_FEATURE_ANGLE, boundary_edges=True),
+                         color=(0, 0, 0), line_width=2.0)
+
+    cam_center = metrics.center.copy()
+    cam_center[idx] = value
+    cam_pos = cam_center + np.array(normal) * metrics.radius * 2.5
+    plotter.camera_position = [cam_pos.tolist(), cam_center.tolist(), list(view_up)]
+    plotter.camera.parallel_projection = True
+    extent = max(metrics.sizes[a] for a in "XYZ" if a.lower() != axis)
+    plotter.camera.parallel_scale = extent * 0.6
+    plotter.reset_camera_clipping_range()
+    plotter.add_title(f"{title + '  ' if title else ''}Section {axis.upper()}={value:g} mm", font_size=10, color="black")
+    _add_axes_widget(plotter)
+    screenshot = plotter.screenshot(return_img=True)
+    plotter.close()
+
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(screenshot).save(str(out))
+    return str(out.resolve())

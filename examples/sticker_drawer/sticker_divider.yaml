@@ -1,0 +1,51 @@
+schema_version: "3.0"
+
+metadata:
+  name: Sticker Bin Divider (prototype)
+  description: 2 mm divider with a centered finger tab; rides in sticker_bin slots. Units mm.
+
+parameters:
+  div_w: 72.0     # bin interior 70.8 + 2 x 0.8 slot depth - 0.4 clearance
+  div_t: 2.0
+  div_h: 44.45    # 1.75 in
+  tab_w: 24.0
+  tab_h: 6.0
+
+parts:
+  body:
+    primitive: box
+    parameters:
+      width: ${div_w}
+      depth: ${div_t}
+      height: ${div_h}
+    origin: corner
+  tab:
+    primitive: box
+    parameters:
+      width: ${tab_w}
+      depth: ${div_t}
+      height: ${tab_h}
+    origin:
+      - ${(div_w - tab_w) / 2}
+      - 0
+      - ${div_h}
+
+operations:
+  divider:
+    type: boolean
+    operation: union
+    inputs:
+      - body
+      - tab
+
+export:
+  default_part: divider
+
+# Closed-form: body 72 x 2 x 44.45 + tab 24 x 2 x 6 = 6400.8 + 288.0
+expect:
+  final: divider
+  volume: 6688.8
+  bbox: [72.0, 2.0, 50.45]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

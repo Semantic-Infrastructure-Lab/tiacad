@@ -1,0 +1,72 @@
+schema_version: "3.0"
+
+metadata:
+  name: Sticker Bin Saddle Clip (prototype)
+  description: >
+    Inverted-U clip that drops over two touching bin walls (side-to-side or
+    front-to-back). Legs hang on the INSIDE faces of the two walls, so the bins
+    themselves need no connector features and the 74 mm bin width is unchanged.
+    Print upside-down as modeled (plate on the bed, legs up): no supports.
+    ~26 clips per drawer: 16 on the side seams (2 per bin, 4 seams x 2 rows),
+    10 on the front-to-back seams (2 per column).
+    Units mm. Tune `gap` first (0.3 = snug friction fit, raise if it binds).
+
+parameters:
+  wall: 1.6            # must match sticker_bin.yaml
+  gap: 0.3             # total clearance between legs and the two walls
+  leg_t: 1.2           # leg thickness (intrudes into the compartment)
+  leg_h: 8.0           # how far the legs hang down inside
+  plate_t: 2.0
+  clip_l: 14.0         # length along the seam
+
+parts:
+  plate:
+    primitive: box
+    parameters:
+      width: ${2 * wall + gap + 2 * leg_t}
+      depth: ${clip_l}
+      height: ${plate_t}
+    origin:
+      - 0
+      - 0
+      - ${leg_h}
+
+  leg_a:
+    primitive: box
+    parameters:
+      width: ${leg_t}
+      depth: ${clip_l}
+      height: ${leg_h}
+    origin: corner
+
+  leg_b:
+    primitive: box
+    parameters:
+      width: ${leg_t}
+      depth: ${clip_l}
+      height: ${leg_h}
+    origin:
+      - ${leg_t + 2 * wall + gap}
+      - 0
+      - 0
+
+operations:
+  clip:
+    type: boolean
+    operation: union
+    inputs:
+      - plate
+      - leg_a
+      - leg_b
+
+export:
+  default_part: clip
+
+# Closed-form: plate 5.9 x 14 x 2 + 2 legs 1.2 x 14 x 8 = 165.2 + 268.8
+expect:
+  final: clip
+  volume: 434.0
+  bbox: [5.9, 14.0, 10.0]
+  watertight: true
+  components: 1
+  tol: { volume: 0.01 }

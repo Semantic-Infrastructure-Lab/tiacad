@@ -1,0 +1,89 @@
+schema_version: "3.0"
+
+metadata:
+  name: Sticker Bin Fit Check
+  description: >
+    Two bins side by side (shared wall), a divider seated in bin A's first slot, and
+    a clip straddling the shared wall. Contract asserts nothing overlaps, so the
+    printed clearances (slot 0.2 mm/side, clip 0.15 mm/leg) are real. Units mm.
+
+imports:
+  - path: ./sticker_bin.yaml
+    as: bin_a
+  - path: ./sticker_bin.yaml
+    as: bin_b
+  - path: ./sticker_divider.yaml
+    as: div
+  - path: ./sticker_clip.yaml
+    as: clip
+
+parameters:
+  bin_w: 74.0
+  bin_h: 50.8
+  wall: 1.6
+  floor: 2.0
+  slot_d: 0.8
+  slot_clear: 0.4
+  div_w: 72.0
+  comp_l: 76.26666666666667
+  clip_gap: 0.3
+  clip_leg_t: 1.2
+  clip_leg_h: 8.0
+  clip_w: '${2 * wall + clip_gap + 2 * clip_leg_t}'
+
+operations:
+  bin_b_placed:
+    type: transform
+    input: bin_b.sticker_bin
+    transforms:
+      - translate:
+          - '${bin_w}'
+          - 0
+          - 0
+
+  # Divider sits on the slot floor, centred in the slot (0.2 mm each side in X and Y)
+  divider_placed:
+    type: transform
+    input: div.divider
+    transforms:
+      - translate:
+          - '${wall - slot_d + (bin_w - 2 * wall + 2 * slot_d - div_w) / 2}'
+          - '${wall + comp_l - slot_clear / 2 + slot_clear / 2}'
+          - '${floor}'
+
+  # Clip plate rests on the rim, centred on the seam between the two bins
+  clip_placed:
+    type: transform
+    input: clip.clip
+    transforms:
+      - translate:
+          - '${bin_w - clip_w / 2}'
+          - 20
+          - '${bin_h - clip_leg_h}'
+
+  assembly:
+    type: boolean
+    operation: union
+    inputs:
+      - bin_a.sticker_bin
+      - bin_b_placed
+      - divider_placed
+      - clip_placed
+
+export:
+  default_part: assembly
+
+# Closed-form: 2 bins 80107.904 + divider 6688.8 + clip 434.0 = 167338.608 (a union of
+# non-overlapping solids is exactly the sum). Height 52.8 = clip plate 2 mm above the
+# 50.8 rim; the divider tab tops out at 52.45. Stay under the 63.5 mm drawer clearance.
+expect:
+  final: assembly
+  volume: 167338.608
+  bbox: [148.0, 236.0, 52.8]
+  watertight: true
+  tol: { volume: 0.05 }
+  no_overlap:
+    - [bin_a.sticker_bin, bin_b_placed]
+    - [divider_placed, bin_a.sticker_bin]
+    - [clip_placed, bin_a.sticker_bin]
+    - [clip_placed, bin_b_placed]

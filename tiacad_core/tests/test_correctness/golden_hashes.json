@@ -241,6 +241,50 @@
     "part": "hanger",
     "volume": 218561.75420374598
   },
+  "examples/sticker_drawer/fit_check.yaml": {
+    "bbox": [
+      148.0,
+      236.0,
+      52.8
+    ],
+    "canonical_mesh_hash": "5917e86c8c3c158cf4003d89fbdaef06815924c87bce6eb83dd36d2a3be0bf93",
+    "mesh_hash": "639dc23e0b4a42771228c2bc7077c9883c297c7d6f6e66007f903001fa798db0",
+    "part": "assembly",
+    "volume": 167338.60800000068
+  },
+  "examples/sticker_drawer/sticker_bin.yaml": {
+    "bbox": [
+      74.0,
+      236.0,
+      50.8
+    ],
+    "canonical_mesh_hash": "b3395df5c28b1b3b647ab3d43f1a2620fe7d0894a2dcb97e6e0fcb70efb29730",
+    "mesh_hash": "fb1bcf457cf5c9d8e3fe4f1fb288dffabdd81c898e5d59c82412a45293566d70",
+    "part": "sticker_bin",
+    "volume": 80107.90399999925
+  },
+  "examples/sticker_drawer/sticker_clip.yaml": {
+    "bbox": [
+      5.9,
+      14.0,
+      10.0
+    ],
+    "canonical_mesh_hash": "59fe94c7e2b77f81dfb4d447b914356db94487c903c8a218988fa281d9e97e78",
+    "mesh_hash": "ecbb79b5c039e52e2484af82a0a0a9c3768c5edc18572d887614455e803f3b83",
+    "part": "clip",
+    "volume": 433.99999999999994
+  },
+  "examples/sticker_drawer/sticker_divider.yaml": {
+    "bbox": [
+      72.0,
+      2.0,
+      50.45
+    ],
+    "canonical_mesh_hash": "f4d93ed06d380ae0d4165e29ba930fa996e2c38a973a125bb0aff3e17fedb259",
+    "mesh_hash": "8eef0cb27f1e03f57145bae27f6405ecff25305f8d20296b0e6048d513446171",
+    "part": "divider",
+    "volume": 6688.800000000001
+  },
   "examples/text_engraved.yaml": {
     "bbox": [
       100.0,

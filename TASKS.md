@@ -5,14 +5,14 @@ id_prefix: TCAD
 next_id: 5
 archival: inline
 areas:
-  VAL: 14
-  UX: 10
+  VAL: 18
+  UX: 15
   API: 3
   ARCH: 10
   CON: 13
   FIN: 2
   BUG: 6
-  DSL: 3
+  DSL: 5
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -1238,3 +1238,251 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-08-02T19:43:43Z session:airless-antimatter-0802] Root-caused: filleting all 12 edges of a box builds a valid OCCT solid but exports a non-watertight STL (9 fragments) regardless of tessellation tolerance/radius -- upstream CadQuery/OCCT tessellation limitation at corner seams, not a tiacad bug. Confirmed via BRepCheck_Analyzer (solid valid) and swept tolerance/radius (crack persists at every setting tried). Fixed formats_demo.yaml by changing edges: all -> edges: {parallel_to: Z} (vertical edges only), which tessellates cleanly. Documented as KNOWN_LIMITATIONS.md #22.
+
+
+## TASK-TCAD-UX-10 · Flow-style YAML with ${...} fails with an unhelpful parse error (parameters: {width: ${w}}, origin: [${x}, ...])
+
+```yaml
+status: backlog
+priority: low
+effort: 2h
+tags: [dx, yaml]
+created: '2026-10-16T18:29:13Z'
+updated: '2026-10-16T19:25:23Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin.yaml
+notes_next: 3
+```
+
+Found modeling the sticker-drawer bin. Inline mappings/sequences containing ${param} are invalid YAML because '{' opens a flow mapping, and the error ('expected , or } but got {') never mentions ${}. Options: pre-quote ${...} spans before yaml.safe_load, or catch the parse error and add a hint to use block style. Repro: parameters: {width: ${a}, depth: 5, height: 5} on a box part.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-16T18:35:30Z session:turbo-nexus-1016] Correction after reading YAML_REFERENCE: docs quote every template ('${w}') and quoted flow-style works (tested). Real gap is only the error text and that the docs never state why quoting is needed; KNOWN_LIMITATIONS #16 covers the -${expr} case. Fix = hint in the parse error + one sentence in YAML_REFERENCE Parameters.
+- [#2 2026-10-16T19:25:23Z session:turbo-nexus-1016] Docs half done 2026-10-16: YAML_REFERENCE.md Parameters now has 'Quoting ${...} in inline YAML' (and the Document Structure block says parts is required unless imports). Remaining: the parse-error hint in code.
+
+
+## TASK-TCAD-UX-11 · Add a section/probe CLI command (e.g. tiacad section FILE --plane y=79.5) reporting wall/floor/slot thicknesses
+
+```yaml
+status: backlog
+priority: low
+effort: 1d
+tags: [cli, validation]
+created: '2026-10-16T18:29:14Z'
+updated: '2026-10-16T18:29:14Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin.yaml
+```
+
+Verifying wall (1.6), slot skin (0.8), floor (2.0) and cutout height on the sticker bin required hand-slicing the STL with trimesh; its ray queries failed without rtree. check only reports bbox+volume per part and measure works between named references. A section command that lists material intervals along an axis line or plane would make thin-feature verification routine.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-UX-12 · Trust render: add depth cues/cross-section view; anchor markers clutter; PNG lands next to the input YAML
+
+```yaml
+status: in_progress
+priority: low
+effort: 1d
+tags: [render, dx]
+created: '2026-10-16T18:29:16Z'
+updated: '2026-10-16T19:12:03Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin_trust.png
+notes_next: 3
+```
+
+Flat shading makes the Top/Bottom views of an open box a solid rectangle (cavity invisible). Wants a section view and/or light shading. Anchor crosshairs dominate small parts. Default output writes <stem>_trust.png into the source directory (dropped 3 PNGs into examples/); consider a build-output dir or documenting -o.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-16T18:53:08Z session:turbo-nexus-1016] Correction: the crosshair markers are validation-issue markers (orange=warning, blue=info), NOT anchors; the 4 warnings on the sticker bin are false positives (filed as the VAL task). Implemented: (1) depth-shaded ortho panels (darker = farther, floor 55%), (2) render --section AXIS=VALUE: capped cutaway, cap = slice + vtkContourTriangulator (vtkClipClosedSurface mis-fills concave U profiles; cap areas verified exact vs hand calc 226.08/304.16/569.28 mm2), (3) render --no-markers, (4) -o/default-path documented in CLI.md. Default output path deliberately NOT changed: examples/trust and thingiverse_rebuilds commit *_trust.png beside the YAML. Tests: 91 pass in test_visualization/test_trust_renderer.py + test_cli. Not yet committed.
+- [#2 2026-10-16T19:12:03Z session:turbo-nexus-1016] Final: also widened tiacad-schema.json (parts required unless the doc imports; if/then keeps the 'Missing required field parts' message) because the import-only fit_check.yaml was rejected by test_every_example_validates_against_schema; +2 schema tests, +get_schema_info reads then.required. Determinism goldens added for the 4 sticker_drawer models only. Test sweep (correctness, schema, docs, visualization, cli, visual_regression): 855 pass; 14 fail, none from this change: 13 differential tests need manifold3d (not installed here), and v3_bracket_mount golden_volume differs in the last float digit (255576.8426929166 vs ...163). Found while verifying: TCAD-UX-13 (render of import-heavy models), TCAD-VAL-14 (false-positive hole warnings). Awaiting commit approval; then tt done --commit.
+
+
+## TASK-TCAD-DSL-3 · Inline cut shorthand: collapse cutter-part + difference boilerplate for pockets/slots
+
+```yaml
+status: future
+priority: low
+effort: 2-3d
+tags: [dsl, ergonomics]
+created: '2026-10-16T18:29:18Z'
+updated: '2026-10-16T18:35:30Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin.yaml
+notes_next: 2
+```
+
+sticker_bin.yaml needs 4 cutter box parts (cavity, 2 slots, finger cut) each with an explicit corner origin, plus a difference op. A 'cut:' list on a part (primitive + origin) would cut ~half the file. Future/idea; only worth it if more models show the same shape.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-16T18:35:30Z session:turbo-nexus-1016] Docs have type: pattern (linear/circular/grid) -- my two divider slots could have been one linear pattern; only the cavity/finger cut are true one-offs, so the boilerplate cost is smaller than first filed. Re-evaluate before building.
+
+
+## TASK-TCAD-DSL-4 · Declare units in metadata (units: mm|in) and warn on mismatch
+
+```yaml
+status: future
+priority: low
+effort: 1d
+tags: [dsl, units]
+created: '2026-10-16T18:29:19Z'
+updated: '2026-10-16T18:29:20Z'
+session: turbo-nexus-1016
+```
+
+All values are implicitly mm. Inch-spec'd designs (sticker-drawer spec) are converted by hand. A units field (with optional conversion) would catch silent mm/inch mix-ups. Idea; confirm there is demand first.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-14 · Validation false positives on box-shaped cutters: HoleEdgeProximity warns 'very close to edge' (37mm!) on pockets/slots; FeatureBounds INFO on intentional overshoot
+
+```yaml
+status: backlog
+priority: low
+effort: 3h
+tags: [validation, false-positive]
+created: '2026-10-16T18:53:08Z'
+updated: '2026-10-16T18:53:08Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin.yaml
+```
+
+sticker_bin.yaml (cavity, 2 slots, finger_cut: box cutters in a difference) yields 4 WARNINGs + 2 INFOs, every one intended. Hole 'cavity' 'very close to edge(s)' with distances of 37 mm: the rule treats any subtracted part as a round hole, estimates radius from the bbox (half the cutter width), so a 70 mm pocket is 'close' to a 74 mm wall. Rectangular pockets/slots/notches are not holes. Also 'extends beyond parent' INFO fires for cutters that deliberately overshoot the shell so the cut is clean (standard CAD practice). Fix direction: only apply HoleEdgeProximity to cutters that are actually cylindrical (backend.get_cylindrical_radius already exists, TCAD-ARCH-7), and don't flag deliberate through-cut overshoot. The warnings were the orange/blue crosshair markers on the render, which is why they read as clutter (TCAD-UX-12).
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-UX-13 · Trust render of a model that imports components draws the components' internal parts (cutters, shells) as solids
+
+```yaml
+status: backlog
+priority: medium
+effort: 4h
+tags: [render, imports]
+created: '2026-10-16T18:58:17Z'
+updated: '2026-10-16T18:58:17Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/fit_check.yaml
+```
+
+Repro: examples/sticker_drawer/fit_check.yaml imports sticker_bin.yaml twice + divider + clip and unions the finished parts. tiacad render shows a 22-entry legend (bin_a.shell, bin_a.cavity, bin_a.slot, bin_a.finger_cut, ...) and scene extents Z=64.8/Y=237.6 vs the real assembly 52.8/236 (build, verify and validate-geometry all agree on 52.8/236). Cause: ComponentImporter._import_file clones every part of the component into the importer's registry as 'ns.part' but drops the component's operations, so _collect_visible_part_names (trust_renderer.py) never sees that ns.cavity etc. were consumed by ns.sticker_bin; it then falls back to rendering all unconsumed parts, and _collect_component_parts treats ns.sticker_bin as an opaque leaf instead of the difference it is. --section is affected too (cavity box shows as solid). Fix direction: have the importer record which imported parts the component's own ops consume (or the component's default part) and have the renderer hide those; do not hide imported parts merely for being unreferenced (a doc may display an imported part directly). Add a test with a component whose op consumes helper parts.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-UX-14 · CLI parameter overrides: --set NAME=VALUE on build/check/render/verify
+
+```yaml
+status: backlog
+priority: medium
+effort: 3h
+tags: [cli, parameters]
+created: '2026-10-16T19:16:58Z'
+updated: '2026-10-16T19:16:58Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_clip.yaml
+```
+
+build/check/render/verify cannot override a parameter; only imports: can. Fit-testing wants variants of one model (clips at gap 0.2/0.3/0.4) without editing the YAML or writing a wrapper. Overrides must flow through the same parameter resolution as imports (so derived ${...} parameters recompute), reject unknown names with the list of valid ones, and be echoed in the output so a printed variant is traceable. Note an expect: contract written for the default values will legitimately fail on a variant; decide whether verify should skip or warn.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-15 · validate-geometry printability report: min wall thickness, overhangs, build-volume fit (--bed XxYxZ)
+
+```yaml
+status: backlog
+priority: medium
+effort: 1d
+tags: [validation, printing]
+created: '2026-10-16T19:17:00Z'
+updated: '2026-10-16T19:17:08Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin.yaml
+  relates_to:
+  - TCAD-VAL-17
+```
+
+validate-geometry only checks watertight + component count. For print work it should also report: minimum wall thickness (the sticker bin's 0.8 mm slot skin is the weak point), faces steeper than a configurable overhang angle needing support, and whether the part fits a build volume (--bed 250x210x200, trying axis-aligned orientations). Had to ask the user their bed size because nothing could check the 236 mm bin. Keep it advisory (warnings), with thresholds as flags.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-16 · Contract relation: clearance (true minimum distance between two parts)
+
+```yaml
+status: backlog
+priority: medium
+effort: 3h
+tags: [contracts, validation]
+created: '2026-10-16T19:17:02Z'
+updated: '2026-10-16T19:17:08Z'
+session: turbo-nexus-1016
+links:
+  references:
+  - examples/sticker_drawer/fit_check.yaml
+notes_next: 2
+```
+
+no_overlap proves a clearance is not negative but not that it is the designed 0.2 mm, so fit_check.yaml's slot (0.2/side) and clip (0.15/leg) gaps are asserted only indirectly. Add relations: clearance: [partA, partB], min: 0.15 (optionally max) using the real solid-to-solid distance already available on the backend (Shape.distance(), see TCAD-ARCH-7 / get_distance). Include a negative-contract fixture so the check is proven able to fail.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-16T19:17:08Z session:turbo-nexus-1016] Related: TCAD-UX-3 shipped 'tiacad measure' (distance between two named spatial references). That is reference-point distance; this task is solid-to-solid minimum distance (gap between surfaces), so check whether measure can share the backend call before adding a second code path.
+
+
+## TASK-TCAD-VAL-17 · Contract: min thickness assertion (thickness: {min: 0.8}) for walls, floors and slot skins
+
+```yaml
+status: backlog
+priority: low
+effort: 1d
+tags: [contracts, validation]
+created: '2026-10-16T19:17:03Z'
+updated: '2026-10-16T19:17:08Z'
+session: turbo-nexus-1016
+depends_on: [TCAD-UX-11]
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin.yaml
+```
+
+Thin features in the sticker bin (1.6 wall, 2.0 floor, 0.8 slot skin) are verified only by volume and by eye in a --section render. A numeric min-thickness contract would make them regress-proof. Pairs with TCAD-UX-11 (section/probe command) which can share the sampling code; the printability report task can reuse it for min wall reporting.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
