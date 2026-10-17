@@ -1576,20 +1576,21 @@ build/check/render/verify accept --set NAME=VALUE (TCAD-UX-14); validate-geometr
 ## TASK-TCAD-DSL-5 · No first-class way to lay several parts out on one build plate
 
 ```yaml
-status: backlog
+status: rejected
 priority: low
 effort: 1d
 tags: [dsl, feature]
 created: '2026-10-17T00:40:43Z'
-updated: '2026-10-17T00:40:43Z'
+updated: '2026-10-17T01:49:25Z'
 session: babewugo-1016
+notes_next: 2
 ```
 
 Putting one tray of each layout (and a test ruler of 18-31 squares) on one print needed a generator script (YAML emitted by Python) plus a trimesh merge outside TiaCAD. Idea: a plate:/layout helper (parts + positions or simple row/grid packing, optional gap, bounds check against a --bed) that exports one multi-body STL/3MF. Only worth building if multi-part print plates recur (sticker drawer will need ~20 trays).
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-17T01:49:25Z session:chartreuse-corona-1016] Scott 2026-10-16: TiaCAD is a modeling tool, not a layout/plate-packing tool. Plate layout belongs in the slicer or user scripts.
 
 
 ## TASK-TCAD-DSL-6 · Box axis names (width=X, depth=Y, height=Z) are a recurring trap; consider x/y/z (or size_x/y/z) aliases
@@ -1643,21 +1644,22 @@ notes_next: 2
 ## TASK-TCAD-EX-1 · sticker_drawer examples (bin/divider/clip/fit_check) still describe the old swapped drawer axes; reconcile with sticker_tray
 
 ```yaml
-status: backlog
+status: rejected
 priority: medium
 effort: 3h
 tags: [examples]
 created: '2026-10-17T00:40:49Z'
-updated: '2026-10-17T00:40:49Z'
+updated: '2026-10-17T01:49:25Z'
 session: babewugo-1016
 links:
   references:
   - examples/sticker_drawer/sticker_bin.yaml
   - examples/sticker_drawer/sticker_tray.yaml
+notes_next: 2
 ```
 
 Real drawer (measured 2026-10-16): 19.5 in left-right x 15 in front-back; columns run front to back. sticker_bin.yaml comments say 5 across a 381 mm drawer and 2 deep in 489 mm (axes swapped) and its 236 mm length cannot print on the CR-6 SE (~234 mm travel). New sticker_tray.yaml (single-sticker trays; layout A slot_l 71.6, 5/column, layout B 90.6, 4/column) supersedes the design. Decide: retire bin/divider/clip/fit_check or keep as an example of imports; either way fix the comments, update fit_check, trust PNGs, golden hashes, docs/tests that reference them. Physical verification still outstanding: print one of each tray, check stickers (3.5 in diagonal) and the 50.8 vs 63.5 mm clearance.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-17T01:49:25Z session:chartreuse-corona-1016] Scott 2026-10-16: sticker-drawer design/reconciliation is not a TiaCAD issue; it's a user project. (Old bin examples stay as-is.)
