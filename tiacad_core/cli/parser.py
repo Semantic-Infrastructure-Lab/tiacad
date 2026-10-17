@@ -25,13 +25,14 @@ def create_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  tiacad build examples/plate.yaml                    # Outputs plate.3mf (modern format)
-  tiacad build examples/plate.yaml -o plate.stl       # Force STL output
-  tiacad build examples/bracket.yaml -o bracket.step  # CAD exchange format
+  tiacad build examples/rounded_mounting_plate.yaml                   # Outputs rounded_mounting_plate.3mf (modern format)
+  tiacad build examples/rounded_mounting_plate.yaml -o plate.stl      # Force STL output
+  tiacad build examples/bracket_with_hole.yaml -o bracket.step        # CAD exchange format
   tiacad validate examples/*.yaml
-  tiacad info examples/bracket.yaml
-  tiacad debug examples/bracket.yaml --bundle out/
-  tiacad render examples/bracket.yaml                 # Outputs bracket_trust.png (8-view inspection render)
+  tiacad info examples/bracket_with_hole.yaml
+  tiacad check examples/sticker_drawer/sticker_tray.yaml --set slot_l=90.6   # try a parameter value
+  tiacad debug examples/bracket_with_hole.yaml --bundle out/
+  tiacad render examples/bracket_with_hole.yaml                       # Outputs bracket_with_hole_trust.png (8-view inspection render)
 
 Note: 3MF is the recommended format for 3D printing (multi-material, compact, modern).
       STL is supported for legacy compatibility.

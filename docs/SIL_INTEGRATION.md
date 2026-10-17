@@ -86,19 +86,21 @@ grep -A 20 "hook:" awesome_guitar_hanger.yaml
 # Returns: Full hook definition
 ```
 
-**v3.1 DAG System** (planned) will extend this:
+**v3.1 DAG System** (shipped) extends this:
 ```bash
-# LEVEL 1: ORIENT - Dependency summary
-tiacad build design.yaml --show-deps-summary
-# Output: "23 parts, 45 operations, 12 parameters"
+# LEVEL 1: ORIENT - What is in the model?
+tiacad info design.yaml
+# Output: parameters, parts, operations
 
-# LEVEL 2: NAVIGATE - Visual graph
-tiacad build design.yaml --show-deps
-# Output: Interactive dependency graph
+# LEVEL 2: NAVIGATE - Dependency graph
+tiacad build design.yaml --show-deps both
+# Output: node/edge counts in the terminal, plus design_deps.dot in the current directory (Graphviz)
 
 # LEVEL 3: FOCUS - Track specific changes
-tiacad build design.yaml --watch --param hook_width
-# Output: Real-time rebuild on parameter change
+tiacad watch design.yaml
+# Output: incremental rebuild (cached geometry) on every save
+tiacad check design.yaml --set hook_width=30
+# Output: dimensions and volume with one parameter overridden
 ```
 
 ---
@@ -332,20 +334,20 @@ parts:
   mounting_holes: ...
 ```
 
-### Execution Level (v3.1 planned)
+### Execution Level
 
 ```bash
 # LEVEL 1: Quick summary
-tiacad build bracket.yaml --summary
-# "Building bracket.yaml (4 parts, 8 operations)"
+tiacad check bracket.yaml
+# Every part with its X x Y x Z size and volume
 
 # LEVEL 2: Build process
-tiacad build bracket.yaml --verbose
-# Shows each operation as it executes
+tiacad build bracket.yaml --stats
+# Build statistics (add --verbose for tracebacks on error)
 
 # LEVEL 3: Full dependency graph
-tiacad build bracket.yaml --show-deps --verbose
-# Visual graph + execution trace
+tiacad build bracket.yaml --show-deps text
+# Node/edge counts and depth (use dot or both for a Graphviz file)
 ```
 
 ---
@@ -488,22 +490,22 @@ the canonical planning doc. v3.1's Dependency Graph shipped as described
 (Q1 2026). The Semantic Constraints work is retimed to **Q4 2026** in
 `ROADMAP.md` (not Q2) — see that file for the current authoritative schedule.
 
-### v3.1: Dependency Graph (Q1 2026)
+### v3.1: Dependency Graph (shipped)
 
 **Progressive Disclosure for Dependencies:**
 
 ```bash
 # LEVEL 1: Orient
-tiacad build widget.yaml --deps-summary
-# "23 parts, 45 operations, 12 parameters, 8 dependency chains"
+tiacad info widget.yaml
+# Parameters, parts, operations
 
 # LEVEL 2: Navigate
-tiacad build widget.yaml --show-deps
-# Interactive graph: hover for details, click to focus
+tiacad build widget.yaml --show-deps both
+# Node/edge counts and depth, plus widget_deps.dot in the current directory for Graphviz
 
 # LEVEL 3: Focus
-tiacad build widget.yaml --watch --param width
-# Live updates on width changes, show affected parts
+tiacad watch widget.yaml
+# Incremental rebuild on every save (cached geometry)
 ```
 
 **SIL Impact:** Demonstrates progressive disclosure for SEMANTIC structures (dependencies), not just syntactic ones.

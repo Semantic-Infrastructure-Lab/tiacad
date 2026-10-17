@@ -564,12 +564,15 @@ ValidationError: Unknown part reference 'tower' in operation 'place_tower'
 
 ### Origin Mode
 
-**What it is**: Specifies where a primitive's origin (0,0,0) is located relative to the shape.
+**What it is**: Specifies which point of a primitive's bounding box sits at (0,0,0).
 
-**Options**:
-- `center` - Origin at geometric center (default for box, sphere)
-- `bottom` - Origin at bottom center (default for cylinder, cone)
-- `corner` - Origin at corner (min X, min Y, min Z)
+**Options** (the same for box, cylinder, cone, sphere, torus and polygon):
+- `center` - Bounding-box center at the origin (default; polygon defaults to `base`)
+- `base` - Bottom-center at the origin, so the part sits on z=0
+- `corner` - Bounding-box min corner (min X, min Y, min Z) at the origin
+- `[x, y, z]` - A literal point for the shape's reference point (box: min corner; cylinder, cone, polygon: bottom-center; sphere, torus: center)
+
+Any other value (for example `bottom`) is an error, not a silent fallback to `center`.
 
 **Example**:
 ```yaml

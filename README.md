@@ -117,11 +117,12 @@ reveal guitar_hanger.yaml       # Structure: metadata, parameters, parts, operat
 reveal guitar_hanger.yaml --range 45-75  # Just the hook definition
 ```
 
-**Future** (v3.1 DAG): Progressive disclosure for *dependencies*:
+Progressive disclosure for *dependencies* (v3.1 DAG, shipped):
 ```bash
-tiacad build widget.yaml --deps-summary    # LEVEL 1: "23 parts, 45 ops"
-tiacad build widget.yaml --show-deps       # LEVEL 2: Dependency graph
-tiacad build widget.yaml --watch --param w # LEVEL 3: Live tracking
+tiacad info widget.yaml                        # LEVEL 1: parameters, parts, operations
+tiacad build widget.yaml --show-deps text      # LEVEL 2: dependency graph (text | dot | both)
+tiacad watch widget.yaml                       # LEVEL 3: incremental rebuild on every save
+tiacad check widget.yaml --set w=40            # ...or try a parameter value without editing
 ```
 
 #### 2. Composability

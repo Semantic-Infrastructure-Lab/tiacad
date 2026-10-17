@@ -54,6 +54,8 @@ tiacad build INPUT [OPTIONS]
 - `-p, --part NAME` - Specific part to export (default: last operation result)
 - `-s, --stats` - Show build statistics
 - `--validate-schema` - Enable JSON schema validation
+- `--show-deps {text,dot,both}` - Print the dependency graph summary (nodes, edges, depth); `dot` and `both` also write `INPUT-stem_deps.dot` to the current directory for Graphviz
+- `--set NAME=VALUE` - Override a top-level parameter (repeatable; see [Parameter overrides](#parameter-overrides---set))
 - `-v, --verbose` - Verbose output with full traceback
 
 **Output Formats:**
@@ -65,19 +67,19 @@ tiacad build INPUT [OPTIONS]
 
 ```bash
 # Build to 3MF (default)
-tiacad build examples/plate.yaml
+tiacad build examples/rounded_mounting_plate.yaml
 
 # Build to specific output file
-tiacad build examples/plate.yaml --output mounting_plate.stl
+tiacad build examples/rounded_mounting_plate.yaml --output mounting_plate.stl
 
 # Build to 3MF for multi-material printing
 tiacad build examples/multi_material_demo.yaml --output demo.3mf
 
 # Build specific part from file
-tiacad build examples/assembly.yaml --part base_plate
+tiacad build examples/week5_assembly.yaml --part platform
 
 # Build with statistics
-tiacad build examples/bracket.yaml --stats
+tiacad build examples/bracket_with_hole.yaml --stats
 
 # Build with schema validation
 tiacad build examples/new_design.yaml --validate-schema
@@ -116,10 +118,10 @@ tiacad validate FILES...
 
 ```bash
 # Validate single file
-tiacad validate examples/plate.yaml
+tiacad validate examples/rounded_mounting_plate.yaml
 
 # Validate multiple files
-tiacad validate examples/plate.yaml examples/bracket.yaml
+tiacad validate examples/rounded_mounting_plate.yaml examples/bracket_with_hole.yaml
 
 # Validate all examples (glob pattern)
 tiacad validate examples/*.yaml
@@ -132,7 +134,7 @@ tiacad validate examples/bolt_*.yaml
 ```
 Validating 3 file(s)...
 ✓ examples/simple_box.yaml
-✓ examples/mounting_plate.yaml
+✓ examples/mounting_plate_with_bolt_circle.yaml
 ✗ examples/broken_design.yaml
   └─ Part 'bolt_hol' not found. Did you mean 'bolt_hole'?
 
@@ -166,44 +168,47 @@ tiacad info INPUT [OPTIONS]
 
 ```bash
 # Show file info
-tiacad info examples/mounting_plate.yaml
+tiacad info examples/mounting_plate_with_bolt_circle.yaml
 
 # Show detailed info
-tiacad info examples/assembly.yaml --verbose
+tiacad info examples/week5_assembly.yaml --verbose
 ```
 
 **Output Example:**
 ```
-📄 rounded_mounting_plate.yaml
+📄 mounting_plate_with_bolt_circle.yaml
 
 Metadata:
-  name: Rounded Mounting Plate with Filleted Edges
-  description: Demonstrates fillet finishing operation
+  name: Mounting Plate with Bolt Circle Pattern
+  description: Demonstrates circular pattern for bolt holes
   version: 1.0
   author: TIA
+  created: 2025-10-25
 
-Parameters (8):
+Parameters (7):
   plate_width: 150
   plate_height: 150
   plate_thickness: 8
   bolt_count: 6
   ...
 
-Parts (10):
+Parts (12):
   • plate (box)
   • bolt_hole (cylinder)
   • center_hole (cylinder)
   ...
+  • final_plate (boolean)
 
-Operations (3):
+Operations (4):
+  • bolt_hole_oriented (transform)
+  • center_hole_oriented (transform)
   • bolt_circle (pattern)
-  • plate_with_holes (boolean)
-  • finished_plate (finishing)
+  • final_plate (boolean)
 
 Statistics:
-  Total parts: 10
-  Parameters: 8
-  Operations: 3
+  Total parts: 12
+  Parameters: 7
+  Operations: 4
 ```
 
 ---
@@ -231,17 +236,17 @@ tiacad render INPUT [OPTIONS]
 - `-v, --verbose` - Verbose output with traceback on failure
 
 **Default output path** (written next to the input file; pass `-o` to send it elsewhere):
-- Overview: `INPUT` stem + `_trust.png`, e.g. `examples/bracket.yaml` → `examples/bracket_trust.png`
+- Overview: `INPUT` stem + `_trust.png`, e.g. `examples/bracket_with_hole.yaml` → `examples/bracket_with_hole_trust.png`
 - `--section`: `INPUT` stem + `_section.png`
 
 **Examples:**
 
 ```bash
 # Write the trust render next to the model
-tiacad render examples/bracket.yaml
+tiacad render examples/bracket_with_hole.yaml
 
 # Write to an explicit path
-tiacad render examples/bracket.yaml -o /tmp/bracket_check.png
+tiacad render examples/bracket_with_hole.yaml -o /tmp/bracket_check.png
 
 # Cutaway through a wall/slot at y = 79.5 mm (viewed from +Y; cut face drawn in yellow)
 tiacad render examples/sticker_drawer/sticker_bin.yaml --section y=79.5
@@ -314,7 +319,7 @@ tiacad debug INPUT [OPTIONS]
 
 **Default bundle directory:**
 - `INPUT` stem + `.tiacad-debug`
-- Example: `examples/bracket.yaml` → `examples/bracket.tiacad-debug/`
+- Example: `examples/bracket_with_hole.yaml` → `examples/bracket_with_hole.tiacad-debug/`
 
 **Bundle contents:**
 - `manifest.json`
@@ -330,19 +335,19 @@ tiacad debug INPUT [OPTIONS]
 
 ```bash
 # Write a debug bundle next to the model
-tiacad debug examples/bracket.yaml
+tiacad debug examples/bracket_with_hole.yaml
 
 # Write to an explicit directory
-tiacad debug examples/bracket.yaml --bundle out/debug-bracket
+tiacad debug examples/bracket_with_hole.yaml --bundle out/debug-bracket
 
 # Print manifest JSON for an agent/tooling wrapper
-tiacad debug examples/bracket.yaml --json
+tiacad debug examples/bracket_with_hole.yaml --json
 
 # Skip trust render if only structured artifacts are needed
-tiacad debug examples/bracket.yaml --no-trust-render
+tiacad debug examples/bracket_with_hole.yaml --no-trust-render
 
 # Compare the current model against a previous bundle
-tiacad debug examples/bracket.yaml --compare out/previous-debug
+tiacad debug examples/bracket_with_hole.yaml --compare out/previous-debug
 ```
 
 **Notes:**
@@ -366,7 +371,7 @@ tiacad check INPUT [-v] [--contract]
 
 ```bash
 # Report all part dimensions without exporting
-tiacad check examples/assembly.yaml
+tiacad check examples/week5_assembly.yaml
 
 # Also check the embedded expect: contract
 tiacad check examples/validation/T0_sphere.tiacad --contract
@@ -460,7 +465,7 @@ Build each file and report final-part dimensions; flags failures.
 
 **Usage:**
 ```bash
-tiacad audit FILES... [-v]
+tiacad audit FILES... [-v] [--write-contract]
 ```
 
 ```bash
@@ -469,7 +474,15 @@ tiacad audit examples/*.yaml
 
 # Verbose output with tracebacks on failure
 tiacad audit examples/*.yaml --verbose
+
+# Print a starting expect: block (final part, volume, bbox, watertight, components) for each file
+tiacad audit examples/simple_box.yaml --write-contract
 ```
+
+`--write-contract` only prints; it never modifies the files. Review the numbers before pasting
+them into the model, since they are frozen from the current build. `examples/dag_test_cycle.yaml`
+and the `examples/validation/negative/` models fail on purpose, so an audit of `examples/*.yaml` reports
+failures for them.
 
 ---
 
@@ -496,10 +509,10 @@ tiacad validate-geometry INPUT [-p PART] [-v] [--bed XxYxZ] [--min-wall MM] [--o
 
 ```bash
 # Validate geometry of a model
-tiacad validate-geometry examples/bracket.yaml
+tiacad validate-geometry examples/bracket_with_hole.yaml
 
 # Check a specific part
-tiacad validate-geometry examples/assembly.yaml --part final_assembly
+tiacad validate-geometry examples/week5_assembly.yaml --part rotated_gear
 
 # Will it print on a 250x210x200 bed, and is anything too thin?
 tiacad validate-geometry examples/sticker_drawer/sticker_bin.yaml --bed 250x210x200
@@ -525,18 +538,18 @@ tiacad watch INPUT [--export PATH]
 **Examples:**
 ```bash
 # Watch and rebuild (no export)
-tiacad watch examples/bracket.yaml
+tiacad watch examples/bracket_with_hole.yaml
 
 # Watch and auto-export to STL
-tiacad watch examples/bracket.yaml --export /tmp/bracket.stl
+tiacad watch examples/bracket_with_hole.yaml --export /tmp/bracket.stl
 
 # Watch and auto-export to 3MF
-tiacad watch examples/assembly.yaml --export /tmp/assembly.3mf
+tiacad watch examples/week5_assembly.yaml --export /tmp/assembly.3mf
 ```
 
 **Output:**
 ```
-Watching: examples/bracket.yaml
+Watching: examples/bracket_with_hole.yaml
 [14:32:07]  changed   ✓   112ms  1 rebuilt, 3 cached  → bracket.stl
 [14:32:15]  changed   ✓    89ms  2 rebuilt, 2 cached  → bracket.stl
 ```
@@ -558,7 +571,7 @@ Available for all commands:
 tiacad --version
 
 # Disable colors for CI
-tiacad build examples/plate.yaml --no-color
+tiacad --no-color build examples/rounded_mounting_plate.yaml
 
 # Show help
 tiacad --help
@@ -567,7 +580,7 @@ tiacad build --help
 
 ### Parameter overrides (`--set`)
 
-`build`, `check`, `render` and `verify` accept `--set NAME=VALUE` (repeatable) to build a
+`build`, `check`, `render`, `verify`, `validate-geometry` and `section` accept `--set NAME=VALUE` (repeatable) to build a
 variant of one model without editing the YAML:
 
 ```bash
@@ -647,10 +660,10 @@ Unknown primitive type 'unknown_primitive' for part 'box1'
 set -e  # Exit on error
 
 echo "Validating TiaCAD designs..."
-tiacad validate designs/*.yaml --no-color
+tiacad --no-color validate designs/*.yaml
 
 echo "Building production parts..."
-tiacad build designs/production_part.yaml --output dist/part.stl --no-color
+tiacad --no-color build designs/production_part.yaml --output dist/part.stl
 
 echo "✓ Build successful"
 ```
@@ -809,7 +822,7 @@ tiacad build production.yaml --output final.stl
 
 Always use `--no-color` in CI/scripts:
 ```bash
-tiacad build design.yaml --no-color > build.log
+tiacad --no-color build design.yaml > build.log
 ```
 
 ### 5. Check Info Before Building
@@ -826,14 +839,14 @@ tiacad info complex_design.yaml
 ### Before (Direct Python)
 
 ```bash
-python -m tiacad_core.parser.tiacad_parser examples/plate.yaml
+python -m tiacad_core.parser.tiacad_parser examples/rounded_mounting_plate.yaml
 # No options, no feedback, no validation
 ```
 
 ### After (Enhanced CLI)
 
 ```bash
-tiacad build examples/plate.yaml --output plate.stl --stats
+tiacad build examples/rounded_mounting_plate.yaml --output plate.stl --stats
 # Professional interface, options, progress, statistics
 ```
 

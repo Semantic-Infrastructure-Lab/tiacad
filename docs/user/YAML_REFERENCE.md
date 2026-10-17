@@ -1150,11 +1150,11 @@ TiaCAD supports three output formats via the CLI:
 
 ```bash
 # Default: outputs modern 3MF format
-tiacad build examples/bracket.yaml              # → bracket.3mf (recommended)
+tiacad build examples/bracket_with_hole.yaml              # → bracket_with_hole.3mf (recommended)
 
 # Specify output format with extension
-tiacad build examples/bracket.yaml -o bracket.step   # → STEP for CAD
-tiacad build examples/bracket.yaml -o bracket.stl    # → STL for legacy
+tiacad build examples/bracket_with_hole.yaml -o bracket.step   # → STEP for CAD
+tiacad build examples/bracket_with_hole.yaml -o bracket.stl    # → STL for legacy
 
 # Multi-material designs (3MF only)
 tiacad build examples/multi_material_demo.yaml  # → preserves colors/materials
