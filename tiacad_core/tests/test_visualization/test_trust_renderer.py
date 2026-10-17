@@ -14,6 +14,7 @@ from tiacad_core.visual.trust_renderer import (
     _cap_at_plane,
     _depth_shaded,
     parse_section_spec,
+    _collect_component_parts,
     _collect_visible_part_names,
     _maybe_start_xvfb,
     _part_to_pyvista,
@@ -72,6 +73,30 @@ def test_collect_visible_part_names_expands_pattern_dict_refs():
         }
 
     assert _collect_visible_part_names(FakeDoc()) == ["final"]
+
+
+def test_collect_component_parts_expands_pattern_and_range_refs():
+    """Regression: `render --section` crashed (unhashable dict) on subtract:[{pattern: X}]."""
+
+    class FakeParts:
+        def list_parts(self):
+            return ["base", "slots_0", "slots_1", "slots_10", "hole_0", "hole_1", "final"]
+
+    class FakeDoc:
+        parts = FakeParts()
+        export_config = {}
+        operations = {
+            "final": {
+                "type": "boolean",
+                "operation": "difference",
+                "base": "base",
+                "subtract": [{"pattern": "slots"}, {"range": "hole[0..0]"}],
+            }
+        }
+
+    additive, subtractive = _collect_component_parts(FakeDoc())
+    assert additive == ["base"]
+    assert subtractive == ["slots_0", "slots_1", "slots_10", "hole_0"]  # numeric order, range honored
 
 
 def test_maybe_start_xvfb_ignores_startup_errors(monkeypatch):

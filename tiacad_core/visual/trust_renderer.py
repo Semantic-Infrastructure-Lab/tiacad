@@ -249,9 +249,15 @@ def _collect_component_parts(doc) -> tuple[list, list]:
     finishing ops, intersections, and primitives are opaque leaves — their
     registry geometry is what we draw.
     """
+    from ..parser.operation_inputs import expand_input_item
     from ..parser.tiacad_parser import resolve_default_part_name
 
     operations = doc.operations or {}
+    part_names = list(doc.parts.list_parts())
+
+    def expand(entries) -> list:
+        return [n for e in entries for n in expand_input_item(e, part_names)]
+
     try:
         root = resolve_default_part_name(doc.parts, operations, doc.export_config)
     except Exception:
@@ -272,14 +278,14 @@ def _collect_component_parts(doc) -> tuple[list, list]:
         if op.get("type") == "boolean":
             operation = op.get("operation")
             if operation == "union":
-                for inp in op.get("inputs", []):
+                for inp in expand(op.get("inputs", [])):
                     walk(inp, is_additive)
                 return
             if operation == "difference":
                 base = op.get("base")
                 if base:
                     walk(base, is_additive)
-                for sub in op.get("subtract", []):
+                for sub in expand(op.get("subtract", [])):
                     walk(sub, not is_additive)
                 return
         # transform / pattern / finishing / intersection / unknown → opaque leaf
