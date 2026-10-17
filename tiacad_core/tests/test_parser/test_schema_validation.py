@@ -78,6 +78,25 @@ class TestConstraintSchema:
         assert len(errors) > 0
 
 
+class TestExpectThicknessSchema:
+    """expect.thickness.min must stay > 0 even though other expect: numbers
+    accept ${...} templates (TCAD-VAL-18)."""
+
+    def _data(self, min_value):
+        return {
+            "parts": {"b": {"primitive": "box", "parameters": {"width": 1, "depth": 1, "height": 1}}},
+            "expect": {"thickness": {"min": min_value}},
+        }
+
+    @pytest.mark.parametrize("value", [1.2, 0.001, "${wall}"])
+    def test_positive_or_template_valid(self, value):
+        assert SchemaValidator().validate(self._data(value)) == []
+
+    @pytest.mark.parametrize("value", [0, -1, -0.5, "thin"])
+    def test_zero_negative_or_non_template_invalid(self, value):
+        assert SchemaValidator().validate(self._data(value)) != []
+
+
 class TestSchemaValidator:
     """Test SchemaValidator class"""
 

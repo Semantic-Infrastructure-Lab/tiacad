@@ -1020,7 +1020,7 @@
           "description": "Minimum wall/floor/skin thickness of the final part, from a sampled inward-ray estimate (see `tiacad validate-geometry`). Checked within tol.length.",
           "properties": {
             "min": {
-              "$ref": "#/$defs/numberOrTemplate",
+              "$ref": "#/$defs/positiveNumberOrTemplate",
               "description": "Thinnest allowed wall in mm (> 0)"
             }
           },
@@ -1109,6 +1109,13 @@
       "description": "A number, or a ${...} expression over the model's parameters (resolved after --set, before the contract is checked)",
       "anyOf": [
         { "type": "number" },
+        { "type": "string", "pattern": "^\\$\\{.*\\}$" }
+      ]
+    },
+    "positiveNumberOrTemplate": {
+      "description": "A number > 0, or a ${...} expression over the model's parameters (resolved after --set, before the contract is checked)",
+      "anyOf": [
+        { "type": "number", "exclusiveMinimum": 0 },
         { "type": "string", "pattern": "^\\$\\{.*\\}$" }
       ]
     },
