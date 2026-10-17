@@ -290,7 +290,7 @@ class TestBackendAwareValidation:
     def test_bounding_box_rule_supports_mock_backend_part(self):
         backend = MockBackend()
         registry = PartRegistry()
-        registry.add(Part("mock_box", backend.create_box(10, 20, 30), backend=backend))
+        registry.add(Part("mock_box", backend.create_box(10, 30, 20), backend=backend))
 
         class MockDoc:
             parts = registry
@@ -320,7 +320,7 @@ class TestBackendAwareValidation:
         """A box-shaped cutter (slot/pocket) with a backend attached has no
         cylindrical face: it is not a round hole, so there is no radius (TCAD-VAL-14)."""
         backend = MockBackend()
-        hole_part = Part("hole", backend.create_box(6, 6, 20), backend=backend)
+        hole_part = Part("hole", backend.create_box(6, 20, 6), backend=backend)
 
         rule = HoleEdgeProximityRule()
         bbox = rule._get_bounding_box(hole_part)
@@ -339,8 +339,8 @@ class TestBackendAwareValidation:
         """Regression (TCAD-VAL-14): a 70 mm box pocket in a 74 mm part used to read as a
         'hole' of radius 35 sitting 2 mm from the edge."""
         backend = MockBackend()
-        base = Part("base", backend.create_box(74, 74, 20), backend=backend)
-        pocket = Part("pocket", backend.create_box(70, 70, 10), backend=backend)
+        base = Part("base", backend.create_box(74, 20, 74), backend=backend)
+        pocket = Part("pocket", backend.create_box(70, 10, 70), backend=backend)
 
         rule = HoleEdgeProximityRule()
         issues = rule._check_hole_proximity(
@@ -641,7 +641,7 @@ class TestBrepGeometryValidation:
         at the flagged part's own center, so a trust render can point
         directly at the degenerate/oversized part.
         """
-        sliver = backend.create_box(10, 10, 0.0001)
+        sliver = backend.create_box(10, 0.0001, 10)
         part = Part("sliver", sliver, backend=backend)
 
         rule = BoundingBoxRule()

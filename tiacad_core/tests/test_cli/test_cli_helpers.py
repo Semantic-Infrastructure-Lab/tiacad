@@ -105,9 +105,9 @@ def test_measure_audit_final_part_warns_on_non_positive_volume():
     result = _empty_audit_result(input_file=type('FakePath', (), {'name': 'box.yaml'})())
 
     with patch('tiacad_core.cli.audit._measure_part_dimensions', return_value={
-        'width': 10.0,
-        'height': 10.0,
-        'depth': 10.0,
+        'x': 10.0,
+        'y': 10.0,
+        'z': 10.0,
         'volume': 0.0,
     }):
         _measure_audit_final_part(doc, result)
@@ -621,8 +621,8 @@ def test_parse_file_override_recomputes_derived_parameter(tmp_path):
     assert variant.parameters["area_w"] == 40
     from tiacad_core.testing.dimensions import get_dimensions
 
-    assert get_dimensions(default.get_part("slab"))["width"] == 20
-    assert get_dimensions(variant.get_part("slab"))["width"] == 40
+    assert get_dimensions(default.get_part("slab"))["x"] == 20
+    assert get_dimensions(variant.get_part("slab"))["x"] == 40
 
 
 def test_parse_file_override_unknown_name_lists_valid(tmp_path):

@@ -28,9 +28,9 @@ class CadQueryBackend(GeometryBackend):
     # Primitive Creation
     # ========================================================================
 
-    def create_box(self, width: float, height: float, depth: float) -> cq.Workplane:
-        """Create a box using CadQuery"""
-        return cq.Workplane("XY").box(width, depth, height)
+    def create_box(self, x: float, y: float, z: float) -> cq.Workplane:
+        """Create a box with extents x, y, z along X, Y, Z"""
+        return cq.Workplane("XY").box(x, y, z)
 
     def create_cylinder(self, radius: float, height: float) -> cq.Workplane:
         """Create a cylinder using CadQuery"""

@@ -339,7 +339,7 @@ def check_contract(doc) -> ContractResult:
         ]
         for axis, (actual, expected) in enumerate(zip(actual_bbox, expect['bbox'])):
             if abs(actual - expected) > tol_length:
-                axis_name = ['width', 'height', 'depth'][axis]
+                axis_name = 'xyz'[axis]
                 violations.append(ContractViolation(
                     'bbox',
                     f"{axis_name} actual={actual:.4f} expected={expected} (tol {tol_length})",

@@ -110,7 +110,7 @@ def test_text_operation_rejects_non_cadquery_input(param_resolver):
     """Text operations should fail clearly on non-CadQuery input parts."""
     registry = PartRegistry()
     backend = MockBackend()
-    registry.add(Part("mock_box", backend.create_box(20, 10, 20), backend=backend))
+    registry.add(Part("mock_box", backend.create_box(20, 20, 10), backend=backend))
     builder = TextBuilder(registry, param_resolver)
 
     with pytest.raises(TextBuilderError) as exc_info:

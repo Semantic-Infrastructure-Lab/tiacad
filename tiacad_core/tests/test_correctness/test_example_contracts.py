@@ -142,9 +142,9 @@ class TestAutoReferencesBoxStack:
         doc = self._parse()
         part = doc.parts.get("base")
         dims = get_dimensions(part)
-        assert dims["width"] == pytest.approx(100.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(50.0, abs=TOL)
-        assert dims["height"] == pytest.approx(20.0, abs=TOL)
+        assert dims["x"] == pytest.approx(100.0, abs=TOL)
+        assert dims["y"] == pytest.approx(50.0, abs=TOL)
+        assert dims["z"] == pytest.approx(20.0, abs=TOL)
 
     def test_base_box_volume(self):
         doc = self._parse()
@@ -156,9 +156,9 @@ class TestAutoReferencesBoxStack:
         doc = self._parse()
         part = doc.parts.get("middle")
         dims = get_dimensions(part)
-        assert dims["width"] == pytest.approx(80.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(40.0, abs=TOL)
-        assert dims["height"] == pytest.approx(15.0, abs=TOL)
+        assert dims["x"] == pytest.approx(80.0, abs=TOL)
+        assert dims["y"] == pytest.approx(40.0, abs=TOL)
+        assert dims["z"] == pytest.approx(15.0, abs=TOL)
 
 
 class TestV3SimpleBox:
@@ -214,9 +214,9 @@ class TestComponentImportDemo:
         doc = self._parse()
         part = doc.parts.get("panel")
         dims = get_dimensions(part)
-        assert dims["width"] == pytest.approx(200.0, abs=TOL)   # X: YAML width
-        assert dims["depth"] == pytest.approx(3.0, abs=TOL)     # Y: YAML depth (panel_thickness)
-        assert dims["height"] == pytest.approx(150.0, abs=TOL)  # Z: YAML height
+        assert dims["x"] == pytest.approx(200.0, abs=TOL)   # X: YAML width
+        assert dims["y"] == pytest.approx(3.0, abs=TOL)     # Y: YAML depth (panel_thickness)
+        assert dims["z"] == pytest.approx(150.0, abs=TOL)  # Z: YAML height
 
     def test_panel_volume(self):
         """Panel vol = 200 × 3 × 150 = 90,000 mm³."""
@@ -232,9 +232,9 @@ class TestComponentImportDemo:
         doc = self._parse()
         part = doc.parts.get("bracket.base")
         dims = get_dimensions(part)
-        assert dims["width"] == pytest.approx(60.0, abs=TOL)    # X
-        assert dims["depth"] == pytest.approx(35.0, abs=TOL)    # Y: base_depth
-        assert dims["height"] == pytest.approx(5.0, abs=TOL)    # Z: thickness
+        assert dims["x"] == pytest.approx(60.0, abs=TOL)    # X
+        assert dims["y"] == pytest.approx(35.0, abs=TOL)    # Y: base_depth
+        assert dims["z"] == pytest.approx(5.0, abs=TOL)    # Z: thickness
 
     def test_bracket_base_volume(self):
         """bracket.base vol = 60 × 35 × 5 = 10,500 mm³."""
@@ -250,9 +250,9 @@ class TestComponentImportDemo:
         doc = self._parse()
         part = doc.parts.get("bracket.flange")
         dims = get_dimensions(part)
-        assert dims["width"] == pytest.approx(60.0, abs=TOL)    # X
-        assert dims["depth"] == pytest.approx(5.0, abs=TOL)     # Y: thickness
-        assert dims["height"] == pytest.approx(50.0, abs=TOL)   # Z: flange_height
+        assert dims["x"] == pytest.approx(60.0, abs=TOL)    # X
+        assert dims["y"] == pytest.approx(5.0, abs=TOL)     # Y: thickness
+        assert dims["z"] == pytest.approx(50.0, abs=TOL)   # Z: flange_height
 
     def test_bracket_flange_volume(self):
         """bracket.flange vol = 60 × 5 × 50 = 15,000 mm³."""
@@ -266,24 +266,24 @@ class TestComponentImportDemo:
         doc = self._parse()
         part = doc.parts.get("screw_short.shaft")
         dims = get_dimensions(part)
-        assert dims["height"] == pytest.approx(12.0, abs=TOL)   # Z: cylinder height
-        assert dims["width"] == pytest.approx(3.0, abs=TOL)     # X: M3 diameter
+        assert dims["z"] == pytest.approx(12.0, abs=TOL)   # Z: cylinder height
+        assert dims["x"] == pytest.approx(3.0, abs=TOL)     # X: M3 diameter
 
     def test_screw_long_shaft_height(self):
         """screw_long imported with length=25. Cylinder along Z: height(Z)=25."""
         doc = self._parse()
         part = doc.parts.get("screw_long.shaft")
         dims = get_dimensions(part)
-        assert dims["height"] == pytest.approx(25.0, abs=TOL)   # Z: cylinder height
+        assert dims["z"] == pytest.approx(25.0, abs=TOL)   # Z: cylinder height
 
     def test_parameter_override_isolation(self):
         """screw_short and screw_long have different lengths — imports are independent."""
         doc = self._parse()
         short = get_dimensions(doc.parts.get("screw_short.shaft"))
         long_ = get_dimensions(doc.parts.get("screw_long.shaft"))
-        assert short["height"] < long_["height"], (
-            f"screw_short ({short['height']:.1f}mm) should be shorter than "
-            f"screw_long ({long_['height']:.1f}mm)"
+        assert short["z"] < long_["z"], (
+            f"screw_short ({short['z']:.1f}mm) should be shorter than "
+            f"screw_long ({long_['z']:.1f}mm)"
         )
 
 
@@ -318,42 +318,42 @@ class TestHardwareAssemblyDemo:
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("plate"))
         assert dims["volume"] == pytest.approx(32_000.0, abs=VOL_TOL)
-        assert dims["width"] == pytest.approx(100.0, abs=TOL)
+        assert dims["x"] == pytest.approx(100.0, abs=TOL)
 
     def test_m3_shaft_dimensions(self):
         """M3 screw shaft: radius=1.5mm (diameter=3mm), length=8mm."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("m3.shaft"))
-        assert dims["width"] == pytest.approx(3.0, abs=TOL)     # diameter
-        assert dims["height"] == pytest.approx(8.0, abs=TOL)    # length
+        assert dims["x"] == pytest.approx(3.0, abs=TOL)     # diameter
+        assert dims["z"] == pytest.approx(8.0, abs=TOL)    # length
 
     def test_m4_shaft_dimensions(self):
         """M4 screw shaft: radius=2mm (diameter=4mm), length=16mm."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("m4.shaft"))
-        assert dims["width"] == pytest.approx(4.0, abs=TOL)
-        assert dims["height"] == pytest.approx(16.0, abs=TOL)
+        assert dims["x"] == pytest.approx(4.0, abs=TOL)
+        assert dims["z"] == pytest.approx(16.0, abs=TOL)
 
     def test_m5_shaft_dimensions(self):
         """M5 screw shaft: radius=2.5mm (diameter=5mm), length=20mm."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("m5.shaft"))
-        assert dims["width"] == pytest.approx(5.0, abs=TOL)
-        assert dims["height"] == pytest.approx(20.0, abs=TOL)
+        assert dims["x"] == pytest.approx(5.0, abs=TOL)
+        assert dims["z"] == pytest.approx(20.0, abs=TOL)
 
     def test_m6_shaft_dimensions(self):
         """M6 bolt shaft: radius=3mm (diameter=6mm), length=25mm."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("m6.shaft"))
-        assert dims["width"] == pytest.approx(6.0, abs=TOL)
-        assert dims["height"] == pytest.approx(25.0, abs=TOL)
+        assert dims["x"] == pytest.approx(6.0, abs=TOL)
+        assert dims["z"] == pytest.approx(25.0, abs=TOL)
 
     def test_washer_outer_diameter(self):
         """M3 washer outer disc: OD=7mm, thickness=0.5mm."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("washer.disc"))
-        assert dims["width"] == pytest.approx(7.0, abs=TOL)
-        assert dims["height"] == pytest.approx(0.5, abs=0.05)
+        assert dims["x"] == pytest.approx(7.0, abs=TOL)
+        assert dims["z"] == pytest.approx(0.5, abs=0.05)
 
     def test_washer_boolean_smaller_than_disc(self):
         """Boolean washer has bore removed — volume < disc volume."""
@@ -375,13 +375,13 @@ class TestHardwareAssemblyDemo:
         """M3 standoff: height=8mm."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("standoff.body"))
-        assert dims["height"] == pytest.approx(8.0, abs=TOL)
+        assert dims["z"] == pytest.approx(8.0, abs=TOL)
 
     def test_standoff_outer_diameter(self):
         """M3 standoff body: OD=6mm (radius=3mm)."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("standoff.body"))
-        assert dims["width"] == pytest.approx(6.0, abs=TOL)
+        assert dims["x"] == pytest.approx(6.0, abs=TOL)
 
     def test_standoff_boolean_smaller_than_body(self):
         """Boolean standoff has M3 bore — volume < body volume."""
@@ -438,7 +438,7 @@ class TestM3NutContracts:
         """Thickness=2.4 → nut Z extent ≈ 2.4mm."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("nut"))
-        assert dims["height"] == pytest.approx(2.4, abs=TOL)
+        assert dims["z"] == pytest.approx(2.4, abs=TOL)
 
     def test_nut_volume_less_than_full_hex(self):
         """Bore must remove material — nut.vol < hex_body.vol."""
@@ -460,7 +460,7 @@ class TestM3NutContracts:
         across flats (AF came out equal to the tip-to-tip diameter, 6.35mm, instead)."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("hex_body"))
-        assert dims["depth"] == pytest.approx(5.5, abs=0.02)
+        assert dims["y"] == pytest.approx(5.5, abs=0.02)
 
 
 # Tier 2: m4_nut stdlib component
@@ -491,7 +491,7 @@ class TestM4NutContracts:
     def test_nut_height_matches_thickness(self):
         """Thickness=3.2 → nut Z extent ≈ 3.2mm."""
         doc = self._parse()
-        assert get_dimensions(doc.parts.get("nut"))["height"] == pytest.approx(3.2, abs=TOL)
+        assert get_dimensions(doc.parts.get("nut"))["z"] == pytest.approx(3.2, abs=TOL)
 
     def test_nut_volume_less_than_hex_body(self):
         """Bore must remove material."""
@@ -511,7 +511,7 @@ class TestM4NutContracts:
         """ISO 4032 M4 AF = 7.0mm. See TestM3NutContracts for the bug this guards."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("hex_body"))
-        assert dims["depth"] == pytest.approx(7.0, abs=0.02)
+        assert dims["y"] == pytest.approx(7.0, abs=0.02)
 
 
 # Tier 2: m5_nut stdlib component
@@ -542,7 +542,7 @@ class TestM5NutContracts:
     def test_nut_height_matches_thickness(self):
         """Thickness=4.7 → nut Z extent ≈ 4.7mm."""
         doc = self._parse()
-        assert get_dimensions(doc.parts.get("nut"))["height"] == pytest.approx(4.7, abs=TOL)
+        assert get_dimensions(doc.parts.get("nut"))["z"] == pytest.approx(4.7, abs=TOL)
 
     def test_nut_volume_less_than_hex_body(self):
         """Bore must remove material."""
@@ -562,7 +562,7 @@ class TestM5NutContracts:
         """ISO 4032 M5 AF = 8.0mm. See TestM3NutContracts for the bug this guards."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("hex_body"))
-        assert dims["depth"] == pytest.approx(8.0, abs=0.02)
+        assert dims["y"] == pytest.approx(8.0, abs=0.02)
 
 
 # Tier 2: m6_nut stdlib component
@@ -593,7 +593,7 @@ class TestM6NutContracts:
     def test_nut_height_matches_thickness(self):
         """Thickness=5.2 → nut Z extent ≈ 5.2mm."""
         doc = self._parse()
-        assert get_dimensions(doc.parts.get("nut"))["height"] == pytest.approx(5.2, abs=TOL)
+        assert get_dimensions(doc.parts.get("nut"))["z"] == pytest.approx(5.2, abs=TOL)
 
     def test_nut_volume_less_than_hex_body(self):
         """Bore must remove material."""
@@ -613,7 +613,7 @@ class TestM6NutContracts:
         """ISO 4032 M6 AF = 10.0mm. See TestM3NutContracts for the bug this guards."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("hex_body"))
-        assert dims["depth"] == pytest.approx(10.0, abs=0.02)
+        assert dims["y"] == pytest.approx(10.0, abs=0.02)
 
 
 # Tier 2: pcb_standoff_assembly — correctly positioned multi-component assembly
@@ -647,9 +647,9 @@ class TestPcbStandoffAssembly:
         """
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("plate"))
-        assert dims["width"] == pytest.approx(100.0, abs=TOL)   # YAML width=100
-        assert dims["depth"] == pytest.approx(5.0, abs=TOL)     # YAML depth=plate_thickness=5 → Y
-        assert dims["height"] == pytest.approx(80.0, abs=TOL)   # YAML height=plate_height=80 → Z
+        assert dims["x"] == pytest.approx(100.0, abs=TOL)   # YAML width=100
+        assert dims["y"] == pytest.approx(5.0, abs=TOL)     # YAML depth=plate_thickness=5 → Y
+        assert dims["z"] == pytest.approx(80.0, abs=TOL)   # YAML height=plate_height=80 → Z
 
     def test_plate_volume(self):
         """Plate: 100 × 80 × 5 = 40,000mm³."""
@@ -660,16 +660,16 @@ class TestPcbStandoffAssembly:
         """PCB: W=80, D=2 (YAML depth=pcb_thickness→Y), H=60 (YAML height=pcb_height→Z)."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("pcb"))
-        assert dims["width"] == pytest.approx(80.0, abs=TOL)    # YAML width=80
-        assert dims["depth"] == pytest.approx(2.0, abs=TOL)     # YAML depth=pcb_thickness=2 → Y
-        assert dims["height"] == pytest.approx(60.0, abs=TOL)   # YAML height=pcb_height=60 → Z
+        assert dims["x"] == pytest.approx(80.0, abs=TOL)    # YAML width=80
+        assert dims["y"] == pytest.approx(2.0, abs=TOL)     # YAML depth=pcb_thickness=2 → Y
+        assert dims["z"] == pytest.approx(60.0, abs=TOL)   # YAML height=pcb_height=60 → Z
 
     def test_standoff_height(self):
         """All 4 standoffs are 10mm tall."""
         doc = self._parse()
         for name in ("standoff_fl", "standoff_fr", "standoff_bl", "standoff_br"):
             dims = get_dimensions(doc.parts.get(name))
-            assert dims["height"] == pytest.approx(10.0, abs=TOL), f"{name} height wrong"
+            assert dims["z"] == pytest.approx(10.0, abs=TOL), f"{name} height wrong"
 
     def test_standoff_volume_matches_body_minus_bore(self):
         """Each standoff (body - bore) must have less volume than body."""
@@ -683,8 +683,8 @@ class TestPcbStandoffAssembly:
         doc = self._parse()
         for name in ("screw_fl", "screw_fr", "screw_bl", "screw_br"):
             dims = get_dimensions(doc.parts.get(name))
-            assert dims["height"] == pytest.approx(16.0, abs=TOL), f"{name} length wrong"
-            assert dims["width"] == pytest.approx(3.0, abs=TOL), f"{name} diameter wrong"
+            assert dims["z"] == pytest.approx(16.0, abs=TOL), f"{name} length wrong"
+            assert dims["x"] == pytest.approx(3.0, abs=TOL), f"{name} diameter wrong"
 
     def test_all_parts_have_positive_volume(self):
         """Every final assembly part must have positive volume."""
@@ -730,9 +730,9 @@ class TestAutoRefsCylinderAssembly:
     def test_shaft_bounding_box(self):
         """Shaft bounding box: W=D=2×radius=10, H=height=50."""
         dims, _ = _parse_and_measure_final("auto_references_cylinder_assembly.yaml")
-        assert dims["width"] == pytest.approx(10.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(10.0, abs=TOL)
-        assert dims["height"] == pytest.approx(50.0, abs=TOL)
+        assert dims["x"] == pytest.approx(10.0, abs=TOL)
+        assert dims["y"] == pytest.approx(10.0, abs=TOL)
+        assert dims["z"] == pytest.approx(50.0, abs=TOL)
 
     def test_shaft_volume(self):
         """π × 5² × 50 = 3926.991mm³."""
@@ -758,8 +758,8 @@ class TestAnchorsDemoPlatform:
     def test_platform_footprint(self):
         """Platform is platform_size×platform_size in the two large axes."""
         dims, _ = _parse_and_measure_final("anchors_demo.yaml")
-        assert dims["width"] == pytest.approx(100.0, abs=TOL)
-        assert dims["depth"] == pytest.approx(100.0, abs=TOL)
+        assert dims["x"] == pytest.approx(100.0, abs=TOL)
+        assert dims["y"] == pytest.approx(100.0, abs=TOL)
 
     def test_platform_volume(self):
         """100 × 100 × 10 = 100,000mm³."""
@@ -896,9 +896,9 @@ class TestGuitarHangerNamedPoints:
         """Mounting plate: W=plate_width=100, D=plate_height=75, H=plate_depth=10."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("plate_with_holes"))
-        assert dims["width"] == pytest.approx(100.0, abs=TOL)   # X: plate_width
-        assert dims["depth"] == pytest.approx(75.0, abs=TOL)    # Y: plate_height
-        assert dims["height"] == pytest.approx(10.0, abs=TOL)   # Z: plate_depth
+        assert dims["x"] == pytest.approx(100.0, abs=TOL)   # X: plate_width
+        assert dims["y"] == pytest.approx(75.0, abs=TOL)    # Y: plate_height
+        assert dims["z"] == pytest.approx(10.0, abs=TOL)   # Z: plate_depth
 
     def test_plate_volume(self):
         """plate_with_holes vol = 75,000 - 2 × through-hole volume ≈ 74,681.9mm³."""
@@ -923,9 +923,9 @@ class TestGuitarHangerNamedPoints:
         """Beam: W=beam_width=75, H=beam_depth=10, D=beam_height=10."""
         doc = self._parse()
         dims = get_dimensions(doc.parts.get("beam"))
-        assert dims["width"] == pytest.approx(75.0, abs=TOL)    # X: beam_width
-        assert dims["height"] == pytest.approx(10.0, abs=TOL)   # Y: beam_depth
-        assert dims["depth"] == pytest.approx(10.0, abs=TOL)    # Z: beam_height
+        assert dims["x"] == pytest.approx(75.0, abs=TOL)    # X: beam_width
+        assert dims["z"] == pytest.approx(10.0, abs=TOL)   # Y: beam_depth
+        assert dims["y"] == pytest.approx(10.0, abs=TOL)    # Z: beam_height
 
     def test_beam_volume(self):
         """Beam vol = 75 × 10 × 10 = 7,500mm³."""

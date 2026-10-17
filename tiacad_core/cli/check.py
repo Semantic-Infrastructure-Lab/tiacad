@@ -51,7 +51,7 @@ def _print_check_rows(rows) -> None:
     col_w = max(col_w, 8)
 
     print_header(f"Parts ({len(rows)}):")
-    print(f"  {'NAME':<{col_w}}  {'TYPE':<8}  {'W × H × D (mm)':<30}  VOLUME (mm³)")
+    print(f"  {'NAME':<{col_w}}  {'TYPE':<8}  {'X × Y × Z (mm)':<30}  VOLUME (mm³)")
     print(f"  {'─'*col_w}  {'─'*8}  {'─'*30}  {'─'*14}")
 
     for row in rows:
@@ -72,9 +72,9 @@ def _print_check_rows(rows) -> None:
 
         measurement = row['measurement']
         dim_str = (
-            f"{measurement['width']:.1f} × "
-            f"{measurement['height']:.1f} × "
-            f"{measurement['depth']:.1f}"
+            f"{measurement['x']:.1f} × "
+            f"{measurement['y']:.1f} × "
+            f"{measurement['z']:.1f}"
         )
         vol_str = f"{measurement['volume']:>14,.1f}"
         print(

@@ -38,9 +38,9 @@ def _measure_audit_final_part(doc, result: dict) -> None:
     try:
         measurement = _measure_part_dimensions(part)
         result['dims'] = (
-            measurement['width'],
-            measurement['height'],
-            measurement['depth'],
+            measurement['x'],
+            measurement['y'],
+            measurement['z'],
         )
         result['volume'] = measurement['volume']
         if measurement['volume'] <= 0:
@@ -54,8 +54,8 @@ def _measure_audit_final_part(doc, result: dict) -> None:
 def _format_audit_dims(result: dict) -> str:
     """Format the audit dimensions/error column."""
     if result['dims']:
-        width, height, depth = result['dims']
-        return f"{width:.1f} × {height:.1f} × {depth:.1f}"
+        x, y, z = result['dims']
+        return f"{x:.1f} × {y:.1f} × {z:.1f}"
     if result['error']:
         return result['error'][:30]
     return '-'

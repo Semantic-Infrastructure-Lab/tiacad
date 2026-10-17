@@ -45,9 +45,9 @@ class TestGetDimensions:
 
         # Verify bounding box dimensions
         # Note: CadQuery box(w, d, h) creates box with those dimensions
-        assert abs(dims['width'] - 50.0) < 0.01
-        assert abs(dims['depth'] - 30.0) < 0.01
-        assert abs(dims['height'] - 20.0) < 0.01
+        assert abs(dims['x'] - 50.0) < 0.01
+        assert abs(dims['y'] - 30.0) < 0.01
+        assert abs(dims['z'] - 20.0) < 0.01
 
         # Verify volume is present
         assert 'volume' in dims
@@ -69,9 +69,9 @@ class TestGetDimensions:
         dims = get_dimensions(cylinder)
 
         # Cylinder bounding box should be 2*radius in X and Y
-        assert abs(dims['width'] - 10.0) < 0.1   # 2*5
-        assert abs(dims['depth'] - 10.0) < 0.1   # 2*5
-        assert abs(dims['height'] - 20.0) < 0.1  # height (Z-axis)
+        assert abs(dims['x'] - 10.0) < 0.1   # 2*5
+        assert abs(dims['y'] - 10.0) < 0.1   # 2*5
+        assert abs(dims['z'] - 20.0) < 0.1  # height (Z-axis)
 
         # Verify volume and surface area are present
         assert dims['volume'] > 0
@@ -89,9 +89,9 @@ class TestGetDimensions:
         dims = get_dimensions(sphere)
 
         # Sphere bounding box should be 2*radius in all directions
-        assert abs(dims['width'] - 20.0) < 0.1
-        assert abs(dims['height'] - 20.0) < 0.1
-        assert abs(dims['depth'] - 20.0) < 0.1
+        assert abs(dims['x'] - 20.0) < 0.1
+        assert abs(dims['z'] - 20.0) < 0.1
+        assert abs(dims['y'] - 20.0) < 0.1
 
         # Verify volume and surface area are present
         assert dims['volume'] > 0

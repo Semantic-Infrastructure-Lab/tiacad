@@ -52,14 +52,14 @@ def _get_part_display_type(part) -> str:
 
 
 def _measure_part_dimensions(part):
-    """Measure a part and return width/height/depth/volume."""
+    """Measure a part and return its x/y/z extents and volume."""
     from ..testing.dimensions import get_dimensions
 
     dims = get_dimensions(part)
     return {
-        'width': dims['width'],
-        'height': dims['height'],
-        'depth': dims['depth'],
+        'x': dims['x'],
+        'y': dims['y'],
+        'z': dims['z'],
         'volume': dims['volume'],
     }
 

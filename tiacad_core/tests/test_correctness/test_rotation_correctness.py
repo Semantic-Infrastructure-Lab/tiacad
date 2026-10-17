@@ -66,15 +66,15 @@ class TestBasicRotations:
         dims_rotated = get_bounding_box_dimensions(box_rotated)
 
         # X and Y should be swapped
-        assert abs(dims_unrotated['width'] - 20.0) < 0.1
-        assert abs(dims_unrotated['height'] - 10.0) < 0.1
+        assert abs(dims_unrotated['x'] - 20.0) < 0.1
+        assert abs(dims_unrotated['y'] - 10.0) < 0.1
 
         # After 90° Z rotation, width and height swap
-        assert abs(dims_rotated['width'] - 10.0) < 0.5
-        assert abs(dims_rotated['height'] - 20.0) < 0.5
+        assert abs(dims_rotated['x'] - 10.0) < 0.5
+        assert abs(dims_rotated['y'] - 20.0) < 0.5
 
         # Z dimension unchanged
-        assert abs(dims_rotated['depth'] - 5.0) < 0.1
+        assert abs(dims_rotated['z'] - 5.0) < 0.1
 
     def test_box_rotate_90deg_around_x_axis(self):
         """Test box rotated 90° around X axis has correct orientation"""
@@ -98,11 +98,11 @@ class TestBasicRotations:
         dims = get_bounding_box_dimensions(box_rotated)
 
         # X unchanged, Y and Z swap
-        assert abs(dims['width'] - 10.0) < 0.1
+        assert abs(dims['x'] - 10.0) < 0.1
         # Y and Z may swap depending on rotation direction
         # Just verify dimensions make sense
-        assert abs(dims['height'] - 30.0) < 0.5
-        assert abs(dims['depth'] - 20.0) < 0.5
+        assert abs(dims['y'] - 30.0) < 0.5
+        assert abs(dims['z'] - 20.0) < 0.5
 
     def test_box_rotate_90deg_around_y_axis(self):
         """Test box rotated 90° around Y axis has correct orientation"""
@@ -126,10 +126,10 @@ class TestBasicRotations:
         dims = get_bounding_box_dimensions(box_rotated)
 
         # Y unchanged, X and Z swap
-        assert abs(dims['height'] - 10.0) < 0.1
+        assert abs(dims['y'] - 10.0) < 0.1
         # X and Z may swap
-        assert abs(dims['width'] - 20.0) < 0.5
-        assert abs(dims['depth'] - 40.0) < 0.5
+        assert abs(dims['x'] - 20.0) < 0.5
+        assert abs(dims['z'] - 40.0) < 0.5
 
     def test_box_rotate_45deg_around_z_axis(self):
         """Test box rotated 45° around Z axis"""
@@ -153,11 +153,11 @@ class TestBasicRotations:
 
         # X and Y should be approximately 10*sqrt(2)
         expected_diagonal = 10 * math.sqrt(2)
-        assert abs(dims['width'] - expected_diagonal) < 1.0
-        assert abs(dims['height'] - expected_diagonal) < 1.0
+        assert abs(dims['x'] - expected_diagonal) < 1.0
+        assert abs(dims['y'] - expected_diagonal) < 1.0
 
         # Z unchanged
-        assert abs(dims['depth'] - 10.0) < 0.1
+        assert abs(dims['z'] - 10.0) < 0.1
 
     def test_cylinder_rotate_90deg_lies_horizontal(self):
         """Test cylinder rotated 90° lies horizontal"""
@@ -185,12 +185,12 @@ class TestBasicRotations:
         dims_horizontal = get_bounding_box_dimensions(cylinder_horizontal)
 
         # Vertical: width=10, height=10, depth=20
-        assert abs(dims_vertical['width'] - 10.0) < 0.1
-        assert abs(dims_vertical['depth'] - 20.0) < 0.1
+        assert abs(dims_vertical['x'] - 10.0) < 0.1
+        assert abs(dims_vertical['z'] - 20.0) < 0.1
 
         # Horizontal: width=20, depth=10 (dimensions swap)
-        assert abs(dims_horizontal['width'] - 20.0) < 0.5
-        assert abs(dims_horizontal['depth'] - 10.0) < 0.5
+        assert abs(dims_horizontal['x'] - 20.0) < 0.5
+        assert abs(dims_horizontal['z'] - 10.0) < 0.5
 
     def test_rotation_180deg_equivalent_to_two_90deg(self):
         """Test that 180° rotation equals two 90° rotations"""
@@ -223,9 +223,9 @@ class TestBasicRotations:
         dims_90_twice = get_bounding_box_dimensions(box_90_twice)
 
         # Both should have same dimensions
-        assert abs(dims_180['width'] - dims_90_twice['width']) < 0.5
-        assert abs(dims_180['height'] - dims_90_twice['height']) < 0.5
-        assert abs(dims_180['depth'] - dims_90_twice['depth']) < 0.1
+        assert abs(dims_180['x'] - dims_90_twice['x']) < 0.5
+        assert abs(dims_180['y'] - dims_90_twice['y']) < 0.5
+        assert abs(dims_180['z'] - dims_90_twice['z']) < 0.1
 
     def test_rotation_360deg_returns_to_original(self):
         """Test that 360° rotation returns to original orientation"""
@@ -253,9 +253,9 @@ class TestBasicRotations:
         dims_360 = get_bounding_box_dimensions(box_360)
 
         # Dimensions should be identical
-        assert abs(dims_original['width'] - dims_360['width']) < 0.1
-        assert abs(dims_original['height'] - dims_360['height']) < 0.1
-        assert abs(dims_original['depth'] - dims_360['depth']) < 0.1
+        assert abs(dims_original['x'] - dims_360['x']) < 0.1
+        assert abs(dims_original['y'] - dims_360['y']) < 0.1
+        assert abs(dims_original['z'] - dims_360['z']) < 0.1
 
     def test_rotation_arbitrary_angle_30deg(self):
         """Test rotation by arbitrary angle (30°)"""
@@ -276,9 +276,9 @@ class TestBasicRotations:
         # Bounding box should be larger than original due to rotation
         # Original: 20x10x5
         # After 30° rotation, bbox should be wider
-        assert dims['width'] > 20.0
-        assert dims['height'] > 10.0
-        assert abs(dims['depth'] - 5.0) < 0.1  # Z unchanged
+        assert dims['x'] > 20.0
+        assert dims['y'] > 10.0
+        assert abs(dims['z'] - 5.0) < 0.1  # Z unchanged
 
 
 class TestNormalVectorsAfterRotation:
@@ -485,9 +485,9 @@ class TestTransformComposition:
 
         # Different rotation orders should produce different results
         # At least one dimension should differ significantly
-        diff_w = abs(dims_xz['width'] - dims_zx['width'])
-        diff_h = abs(dims_xz['height'] - dims_zx['height'])
-        diff_d = abs(dims_xz['depth'] - dims_zx['depth'])
+        diff_w = abs(dims_xz['x'] - dims_zx['x'])
+        diff_h = abs(dims_xz['y'] - dims_zx['y'])
+        diff_d = abs(dims_xz['z'] - dims_zx['z'])
 
         # At least one should be significantly different (using 45° angles should show difference)
         assert (diff_w > 0.5 or diff_h > 0.5 or diff_d > 0.5), \
@@ -565,12 +565,12 @@ class TestRotationAccuracy:
         # For a 30x10 rectangle rotated by 5°:
         # width ≈ 30*cos(5°) + 10*sin(5°) ≈ 30*0.996 + 10*0.087 ≈ 30.75
         # height ≈ 30*sin(5°) + 10*cos(5°) ≈ 30*0.087 + 10*0.996 ≈ 12.57
-        assert dims_rotated['width'] >= dims_unrotated['width']
-        assert dims_rotated['height'] >= dims_unrotated['height']
+        assert dims_rotated['x'] >= dims_unrotated['x']
+        assert dims_rotated['y'] >= dims_unrotated['y']
 
         # Reasonable upper bounds for 5° rotation
-        assert dims_rotated['width'] < dims_unrotated['width'] + 3.0
-        assert dims_rotated['height'] < dims_unrotated['height'] + 5.0
+        assert dims_rotated['x'] < dims_unrotated['x'] + 3.0
+        assert dims_rotated['y'] < dims_unrotated['y'] + 5.0
 
     def test_rotation_precision_consistency(self):
         """Test that same rotation produces consistent results"""
@@ -601,9 +601,9 @@ class TestRotationAccuracy:
         dims2 = get_bounding_box_dimensions(box2)
 
         # Should have identical dimensions
-        assert abs(dims1['width'] - dims2['width']) < 0.001
-        assert abs(dims1['height'] - dims2['height']) < 0.001
-        assert abs(dims1['depth'] - dims2['depth']) < 0.001
+        assert abs(dims1['x'] - dims2['x']) < 0.001
+        assert abs(dims1['y'] - dims2['y']) < 0.001
+        assert abs(dims1['z'] - dims2['z']) < 0.001
 
 
 # Pytest markers for test organization

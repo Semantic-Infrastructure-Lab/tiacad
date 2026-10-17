@@ -45,9 +45,9 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(box)
 
         # Verify dimensions to 0.01 unit accuracy
-        assert abs(dims['width'] - 50.0) < 0.01
-        assert abs(dims['depth'] - 30.0) < 0.01
-        assert abs(dims['height'] - 20.0) < 0.01
+        assert abs(dims['x'] - 50.0) < 0.01
+        assert abs(dims['y'] - 30.0) < 0.01
+        assert abs(dims['z'] - 20.0) < 0.01
 
     def test_cylinder_radius_accuracy(self):
         """Test cylinder has accurate radius"""
@@ -61,9 +61,9 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(cylinder)
 
         # Cylinder bounding box width/depth should be 2*radius = 20
-        assert abs(dims['width'] - 20.0) < 0.1
-        assert abs(dims['depth'] - 20.0) < 0.1
-        assert abs(dims['height'] - 50.0) < 0.1
+        assert abs(dims['x'] - 20.0) < 0.1
+        assert abs(dims['y'] - 20.0) < 0.1
+        assert abs(dims['z'] - 50.0) < 0.1
 
     def test_cylinder_height_accuracy(self):
         """Test cylinder has accurate height"""
@@ -77,7 +77,7 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(cylinder)
 
         # Height should be accurate
-        assert abs(dims['height'] - 100.0) < 0.1
+        assert abs(dims['z'] - 100.0) < 0.1
 
     def test_sphere_radius_accuracy(self):
         """Test sphere has accurate radius"""
@@ -91,9 +91,9 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(sphere)
 
         # Sphere bounding box should be 2*radius = 30 in all dimensions
-        assert abs(dims['width'] - 30.0) < 0.1
-        assert abs(dims['height'] - 30.0) < 0.1
-        assert abs(dims['depth'] - 30.0) < 0.1
+        assert abs(dims['x'] - 30.0) < 0.1
+        assert abs(dims['z'] - 30.0) < 0.1
+        assert abs(dims['y'] - 30.0) < 0.1
 
     def test_cone_dimensions_accuracy(self):
         """Test cone has accurate dimensions"""
@@ -109,10 +109,10 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(cone)
 
         # Cone base should be 2*radius = 20
-        assert abs(dims['width'] - 20.0) < 0.1
-        assert abs(dims['height'] - 20.0) < 0.1
+        assert abs(dims['x'] - 20.0) < 0.1
+        assert abs(dims['z'] - 20.0) < 0.1
         # Height should be 20
-        assert abs(dims['depth'] - 20.0) < 0.1
+        assert abs(dims['y'] - 20.0) < 0.1
 
     def test_small_box_precision(self):
         """Test dimensional accuracy for very small box"""
@@ -126,9 +126,9 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(small_box)
 
         # Even small dimensions should be accurate
-        assert abs(dims['width'] - 1.0) < 0.01
-        assert abs(dims['height'] - 1.0) < 0.01
-        assert abs(dims['depth'] - 1.0) < 0.01
+        assert abs(dims['x'] - 1.0) < 0.01
+        assert abs(dims['z'] - 1.0) < 0.01
+        assert abs(dims['y'] - 1.0) < 0.01
 
     def test_large_box_precision(self):
         """Test dimensional accuracy for very large box"""
@@ -142,9 +142,9 @@ class TestPrimitiveDimensions:
         dims = get_dimensions(large_box)
 
         # Large dimensions should also be accurate
-        assert abs(dims['width'] - 1000.0) < 0.1
-        assert abs(dims['height'] - 1000.0) < 0.1
-        assert abs(dims['depth'] - 1000.0) < 0.1
+        assert abs(dims['x'] - 1000.0) < 0.1
+        assert abs(dims['z'] - 1000.0) < 0.1
+        assert abs(dims['y'] - 1000.0) < 0.1
 
     def test_non_uniform_box_dimensions(self):
         """Test box with very different dimensions"""
@@ -157,9 +157,9 @@ class TestPrimitiveDimensions:
 
         dims = get_dimensions(plate)
 
-        assert abs(dims['width'] - 100.0) < 0.1
-        assert abs(dims['depth'] - 100.0) < 0.1
-        assert abs(dims['height'] - 2.0) < 0.01
+        assert abs(dims['x'] - 100.0) < 0.1
+        assert abs(dims['y'] - 100.0) < 0.1
+        assert abs(dims['z'] - 2.0) < 0.01
 
 
 class TestVolumeCalculations:
@@ -456,7 +456,7 @@ class TestDimensionalConsistency:
         volume = get_volume(box)
 
         # Calculate expected volume from dimensions
-        expected_volume = dims['width'] * dims['height'] * dims['depth']
+        expected_volume = dims['x'] * dims['z'] * dims['y']
 
         # Should match within 1%
         assert abs(volume - expected_volume) < expected_volume * 0.01
@@ -474,7 +474,7 @@ class TestDimensionalConsistency:
         area = get_surface_area(box)
 
         # Calculate expected surface area from dimensions
-        w, h, d = dims['width'], dims['height'], dims['depth']
+        w, h, d = dims['x'], dims['z'], dims['y']
         expected_area = 2 * (w*h + w*d + h*d)
 
         # Should match within 1%

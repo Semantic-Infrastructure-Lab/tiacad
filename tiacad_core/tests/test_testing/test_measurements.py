@@ -286,9 +286,9 @@ class TestGetBoundingBoxDimensions:
         dims = get_bounding_box_dimensions(box)
 
         # Verify dimensions
-        assert abs(dims["width"] - 50.0) < 0.1
-        assert abs(dims["height"] - 30.0) < 0.1
-        assert abs(dims["depth"] - 20.0) < 0.1
+        assert abs(dims["x"] - 50.0) < 0.1
+        assert abs(dims["y"] - 30.0) < 0.1
+        assert abs(dims["z"] - 20.0) < 0.1
 
     def test_cylinder_dimensions(self):
         """Test bounding box dimensions for a cylinder"""
@@ -302,9 +302,9 @@ class TestGetBoundingBoxDimensions:
         dims = get_bounding_box_dimensions(cylinder)
 
         # Cylinder bbox width/height should be 2*radius = 20
-        assert abs(dims["width"] - 20.0) < 0.1
-        assert abs(dims["height"] - 20.0) < 0.1
-        assert abs(dims["depth"] - 50.0) < 0.1
+        assert abs(dims["x"] - 20.0) < 0.1
+        assert abs(dims["y"] - 20.0) < 0.1
+        assert abs(dims["z"] - 50.0) < 0.1
 
     def test_sphere_dimensions(self):
         """Test bounding box dimensions for a sphere"""
@@ -318,9 +318,9 @@ class TestGetBoundingBoxDimensions:
         dims = get_bounding_box_dimensions(sphere)
 
         # Sphere bbox should be 2*radius = 30 in all dimensions
-        assert abs(dims["width"] - 30.0) < 0.1
-        assert abs(dims["height"] - 30.0) < 0.1
-        assert abs(dims["depth"] - 30.0) < 0.1
+        assert abs(dims["x"] - 30.0) < 0.1
+        assert abs(dims["y"] - 30.0) < 0.1
+        assert abs(dims["z"] - 30.0) < 0.1
 
     def test_dimensions_includes_center(self):
         """Test that dimensions dict includes center point"""
@@ -382,9 +382,9 @@ class TestGetBoundingBoxDimensions:
         dims = get_bounding_box_dimensions(box)
 
         # Verify dimensions match max - min
-        assert abs(dims["width"] - (dims["max"][0] - dims["min"][0])) < 0.001
-        assert abs(dims["height"] - (dims["max"][1] - dims["min"][1])) < 0.001
-        assert abs(dims["depth"] - (dims["max"][2] - dims["min"][2])) < 0.001
+        assert abs(dims["x"] - (dims["max"][0] - dims["min"][0])) < 0.001
+        assert abs(dims["y"] - (dims["max"][1] - dims["min"][1])) < 0.001
+        assert abs(dims["z"] - (dims["max"][2] - dims["min"][2])) < 0.001
 
     def test_dimensions_invalid_part(self):
         """Test that invalid part raises MeasurementError"""
@@ -560,7 +560,7 @@ class TestMeasurementsIntegration:
 
         # Calculate expected diagonal from dimensions
         expected_diagonal = np.sqrt(
-            dims["width"]**2 + dims["height"]**2 + dims["depth"]**2
+            dims["x"]**2 + dims["y"]**2 + dims["z"]**2
         )
 
         assert abs(diagonal - expected_diagonal) < 0.1

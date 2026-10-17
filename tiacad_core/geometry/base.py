@@ -27,14 +27,14 @@ class GeometryBackend(ABC):
     # ========================================================================
 
     @abstractmethod
-    def create_box(self, width: float, height: float, depth: float) -> Any:
+    def create_box(self, x: float, y: float, z: float) -> Any:
         """
         Create a box primitive.
 
         Args:
-            width: Box width (X dimension)
-            height: Box height (Z dimension)
-            depth: Box depth (Y dimension)
+            x: Extent along X
+            y: Extent along Y
+            z: Extent along Z
 
         Returns:
             Geometry object (type depends on backend)

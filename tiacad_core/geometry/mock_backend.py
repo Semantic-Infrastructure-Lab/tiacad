@@ -61,12 +61,12 @@ class MockGeometry:
     def _calculate_default_bounds(self) -> Dict[str, Tuple]:
         """Calculate reasonable bounding box for shape type"""
         if self.shape_type == 'box':
-            w = self.parameters.get('width', 10)
-            h = self.parameters.get('height', 10)
-            d = self.parameters.get('depth', 10)
+            x = self.parameters.get('x', 10)
+            y = self.parameters.get('y', 10)
+            z = self.parameters.get('z', 10)
             return {
-                'min': (-w/2, -d/2, -h/2),
-                'max': (w/2, d/2, h/2),
+                'min': (-x/2, -y/2, -z/2),
+                'max': (x/2, y/2, z/2),
                 'center': self.center
             }
 
@@ -174,12 +174,12 @@ class MockBackend(GeometryBackend):
     # Primitive Creation
     # ========================================================================
 
-    def create_box(self, width: float, height: float, depth: float) -> MockGeometry:
+    def create_box(self, x: float, y: float, z: float) -> MockGeometry:
         """Create mock box"""
         self.operations_count += 1
         return MockGeometry(
             shape_type='box',
-            parameters={'width': width, 'height': height, 'depth': depth}
+            parameters={'x': x, 'y': y, 'z': z}
         )
 
     def create_cylinder(self, radius: float, height: float) -> MockGeometry:

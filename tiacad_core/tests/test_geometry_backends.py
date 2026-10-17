@@ -64,7 +64,7 @@ class TestBackendInterface:
         """All primitives should be creatable"""
         backend = backend_class()
 
-        box = backend.create_box(10, 20, 30)
+        box = backend.create_box(10, 30, 20)
         assert box is not None
 
         cylinder = backend.create_cylinder(5, 20)
@@ -87,13 +87,13 @@ class TestMockBackend:
 
     def test_create_box(self, backend):
         """MockBackend creates MockGeometry for box"""
-        box = backend.create_box(10, 20, 30)
+        box = backend.create_box(10, 30, 20)
 
         assert isinstance(box, MockGeometry)
         assert box.shape_type == 'box'
-        assert box.parameters['width'] == 10
-        assert box.parameters['height'] == 20
-        assert box.parameters['depth'] == 30
+        assert box.parameters['x'] == 10
+        assert box.parameters['y'] == 30
+        assert box.parameters['z'] == 20
 
     def test_create_cylinder(self, backend):
         """MockBackend creates MockGeometry for cylinder"""
@@ -234,7 +234,7 @@ class TestCadQueryBackend:
 
     def test_create_box(self, backend):
         """CadQueryBackend creates real Workplane"""
-        box = backend.create_box(10, 20, 30)
+        box = backend.create_box(10, 30, 20)
 
         # Should be a CadQuery Workplane
         assert hasattr(box, 'val')

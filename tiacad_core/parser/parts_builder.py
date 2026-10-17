@@ -255,10 +255,10 @@ class PartsBuilder:
                     f"(extents along X, Y, Z in mm; a single number is a cube)",
                     part_name=name
                 )
-            x, z, y = params['width'], params['height'], params['depth']
+            x, y, z = params['width'], params['depth'], params['height']
             self._require_positive(name, 'Box', width=x, height=z, depth=y)
 
-        box = self.backend.create_box(x, z, y)
+        box = self.backend.create_box(x, y, z)
         if origin == 'corner':
             box = self.backend.translate(box, (x / 2, y / 2, z / 2))
         else:

@@ -566,9 +566,9 @@ constraints:
     faces: [base2.face_top, shelf2.face_bottom]
 """)
         dims = get_dimensions(doc.parts.get('base2'))
-        assert abs(dims['width'] - 20.0) < 1e-6
-        assert abs(dims['height'] - 5.0) < 1e-6
-        assert abs(dims['depth'] - 20.0) < 1e-6
+        assert abs(dims['x'] - 20.0) < 1e-6
+        assert abs(dims['z'] - 5.0) < 1e-6
+        assert abs(dims['y'] - 20.0) < 1e-6
 
     def test_constraints_can_reference_operation_output_parts(self):
         """Constraints run after operations, so they may reference a part an

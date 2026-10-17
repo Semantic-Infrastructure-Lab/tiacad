@@ -24,7 +24,7 @@ class TestFaceSelection:
     def test_select_top_face(self):
         """Select top face of a box (>Z)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         faces = backend.select_faces(box, ">Z")
 
@@ -36,7 +36,7 @@ class TestFaceSelection:
     def test_select_bottom_face(self):
         """Select bottom face of a box (<Z)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         faces = backend.select_faces(box, "<Z")
 
@@ -47,7 +47,7 @@ class TestFaceSelection:
     def test_select_right_face(self):
         """Select right face of a box (>X)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         faces = backend.select_faces(box, ">X")
 
@@ -58,7 +58,7 @@ class TestFaceSelection:
     def test_select_left_face(self):
         """Select left face of a box (<X)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         faces = backend.select_faces(box, "<X")
 
@@ -69,7 +69,7 @@ class TestFaceSelection:
     def test_select_front_face(self):
         """Select front face of a box (>Y)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         faces = backend.select_faces(box, ">Y")
 
@@ -80,7 +80,7 @@ class TestFaceSelection:
     def test_select_back_face(self):
         """Select back face of a box (<Y)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         faces = backend.select_faces(box, "<Y")
 
@@ -91,7 +91,7 @@ class TestFaceSelection:
     def test_select_faces_translated_box(self):
         """Face selection works on translated geometry"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         translated = backend.translate(box, (100, 200, 300))
 
         faces = backend.select_faces(translated, ">Z")
@@ -103,7 +103,7 @@ class TestFaceSelection:
     def test_select_faces_returns_list(self):
         """select_faces always returns a list"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         faces = backend.select_faces(box, ">Z")
 
@@ -117,7 +117,7 @@ class TestEdgeSelection:
     def test_select_vertical_edges(self):
         """Select vertical edges (|Z) from a box"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         edges = backend.select_edges(box, "|Z")
 
@@ -134,7 +134,7 @@ class TestEdgeSelection:
     def test_select_horizontal_edges(self):
         """Select horizontal edges (|X) from a box"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         edges = backend.select_edges(box, "|X")
 
@@ -145,7 +145,7 @@ class TestEdgeSelection:
     def test_edge_start_end_different(self):
         """Edges have distinct start and end points"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         edges = backend.select_edges(box, "|Z")
 
@@ -155,7 +155,7 @@ class TestEdgeSelection:
     def test_edge_selection_on_translated_box(self):
         """Edge selection works on translated geometry"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         translated = backend.translate(box, (100, 200, 300))
 
         edges = backend.select_edges(translated, "|Z")
@@ -168,7 +168,7 @@ class TestEdgeSelection:
     def test_select_edges_returns_list(self):
         """select_edges always returns a list"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         edges = backend.select_edges(box, "|Z")
 
@@ -182,7 +182,7 @@ class TestFaceCenterQuery:
     def test_get_face_center_basic(self):
         """Get center of a face"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         faces = backend.select_faces(box, ">Z")
 
         center = backend.get_face_center(faces[0])
@@ -194,7 +194,7 @@ class TestFaceCenterQuery:
     def test_get_face_center_all_faces(self):
         """Get centers for all 6 box faces"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         selectors = [">Z", "<Z", ">X", "<X", ">Y", "<Y"]
         expected_centers = [
@@ -214,7 +214,7 @@ class TestFaceCenterQuery:
     def test_get_face_center_returns_tuple(self):
         """get_face_center returns tuple of 3 floats"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         faces = backend.select_faces(box, ">Z")
 
         center = backend.get_face_center(faces[0])
@@ -226,7 +226,7 @@ class TestFaceCenterQuery:
     def test_get_face_center_translated(self):
         """Face center accounts for translation"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         translated = backend.translate(box, (50, 60, 70))
         faces = backend.select_faces(translated, ">Z")
 
@@ -241,7 +241,7 @@ class TestFaceNormalQuery:
     def test_get_face_normal_top(self):
         """Top face normal points up"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         faces = backend.select_faces(box, ">Z")
 
         normal = backend.get_face_normal(faces[0])
@@ -251,7 +251,7 @@ class TestFaceNormalQuery:
     def test_get_face_normal_all_faces(self):
         """All face normals are unit vectors pointing outward"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         test_cases = [
             (">Z", (0, 0, 1)),   # Top
@@ -270,7 +270,7 @@ class TestFaceNormalQuery:
     def test_face_normal_is_normalized(self):
         """Face normals are unit vectors (length 1)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         faces = backend.select_faces(box, ">Z")
 
         normal = backend.get_face_normal(faces[0])
@@ -282,7 +282,7 @@ class TestFaceNormalQuery:
     def test_face_normal_unchanged_by_translation(self):
         """Face normal direction is unaffected by translation"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         translated = backend.translate(box, (100, 200, 300))
 
         faces_original = backend.select_faces(box, ">Z")
@@ -296,7 +296,7 @@ class TestFaceNormalQuery:
     def test_get_face_normal_returns_tuple(self):
         """get_face_normal returns tuple of 3 floats"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         faces = backend.select_faces(box, ">Z")
 
         normal = backend.get_face_normal(faces[0])
@@ -312,7 +312,7 @@ class TestEdgePointQuery:
     def test_get_edge_point_start(self):
         """Get start point of an edge"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         point = backend.get_edge_point(edges[0], "start")
@@ -325,7 +325,7 @@ class TestEdgePointQuery:
     def test_get_edge_point_end(self):
         """Get end point of an edge"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         point = backend.get_edge_point(edges[0], "end")
@@ -338,7 +338,7 @@ class TestEdgePointQuery:
     def test_get_edge_point_midpoint(self):
         """Get midpoint of an edge"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         start = backend.get_edge_point(edges[0], "start")
@@ -352,7 +352,7 @@ class TestEdgePointQuery:
     def test_get_edge_point_invalid_location(self):
         """Invalid location raises ValueError"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         with pytest.raises(ValueError, match="Invalid location"):
@@ -361,7 +361,7 @@ class TestEdgePointQuery:
     def test_get_edge_point_all_locations(self):
         """Test all valid location options"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         locations = ["start", "end", "midpoint"]
@@ -374,7 +374,7 @@ class TestEdgePointQuery:
     def test_edge_point_returns_tuple(self):
         """get_edge_point returns tuple of 3 floats"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         point = backend.get_edge_point(edges[0], "midpoint")
@@ -390,7 +390,7 @@ class TestEdgeTangentQuery:
     def test_get_edge_tangent_vertical(self):
         """Tangent of vertical edge points up"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         tangent = backend.get_edge_tangent(edges[0])
@@ -403,7 +403,7 @@ class TestEdgeTangentQuery:
     def test_get_edge_tangent_horizontal(self):
         """Tangent of horizontal edge is horizontal"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|X")
 
         tangent = backend.get_edge_tangent(edges[0])
@@ -414,7 +414,7 @@ class TestEdgeTangentQuery:
     def test_edge_tangent_is_normalized(self):
         """Edge tangent is a unit vector (length 1)"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         tangent = backend.get_edge_tangent(edges[0])
@@ -446,7 +446,7 @@ class TestEdgeTangentQuery:
     def test_edge_tangent_returns_tuple(self):
         """get_edge_tangent returns tuple of 3 floats"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
         edges = backend.select_edges(box, "|Z")
 
         tangent = backend.get_edge_tangent(edges[0])
@@ -462,7 +462,7 @@ class TestIntegration:
     def test_face_extraction_complete_workflow(self):
         """Complete workflow: select face, get center and normal"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         # Select top face
         faces = backend.select_faces(box, ">Z")
@@ -479,7 +479,7 @@ class TestIntegration:
     def test_edge_extraction_complete_workflow(self):
         """Complete workflow: select edge, get point and tangent"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         # Select vertical edge
         edges = backend.select_edges(box, "|Z")
@@ -499,7 +499,7 @@ class TestIntegration:
     def test_all_faces_workflow(self):
         """Extract properties from all 6 box faces"""
         backend = MockBackend()
-        box = backend.create_box(width=10, height=20, depth=5)
+        box = backend.create_box(x=10, y=5, z=20)
 
         selectors = [">Z", "<Z", ">X", "<X", ">Y", "<Y"]
 

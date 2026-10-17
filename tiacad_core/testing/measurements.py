@@ -6,7 +6,7 @@ between parts. Part of the Testing Confidence Plan v3.1.
 
 Key functions:
     - measure_distance: Measure distance between two parts at reference points
-    - get_bounding_box_dimensions: Extract width/height/depth from bounding box
+    - get_bounding_box_dimensions: Extract x/y/z extents from bounding box
 
 Philosophy: Enable precise verification of attachment correctness and spatial
 relationships in tests without manual coordinate calculation.
@@ -205,7 +205,7 @@ def get_bounding_box_dimensions(part: Part) -> Dict[str, float]:
         part: Part to measure
 
     Returns:
-        Dict with 'width' (X), 'height' (Y), 'depth' (Z), 'center', 'min', 'max'.
+        Dict with 'x', 'y', 'z' (extents along X, Y, Z), 'center', 'min', 'max'.
 
     Raises:
         MeasurementError: If bounding box cannot be computed
@@ -225,9 +225,9 @@ def get_bounding_box_dimensions(part: Part) -> Dict[str, float]:
     center = np.array(bounds['center'])
 
     return {
-        'width': float(max_corner[0] - min_corner[0]),
-        'height': float(max_corner[1] - min_corner[1]),
-        'depth': float(max_corner[2] - min_corner[2]),
+        'x': float(max_corner[0] - min_corner[0]),
+        'y': float(max_corner[1] - min_corner[1]),
+        'z': float(max_corner[2] - min_corner[2]),
         'center': center.tolist(),
         'min': min_corner.tolist(),
         'max': max_corner.tolist(),

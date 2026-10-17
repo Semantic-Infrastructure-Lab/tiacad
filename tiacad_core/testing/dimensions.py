@@ -38,9 +38,9 @@ def get_dimensions(part: Part) -> Dict[str, float]:
 
     Returns:
         Dictionary with keys (depending on part type):
-            - 'width': X-axis extent (always present)
-            - 'depth': Y-axis extent (always present)
-            - 'height': Z-axis extent (always present)
+            - 'x': X-axis extent (always present)
+            - 'y': Y-axis extent (always present)
+            - 'z': Z-axis extent (always present)
             - 'volume': Part volume (always present)
             - 'surface_area': Part surface area (always present)
 
@@ -50,14 +50,14 @@ def get_dimensions(part: Part) -> Dict[str, float]:
     Examples:
         # Get dimensions of a box
         >>> dims = get_dimensions(box_part)
-        >>> assert abs(dims['width'] - 50.0) < 0.01
-        >>> assert abs(dims['height'] - 30.0) < 0.01
-        >>> assert abs(dims['depth'] - 20.0) < 0.01
+        >>> assert abs(dims['x'] - 50.0) < 0.01
+        >>> assert abs(dims['z'] - 30.0) < 0.01
+        >>> assert abs(dims['y'] - 20.0) < 0.01
 
         # Get cylinder dimensions
         >>> dims = get_dimensions(cylinder_part)
         >>> # Cylinder bounding box is 2*radius in X and Y
-        >>> assert abs(dims['width'] - 20.0) < 0.01  # radius=10
+        >>> assert abs(dims['x'] - 20.0) < 0.01  # radius=10
 
         # Verify dimensions
         >>> dims = get_dimensions(part)
@@ -84,11 +84,10 @@ def get_dimensions(part: Part) -> Dict[str, float]:
         min_corner = bounds['min']
         max_corner = bounds['max']
 
-        # Calculate dimensions (matches create_box's width->X, depth->Y, height->Z)
         dimensions = {
-            'width': max_corner[0] - min_corner[0],   # X extent
-            'depth': max_corner[1] - min_corner[1],   # Y extent
-            'height': max_corner[2] - min_corner[2],  # Z extent
+            'x': max_corner[0] - min_corner[0],
+            'y': max_corner[1] - min_corner[1],
+            'z': max_corner[2] - min_corner[2],
         }
 
         # Add volume and surface area

@@ -43,7 +43,7 @@ class TestSummarizePartGeometry:
         backend = MockBackend()
         part = Part(
             name="mock_box",
-            geometry=backend.create_box(10, 20, 30),
+            geometry=backend.create_box(10, 30, 20),
             backend=backend,
         )
 
