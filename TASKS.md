@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 5
+next_id: 7
 archival: inline
 areas:
   VAL: 19
@@ -1667,3 +1667,39 @@ Real drawer (measured 2026-10-16): 19.5 in left-right x 15 in front-back; column
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-17T01:49:25Z session:chartreuse-corona-1016] Scott 2026-10-16: sticker-drawer design/reconciliation is not a TiaCAD issue; it's a user project. (Old bin examples stay as-is.)
+
+
+## TASK-TCAD-5 · Cylinder/cone 'height' -> length along an axis: finish removing direction words from primitives
+
+```yaml
+status: backlog
+priority: low
+tags: [dsl, dx]
+created: '2026-10-17T02:55:52Z'
+updated: '2026-10-17T02:55:52Z'
+session: chartreuse-corona-1016
+```
+
+Follow-up to TCAD-DSL-6 (boxes now size:[x,y,z]). Cylinder/cone/polygon 'height' means 'extent along Z' only by default; with a rotated axis the word misleads. Idea: 'length' + 'axis: X|Y|Z' (default Z). Also decide whether 2D rectangle width/height stays (only two axes, so probably yes). Breaking-change rewrite is acceptable (Scott 2026-10-16); reuse scripts/migrations/box_size.py approach.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-6 · Primitive default origin: centered at (0,0,0) puts half the part below the bed; consider min-corner or bottom-centre default
+
+```yaml
+status: backlog
+priority: low
+tags: [dsl, dx]
+created: '2026-10-17T02:55:54Z'
+updated: '2026-10-17T02:55:54Z'
+session: chartreuse-corona-1016
+```
+
+Raised during TCAD-DSL-6 discussion. 'origin: center' is the default for box etc., so z=0 is mid-height; printable models need origin: corner/base to sit on the plate. Evaluate changing the default (breaking; migration script can add explicit origin: center to every part lacking one so geometry is unchanged).
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
