@@ -1593,20 +1593,22 @@ Putting one tray of each layout (and a test ruler of 18-31 squares) on one print
 - [#1 2026-10-17T01:49:25Z session:chartreuse-corona-1016] Scott 2026-10-16: TiaCAD is a modeling tool, not a layout/plate-packing tool. Plate layout belongs in the slicer or user scripts.
 
 
-## TASK-TCAD-DSL-6 · Box axis names (width=X, depth=Y, height=Z) are a recurring trap; consider x/y/z (or size_x/y/z) aliases
+## TASK-TCAD-DSL-6 · Box sizing: replace width/depth/height with size: [x, y, z]; remove W/D/H from the language, tools and docs (breaking, Scott-approved)
 
 ```yaml
-status: backlog
-priority: low
-effort: 4h
+status: done
+priority: medium
+effort: 2d
 tags: [dsl, dx]
 created: '2026-10-17T00:40:45Z'
-updated: '2026-10-17T00:41:09Z'
+updated: '2026-10-17T02:55:40Z'
 session: babewugo-1016
 links:
   references:
   - docs/user/YAML_REFERENCE.md
-notes_next: 2
+  commits:
+  - 9daee40cbf90769bd039633ceee483a3d4c64657
+notes_next: 4
 ```
 
 YAML_REFERENCE already carries a warning that depth maps to Y and height to Z, and TCAD-VAL-13 was the same class of bug in the CLI table. Weak evidence otherwise: during the 2026-10-16 sticker-drawer work the box axes were written correctly from existing examples (no axis mistake of mine), so this is a judgement about the naming, not a repeated failure. Option: accept x/y/z (or size_x/size_y/size_z) as aliases for the three box parameters, keep width/depth/height working, mention in docs. Needs a decision first (alias vs leave as documented).
@@ -1614,6 +1616,8 @@ YAML_REFERENCE already carries a warning that depth maps to Y and height to Z, a
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-17T00:41:09Z session:babewugo-1016] Correction (babewugo-1016): I first reported axis naming 'cost a failed build'. It did not; that failure was 'size:' on a box (see TCAD-DOC-1). Priority stays low; decide alias vs documented-only.
+- [#2 2026-10-17T02:28:28Z session:chartreuse-corona-1016] Scott 2026-10-16: x,y,z it is; breaking change OK, existing models may be rewritten. Evidence: pcb_standoff_assembly axis swap (b2c616a), VAL-13 + 36 straggler assertions, create_box(w,h,d)->box(w,d,h) internal flip; docs and Claude both wrote size:[x,y,z] first. Plan: (1) corpus snapshot oracle (147 files, 9 expected negatives) (2) fixtures (3) implement size: (scalar=cube, units convert, templates) (4) scripted rewrite of examples/docs/tests (5) delete width/depth/height; check/audit/get_dimensions/expect.bbox report X/Y/Z. Out of scope, decide separately: cylinder height->length+axis, 2D rectangle width/height, default origin (center vs min corner).
+- [#3 2026-10-17T02:55:40Z session:chartreuse-corona-1016] Shipped: size:[x,y,z] only. Parser/schema/create_box(x,y,z)/get_dimensions+get_bounding_box_dimensions (x/y/z)/check+audit tables/contract messages/differential oracle; 184 example+stdlib box parts, ~255 test specs and 48 doc blocks rewritten by scripts/migrations/box_size.py + AST scripts; corpus snapshot (147 files) geometry identical. Found 3 contradictory W/H/D conventions (get_dimensions X/Z/Y, get_bounding_box_dimensions X/Y/Z, check table X x Z x Y). NOTE: reverses v3.0.0 987cead 'positional size -> named params' (2025-11-10); rationale not recorded there. Open: cylinder/cone height->length+axis, 2D rectangle width/height, default origin.
 
 
 ## TASK-TCAD-VAL-18 · Schema: thickness.min lost 'exclusiveMinimum: 0' when widened to numberOrTemplate
