@@ -5,14 +5,16 @@ id_prefix: TCAD
 next_id: 5
 archival: inline
 areas:
-  VAL: 18
-  UX: 15
+  VAL: 19
+  UX: 16
   API: 3
   ARCH: 10
   CON: 13
   FIN: 2
   BUG: 6
-  DSL: 5
+  DSL: 7
+  DOC: 2
+  EX: 2
 ---
 
 ## TASK-TCAD-VAL-1 · CI validation as required gate — make expect: contract checking a required CI gate
@@ -1519,3 +1521,133 @@ Thin features in the sticker bin (1.6 wall, 2.0 floor, 0.8 slot skin) are verifi
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-16T20:22:36Z session:cobalt-flash-1016] thickness contract; sticker_bin asserts 0.8 skin; --set slot_d=1.0 fails with location
+
+
+## TASK-TCAD-DOC-1 · YAML_REFERENCE examples use 'size: [x,y,z]' for box, which fails to build; expect: block undocumented
+
+```yaml
+status: backlog
+priority: medium
+effort: 2h
+tags: [docs, dx]
+created: '2026-10-17T00:40:40Z'
+updated: '2026-10-17T00:40:40Z'
+session: babewugo-1016
+links:
+  references:
+  - docs/user/YAML_REFERENCE.md
+```
+
+Found 2026-10-16 (babewugo-1016). A box written as 'primitive: box, size: [10,20,5]' fails: "Box 'b' missing required parameters: width, height, depth". YAML_REFERENCE.md still shows size: in 'Using Parameters', Examples 1/2/4 and the Primitives table (box row), and my new Units paragraph mentions size: as if valid. Fix: use 'parameters: {width, depth, height}' everywhere (verify each example actually builds, ideally with a doc-example build test), and add an 'expect:' (contracts) section or a pointer to MODEL_VALIDATION.md / VALIDATION_STRENGTHENING.md 4.1 (incl. ${...} in expect values).
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-UX-15 · validate-geometry has no --set, so parameter variants cannot be print-checked directly
+
+```yaml
+status: backlog
+priority: low
+effort: 1h
+tags: [cli, dx]
+created: '2026-10-17T00:40:42Z'
+updated: '2026-10-17T00:40:42Z'
+session: babewugo-1016
+links:
+  references:
+  - tiacad_core/cli/validate_geometry.py
+```
+
+build/check/render/verify accept --set NAME=VALUE (TCAD-UX-14); validate-geometry (--bed/--min-wall/--overhang-angle) does not. Working around it meant building a variant STL then inspecting it by hand. Wire --set through, tag output like the other commands, add a test.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-DSL-5 · No first-class way to lay several parts out on one build plate
+
+```yaml
+status: backlog
+priority: low
+effort: 1d
+tags: [dsl, feature]
+created: '2026-10-17T00:40:43Z'
+updated: '2026-10-17T00:40:43Z'
+session: babewugo-1016
+```
+
+Putting one tray of each layout (and a test ruler of 18-31 squares) on one print needed a generator script (YAML emitted by Python) plus a trimesh merge outside TiaCAD. Idea: a plate:/layout helper (parts + positions or simple row/grid packing, optional gap, bounds check against a --bed) that exports one multi-body STL/3MF. Only worth building if multi-part print plates recur (sticker drawer will need ~20 trays).
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-DSL-6 · Box axis names (width=X, depth=Y, height=Z) are a recurring trap; consider x/y/z (or size_x/y/z) aliases
+
+```yaml
+status: backlog
+priority: low
+effort: 4h
+tags: [dsl, dx]
+created: '2026-10-17T00:40:45Z'
+updated: '2026-10-17T00:40:45Z'
+session: babewugo-1016
+links:
+  references:
+  - docs/user/YAML_REFERENCE.md
+```
+
+YAML_REFERENCE already carries a warning that depth maps to Y and height to Z. Hit it again on 2026-10-16: a 74 x 236 slab written depth=236 was right but a first draft had height/depth confused, and TCAD-VAL-13 was the same class of bug in the CLI table. Option: accept x/y/z (or size_x/size_y/size_z) as aliases for the three box parameters, keep width/depth/height working, mention in docs. Needs a decision first (alias vs leave as documented).
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-VAL-18 · Schema: thickness.min lost 'exclusiveMinimum: 0' when widened to numberOrTemplate
+
+```yaml
+status: backlog
+priority: low
+effort: 30m
+tags: [validation, contracts]
+created: '2026-10-17T00:40:47Z'
+updated: '2026-10-17T00:40:47Z'
+session: babewugo-1016
+links:
+  references:
+  - tiacad-schema.json
+```
+
+4eaf444 let expect: numeric fields be a number or a ${...} template ($defs/numberOrTemplate). thickness.min previously enforced > 0 in the schema; the shared definition cannot carry that, so a literal 0 or negative min now passes the schema (the contract itself would still need a positive value to be meaningful). Restore with a dedicated definition (anyOf [number > 0, template]) for thickness.min, plus a schema test for 0/-1.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
+
+
+## TASK-TCAD-EX-1 · sticker_drawer examples (bin/divider/clip/fit_check) still describe the old swapped drawer axes; reconcile with sticker_tray
+
+```yaml
+status: backlog
+priority: medium
+effort: 3h
+tags: [examples]
+created: '2026-10-17T00:40:49Z'
+updated: '2026-10-17T00:40:49Z'
+session: babewugo-1016
+links:
+  references:
+  - examples/sticker_drawer/sticker_bin.yaml
+  - examples/sticker_drawer/sticker_tray.yaml
+```
+
+Real drawer (measured 2026-10-16): 19.5 in left-right x 15 in front-back; columns run front to back. sticker_bin.yaml comments say 5 across a 381 mm drawer and 2 deep in 489 mm (axes swapped) and its 236 mm length cannot print on the CR-6 SE (~234 mm travel). New sticker_tray.yaml (single-sticker trays; layout A slot_l 71.6, 5/column, layout B 90.6, 4/column) supersedes the design. Decide: retire bin/divider/clip/fit_check or keep as an example of imports; either way fix the comments, update fit_check, trust PNGs, golden hashes, docs/tests that reference them. Physical verification still outstanding: print one of each tray, check stickers (3.5 in diagonal) and the 50.8 vs 63.5 mm clearance.
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+_(no notes yet)_
