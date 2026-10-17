@@ -90,12 +90,7 @@ operations:
     base: plate
     subtract:
       - center_hole_oriented
-      - bolt_circle_0
-      - bolt_circle_1
-      - bolt_circle_2
-      - bolt_circle_3
-      - bolt_circle_4
-      - bolt_circle_5
+      - {pattern: bolt_circle}
 
   # Fillet the 4 outer vertical corner edges (safe on complex geometry with holes)
   # Vertical == the plate's thickness direction, which is Y (see note above).

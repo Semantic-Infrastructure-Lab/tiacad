@@ -969,9 +969,23 @@ operations:
 ```
 
 **Pattern Naming:**
-Generated parts are named: `{pattern_name}_{index}`
+Generated parts are named `{pattern_name}_{index}` (`{pattern_name}_{i}_{j}` for 2D grids).
+`bolt_circle` creates `bolt_circle_0`, `bolt_circle_1`, etc.
 
-Example: `bolt_circle` creates `bolt_circle_0`, `bolt_circle_1`, etc.
+**Using a pattern's copies:** don't list the copies by name. Refer to the whole pattern with
+`{pattern: name}` and the list follows `count` when you change it:
+
+```yaml
+    plate_with_holes:
+      type: boolean
+      operation: difference
+      base: plate
+      subtract:
+        - {pattern: bolt_circle}     # every copy, however many bolt_count makes
+```
+
+This works wherever a boolean takes a list (`subtract`, `inputs`). Also accepted: a wildcard
+string (`"bolt_circle_*"`) and ranges (`{range: "bolt_circle[0..2]"}` or `{range: "bolt_circle[*]"}`).
 
 ---
 
@@ -1270,10 +1284,7 @@ operations:
     operation: difference
     base: plate
     subtract:
-      - hole_pattern_0_0
-      - hole_pattern_0_1
-      - hole_pattern_1_0
-      - hole_pattern_1_1
+      - {pattern: hole_pattern}   # all 2 x 2 copies
 
 export:
   default_part: plate
@@ -1323,12 +1334,7 @@ operations:
     operation: difference
     base: plate
     subtract:
-      - bolt_circle_0
-      - bolt_circle_1
-      - bolt_circle_2
-      - bolt_circle_3
-      - bolt_circle_4
-      - bolt_circle_5
+      - {pattern: bolt_circle}   # all bolt_count holes; change the count freely
 
   # Round the top edges
   finished_plate:
@@ -1457,7 +1463,8 @@ rotate:
 
 ### 4. Pattern Naming Convention
 
-Patterns generate numbered parts. Plan your boolean operations accordingly:
+Patterns generate numbered parts. Refer to all of them with `{pattern: name}` instead of
+listing each one, so changing `count` can't leave a copy behind:
 
 ```yaml
 operations:
@@ -1474,10 +1481,7 @@ operations:
     operation: difference
     base: plate
     subtract:
-      - my_pattern_0
-      - my_pattern_1
-      - my_pattern_2
-      - my_pattern_3
+      - {pattern: my_pattern}     # same as listing my_pattern_0 .. my_pattern_3
 ```
 
 ### 5. Use Finishing Last
@@ -1602,7 +1606,7 @@ operations:
 | Operation | Purpose | Syntax |
 |-----------|---------|--------|
 | union | Combine parts | `inputs: [...]` |
-| difference | Subtract | `base: ..., subtract: [...]` |
+| difference | Subtract | `base: ..., subtract: [...]` (entries may be `{pattern: name}` for every copy of a pattern) |
 | intersection | Overlap only | `inputs: [...]` |
 
 ### Pattern Types

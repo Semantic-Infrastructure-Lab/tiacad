@@ -265,10 +265,7 @@ operations:
     operation: union
     inputs:
       - enclosure_with_holes
-      - mount_post_pattern_0_0
-      - mount_post_pattern_0_1
-      - mount_post_pattern_1_0
-      - mount_post_pattern_1_1
+      - {pattern: mount_post_pattern}
 
   # Subtract screw holes from posts
   final_enclosure:
@@ -276,10 +273,7 @@ operations:
     operation: difference
     base: enclosure_with_posts
     subtract:
-      - screw_hole_pattern_0_0
-      - screw_hole_pattern_0_1
-      - screw_hole_pattern_1_0
-      - screw_hole_pattern_1_1
+      - {pattern: screw_hole_pattern}
 
   # Position gasket on top
   gasket_positioned:

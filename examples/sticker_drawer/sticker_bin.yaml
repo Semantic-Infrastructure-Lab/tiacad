@@ -84,8 +84,7 @@ operations:
     base: shell
     subtract:
       - cavity
-      - slots_0
-      - slots_1
+      - {pattern: slots}
       - finger_cut
 
 export:
