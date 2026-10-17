@@ -14,17 +14,11 @@ parameters:
 parts:
   body:
     primitive: box
-    parameters:
-      width: ${div_w}
-      depth: ${div_t}
-      height: ${div_h}
+    size: ['${div_w}', '${div_t}', '${div_h}']
     origin: corner
   tab:
     primitive: box
-    parameters:
-      width: ${tab_w}
-      depth: ${div_t}
-      height: ${tab_h}
+    size: ['${tab_w}', '${div_t}', '${tab_h}']
     origin:
       - ${(div_w - tab_w) / 2}
       - 0

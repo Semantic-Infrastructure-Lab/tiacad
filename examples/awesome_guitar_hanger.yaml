@@ -55,28 +55,19 @@ parts:
 
   mounting_plate:
     primitive: box
-    parameters:
-      width: '${plate_width}'
-      height: '${plate_thickness}'
-      depth: '${plate_height}'
+    size: ['${plate_width}', '${plate_height}', '${plate_thickness}']
     origin: center
     color: [0.2, 0.3, 0.5, 1.0]  # Nice blue
 
   support_beam:
     primitive: box
-    parameters:
-      width: '${beam_width}'
-      height: '${beam_thickness}'
-      depth: '${beam_depth}'
+    size: ['${beam_width}', '${beam_depth}', '${beam_thickness}']
     origin: center
     color: [0.2, 0.3, 0.5, 1.0]
 
   cradle_arm:
     primitive: box
-    parameters:
-      width: '${arm_width}'
-      height: '${arm_length}'
-      depth: '${arm_thickness}'
+    size: ['${arm_width}', '${arm_thickness}', '${arm_length}']
     origin: center
     color: [0.2, 0.3, 0.5, 1.0]
 
@@ -86,10 +77,7 @@ parts:
 
   reinforcement_bracket:
     primitive: box
-    parameters:
-      width: '${bracket_width}'
-      height: '${bracket_height}'
-      depth: '${bracket_thickness}'
+    size: ['${bracket_width}', '${bracket_thickness}', '${bracket_height}']
     origin: center
     color: [0.2, 0.3, 0.5, 1.0]
 

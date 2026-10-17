@@ -19,10 +19,7 @@ parameters:
 parts:
   block:
     primitive: box
-    parameters:
-      width: ${box_w}
-      height: ${box_h}
-      depth: ${box_d}
+    size: ['${box_w}', '${box_d}', '${box_h}']
 
   hole:
     primitive: cylinder

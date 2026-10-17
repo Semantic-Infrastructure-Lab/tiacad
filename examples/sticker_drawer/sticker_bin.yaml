@@ -26,18 +26,12 @@ parameters:
 parts:
   shell:
     primitive: box
-    parameters:
-      width: '${bin_w}'
-      depth: '${bin_l}'
-      height: '${bin_h}'
+    size: ['${bin_w}', '${bin_l}', '${bin_h}']
     origin: corner
 
   cavity:
     primitive: box
-    parameters:
-      width: '${bin_w - 2 * wall}'
-      depth: '${bin_l - 2 * wall}'
-      height: '${bin_h}'
+    size: ['${bin_w - 2 * wall}', '${bin_l - 2 * wall}', '${bin_h}']
     origin:
       - '${wall}'
       - '${wall}'
@@ -47,10 +41,7 @@ parts:
   # the second one a compartment-pitch further along Y.
   slot:
     primitive: box
-    parameters:
-      width: '${bin_w - 2 * wall + 2 * slot_d}'
-      depth: '${slot_w}'
-      height: '${bin_h - floor}'
+    size: ['${bin_w - 2 * wall + 2 * slot_d}', '${slot_w}', '${bin_h - floor}']
     origin:
       - '${wall - slot_d}'
       - '${wall + comp_l - slot_clear / 2}'
@@ -58,10 +49,7 @@ parts:
 
   finger_cut:
     primitive: box
-    parameters:
-      width: '${tab_w}'
-      depth: '${wall * 3}'
-      height: '${bin_h}'
+    size: ['${tab_w}', '${wall * 3}', '${bin_h}']
     origin:
       - '${(bin_w - tab_w) / 2}'
       - '${-wall}'

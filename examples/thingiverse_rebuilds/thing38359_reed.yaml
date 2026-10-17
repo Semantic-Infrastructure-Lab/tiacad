@@ -18,10 +18,7 @@ parameters:
 parts:
   reed:
     primitive: box
-    parameters:
-      width: ${reed_width}
-      depth: ${reed_length}
-      height: ${reed_thickness}
+    size: ['${reed_width}', '${reed_length}', '${reed_thickness}']
     origin: center
 
 export:

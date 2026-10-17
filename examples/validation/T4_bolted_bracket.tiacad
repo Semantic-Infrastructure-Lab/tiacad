@@ -58,10 +58,7 @@ parameters:
 parts:
   bracket:
     primitive: box
-    parameters:
-      width: ${bracket_w}
-      height: ${bracket_t}
-      depth: ${bracket_d}
+    size: ['${bracket_w}', '${bracket_d}', '${bracket_t}']
     origin: center
 
   hole:

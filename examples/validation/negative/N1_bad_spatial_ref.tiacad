@@ -13,17 +13,11 @@ metadata:
 parts:
   box_a:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
 
   box_b:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
     translate:
       to: nonexistent_part.face_top
 

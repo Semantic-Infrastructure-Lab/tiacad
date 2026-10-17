@@ -58,10 +58,7 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: ${plate_size}
-      height: ${plate_t}
-      depth: ${plate_size}
+    size: ['${plate_size}', '${plate_size}', '${plate_t}']
     origin: center
 
   spacer:

@@ -22,10 +22,7 @@ metadata:
 parts:
   mounting_plate:
     primitive: box
-    parameters:
-      width: 120
-      height: 15
-      depth: 90
+    size: [120, 90, 15]
     origin: center
   screw_hole_shaft:
     primitive: cylinder

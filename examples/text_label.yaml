@@ -71,9 +71,7 @@ sketches:
 parts:
   base_plate:
     primitive: box
-    width: 90
-    depth: 40
-    height: 2
+    size: [90, 40, 2]
     origin: center
 
 operations:

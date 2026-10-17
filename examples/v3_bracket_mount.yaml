@@ -38,19 +38,13 @@ parts:
   # 1. Base mounting plate (attaches to wall)
   base_plate:
     primitive: box
-    parameters:
-      width: '${base_width}'
-      height: '${base_thickness}'
-      depth: '${base_depth}'
+    size: ['${base_width}', '${base_depth}', '${base_thickness}']
     origin: center
 
   # 2. Vertical bracket (mounted on back of base)
   bracket:
     primitive: box
-    parameters:
-      width: '${bracket_width}'
-      height: '${bracket_thickness}'
-      depth: '${bracket_height}'
+    size: ['${bracket_width}', '${bracket_height}', '${bracket_thickness}']
     origin: center
     translate:
       to: base_plate.face_back  # ✨ auto-generated anchor positioning
@@ -58,10 +52,7 @@ parts:
   # 3. Left support arm
   left_arm:
     primitive: box
-    parameters:
-      width: '${arm_width}'
-      height: '${arm_depth}'
-      depth: '${arm_height}'
+    size: ['${arm_width}', '${arm_height}', '${arm_depth}']
     origin: center
     translate:
       to:
@@ -71,10 +62,7 @@ parts:
   # 4. Right support arm
   right_arm:
     primitive: box
-    parameters:
-      width: '${arm_width}'
-      height: '${arm_depth}'
-      depth: '${arm_height}'
+    size: ['${arm_width}', '${arm_height}', '${arm_depth}']
     origin: center
     translate:
       to:

@@ -15,19 +15,13 @@ parts:
   # Base platform
   base:
     primitive: box
-    parameters:
-      width: '${base_size}'
-      height: '${base_height}'
-      depth: '${base_size}'
+    size: ['${base_size}', '${base_size}', '${base_height}']
     origin: center
 
   # Top box positioned using auto-generated anchor (no manual reference definition!)
   top:
     primitive: box
-    parameters:
-      width: '${top_size}'
-      height: '${top_height}'
-      depth: '${top_size}'
+    size: ['${top_size}', '${top_size}', '${top_height}']
     origin: center
     translate:
       to: base.face_top  # ✨ auto-generated anchor! No explicit definition needed

@@ -10,13 +10,7 @@ metadata:
 parts:
   cube:
     primitive: box
-    parameters:
-
-      width: 30
-
-      height: 30
-
-      depth: 30
+    size: [30, 30, 30]
     color: blue
 
 operations:

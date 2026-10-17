@@ -32,18 +32,12 @@ parts:
   # Wall mount base
   wall_mount:
     primitive: box
-    parameters:
-      width: ${hook_width}
-      height: ${wall_thickness}
-      depth: 20
+    size: ['${hook_width}', 20, '${wall_thickness}']
 
   # Hook arm
   hook_arm:
     primitive: box
-    parameters:
-      width: ${wall_thickness}
-      height: 15
-      depth: ${hook_depth}
+    size: ['${wall_thickness}', '${hook_depth}', 15]
     translate:
       to:
         from: wall_mount.face_front
@@ -52,10 +46,7 @@ parts:
   # Hook tip
   hook_tip:
     primitive: box
-    parameters:
-      width: 15
-      height: 15
-      depth: ${wall_thickness}
+    size: [15, '${wall_thickness}', 15]
     translate:
       to:
         from: hook_arm.face_front

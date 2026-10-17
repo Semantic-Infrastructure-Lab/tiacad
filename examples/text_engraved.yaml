@@ -20,9 +20,7 @@ parameters:
 parts:
   sign_base:
     primitive: box
-    width: 100
-    depth: 60
-    height: 5
+    size: [100, 60, 5]
     origin: center
 
 # Text to be carved

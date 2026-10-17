@@ -22,10 +22,7 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: ${2 * wall + gap + 2 * leg_t}
-      depth: ${clip_l}
-      height: ${plate_t}
+    size: ['${2 * wall + gap + 2 * leg_t}', '${clip_l}', '${plate_t}']
     origin:
       - 0
       - 0
@@ -33,18 +30,12 @@ parts:
 
   leg_a:
     primitive: box
-    parameters:
-      width: ${leg_t}
-      depth: ${clip_l}
-      height: ${leg_h}
+    size: ['${leg_t}', '${clip_l}', '${leg_h}']
     origin: corner
 
   leg_b:
     primitive: box
-    parameters:
-      width: ${leg_t}
-      depth: ${clip_l}
-      height: ${leg_h}
+    size: ['${leg_t}', '${clip_l}', '${leg_h}']
     origin:
       - ${leg_t + 2 * wall + gap}
       - 0

@@ -19,10 +19,7 @@ metadata:
 parts:
   box_raw:
     primitive: box
-    parameters:
-      width: 30
-      depth: 20
-      height: 20
+    size: [30, 20, 20]
 
 operations:
   left:

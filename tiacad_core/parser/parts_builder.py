@@ -24,7 +24,7 @@ import cadquery as cq
 from ..part import Part, PartRegistry
 from ..utils.exceptions import TiaCADError
 from ..geometry import GeometryBackend, CadQueryBackend, get_default_backend
-from .parameter_resolver import ParameterResolver
+from .parameter_resolver import ParameterResolver, parse_length
 from .color_parser import ColorParser
 from .appearance_builder import AppearanceBuilder
 
@@ -231,41 +231,80 @@ class PartsBuilder:
 
         Args:
             name: Part name (for error messages)
-            spec: Specification with 'parameters' containing width, height, depth
+            spec: Specification with `size: [x, y, z]` (extents along X, Y, Z;
+                a single number is a cube). The legacy width/depth/height
+                `parameters:` form is still read until it is removed.
 
         Returns:
             CadQuery Workplane with box geometry
 
         Raises:
-            PartsBuilderError: If required parameters missing
+            PartsBuilderError: If size is missing, malformed or not positive
         """
-        # Extract parameters (check 'parameters' key first, fall back to spec for backward compat)
-        params = spec.get('parameters', spec)
-
-        # Validate required parameters
-        required = ['width', 'height', 'depth']
-        missing = [p for p in required if p not in params]
-        if missing:
-            raise PartsBuilderError(
-                f"Box '{name}' missing required parameters: {', '.join(missing)}",
-                part_name=name
-            )
-
-        width = params['width']
-        height = params['height']
-        depth = params['depth']
         origin = spec.get('origin', 'center')
-
-        self._require_positive(name, 'Box', width=width, height=height, depth=depth)
-
-        box = self.backend.create_box(width, height, depth)
-        if origin == 'corner':
-            box = self.backend.translate(box, (width / 2, depth / 2, height / 2))
+        if 'size' in spec:
+            x, y, z = self._box_size(name, spec)
         else:
-            offset = self._resolve_origin_offset(origin, (width / 2, depth / 2, height / 2))
+            # Legacy spelling (check 'parameters' key first, fall back to spec for backward compat)
+            params = spec.get('parameters', spec)
+            required = ['width', 'height', 'depth']
+            missing = [p for p in required if p not in params]
+            if missing:
+                raise PartsBuilderError(
+                    f"Box '{name}' needs a size: write `size: [x, y, z]` "
+                    f"(extents along X, Y, Z in mm; a single number is a cube)",
+                    part_name=name
+                )
+            x, z, y = params['width'], params['height'], params['depth']
+            self._require_positive(name, 'Box', width=x, height=z, depth=y)
+
+        box = self.backend.create_box(x, z, y)
+        if origin == 'corner':
+            box = self.backend.translate(box, (x / 2, y / 2, z / 2))
+        else:
+            offset = self._resolve_origin_offset(origin, (x / 2, y / 2, z / 2))
             if offset is not None:
                 box = self.backend.translate(box, offset)
         return box
+
+    def _box_size(self, name: str, spec: Dict[str, Any]) -> tuple:
+        """Validate a box's `size:` and return (x, y, z) in mm."""
+        legacy = [k for k in ('width', 'depth', 'height')
+                  if k in spec or k in (spec.get('parameters') or {})]
+        if legacy:
+            raise PartsBuilderError(
+                f"Box '{name}' has both `size` and {', '.join(legacy)}; "
+                f"use `size: [x, y, z]` only",
+                part_name=name
+            )
+
+        size = spec['size']
+        if isinstance(size, (int, float)) and not isinstance(size, bool):
+            size = [size, size, size]
+        elif isinstance(size, str):
+            size = [size, size, size]
+        if not isinstance(size, (list, tuple)):
+            raise PartsBuilderError(
+                f"Box '{name}' has invalid size {size!r}: expected [x, y, z] "
+                f"(or a single number for a cube)",
+                part_name=name
+            )
+        if len(size) != 3:
+            raise PartsBuilderError(
+                f"Box '{name}' has invalid size {list(size)!r}: expected exactly 3 values [x, y, z], "
+                f"got {len(size)}",
+                part_name=name
+            )
+
+        values = tuple(parse_length(v) for v in size)
+        for value in values:
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+                raise PartsBuilderError(
+                    f"Box '{name}' has invalid size {list(size)!r}: every value must be a "
+                    f"positive number (got {value!r})",
+                    part_name=name
+                )
+        return values
 
     def _build_cylinder(self, name: str, spec: Dict[str, Any]) -> Any:
         """

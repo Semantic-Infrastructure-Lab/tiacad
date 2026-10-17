@@ -28,10 +28,7 @@ parts:
 
   clip_box:
     primitive: box
-    parameters:
-      width: ${clip_width}
-      depth: ${wedge_depth + 2}
-      height: ${wedge_height}
+    size: ['${clip_width}', '${wedge_depth + 2}', '${wedge_height}']
     origin: ["${-clip_width / 2}", "${-(wedge_depth / 2 + 1)}", 0]
 
 operations:

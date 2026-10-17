@@ -20,10 +20,7 @@ parts:
   # Base platform
   platform:
     primitive: box
-    parameters:
-      width: ${platform_size}
-      height: 10
-      depth: ${platform_size}
+    size: ['${platform_size}', '${platform_size}', 10]
 
   # Left pillar - positioned using auto-generated anchor
   left_pillar:
@@ -50,10 +47,7 @@ parts:
   # Crossbar connecting the pillars
   crossbar:
     primitive: box
-    parameters:
-      width: 70
-      height: 5
-      depth: 10
+    size: [70, 10, 5]
     translate:
       to: assembly_top  # Use our custom anchor defined below!
 

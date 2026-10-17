@@ -11,10 +11,7 @@ parts:
   box:
     primitive: box
     color: "#E63946"
-    parameters:
-      width: 50    # X — widest
-      depth: 30    # Y — medium
-      height: 20   # Z — shortest
+    size: [50, 30, 20]
     origin: center
 
 export:

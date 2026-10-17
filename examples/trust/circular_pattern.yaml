@@ -21,10 +21,7 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: ${plate_size}   # X
-      depth: ${plate_size}   # Y (floor direction)
-      height: ${plate_thickness}  # Z (thin)
+    size: ['${plate_size}', '${plate_size}', '${plate_thickness}']
     origin: center
     metadata:
       color: "#64748B"  # slate

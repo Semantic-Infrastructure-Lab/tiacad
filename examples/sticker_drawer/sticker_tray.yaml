@@ -21,18 +21,12 @@ parameters:
 parts:
   shell:
     primitive: box
-    parameters:
-      width: '${tray_w}'
-      depth: '${tray_l}'
-      height: '${tray_h}'
+    size: ['${tray_w}', '${tray_l}', '${tray_h}']
     origin: corner
 
   cavity:
     primitive: box
-    parameters:
-      width: '${tray_w - 2 * wall}'
-      depth: '${slot_l}'
-      height: '${tray_h}'
+    size: ['${tray_w - 2 * wall}', '${slot_l}', '${tray_h}']
     origin:
       - '${wall}'
       - '${wall}'
@@ -40,10 +34,7 @@ parts:
 
   finger_cut:
     primitive: box
-    parameters:
-      width: '${tab_w}'
-      depth: '${wall * 3}'
-      height: '${tray_h}'
+    size: ['${tab_w}', '${wall * 3}', '${tray_h}']
     origin:
       - '${(tray_w - tab_w) / 2}'
       - '${-wall}'

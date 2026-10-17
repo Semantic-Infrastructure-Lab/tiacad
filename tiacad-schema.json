@@ -262,9 +262,21 @@
               "text"
             ]
           },
+          "size": {
+            "description": "Box extents along X, Y, Z in mm: [x, y, z], or one number for a cube. Values may be ${...} templates or unit literals (1in, 2cm).",
+            "oneOf": [
+              { "type": ["number", "string"] },
+              {
+                "type": "array",
+                "items": { "type": ["number", "string"] },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            ]
+          },
           "parameters": {
             "type": "object",
-            "description": "Primitive-specific parameters (size, radius, height, etc.)",
+            "description": "Primitive-specific parameters (radius, height, etc.)",
             "additionalProperties": true
           },
           "translate": {

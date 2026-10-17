@@ -16,10 +16,7 @@ parameters:
 parts:
   back_plate:
     primitive: box
-    parameters:
-      width: ${plate_width}
-      height: ${plate_height}
-      depth: 3
+    size: ['${plate_width}', 3, '${plate_height}']
     color: black
 
 operations:

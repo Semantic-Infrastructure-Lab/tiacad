@@ -32,18 +32,12 @@ parameters:
 parts:
   base:
     primitive: box
-    parameters:
-      width: ${base_size}
-      height: ${base_size}
-      depth: ${base_size}
+    size: ['${base_size}', '${base_size}', '${base_size}']
     origin: center
 
   top:
     primitive: box
-    parameters:
-      width: ${top_size}
-      height: ${top_size}
-      depth: ${top_size}
+    size: ['${top_size}', '${top_size}', '${top_size}']
     origin: center
 
 constraints:

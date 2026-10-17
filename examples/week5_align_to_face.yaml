@@ -7,25 +7,13 @@ description: Demonstrates the new align_to_face transform operation
 parts:
   base_plate:
     primitive: box
-    parameters:
-
-      width: 100
-
-      height: 100
-
-      depth: 10
+    size: [100, 10, 100]
     center: false
     color: [0.8, 0.8, 0.8]  # Gray
 
   bracket:
     primitive: box
-    parameters:
-
-      width: 30
-
-      height: 10
-
-      depth: 20
+    size: [30, 20, 10]
     center: true
     color: [0.2, 0.6, 0.8]  # Blue
 

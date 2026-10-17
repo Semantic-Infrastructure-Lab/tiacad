@@ -14,18 +14,12 @@ metadata:
 parts:
   x_slab:
     primitive: box
-    parameters:
-      width: 60
-      height: 20
-      depth: 20
+    size: [60, 20, 20]
     origin: center
 
   z_slab:
     primitive: box
-    parameters:
-      width: 20
-      height: 20
-      depth: 60
+    size: [20, 60, 20]
     origin: center
 
 operations:

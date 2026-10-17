@@ -44,10 +44,7 @@ parameters:
 parts:
   panel:
     primitive: box
-    parameters:
-      width: '${panel_width}'
-      depth: '${panel_thickness}'
-      height: '${panel_height}'
+    size: ['${panel_width}', '${panel_thickness}', '${panel_height}']
 
 # Operations can reference imported parts by {namespace}.{part_name}
 operations:

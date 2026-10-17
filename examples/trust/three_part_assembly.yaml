@@ -22,10 +22,7 @@ parts:
   base:
     primitive: box
     color: "#FF9800"
-    parameters:
-      width: 100
-      depth: 40
-      height: 8
+    size: [100, 40, 8]
 
   post_raw:
     primitive: cylinder

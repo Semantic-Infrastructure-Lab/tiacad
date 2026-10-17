@@ -55,10 +55,7 @@ parts:
   # Simple box to demonstrate formats
   demo_box:
     primitive: box
-    parameters:
-      width: '${size}'
-      height: '${size}'
-      depth: '${height}'
+    size: ['${size}', '${height}', '${size}']
     origin: center
 
 operations:

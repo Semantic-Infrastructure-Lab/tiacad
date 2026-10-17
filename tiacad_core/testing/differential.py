@@ -288,10 +288,11 @@ def _build_manifold(
         primitive = spec["primitive"]
 
         if primitive == "box":
-            width, height, depth = params["width"], params["height"], params["depth"]
-            shape = m.Manifold.cube((width, depth, height), center=True)
+            size = spec["size"]
+            sx, sy, sz = (size, size, size) if isinstance(size, (int, float)) else size
+            shape = m.Manifold.cube((sx, sy, sz), center=True)
             if origin == "corner":
-                shape = shape.translate((width / 2, depth / 2, height / 2))
+                shape = shape.translate((sx / 2, sy / 2, sz / 2))
         elif primitive == "cylinder":
             radius, height = params["radius"], params["height"]
             shape = m.Manifold.cylinder(height, radius, radius, center=True)

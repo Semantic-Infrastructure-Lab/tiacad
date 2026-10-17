@@ -33,26 +33,17 @@ parts:
   # Wall plate (centered at origin, thin in Y)
   plate:
     primitive: box
-    parameters:
-      width: '${plate_w}'
-      height: '${plate_t}'
-      depth: '${plate_h}'
+    size: ['${plate_w}', '${plate_h}', '${plate_t}']
 
   # Support beam (long in Y, attached to plate front face)
   beam:
     primitive: box
-    parameters:
-      width: '${beam_w}'
-      height: '${beam_len}'
-      depth: '${beam_h}'
+    size: ['${beam_w}', '${beam_h}', '${beam_len}']
 
   # Cradle arm template (reused for both left and right)
   arm:
     primitive: box
-    parameters:
-      width: '${arm_w}'
-      height: '${arm_len}'
-      depth: '${arm_h}'
+    size: ['${arm_w}', '${arm_h}', '${arm_len}']
 
 operations:
   # Position beam flush with plate front face, extending outward

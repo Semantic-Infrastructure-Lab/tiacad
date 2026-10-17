@@ -21,10 +21,7 @@ parts:
   plate:
     primitive: box
     color: "#FF9800"
-    parameters:
-      width: 80
-      depth: 60
-      height: 5
+    size: [80, 60, 5]
 
   post_raw:
     primitive: cylinder

@@ -24,17 +24,11 @@ parameters:
 parts:
   base:
     primitive: box
-    parameters:
-      width: '${width}'
-      depth: '${base_depth}'
-      height: '${thickness}'
+    size: ['${width}', '${base_depth}', '${thickness}']
 
   flange:
     primitive: box
-    parameters:
-      width: '${width}'
-      depth: '${thickness}'
-      height: '${flange_height}'
+    size: ['${width}', '${thickness}', '${flange_height}']
 
 operations:
   position_flange:

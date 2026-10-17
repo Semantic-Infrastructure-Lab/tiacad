@@ -16,15 +16,12 @@ schema_version: "3.0"
 
 metadata:
   name: N3 Negative Dimension
-  description: "Negative test: box width is negative"
+  description: "Negative test: box size x is negative"
 
 parts:
   block:
     primitive: box
-    parameters:
-      width: -10
-      height: 10
-      depth: 10
+    size: [-10, 10, 10]
 
 export:
   default_part: block

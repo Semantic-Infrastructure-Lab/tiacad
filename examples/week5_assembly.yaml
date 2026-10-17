@@ -11,26 +11,14 @@ parts:
   # Base platform
   platform:
     primitive: box
-    parameters:
-
-      width: 120
-
-      height: 80
-
-      depth: 15
+    size: [120, 15, 80]
     center: false
     color: [0.7, 0.7, 0.7]  # Gray
 
   # Motor mount bracket
   motor_bracket:
     primitive: box
-    parameters:
-
-      width: 40
-
-      height: 30
-
-      depth: ${bracket_height}
+    size: [40, '${bracket_height}', 30]
     center: true
     color: [0.3, 0.6, 0.9]  # Blue
 

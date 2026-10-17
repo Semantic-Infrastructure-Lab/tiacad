@@ -15,25 +15,13 @@ parts:
   # Simple named color
   base:
     primitive: box
-    parameters:
-
-      width: 100
-
-      height: 100
-
-      depth: 10
+    size: [100, 10, 100]
     color: red
 
   # Hex color
   cover:
     primitive: box
-    parameters:
-
-      width: 90
-
-      height: 90
-
-      depth: 3
+    size: [90, 3, 90]
     color: "#0066CC"
 
   # Palette reference
@@ -46,13 +34,7 @@ parts:
   # Material from library
   bracket:
     primitive: box
-    parameters:
-
-      width: 30
-
-      height: 30
-
-      depth: 5
+    size: [30, 5, 30]
     material: aluminum
 
   # RGB array
@@ -74,13 +56,7 @@ parts:
   # Full appearance specification
   custom:
     primitive: box
-    parameters:
-
-      width: 20
-
-      height: 20
-
-      depth: 20
+    size: [20, 20, 20]
     appearance:
       color: [0.9, 0.1, 0.1]
       finish: glossy

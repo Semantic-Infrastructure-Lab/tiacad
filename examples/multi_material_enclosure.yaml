@@ -76,39 +76,27 @@ parts:
   # Main enclosure body (Black ABS)
   enclosure_outer:
     primitive: box
-    parameters:
-      width: '${enclosure_width}'
-      height: '${enclosure_depth}'
-      depth: '${enclosure_height}'
+    size: ['${enclosure_width}', '${enclosure_height}', '${enclosure_depth}']
     origin: corner
     material: abs-black  # Changed from structure-material (pla-black doesn't exist)
 
   enclosure_inner:
     primitive: box
-    parameters:
-      width: '${enclosure_width - wall_thickness*2}'
-      height: '${enclosure_depth - wall_thickness*2}'
-      depth: '${enclosure_height}'
+    size: ['${enclosure_width - wall_thickness*2}', '${enclosure_height}', '${enclosure_depth - wall_thickness*2}']
     origin: corner
     material: abs-black  # Changed from structure-material
 
   # Transparent window (Clear PETG)
   front_window:
     primitive: box
-    parameters:
-      width: '${window_width}'
-      height: '${window_thickness}'
-      depth: '${window_height}'
+    size: ['${window_width}', '${window_height}', '${window_thickness}']
     origin: center
     material: petg-clear  # Changed from window-material
 
   # Flexible gasket (Red TPU)
   lid_gasket:
     primitive: box
-    parameters:
-      width: '${gasket_width}'
-      height: '${gasket_depth}'
-      depth: '${gasket_thickness}'
+    size: ['${gasket_width}', '${gasket_thickness}', '${gasket_depth}']
     origin: center
     material: tpu-flexible  # Changed from gasket-material
 

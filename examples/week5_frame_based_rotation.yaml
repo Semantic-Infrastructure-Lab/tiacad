@@ -7,13 +7,7 @@ description: Demonstrates frame-based rotation using the 'around' parameter
 parts:
   base:
     primitive: box
-    parameters:
-
-      width: 50
-
-      height: 50
-
-      depth: 10
+    size: [50, 10, 50]
     center: false
     color: [0.9, 0.9, 0.9]  # Light gray
 

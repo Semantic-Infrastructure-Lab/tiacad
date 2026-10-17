@@ -92,18 +92,12 @@ parts:
   # Base mounting plate — flat (thickness in Z so standoffs align naturally)
   plate:
     primitive: box
-    parameters:
-      width: '${plate_width}'
-      height: '${plate_height}'
-      depth: '${plate_thickness}'
+    size: ['${plate_width}', '${plate_thickness}', '${plate_height}']
 
   # PCB board — sits on top of standoffs
   pcb:
     primitive: box
-    parameters:
-      width: '${pcb_width}'
-      height: '${pcb_height}'
-      depth: '${pcb_thickness}'
+    size: ['${pcb_width}', '${pcb_thickness}', '${pcb_height}']
     translate: [0, 0, '${pcb_center_z}']
 
 operations:

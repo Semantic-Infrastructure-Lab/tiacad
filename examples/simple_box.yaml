@@ -40,10 +40,7 @@ parameters:
 parts:
   box:
     primitive: box
-    parameters:
-      width: '${width}'
-      height: '${height}'
-      depth: '${depth}'
+    size: ['${width}', '${depth}', '${height}']
     origin: center  # Center the box at (0, 0, 0)
 
 export:

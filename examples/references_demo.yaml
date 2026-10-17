@@ -12,24 +12,12 @@ parameters:
 parts:
   base:
     primitive: box
-    parameters:
-
-      width: '${base_size}'
-
-      height: '${base_size}'
-
-      depth: 10
+    size: ['${base_size}', 10, '${base_size}']
     origin: center
 
   bracket:
     primitive: box
-    parameters:
-
-      width: 20
-
-      height: 20
-
-      depth: 5
+    size: [20, 5, 20]
     origin: center
 
 # New references section - replaces named_points

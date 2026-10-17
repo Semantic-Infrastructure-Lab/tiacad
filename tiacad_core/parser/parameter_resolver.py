@@ -48,6 +48,12 @@ def _to_mm(number: str, unit: str) -> float:
     return round(float(number) * UNIT_TO_MM[unit], 9)
 
 
+def parse_length(value: Any) -> Any:
+    """Convert a whole-value unit literal (`'9.5in'`) to mm; anything else is returned unchanged."""
+    match = _UNIT_VALUE.fullmatch(value) if isinstance(value, str) else None
+    return _to_mm(*match.groups()) if match else value
+
+
 class ParameterResolver:
     """
     Resolves ${...} expressions in parameter values.

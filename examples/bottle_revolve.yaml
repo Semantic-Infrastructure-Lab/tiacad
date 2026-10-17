@@ -44,10 +44,7 @@ sketches:
 parts:
   _placeholder:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
     origin: center
 
 operations:

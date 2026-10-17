@@ -12,15 +12,11 @@ parameters:
 parts:
   base:
     primitive: box
-    width: ${base_size}
-    depth: ${base_size}
-    height: ${height}
+    size: ['${base_size}', '${base_size}', '${height}']
 
   top:
     primitive: box
-    width: ${base_size}
-    depth: ${base_size}
-    height: ${thickness}
+    size: ['${base_size}', '${base_size}', '${thickness}']
 
 operations:
   stacked:

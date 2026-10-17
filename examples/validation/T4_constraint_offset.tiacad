@@ -31,18 +31,12 @@ parameters:
 parts:
   surface:
     primitive: box
-    parameters:
-      width: ${surface_size}
-      depth: ${surface_size}
-      height: ${surface_thickness}
+    size: ['${surface_size}', '${surface_size}', '${surface_thickness}']
     origin: center
 
   mount:
     primitive: box
-    parameters:
-      width: ${mount_size}
-      depth: ${mount_size}
-      height: ${mount_size}
+    size: ['${mount_size}', '${mount_size}', '${mount_size}']
     origin: center
 
 constraints:

@@ -12,28 +12,19 @@ parts:
   # Central base cube
   base:
     primitive: box
-    parameters:
-      width: 30
-      height: 30
-      depth: 30
+    size: [30, 30, 30]
 
   # Arm extending along X-axis
   arm_x:
     primitive: box
-    parameters:
-      width: 60
-      height: 8
-      depth: 8
+    size: [60, 8, 8]
     translate:
       to: base.center
 
   # Arm rotated 90° around Z-axis (along Y-axis)
   arm_y:
     primitive: box
-    parameters:
-      width: 60
-      height: 8
-      depth: 8
+    size: [60, 8, 8]
     translate:
       to: base.center
     rotate:
@@ -44,10 +35,7 @@ parts:
   # Arm rotated 90° around Y-axis (along Z-axis)
   arm_z:
     primitive: box
-    parameters:
-      width: 60
-      height: 8
-      depth: 8
+    size: [60, 8, 8]
     translate:
       to: base.center
     rotate:
@@ -58,10 +46,7 @@ parts:
   # Diagonal arm (rotated around two axes)
   arm_diagonal:
     primitive: box
-    parameters:
-      width: 50
-      height: 6
-      depth: 6
+    size: [50, 6, 6]
     translate:
       to: base.center
     rotate:

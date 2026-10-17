@@ -138,7 +138,7 @@ class TestBox:
         assert bounds['max'] == pytest.approx((110, -44, 34))
 
     def test_box_missing_size(self):
-        """Test box without parameters"""
+        """Test box without a size"""
         params = {}
         spec = {
             'box': {
@@ -152,15 +152,15 @@ class TestBox:
         with pytest.raises(PartsBuilderError) as exc_info:
             builder.build_parts(spec)
 
-        assert 'missing required parameters' in str(exc_info.value).lower()
+        assert 'size: [x, y, z]' in str(exc_info.value)
 
     def test_box_invalid_size(self):
-        """Test box with partial parameters"""
+        """Test box with a two-value size"""
         params = {}
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 20}  # Missing depth
+                'size': [10, 20]  # Missing z
             }
         }
 
@@ -170,7 +170,7 @@ class TestBox:
         with pytest.raises(PartsBuilderError) as exc_info:
             builder.build_parts(spec)
 
-        assert 'depth' in str(exc_info.value).lower()
+        assert 'exactly 3 values' in str(exc_info.value)
 
     def test_box_uses_default_geometry_backend(self):
         """PartsBuilder should honor the configured default backend."""

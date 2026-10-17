@@ -16,7 +16,7 @@ metadata:
 parts:
   plate:
     primitive: box
-    parameters: { width: 30, depth: 30, height: 6 }
+    size: [30, 30, 6]
     origin: center
 
   hole_cyl:

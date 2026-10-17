@@ -34,28 +34,19 @@ parts:
   # Mounting plate (back plate that attaches to wall)
   plate:
     primitive: box
-    parameters:
-      width: '${plate_width}'
-      height: '${plate_depth}'
-      depth: '${plate_height}'
+    size: ['${plate_width}', '${plate_height}', '${plate_depth}']
     origin: center
 
   # Horizontal beam
   beam:
     primitive: box
-    parameters:
-      width: '${beam_width}'
-      height: '${beam_depth}'
-      depth: '${beam_height}'
+    size: ['${beam_width}', '${beam_height}', '${beam_depth}']
     origin: center
 
   # Guitar arm (will be duplicated for left/right)
   arm:
     primitive: box
-    parameters:
-      width: '${arm_width}'
-      height: '${arm_len}'
-      depth: '${arm_depth}'
+    size: ['${arm_width}', '${arm_depth}', '${arm_len}']
     origin: center
 
   # Screw hole template

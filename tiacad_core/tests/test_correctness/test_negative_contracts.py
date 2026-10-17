@@ -94,7 +94,7 @@ class TestNegativeDimension:
             TiaCADParser.parse_file(_path("N3_negative_dimension.tiacad"))
         message = str(exc_info.value)
         assert message.strip(), "error message must not be empty"
-        assert "width" in message.lower()
+        assert "size" in message.lower()
         assert "-10" in message
 
 
@@ -110,14 +110,14 @@ class TestUnknownPrimitive:
 
 
 class TestMalformedSchemaMissingField:
-    """N5: box primitive missing the required 'depth' parameter."""
+    """N5: box size has two values instead of [x, y, z]."""
 
     def test_raises_typed_error(self):
         with pytest.raises(PartsBuilderError) as exc_info:
             TiaCADParser.parse_file(_path("N5_malformed_schema.tiacad"))
         message = str(exc_info.value)
-        assert "depth" in message.lower()
-        assert "missing" in message.lower()
+        assert "size" in message.lower()
+        assert "exactly 3 values" in message
 
 
 class TestDuplicatePartName:

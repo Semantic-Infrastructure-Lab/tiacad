@@ -33,10 +33,7 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: ${plate_size}
-      depth: ${plate_size}
-      height: ${plate_thickness}
+    size: ['${plate_size}', '${plate_size}', '${plate_thickness}']
     origin: center
 
   hole_cyl:

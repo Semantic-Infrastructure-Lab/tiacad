@@ -77,19 +77,13 @@ parts:
   # Main brick body (solid block)
   brick_body:
     primitive: box
-    parameters:
-      width: '${brick_length}'
-      height: '${brick_width}'
-      depth: '${brick_height}'
+    size: ['${brick_length}', '${brick_height}', '${brick_width}']
     origin: corner
 
   # Hollow cavity (to be subtracted)
   brick_cavity:
     primitive: box
-    parameters:
-      width: '${brick_length - wall_thickness * 2}'
-      height: '${brick_width - wall_thickness * 2}'
-      depth: '${brick_height - bottom_thickness}'
+    size: ['${brick_length - wall_thickness * 2}', '${brick_height - bottom_thickness}', '${brick_width - wall_thickness * 2}']
     origin: corner
 
   # Single stud template (will be patterned)

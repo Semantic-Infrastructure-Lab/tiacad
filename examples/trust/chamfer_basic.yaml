@@ -9,10 +9,7 @@ metadata:
 parts:
   box:
     primitive: box
-    parameters:
-      width: 40
-      height: 40
-      depth: 20
+    size: [40, 20, 40]
     origin: center
 
 operations:

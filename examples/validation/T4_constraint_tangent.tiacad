@@ -42,10 +42,7 @@ parameters:
 parts:
   rail:
     primitive: box
-    parameters:
-      width: ${rail_size}
-      depth: ${rail_size}
-      height: ${rail_thickness}
+    size: ['${rail_size}', '${rail_size}', '${rail_thickness}']
     origin: center
 
   roller_raw:

@@ -16,13 +16,7 @@ parameters:
 parts:
   base_plate:
     primitive: box
-    parameters:
-
-      width: '${plate_width}'
-
-      height: '${plate_height}'
-
-      depth: '${plate_depth}'
+    size: ['${plate_width}', '${plate_depth}', '${plate_height}']
     color: silver
 
 operations:

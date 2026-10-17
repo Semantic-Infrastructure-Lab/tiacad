@@ -21,17 +21,11 @@ metadata:
 parts:
   base_block:
     primitive: box
-    parameters:
-      width: 20
-      height: 20
-      depth: 20
+    size: [20, 20, 20]
     origin: center
   floating_block:
     primitive: box
-    parameters:
-      width: 20
-      height: 20
-      depth: 20
+    size: [20, 20, 20]
     origin: center
 
 operations:

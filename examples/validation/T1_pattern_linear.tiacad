@@ -16,10 +16,7 @@ parameters:
 parts:
   unit:
     primitive: box
-    parameters:
-      width: ${cube}
-      height: ${cube}
-      depth: ${cube}
+    size: ['${cube}', '${cube}', '${cube}']
 
 operations:
   copies:

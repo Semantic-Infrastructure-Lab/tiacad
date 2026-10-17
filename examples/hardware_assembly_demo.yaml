@@ -54,10 +54,7 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: '${plate_width}'
-      depth: '${plate_thickness}'
-      height: '${plate_height}'
+    size: ['${plate_width}', '${plate_thickness}', '${plate_height}']
 
 operations:
   # Place M3 screw at front-left (shaft + head move together, same offset, so

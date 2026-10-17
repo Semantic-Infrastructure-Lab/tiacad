@@ -15,18 +15,12 @@ parameters:
 parts:
   box_a:
     primitive: box
-    parameters:
-      width: ${cube}
-      height: ${cube}
-      depth: ${cube}
+    size: ['${cube}', '${cube}', '${cube}']
     origin: center
 
   box_b:
     primitive: box
-    parameters:
-      width: ${cube}
-      height: ${cube}
-      depth: ${cube}
+    size: ['${cube}', '${cube}', '${cube}']
     origin: center
 
 operations:

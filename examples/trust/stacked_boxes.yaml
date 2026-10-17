@@ -21,17 +21,11 @@ parts:
   bottom:
     primitive: box
     color: "#E63946"
-    parameters:
-      width: 60
-      depth: 40
-      height: 20
+    size: [60, 40, 20]
 
   top_raw:
     primitive: box
-    parameters:
-      width: 40
-      depth: 30
-      height: 15
+    size: [40, 30, 15]
 
 operations:
   top:

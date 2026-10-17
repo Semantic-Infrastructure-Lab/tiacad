@@ -17,12 +17,12 @@ metadata:
 parts:
   base:
     primitive: box
-    parameters: { width: 40, depth: 40, height: 10 }
+    size: [40, 40, 10]
     origin: center
 
   shelf:
     primitive: box
-    parameters: { width: 30, depth: 30, height: 4 }
+    size: [30, 30, 4]
     origin: center
 
 constraints:

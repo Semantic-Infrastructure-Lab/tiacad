@@ -17,10 +17,7 @@ parameters:
 parts:
   block:
     primitive: box
-    parameters:
-      width: ${a}
-      height: 10
-      depth: 10
+    size: ['${a}', 10, 10]
 
 export:
   default_part: block

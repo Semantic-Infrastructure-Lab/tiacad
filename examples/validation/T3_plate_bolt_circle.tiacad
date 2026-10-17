@@ -46,10 +46,7 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: ${plate_w}
-      height: ${plate_l}
-      depth: ${plate_t}
+    size: ['${plate_w}', '${plate_t}', '${plate_l}']
     origin: center
 
   bolt_hole:

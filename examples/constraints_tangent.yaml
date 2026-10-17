@@ -17,7 +17,7 @@ metadata:
 parts:
   rail:
     primitive: box
-    parameters: { width: 50, depth: 50, height: 4 }
+    size: [50, 50, 4]
     origin: center
 
   roller_raw:
