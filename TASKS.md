@@ -1731,17 +1731,21 @@ notes_next: 2
 ## TASK-TCAD-8 · Expressions: make sin/cos/tan take degrees, add asin/acos/atan/atan2 + 'rad' literal, document functions
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 3h
 tags: [dsl, parameters, expressions]
 created: '2026-10-17T22:29:32Z'
-updated: '2026-10-17T22:42:48Z'
+updated: '2026-10-17T23:56:26Z'
 session: cunning-oracle-1017
-notes_next: 3
+links:
+  commits:
+  - b679560ecd620697b0c6de6b3208e2c30e424b09
+notes_next: 4
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-17T22:29:35Z session:cunning-oracle-1017] Found 2026-10-17 (cunning-oracle-1017) building the sticker_tray 20 deg floor ramp: Parameters support only + - * / ** % (YAML_REFERENCE.md 'Supported Operators'), so sticker_tray.yaml carries ramp_slope: 0.364 (= tan 20 deg) as a hand-computed constant instead of ramp_deg: 20. Want tan/sin/cos/atan/radians (whitelisted, deg-in) in the ${...} evaluator so the angle is the parameter and --set ramp_deg=15 works. Then replace ramp_slope in examples/sticker_drawer/sticker_tray.yaml and document in YAML_REFERENCE.md.
 - [#2 2026-10-17T22:42:48Z session:cunning-oracle-1017] CORRECTION to note #1: sin/cos/tan/pi already exist in the ${...} evaluator (parameter_resolver.py ParameterResolver.__init__ functions dict) but take RADIANS and are undocumented -- ${tan(20)} silently returns 2.237 not 0.364 (silent footgun; all other TiaCAD angles are degrees). No YAML model or test uses them (grep 2026-10-17); m3/m4/m5_nut.yaml hand-compute cos(30deg) in comments. Precedent for angle units: operations_builder._parse_angle accepts an 'Xrad' suffix on angle fields (degrees default), undocumented. Prior art: OpenSCAD trig is degrees; FreeCAD expressions default to degrees, 'rad' suffix for radians (cos(45)==cos(pi rad/4)); SolidWorks is radians + 'D' suffix (the confusing one). RECOMMENDED DESIGN: (1) sin/cos/tan take degrees; (2) add asin/acos/atan/atan2 returning degrees; (3) 'rad' literal in expressions (${tan(0.35rad)}) mirroring the '9.5in' length literal -- internal unit stays degrees, suffix converts; same rule as lengths; (4) keep pi; no radians()/degrees() functions (one way to do it); (5) add a Functions list to YAML_REFERENCE.md Parameters (min max abs sqrt pow round floor ceil + trig) with a degrees note; (6) then ramp_deg: 20 + ramp_slope: '${tan(ramp_deg)}' in sticker_tray.yaml. Test: tan(45)==1, sin(30)==0.5, atan(1)==45, atan2(1,1)==45, 'rad' literal round-trip, and that rad inside parameter value vs --set both work.
+- [#3 2026-10-17T23:56:26Z session:cunning-oracle-1017] sin/cos/tan now degrees; asin/acos/atan/atan2 added (degrees); 'rad' literal in expressions, whole parameter values and --set; functions + angles documented in YAML_REFERENCE.md; 18 new tests, 910 parser tests pass; sticker_tray uses ramp_deg.
