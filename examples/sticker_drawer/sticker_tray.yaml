@@ -13,7 +13,7 @@ parameters:
   slot_l: 71.6         # interior Y, front-back. A: 5 per 381 mm | B: 90.6, 4 per 381 mm
   tray_h: 50.8         # Z. 2.00 in
   wall: 1.2
-  floor: 2.0
+  floor: 1.2
   tab_w: 40.0          # finger cutout width, front wall
   tab_floor: 14.0      # cutout starts this far above the outside bottom
   tray_l: '${slot_l + 2 * wall}'
