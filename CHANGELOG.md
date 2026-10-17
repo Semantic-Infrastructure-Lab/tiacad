@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (BREAKING) - 2026-10-16 (one `origin:` vocabulary, TCAD-6)
+- Every primitive accepts `center` / `base` / `corner` / `[x, y, z]`; an unknown or misspelled value (`bottom`, `centre`, `corner` on a cylinder before, ...) now raises with a "did you mean" hint instead of silently building centered. Polygon honors `origin` (default stays `base`). `validate-geometry` prints a `Placement:` line when a part does not start at z=0. The default origin stays `center`.
+
 ### Changed (BREAKING) - 2026-10-16 (box `size: [x, y, z]`, TCAD-DSL-6)
 
 Boxes are sized by `size: [x, y, z]` (extents along X, Y, Z; a number is a cube; units and

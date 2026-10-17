@@ -566,10 +566,9 @@ the third value). A single number is a cube: `size: 20` is `[20, 20, 20]`. Value
 > still uses them fails with a message saying so; `python3 scripts/migrations/box_size.py FILE...`
 > rewrites them for you.
 
-**Origin modes:**
-- `center`: Center at (0, 0, 0) - default
-- `corner`: Min corner at (0, 0, 0)
-- `[x, y, z]`: Min corner at this point instead of (0, 0, 0) — i.e. `corner` generalized to an arbitrary point, not a translate of the centered box
+**Origin modes:** one vocabulary for every primitive, see [Origin Modes](#origin-modes). For a box,
+`center` (default) puts the middle at (0, 0, 0), `base` the middle of the bottom face, `corner` the min
+corner, and `[x, y, z]` the min corner at that point.
 
 ### Cylinder Primitive
 
@@ -1559,11 +1558,18 @@ operations:
 
 ### Origin Modes
 
-| Mode | Description | Example |
-|------|-------------|---------|
-| center | Center at origin | `origin: center` |
-| corner | Min corner at origin | `origin: corner` |
-| custom | Specific point | `origin: [x, y, z]` |
+Every primitive (box, cylinder, cone, sphere, torus, polygon) takes the same `origin:` values and
+measures them from its own bounding box. Anything else, such as `bottom` or `centre`, is an error that
+lists the valid modes; it is never silently treated as `center`.
+
+| Mode | Puts this point at (0, 0, 0) | Example |
+|------|------------------------------|---------|
+| center | bounding-box center (default; polygon defaults to `base`) | `origin: center` |
+| base | bottom-center, the middle of the z-min face, so the part sits on the bed | `origin: base` |
+| corner | bounding-box min corner | `origin: corner` |
+| custom | `[x, y, z]` is where the reference point goes: min corner for a box, bottom-center for cylinder/cone/polygon, center for sphere/torus | `origin: [x, y, z]` |
+
+`tiacad validate-geometry` prints a `Placement:` line when a part does not start at z=0.
 
 ### Axes
 

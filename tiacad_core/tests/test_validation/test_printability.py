@@ -129,3 +129,15 @@ class TestWarnings:
     def test_overhang_warns_with_supports_note(self, t_shape):
         _, warnings = printability_warnings(t_shape)
         assert any("Overhangs" in w and "supports likely" in w for w in warnings)
+
+
+class TestPlacement:
+    def test_centered_part_reports_it_straddles_the_bed_plane(self):
+        info, _ = printability_warnings(trimesh.creation.box(extents=(10, 10, 10)))
+        assert any(i.startswith("Placement: spans z -5.0 to 5.0") and "straddles" in i for i in info)
+
+    def test_part_on_z0_has_no_placement_line(self):
+        mesh = trimesh.creation.box(extents=(10, 10, 10))
+        mesh.apply_translation((0, 0, 5))
+        info, warnings = printability_warnings(mesh)
+        assert not any(i.startswith("Placement") for i in info + warnings)

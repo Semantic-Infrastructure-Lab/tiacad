@@ -16,6 +16,7 @@ Author: TIA
 Version: 0.1.0-alpha
 """
 
+import difflib
 import logging
 import warnings
 from typing import Dict, Any, Optional
@@ -196,34 +197,60 @@ class PartsBuilder:
                     part_name=name
                 )
 
-    def _resolve_origin_offset(self, origin: Any, reference_offset: tuple) -> Optional[tuple]:
+    def _place_by_origin(self, name: str, label: str, shape: Any, origin: Any,
+                         half_extents: tuple, point_reference: tuple,
+                         default: str = 'center') -> Any:
         """
-        Resolve an `origin:` value to a translate offset, or None for no translation.
+        Place a primitive according to its `origin:` value.
 
-        `origin: [x, y, z]` (the "Custom origin point" mode documented in
-        YAML_REFERENCE.md's Box Primitive section, alongside 'center' and the
-        primitive's own named alt-mode) generalizes that alt-mode: it places
-        the SAME reference point the alt-mode uses (a box's min corner, a
-        cylinder/cone's bottom-center) at the given world coordinate, rather
-        than translating the centered primitive by that vector directly --
-        confirmed against `examples/thingiverse_rebuilds/thing38359_wedge.yaml`'s
-        `clip_box`, whose `origin: [-clip_width/2, ..., 0]` only produces its
-        documented "0..height slice" (z starting at 0, not centered on 0)
-        under corner-placement semantics. `reference_offset` is the same
-        offset the primitive's own 'corner'/'base' branch already uses (e.g.
-        `(x/2, y/2, z/2)` for box, `(0, 0, height/2)` for
-        cylinder/cone) -- added to the literal origin point instead of to the
-        world origin. Primitives with no alt-mode (sphere/torus/polygon/text)
-        should pass `(0, 0, 0)`, i.e. a plain translate to that point.
-        This was previously silently unhandled for every primitive -- see
-        KNOWN_LIMITATIONS.md #17.
+        Every primitive is built centered on (0, 0, 0) (polygon aside, see
+        `_build_polygon`) and then moved so that a named reference point of its
+        bounding box lands at the world origin. One vocabulary for all of them:
+
+          center  -- bounding-box center at (0, 0, 0)
+          base    -- bottom-center (middle of the z-min face) at (0, 0, 0)
+          corner  -- bounding-box min corner at (0, 0, 0)
+          [x,y,z] -- `point_reference` (box: min corner; cylinder/cone: bottom-center;
+                     sphere/torus: center) at that world point. This generalizes the
+                     primitive's own named mode instead of translating the centered shape
+                     (confirmed against `examples/thingiverse_rebuilds/thing38359_wedge.yaml`,
+                     KNOWN_LIMITATIONS.md #17).
+
+        Anything else raises: an unknown or misspelled `origin` used to fall through
+        to "centered" with no message.
+
+        Args:
+            half_extents: (hx, hy, hz) of the centered shape's bounding box
+            point_reference: offset added to a literal `[x, y, z]` origin
+            default: mode used when `origin` is absent (polygon is `base`)
         """
-        if not (isinstance(origin, list) and len(origin) == 3):
-            return None
-        ox, oy, oz = (float(v) for v in origin)
-        rx, ry, rz = reference_offset
-        offset = (ox + rx, oy + ry, oz + rz)
-        return None if offset == (0.0, 0.0, 0.0) else offset
+        if origin is None:
+            origin = default
+        hx, hy, hz = half_extents
+        if isinstance(origin, str):
+            offsets = {'center': (0, 0, 0), 'base': (0, 0, hz), 'corner': (hx, hy, hz)}
+            if origin not in offsets:
+                suggestion = difflib.get_close_matches(origin, offsets, n=1)
+                hint = f" Did you mean '{suggestion[0]}'?" if suggestion else ""
+                raise PartsBuilderError(
+                    f"{label} '{name}' has unknown origin {origin!r}. Use 'center' "
+                    f"(bounding-box center at 0,0,0), 'base' (bottom-center at 0,0,0), "
+                    f"'corner' (min corner at 0,0,0) or [x, y, z].{hint}",
+                    part_name=name
+                )
+            offset = offsets[origin]
+        elif (isinstance(origin, (list, tuple)) and len(origin) == 3
+              and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in origin)):
+            offset = tuple(float(v) + r for v, r in zip(origin, point_reference))
+        else:
+            raise PartsBuilderError(
+                f"{label} '{name}' has invalid origin {origin!r}. Use 'center', 'base', "
+                f"'corner' or three numbers [x, y, z].",
+                part_name=name
+            )
+        if tuple(float(v) for v in offset) == (0.0, 0.0, 0.0):
+            return shape
+        return self.backend.translate(shape, offset)
 
     def _build_box(self, name: str, spec: Dict[str, Any]) -> Any:
         """
@@ -244,13 +271,8 @@ class PartsBuilder:
         x, y, z = self._box_size(name, spec)
 
         box = self.backend.create_box(x, y, z)
-        if origin == 'corner':
-            box = self.backend.translate(box, (x / 2, y / 2, z / 2))
-        else:
-            offset = self._resolve_origin_offset(origin, (x / 2, y / 2, z / 2))
-            if offset is not None:
-                box = self.backend.translate(box, offset)
-        return box
+        return self._place_by_origin(name, 'Box', box, origin,
+                                     (x / 2, y / 2, z / 2), (x / 2, y / 2, z / 2))
 
     def _box_size(self, name: str, spec: Dict[str, Any]) -> tuple:
         """Validate a box's `size:` and return (x, y, z) in mm."""
@@ -329,13 +351,8 @@ class PartsBuilder:
         self._require_positive(name, 'Cylinder', radius=radius, height=height)
 
         cylinder = self.backend.create_cylinder(radius, height)
-        if origin == 'base':
-            cylinder = self.backend.translate(cylinder, (0, 0, height / 2))
-        else:
-            offset = self._resolve_origin_offset(origin, (0, 0, height / 2))
-            if offset is not None:
-                cylinder = self.backend.translate(cylinder, offset)
-        return cylinder
+        return self._place_by_origin(name, 'Cylinder', cylinder, origin,
+                                     (radius, radius, height / 2), (0, 0, height / 2))
 
     def _build_sphere(self, name: str, spec: Dict[str, Any]) -> Any:
         """
@@ -366,10 +383,8 @@ class PartsBuilder:
         self._require_positive(name, 'Sphere', radius=radius)
 
         sphere = self.backend.create_sphere(radius)
-        offset = self._resolve_origin_offset(origin, (0, 0, 0))
-        if offset is not None:
-            sphere = self.backend.translate(sphere, offset)
-        return sphere
+        return self._place_by_origin(name, 'Sphere', sphere, origin,
+                                     (radius, radius, radius), (0, 0, 0))
 
     def _build_cone(self, name: str, spec: Dict[str, Any]) -> Any:
         """
@@ -436,13 +451,9 @@ class PartsBuilder:
         self._require_positive(name, 'Cone', height=height)
 
         cone = self.backend.create_cone(radius1, radius2, height)
-        if origin == 'base':
-            cone = self.backend.translate(cone, (0, 0, height / 2))
-        else:
-            offset = self._resolve_origin_offset(origin, (0, 0, height / 2))
-            if offset is not None:
-                cone = self.backend.translate(cone, offset)
-        return cone
+        r_max = max(radius1, radius2)
+        return self._place_by_origin(name, 'Cone', cone, origin,
+                                     (r_max, r_max, height / 2), (0, 0, height / 2))
 
     def _build_torus(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
         """
@@ -494,10 +505,9 @@ class PartsBuilder:
         torus_solid = cq.Solid.makeTorus(major_radius, minor_radius)
         torus = cq.Workplane("XY").newObject([torus_solid])
         origin = spec.get('origin', 'center')
-        offset = self._resolve_origin_offset(origin, (0, 0, 0))
-        if offset is not None:
-            torus = self.backend.translate(torus, offset)
-        return torus
+        reach = major_radius + minor_radius
+        return self._place_by_origin(name, 'Torus', torus, origin,
+                                     (reach, reach, minor_radius), (0, 0, 0))
 
     def _build_polygon(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
         """
@@ -564,7 +574,17 @@ class PartsBuilder:
             .polygon(sides, diameter, circumscribed=not circumscribed)
             .extrude(height)
         )
-        return polygon
+        # Built sitting on z=0, so the reference for a literal [x, y, z] is (0, 0, 0)
+        # and the centered shape's offsets are measured from the base, not the middle.
+        bb = polygon.val().BoundingBox()
+        offsets = {'base': (0, 0, 0), 'center': (0, 0, -height / 2),
+                   'corner': (-bb.xmin, -bb.ymin, 0)}
+        origin = spec.get('origin', 'base')
+        if isinstance(origin, str) and origin in offsets:
+            offset = offsets[origin]
+            return polygon if offset == (0, 0, 0) else self.backend.translate(polygon, offset)
+        # unknown / [x, y, z]: reuse the shared validation and list handling
+        return self._place_by_origin(name, 'Polygon', polygon, origin, (0, 0, 0), (0, 0, 0))
 
     _TEXT_VALID_STYLES = ['regular', 'bold', 'italic', 'bold-italic']
     _TEXT_VALID_HALIGN = ['left', 'center', 'right']

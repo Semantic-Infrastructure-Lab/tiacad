@@ -145,6 +145,13 @@ def printability_warnings(
         else:
             warnings.append(f"Build volume: {ext} mm does not fit {bed_s} mm in any axis-aligned orientation")
 
+    zmin, zmax = float(mesh.bounds[0][2]), float(mesh.bounds[1][2])
+    if abs(zmin) > _FIT_EPS:
+        where = ("straddles the z=0 plane" if zmin < 0 < zmax
+                 else "sits below z=0" if zmax <= 0 else "floats above z=0")
+        info.append(f"Placement: spans z {zmin:.1f} to {zmax:.1f} mm ({where}); slicers drop a single "
+                    f"part onto the bed, but use origin: base to model it flat on z=0")
+
     wall = min_wall_thickness(mesh)
     if wall.min_thickness is None:
         info.append("Wall thickness: no interior walls found by sampling")
