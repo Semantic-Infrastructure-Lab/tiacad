@@ -996,12 +996,12 @@
           "description": "Part name whose contract is authoritative (default: same resolution as export/assembly — last operation, else first part)"
         },
         "volume": {
-          "type": "number",
-          "description": "Expected volume in mm^3"
+          "$ref": "#/$defs/numberOrTemplate",
+          "description": "Expected volume in mm^3 (number or ${...} expression)"
         },
         "bbox": {
           "type": "array",
-          "items": { "type": "number" },
+          "items": { "$ref": "#/$defs/numberOrTemplate" },
           "minItems": 3,
           "maxItems": 3,
           "description": "Expected axis-aligned bounding box [width, height, depth]"
@@ -1020,9 +1020,8 @@
           "description": "Minimum wall/floor/skin thickness of the final part, from a sampled inward-ray estimate (see `tiacad validate-geometry`). Checked within tol.length.",
           "properties": {
             "min": {
-              "type": "number",
-              "exclusiveMinimum": 0,
-              "description": "Thinnest allowed wall in mm"
+              "$ref": "#/$defs/numberOrTemplate",
+              "description": "Thinnest allowed wall in mm (> 0)"
             }
           },
           "required": ["min"],
@@ -1049,7 +1048,7 @@
                 "description": "Two axis references (e.g. 'screw.axis_z') expected to share the same line"
               },
               "gap": {
-                "type": "number",
+                "$ref": "#/$defs/numberOrTemplate",
                 "description": "Expected gap along the normal for a flush relation (default 0)"
               },
               "clearance": {
@@ -1062,11 +1061,11 @@
                 "description": "Two part names whose true solid-to-solid minimum distance must lie within [min, max] (0 when touching or overlapping)"
               },
               "min": {
-                "type": "number",
+                "$ref": "#/$defs/numberOrTemplate",
                 "description": "Lower bound (mm) for a clearance relation, within tol.length"
               },
               "max": {
-                "type": "number",
+                "$ref": "#/$defs/numberOrTemplate",
                 "description": "Upper bound (mm) for a clearance relation, within tol.length"
               }
             },
@@ -1088,11 +1087,11 @@
           "description": "Tolerances for contract comparisons",
           "properties": {
             "length": {
-              "type": "number",
+              "$ref": "#/$defs/numberOrTemplate",
               "description": "Absolute tolerance (mm) for bbox/gap/coaxial comparisons"
             },
             "volume": {
-              "type": "number",
+              "$ref": "#/$defs/numberOrTemplate",
               "description": "Absolute tolerance (mm^3) for volume comparison"
             }
           },
@@ -1106,6 +1105,13 @@
   "then": {"required": ["parts"]},
   "additionalProperties": false,
   "$defs": {
+    "numberOrTemplate": {
+      "description": "A number, or a ${...} expression over the model's parameters (resolved after --set, before the contract is checked)",
+      "anyOf": [
+        { "type": "number" },
+        { "type": "string", "pattern": "^\\$\\{.*\\}$" }
+      ]
+    },
     "partListItem": {
       "description": "An entry in a boolean operation's base/union/subtract/intersect list: a plain part name, a wildcard string (\"bolt_*\"), a {pattern: name} reference to every instance of a named pattern operation, or a {range: \"name[0..5]\"} / {range: \"name[*]\"} reference.",
       "oneOf": [

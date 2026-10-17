@@ -142,6 +142,12 @@ Prefer contracts based on:
 - invariants such as symmetry, monotonicity, or volume preservation
 - named references that encode design intent
 
+In a model's `expect:` block, numeric values may be `${...}` expressions over the
+model's parameters (after any `--set`), e.g. `volume: '${w * d * h - cavity}'` and
+`bbox: ['${w}', '${d}', '${h}']`. That keeps one closed-form contract valid for every
+variant instead of freezing the default numbers; see
+`examples/sticker_drawer/sticker_tray.yaml`.
+
 Avoid contracts that simply freeze accidental output. If a value comes from the
 current implementation rather than from intent, document why it is still useful.
 

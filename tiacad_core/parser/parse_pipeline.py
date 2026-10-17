@@ -419,7 +419,8 @@ def parse_tiacad_dict(
             operations=operations_spec,
             references=context.resolved_references,
             export_config=context.export_config,
-            expect=sections['expect'],
+            # expect: values may use ${...} against the resolved parameters (incl. --set)
+            expect=ParameterResolver(context.resolved_params).resolve(sections['expect']),
             line_tracker=line_tracker,
             yaml_string=yaml_string,
             file_path=file_path,

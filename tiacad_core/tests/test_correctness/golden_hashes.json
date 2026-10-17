@@ -296,6 +296,17 @@
     "part": "divider",
     "volume": 6688.800000000001
   },
+  "examples/sticker_drawer/sticker_tray.yaml": {
+    "bbox": [
+      94.0,
+      74.0,
+      50.8
+    ],
+    "canonical_mesh_hash": "1305e2f1d168522eba16b0a109a6cb92adc30a2cd0a444f688384e549df5e694",
+    "mesh_hash": "aa20208f4e4a361410d1991ee1b2f8a36b6b7f1ff9c6c38e0413d2a5998958bb",
+    "part": "sticker_tray",
+    "volume": 31540.671999999984
+  },
   "examples/text_engraved.yaml": {
     "bbox": [
       100.0,

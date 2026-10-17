@@ -1,0 +1,74 @@
+schema_version: "3.0"
+
+metadata:
+  name: Sticker Tray (one design per tray)
+  description: >
+    Single-sticker container for the 15 in x 19.5 in drawer. Five columns run front to
+    back (left-right pitch 94 mm + 2 mm gaps = 488 of 495 mm). Layout A (default,
+    slot_l 71.6) fits 5 trays per column; layout B (--set slot_l=90.6) fits 4 per
+    column and holds any sticker within a 3.5 in (88.9 mm) diagonal. Units mm.
+
+parameters:
+  tray_w: 94.0         # X, left-right. 5 trays + 6 x 3 mm gaps = 488 of 495 mm
+  slot_l: 71.6         # interior Y, front-back. A: 5 per 381 mm | B: 90.6, 4 per 381 mm
+  tray_h: 50.8         # Z. 2.00 in
+  wall: 1.2
+  floor: 2.0
+  tab_w: 40.0          # finger cutout width, front wall
+  tab_floor: 14.0      # cutout starts this far above the outside bottom
+  tray_l: '${slot_l + 2 * wall}'
+
+parts:
+  shell:
+    primitive: box
+    parameters:
+      width: '${tray_w}'
+      depth: '${tray_l}'
+      height: '${tray_h}'
+    origin: corner
+
+  cavity:
+    primitive: box
+    parameters:
+      width: '${tray_w - 2 * wall}'
+      depth: '${slot_l}'
+      height: '${tray_h}'
+    origin:
+      - '${wall}'
+      - '${wall}'
+      - '${floor}'
+
+  finger_cut:
+    primitive: box
+    parameters:
+      width: '${tab_w}'
+      depth: '${wall * 3}'
+      height: '${tray_h}'
+    origin:
+      - '${(tray_w - tab_w) / 2}'
+      - '${-wall}'
+      - '${tab_floor}'
+
+operations:
+  sticker_tray:
+    type: boolean
+    operation: difference
+    base: shell
+    subtract:
+      - cavity
+      - finger_cut
+
+export:
+  default_part: sticker_tray
+
+# Closed-form contract (from the parameters, not frozen output); holds for any slot_l:
+#   volume = tray_w*tray_l*tray_h - (tray_w-2*wall)*slot_l*(tray_h-floor)   # shell - cavity
+#            - tab_w*wall*(tray_h-tab_floor)                               # finger cut, front wall
+expect:
+  final: sticker_tray
+  volume: '${tray_w * tray_l * tray_h - (tray_w - 2 * wall) * slot_l * (tray_h - floor) - tab_w * wall * (tray_h - tab_floor)}'
+  bbox: ['${tray_w}', '${tray_l}', '${tray_h}']
+  watertight: true
+  components: 1
+  thickness: { min: 1.2 }
+  tol: { volume: 0.01, length: 0.01 }
