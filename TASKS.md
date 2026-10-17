@@ -1687,19 +1687,24 @@ Follow-up to TCAD-DSL-6 (boxes now size:[x,y,z]). Cylinder/cone/polygon 'height'
 _(no notes yet)_
 
 
-## TASK-TCAD-6 · Primitive default origin: centered at (0,0,0) puts half the part below the bed; consider min-corner or bottom-centre default
+## TASK-TCAD-6 · Primitive origin: one vocabulary for all primitives, reject bad values (default stays center)
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [dsl, dx]
 created: '2026-10-17T02:55:54Z'
-updated: '2026-10-17T02:55:54Z'
+updated: '2026-10-17T03:25:00Z'
 session: chartreuse-corona-1016
+links:
+  commits:
+  - 0c8adc34604cfc37d5aaa413ca4dbb299a2d711d
+notes_next: 3
 ```
 
 Raised during TCAD-DSL-6 discussion. 'origin: center' is the default for box etc., so z=0 is mid-height; printable models need origin: corner/base to sit on the plate. Evaluate changing the default (breaking; migration script can add explicit origin: center to every part lacking one so geometry is unchanged).
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-17T03:25:00Z session:suzeco-1016] Investigated 2026-10-16: slicers drop single parts onto the bed, ~130 parts rely on the centered default, so the default flip was parked. Fixed the real defects instead: unknown/unsupported origin silently built centered (cone corner was documented but a no-op), polygon ignored origin.
+- [#2 2026-10-17T03:25:00Z session:suzeco-1016] center/base/corner/[xyz] on all primitives, unknown values raise with hint, polygon honors origin, validate-geometry Placement line. Full suite 2286 + 122 dag pass; 147-file geometry snapshot unchanged.
