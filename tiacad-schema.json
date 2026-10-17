@@ -1016,7 +1016,7 @@
           "items": { "$ref": "#/$defs/numberOrTemplate" },
           "minItems": 3,
           "maxItems": 3,
-          "description": "Expected axis-aligned bounding box [width, height, depth]"
+          "description": "Expected axis-aligned bounding box extents [x, y, z]"
         },
         "watertight": {
           "type": "boolean",

@@ -56,7 +56,7 @@ When in doubt: **Prefer clarity over brevity, but technical accuracy over colloq
 ```yaml
 # Offset is relative to base.face_top's local frame
 tower:
-  box: {width: 20, depth: 20, height: 100}
+  box: {primitive: box, size: [20, 20, 100]}
   translate: base.face_top
   offset: [0, 0, 5]  # 5 units up in the face's local frame
 ```

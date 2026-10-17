@@ -144,6 +144,9 @@ def _summarize_part_node(spec: Dict[str, Any]) -> str:
     primitive = spec.get('primitive', 'part')
     params = spec.get('parameters', spec)
     scalars = _format_spec_scalars(params, exclude=('primitive',))
+    size = spec.get('size')
+    if isinstance(size, (list, tuple)):
+        scalars = ', '.join(filter(None, [f"size={list(size)}", scalars]))
     return f"{primitive} ({scalars})" if scalars else str(primitive)
 
 

@@ -44,7 +44,7 @@ def test_expect_values_resolve_templates_against_parameters():
     doc = TiaCADParser.parse_string(
         "parameters: {w: 4, d: 6}\n"
         "parts:\n"
-        "  b: {primitive: box, parameters: {width: '${w}', depth: '${d}', height: 2}}\n"
+        "  b: {primitive: box, size: ['${w}', '${d}', 2]}\n"
         "expect:\n"
         "  final: b\n"
         "  volume: '${w * d * 2}'\n"

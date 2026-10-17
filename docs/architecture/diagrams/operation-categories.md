@@ -240,7 +240,7 @@ parts:
   # Create basic plate
   plate:
     primitive: box
-    parameters: {width: 100, height: 5, depth: 100}
+    size: [100, 100, 5]
 
   # Create one screw hole
   screw_hole:

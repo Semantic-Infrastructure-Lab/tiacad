@@ -15,7 +15,7 @@ _SIMPLE_MODEL = """
 parts:
   box:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
 """
 
 
@@ -104,7 +104,7 @@ sketches:
 parts:
   _placeholder:
     primitive: box
-    parameters: {width: 1, height: 1, depth: 1}
+    size: [1, 1, 1]
 operations:
   bicone:
     type: revolve
@@ -149,11 +149,11 @@ def test_build_with_constraints_exports_constrained_geometry(tmp_path):
 parts:
   base:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   top:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
 
 constraints:

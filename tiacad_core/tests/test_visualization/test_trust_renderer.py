@@ -209,8 +209,8 @@ def test_collect_visible_part_names_hides_component_internal_parts(tmp_path):
     (tmp_path / "comp.yaml").write_text(
         'schema_version: "3.0"\n'
         "parts:\n"
-        "  block: {primitive: box, parameters: {width: 10, depth: 10, height: 10}, origin: corner}\n"
-        "  cutter: {primitive: box, parameters: {width: 2, depth: 2, height: 20}, origin: corner}\n"
+        "  block: {primitive: box, size: [10, 10, 10], origin: corner}\n"
+        "  cutter: {primitive: box, size: [2, 2, 20], origin: corner}\n"
         "operations:\n"
         "  holed: {type: boolean, operation: difference, base: block, subtract: [cutter]}\n"
     )
@@ -231,12 +231,12 @@ def test_collect_visible_part_names_keeps_unreferenced_imported_part(tmp_path):
     (tmp_path / "comp.yaml").write_text(
         'schema_version: "3.0"\n'
         "parts:\n"
-        "  block: {primitive: box, parameters: {width: 10, depth: 10, height: 10}, origin: corner}\n"
+        "  block: {primitive: box, size: [10, 10, 10], origin: corner}\n"
     )
     (tmp_path / "main.yaml").write_text(
         "imports:\n  - {path: ./comp.yaml, as: c}\n"
         "parts:\n"
-        "  base: {primitive: box, parameters: {width: 5, depth: 5, height: 5}, origin: corner}\n"
+        "  base: {primitive: box, size: [5, 5, 5], origin: corner}\n"
     )
     doc = TiaCADParser.parse_file(str(tmp_path / "main.yaml"))
 

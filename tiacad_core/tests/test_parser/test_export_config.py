@@ -20,10 +20,7 @@ class TestExportConfigParsing:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
 operations:
   modified:
     type: transform
@@ -45,10 +42,7 @@ export:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
@@ -62,10 +56,7 @@ parts:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
 export:
   default_part: base
   formats: [stl, step, 3mf]
@@ -89,10 +80,7 @@ class TestExportWithFinishingOperations:
 parts:
   bracket:
     primitive: box
-    parameters:
-      width: 20
-      height: 20
-      depth: 5
+    size: [20, 5, 20]
 operations:
   positioned:
     type: transform
@@ -131,10 +119,7 @@ export:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 20
-      height: 20
-      depth: 5
+    size: [20, 5, 20]
 operations:
   filleted_base:
     type: finishing
@@ -174,10 +159,7 @@ class TestExportPriorityLogic:
 parts:
   first:
     primitive: box
-    parameters:
-      width: 5
-      height: 5
-      depth: 5
+    size: [5, 5, 5]
 operations:
   second:
     type: transform
@@ -213,10 +195,7 @@ export:
 parts:
   first:
     primitive: box
-    parameters:
-      width: 5
-      height: 5
-      depth: 5
+    size: [5, 5, 5]
 operations:
   second:
     type: transform
@@ -248,10 +227,7 @@ operations:
 parts:
   only_part:
     primitive: box
-    parameters:
-      width: 5
-      height: 5
-      depth: 5
+    size: [5, 5, 5]
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
@@ -272,10 +248,7 @@ parts:
 parts:
   first:
     primitive: box
-    parameters:
-      width: 5
-      height: 5
-      depth: 5
+    size: [5, 5, 5]
 operations:
   second:
     type: transform
@@ -308,10 +281,7 @@ class TestExportConfigSTEPFormat:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
 operations:
   modified:
     type: transform

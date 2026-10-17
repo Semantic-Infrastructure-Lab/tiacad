@@ -29,10 +29,7 @@ metadata:
 parts:
   box:
     primitive: box
-    parameters:
-      width: 10
-      height: 20
-      depth: 30
+    size: [10, 30, 20]
 """,
         encoding="utf-8",
     )
@@ -74,7 +71,7 @@ parts:
     assert build_trace['default_part'] == 'box'
     assert build_trace['nodes'][0]['name'] == 'box'
     assert build_trace['nodes'][0]['node_type'] == 'part'
-    assert build_trace['nodes'][0]['summary_text'] == 'box (depth=30, height=20, width=10)'
+    assert build_trace['nodes'][0]['summary_text'] == 'box (size=[10, 30, 20])'
 
     part_summaries = json.loads((bundle_dir / 'part_summaries.json').read_text(encoding='utf-8'))
     assert 'box' in part_summaries
@@ -96,8 +93,8 @@ def test_summarize_part_node_uses_nested_parameters():
 
 
 def test_summarize_part_node_falls_back_to_flat_spec():
-    spec = {'primitive': 'box', 'width': 10, 'height': 20, 'depth': 30}
-    assert _summarize_part_node(spec) == 'box (depth=30, height=20, width=10)'
+    spec = {'primitive': 'box', 'size': [10, 30, 20]}
+    assert _summarize_part_node(spec) == 'box (size=[10, 30, 20])'
 
 
 def test_summarize_part_node_with_no_scalar_params():
@@ -120,10 +117,7 @@ def test_create_debug_bundle_records_trust_render_failure(tmp_path, monkeypatch)
 parts:
   box:
     primitive: box
-    parameters:
-      width: 5
-      height: 5
-      depth: 5
+    size: [5, 5, 5]
 """,
         encoding="utf-8",
     )
@@ -150,10 +144,7 @@ def test_create_debug_bundle_compare_report_detects_changes(tmp_path, monkeypatc
 parts:
   box:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
 """,
         encoding="utf-8",
     )
@@ -162,10 +153,7 @@ parts:
 parts:
   box:
     primitive: box
-    parameters:
-      width: 20
-      height: 10
-      depth: 10
+    size: [20, 10, 10]
 operations:
   moved:
     type: transform

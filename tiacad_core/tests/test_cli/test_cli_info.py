@@ -13,7 +13,7 @@ parameters:
 parts:
   box:
     primitive: box
-    parameters: { width: "${size}", height: 10, depth: 10 }
+    size: ["${size}", 10, 10]
 
 operations:
   moved:

@@ -579,23 +579,11 @@ parameters:
 parts:
   box_a:
     primitive: box
-    parameters:
-
-      width: '${size}'
-
-      height: '${size}'
-
-      depth: '${size}'
+    size: ['${size}', '${size}', '${size}']
 
   box_b:
     primitive: box
-    parameters:
-
-      width: '${size}'
-
-      height: '${size}'
-
-      depth: '${size}'
+    size: ['${size}', '${size}', '${size}']
 
 operations:
   combined:
@@ -639,13 +627,7 @@ metadata:
 parts:
   plate:
     primitive: box
-    parameters:
-
-      width: 20
-
-      height: 20
-
-      depth: 5
+    size: [20, 5, 20]
 
   hole:
     primitive: cylinder

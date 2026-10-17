@@ -76,7 +76,7 @@ Traditional CAD uses hierarchical parent-child assemblies. TiaCAD uses **peer pa
 parts:
   base:
     primitive: box
-    parameters: {width: 100, height: 5, depth: 100}
+    size: [100, 100, 5]
 
   pillar:
     primitive: cylinder
@@ -141,10 +141,7 @@ Explicit YAML (not implicit magic) + Declarative (not procedural):
 # Explicit origins, parameters, references
 box:
   primitive: box        # Explicit type
-  parameters:
-    width: 10          # Named dimensions
-    height: 10         # (not [10,10,10])
-    depth: 10
+  size: [10, 10, 10]  # extents along X, Y, Z
   origin: center       # Explicit origin
 ```
 
@@ -320,10 +317,7 @@ parts:
   # Base platform
   platform:
     primitive: box
-    parameters:
-      width: 100
-      height: 5
-      depth: 100
+    size: [100, 100, 5]
 
   # Pillar automatically positioned on top
   pillar:
@@ -337,10 +331,7 @@ parts:
   # Cap positioned with offset from pillar top
   cap:
     primitive: box
-    parameters:
-      width: 15
-      height: 5
-      depth: 15
+    size: [15, 15, 5]
     translate:
       to:
         from: pillar.face_top  # Auto-generated reference!

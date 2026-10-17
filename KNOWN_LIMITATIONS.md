@@ -229,7 +229,7 @@ See `tt show TCAD-CON-12`.
 parts:
   bracket:
     primitive: box
-    parameters: {width: 50, height: 10, depth: 50}
+    size: [50, 50, 10]
 
 operations:
   position_bracket:

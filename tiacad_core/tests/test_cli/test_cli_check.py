@@ -13,7 +13,7 @@ _SIMPLE_MODEL = """
 parts:
   box:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
 """
 
 
@@ -54,7 +54,7 @@ def test_check_with_failing_contract_fails(tmp_path, capsys):
 parts:
   block:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
 export:
   default_part: block
 expect:

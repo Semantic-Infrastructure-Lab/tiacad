@@ -169,10 +169,7 @@ box:
 # GOOD (explicit, clear)
 box:
   primitive: box
-  parameters:
-    width: 10   # X dimension
-    height: 10  # Y dimension
-    depth: 10   # Z dimension
+  size: [10, 10, 10]   # extents along X, Y, Z
   origin: center  # Explicit origin point
 ```
 
@@ -208,7 +205,7 @@ cylinder = cq.Workplane("XY").cylinder(5, 20)
 parts:
   box:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
 
   cylinder:
@@ -249,11 +246,11 @@ Comprehensive Test Suite (see TEST_STATUS.json for current counts)
 ```python
 def test_box_dimensions():
     """Verify box has exact specified dimensions"""
-    model = parse_yaml("box: {width: 10, height: 20, depth: 30}")
+    model = parse_yaml("box: {primitive: box, size: [10, 20, 30]}")
     bbox = model.bounding_box()
-    assert bbox.width == 10.0  # Exact match
-    assert bbox.height == 20.0
-    assert bbox.depth == 30.0
+    assert bbox.x == 10.0  # Exact match
+    assert bbox.y == 20.0
+    assert bbox.z == 30.0
 ```
 
 ---

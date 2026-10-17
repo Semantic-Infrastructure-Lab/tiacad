@@ -32,7 +32,7 @@ class TestInlinePlainVectorTranslate:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
     translate: [100, -50, 30]
 """)
@@ -44,7 +44,7 @@ parts:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
     translate: [[10, 0, 0], [0, 20, 0], [0, 0, 30]]
 """)
@@ -56,7 +56,7 @@ parts:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
 """)
         bounds = doc.parts.get("block").get_bounds()
@@ -70,7 +70,7 @@ class TestInlineAnchorTranslate:
 parts:
   platform:
     primitive: box
-    parameters: {width: 100, height: 10, depth: 100}
+    size: [100, 100, 10]
     origin: center
   pillar:
     primitive: cylinder
@@ -93,7 +93,7 @@ parts:
 parts:
   platform:
     primitive: box
-    parameters: {width: 100, height: 10, depth: 100}
+    size: [100, 100, 10]
     origin: center
   left_pillar:
     primitive: cylinder
@@ -125,7 +125,7 @@ class TestInlineRotate:
 parts:
   block:
     primitive: box
-    parameters: {width: 40, height: 15, depth: 25}
+    size: [40, 25, 15]
     origin: center
     rotate: {angle: 90, axis: Z, origin: [0, 0, 0]}
 """)
@@ -142,7 +142,7 @@ parts:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
     translate: [50, 0, 0]
     rotate: {angle: 90, axis: Z, origin: [0, 0, 0]}
@@ -159,7 +159,7 @@ class TestInlineTransformVolumeInvariance:
 parts:
   block:
     primitive: box
-    parameters: {width: 40, height: 15, depth: 25}
+    size: [40, 25, 15]
     origin: center
     translate: [100, -50, 30]
     rotate: {angle: 37, axis: Z, origin: [0, 0, 0]}
@@ -181,7 +181,7 @@ class TestInlineTransformsListKey:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
     transforms:
       - translate: [50, 0, 0]
@@ -196,7 +196,7 @@ parts:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
     transforms:
       - translate: [50, 0, 0]
@@ -213,7 +213,7 @@ parts:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
     transforms: {translate: [50, 0, 0]}
 """)

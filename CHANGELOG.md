@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (BREAKING) - 2026-10-16 (box `size: [x, y, z]`, TCAD-DSL-6)
+
+Boxes are sized by `size: [x, y, z]` (extents along X, Y, Z; a number is a cube; units and
+`${...}` work). `width`/`depth`/`height` are removed from the language, `create_box`,
+`check`/`audit` tables, `get_dimensions` and contract messages, which had three contradictory
+axis conventions. Migrate models with `python3 scripts/migrations/box_size.py FILE...`.
+
 ### Added - 2026-08-02 (Path2D `ellipse_arc`/`spline` segments, TCAD-DSL-2)
 
 `Path2D` sketch profiles can now mix `ellipse_arc` and `spline` segments with

@@ -53,7 +53,12 @@ COMPOUND_SETTINGS = settings(max_examples=15, deadline=None, derandomize=True)
 def _build(name, primitive, **params):
     resolver = ParameterResolver({})
     builder = PartsBuilder(resolver, backend=CadQueryBackend())
-    spec = {name: {"primitive": primitive, "parameters": params}}
+    if primitive == "box":
+        # tests below keep the width/depth/height vocabulary of their strategies;
+        # width -> x, depth -> y, height -> z
+        spec = {name: {"primitive": "box", "size": [params["width"], params["depth"], params["height"]]}}
+    else:
+        spec = {name: {"primitive": primitive, "parameters": params}}
     return builder.build_parts(spec).get(name)
 
 

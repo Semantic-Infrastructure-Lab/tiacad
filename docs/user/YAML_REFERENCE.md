@@ -60,10 +60,7 @@ references:         # Optional (v3.0): named spatial references
 parts:             # Required (unless the file imports components): define primitive parts
   part_name:
     primitive: box
-    parameters:
-      width: 100     # X axis
-      depth: 50      # Y axis
-      height: 10     # Z axis
+    size: [100, 50, 10]
 
 operations:        # Optional: transform, boolean, pattern, finish
   operation_name:
@@ -282,9 +279,9 @@ Inside an inline mapping or list (`{...}` / `[...]`), a bare `${w}` is invalid Y
 `{` opens a flow mapping, and the parse error never mentions `${}`. Quote every template:
 
 ```yaml
-parameters: {width: '${base_width}', depth: 5, height: 5}   # ✅
+size: ['${base_width}', 5, 5]                                # ✅
 origin: ['${wall}', 0, '${floor}']                           # ✅
-parameters: {width: ${base_width}}                           # ❌ "expected ',' or '}'"
+size: [${base_width}, 5, 5]                                  # ❌ "expected ',' or ']'"
 ```
 
 In block style (one key or `- item` per line) the quotes are optional but harmless; the
@@ -298,10 +295,7 @@ Reference parameters in any numeric field:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: '${width}'
-      depth: '${depth}'
-      height: '${thickness}'
+    size: ['${width}', '${depth}', '${thickness}']
 ```
 
 ---
@@ -353,10 +347,7 @@ Available for all parts (box, cylinder, sphere, cone):
 parts:
   platform:
     primitive: box
-    parameters:
-      width: 100
-      height: 10
-      depth: 100
+    size: [100, 100, 10]
 
   pillar:
     primitive: cylinder
@@ -368,10 +359,7 @@ parts:
 
   cap:
     primitive: box
-    parameters:
-      width: 15
-      height: 5
-      depth: 15
+    size: [15, 15, 5]
     translate:
       to:
         from: pillar.face_top  # auto-generated anchor with offset
@@ -566,14 +554,17 @@ Parts are the basic building blocks. Each part starts from a primitive shape.
 parts:
   my_box:
     primitive: box
-    parameters:
-      width: 100                  # X axis (left/right)
-      depth: 30                   # Y axis (front/back)
-      height: 20                  # Z axis (up/down)
+    size: [100, 30, 20]
     origin: center                # center, corner, or [x,y,z]
 ```
 
-> ⚠️ **Axis mapping gotcha:** `width`→X, `depth`→Y, `height`→Z. The name "depth" maps to Y (not Z), and "height" maps to Z (not Y). This is counterintuitive — think of `depth` as the front-to-back dimension of a flat plate, not vertical depth. When building assemblies, verify Z positioning with a rendered view.
+`size` is the extent along **X, Y, Z**, in that order (`+Z` is up, so for a flat plate the thickness is
+the third value). A single number is a cube: `size: 20` is `[20, 20, 20]`. Values may be numbers,
+`'${...}'` templates, or unit literals (`[9.5in, 2cm, 3]`).
+
+> The old `width` / `depth` / `height` keys are gone (`width` → x, `depth` → y, `height` → z). A model that
+> still uses them fails with a message saying so; `python3 scripts/migrations/box_size.py FILE...`
+> rewrites them for you.
 
 **Origin modes:**
 - `center`: Center at (0, 0, 0) - default
@@ -653,10 +644,7 @@ Apply transforms directly to parts:
 parts:
   rotated_box:
     primitive: box
-    parameters:
-      width: 10
-      height: 20
-      depth: 30
+    size: [10, 30, 20]
     transforms:
       - translate: [50, 0, 0]
       - rotate:
@@ -673,7 +661,7 @@ You can also use auto-generated anchors and spatial references in transforms:
 parts:
   mounted_bracket:
     primitive: box
-    parameters: {width: 20, height: 5, depth: 30}
+    size: [20, 30, 5]
     translate:
       to: base.face_top  # auto-generated anchor
 
@@ -1193,10 +1181,7 @@ parameters:
 parts:
   tray:
     primitive: box
-    parameters:
-      width: '${w}'
-      depth: '${d}'
-      height: '${h}'
+    size: ['${w}', '${d}', '${h}']
 
 expect:
   final: tray                      # part the contract applies to (default: the exported part)
@@ -1228,10 +1213,7 @@ metadata:
 parts:
   box:
     primitive: box
-    parameters:
-      width: 100
-      depth: 100
-      height: 10
+    size: [100, 100, 10]
     origin: center
 
 export:
@@ -1255,10 +1237,7 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: '${plate_width}'
-      depth: '${plate_height}'
-      height: '${plate_thickness}'
+    size: ['${plate_width}', '${plate_height}', '${plate_thickness}']
     origin: center
 
   hole:
@@ -1367,18 +1346,12 @@ parameters:
 parts:
   base_plate:
     primitive: box
-    parameters:
-      width: '${base_width}'
-      depth: '${base_depth}'
-      height: '${base_thickness}'
+    size: ['${base_width}', '${base_depth}', '${base_thickness}']
     origin: corner
 
   vertical_plate:
     primitive: box
-    parameters:
-      width: '${base_width}'
-      depth: '${vertical_thickness}'
-      height: '${vertical_height}'
+    size: ['${base_width}', '${vertical_thickness}', '${vertical_height}']
     origin: corner
 
 operations:
@@ -1676,7 +1649,7 @@ If you have existing v0.3.0 YAML files, see [MIGRATION_GUIDE_V3.md](../developer
 **Key Changes:**
 - `named_points:` → `references:` with explicit `type` field
 - Auto-generated references (e.g., `part.face_top`)
-- `size:` → `parameters:` for primitive dimensions
+- box dimensions are `size: [x, y, z]` (v0.3.0's `size:` returned in v3.x after a `width`/`depth`/`height` interlude)
 - Local frame offsets for intuitive positioning
 - Face/edge/axis references (not just points)
 

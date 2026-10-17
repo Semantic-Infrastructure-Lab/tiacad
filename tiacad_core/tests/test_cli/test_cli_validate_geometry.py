@@ -10,7 +10,7 @@ _SIMPLE_MODEL = """
 parts:
   box:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
 """
 
 # Two non-overlapping boxes unioned: a real disconnected-component case, the
@@ -20,10 +20,10 @@ _DISCONNECTED_MODEL = """
 parts:
   box_a:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
   box_b:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
 
 operations:
   box_b_moved:
@@ -128,7 +128,7 @@ parameters:
 parts:
   box:
     primitive: box
-    parameters: { width: 40, height: '${t}', depth: 40 }
+    size: [40, 40, '${t}']
 """
 
 

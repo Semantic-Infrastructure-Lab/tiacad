@@ -254,18 +254,12 @@ parameters:
 parts:
   base:
     primitive: box
-    parameters:
-      width: '${base_width}'
-      height: '${base_height}'
-      depth: 50
+    size: ['${base_width}', 50, '${base_height}']
     origin: center
 
   tower:
     primitive: box
-    parameters:
-      width: '${tower_width}'
-      height: '${tower_height}'
-      depth: 30
+    size: ['${tower_width}', 30, '${tower_height}']
     origin: center
     translate:
       to: base.face_top  # Anchor at top of base!

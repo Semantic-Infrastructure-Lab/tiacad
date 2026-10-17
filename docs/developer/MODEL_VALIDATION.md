@@ -127,7 +127,7 @@ Good contracts are independent, stable, and explainable.
 Examples:
 
 ```python
-assert dims["width"] == pytest.approx(100.0, abs=0.1)
+assert dims["x"] == pytest.approx(100.0, abs=0.1)
 assert final_volume < solid_plate_volume
 assert final_volume > plate_volume
 assert left_tip_z == pytest.approx(right_tip_z, abs=0.1)

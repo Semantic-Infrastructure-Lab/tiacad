@@ -302,7 +302,7 @@ operations: { ... }
 expect:                        # <-- the model declares its own ground truth
   final: bracket               # part whose contract is authoritative
   volume: 9214                 # mm³, tolerance from `tol:` or default
-  bbox: [50, 20, 10]           # w × h × d
+  bbox: [50, 20, 10]           # extents along X, Y, Z
   watertight: true
   components: 1
   relations:                   # for assemblies (Tier 4)
@@ -454,8 +454,8 @@ everything it covers. **Effort:** low–medium; high early yield.
 builds each primitive through the real user path (`ParameterResolver` →
 `PartsBuilder` → `CadQueryBackend`) and checks the Tier-0/1 analytic oracles
 over machine-generated parameters: box/cylinder/sphere/cone/frustum/torus
-volume, bounding-box extents (including the `width→X, depth→Y, height→Z` box
-mapping that caused the §4.1 disconnected-components bug), and box/cylinder/
+volume, bounding-box extents (including the box's x/y/z axis mapping, which once
+caused the §4.1 disconnected-components bug, when boxes still used width/depth/height), and box/cylinder/
 sphere surface area; plus translate/rotate volume-invariance, uniform-scale
 `k³`, and boolean inclusion-exclusion over generated overlapping pairs. Every
 test runs under `@settings(derandomize=True, deadline=None)` — Hypothesis
@@ -851,8 +851,8 @@ an `expect:` block:
   N3_negative_dimension/N4_unknown_primitive/N5_malformed_schema/N6_duplicate_part_name`,
   each an intentionally broken `.tiacad` file triggering one specific error class —
   a bad `translate: to:` reference, a circular `${a}`/`${b}` parameter cycle, a
-  negative box dimension, a misspelled `primitive:`, a box missing its required
-  `depth`, and two `parts:` entries sharing the name `block`. Every fixture was
+  negative box dimension, a misspelled `primitive:`, a box whose `size`
+  has two values instead of three (originally a missing `depth`), and two `parts:` entries sharing the name `block`. Every fixture was
   verified by actually running it through `TiaCADParser.parse_file()` and observing
   the real exception type/message before any test assertion was written (this
   tier's own "verify, don't assume" mandate) — see `test_negative_contracts.py`.

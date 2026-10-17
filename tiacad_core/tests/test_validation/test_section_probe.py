@@ -87,7 +87,7 @@ _MODEL = """
 parts:
   slab:
     primitive: box
-    parameters: { width: 10, depth: 10, height: 4 }
+    size: [10, 10, 4]
     origin: corner
 """
 

@@ -22,7 +22,7 @@ class TestBox:
         spec = {
             'plate': {
                 'primitive': 'box',
-                'parameters': {'width': 100, 'height': 50, 'depth': 25}
+                'size': [100, 25, 50]
             }
         }
 
@@ -45,7 +45,7 @@ class TestBox:
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': '${width}', 'height': '${depth}', 'depth': '${height}'}
+                'size': ['${width}', '${height}', '${depth}']
             }
         }
 
@@ -64,7 +64,7 @@ class TestBox:
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': '${base_size}', 'height': '${base_size / 2}', 'depth': '${base_size / 4}'}
+                'size': ['${base_size}', '${base_size / 4}', '${base_size / 2}']
             }
         }
 
@@ -81,7 +81,7 @@ class TestBox:
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
                 'origin': 'center'
             }
         }
@@ -99,7 +99,7 @@ class TestBox:
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
                 'origin': 'corner'
             }
         }
@@ -124,7 +124,7 @@ class TestBox:
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 4, 'depth': 6},
+                'size': [10, 6, 4],
                 'origin': [100, -50, 30],
             }
         }
@@ -177,7 +177,7 @@ class TestBox:
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 20, 'depth': 30}
+                'size': [10, 30, 20]
             }
         }
 
@@ -485,11 +485,11 @@ class TestMultipleParts:
         spec = {
             'plate': {
                 'primitive': 'box',
-                'parameters': {'width': '${plate_w}', 'height': '${plate_t}', 'depth': '${plate_h}'}
+                'size': ['${plate_w}', '${plate_h}', '${plate_t}']
             },
             'beam': {
                 'primitive': 'box',
-                'parameters': {'width': '${beam_w}', 'height': '${beam_len}', 'depth': '${beam_h}'}
+                'size': ['${beam_w}', '${beam_h}', '${beam_len}']
             },
             'screw_hole': {
                 'primitive': 'cylinder',
@@ -533,7 +533,7 @@ class TestErrorHandling:
         spec = {
             'my_part': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
                 'position': [0, 0, 5],
             }
         }
@@ -576,7 +576,7 @@ class TestMetadata:
         spec = {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                'size': [10, 10, 10]
             }
         }
 
@@ -609,7 +609,7 @@ class TestGuitarHangerExample:
         spec = {
             'plate': {
                 'primitive': 'box',
-                'parameters': {'width': '${plate_w}', 'height': '${plate_t}', 'depth': '${plate_h}'},
+                'size': ['${plate_w}', '${plate_h}', '${plate_t}'],
                 'origin': 'center'
             },
             'screw_hole': {
@@ -620,12 +620,12 @@ class TestGuitarHangerExample:
             },
             'beam': {
                 'primitive': 'box',
-                'parameters': {'width': '${beam_w}', 'height': '${beam_len}', 'depth': '${beam_h}'},
+                'size': ['${beam_w}', '${beam_h}', '${beam_len}'],
                 'origin': 'center'
             },
             'arm': {
                 'primitive': 'box',
-                'parameters': {'width': '${arm_w}', 'height': '${arm_len}', 'depth': '${arm_h}'},
+                'size': ['${arm_w}', '${arm_h}', '${arm_len}'],
                 'origin': 'center'
             }
         }

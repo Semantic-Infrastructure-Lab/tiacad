@@ -46,10 +46,7 @@ parameters:
 parts:
   body:
     primitive: box
-    parameters:
-      width: '${width}'
-      height: '${height}'
-      depth: '${depth}'
+    size: ['${width}', '${depth}', '${height}']
 """
 
 MULTI_PART_COMPONENT = """
@@ -88,10 +85,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 100
-      height: 10
-      depth: 100
+    size: [100, 100, 10]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         doc = TiaCADParser.parse_file(main_file)
@@ -111,10 +105,7 @@ imports:
 parts:
   anchor:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         doc = TiaCADParser.parse_file(main_file)
@@ -185,10 +176,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         doc = TiaCADParser.parse_file(main_file)
@@ -214,10 +202,7 @@ imports:
 parts:
   dummy:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         doc = TiaCADParser.parse_file(main_file)
@@ -249,10 +234,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         doc = TiaCADParser.parse_file(main_file)
@@ -283,10 +265,7 @@ imports:
 parts:
   placeholder:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         doc = TiaCADParser.parse_file(main_file)
@@ -334,10 +313,7 @@ imports:
 parts:
   a_part:
     primitive: box
-    parameters:
-      width: 50
-      height: 50
-      depth: 50
+    size: [50, 50, 50]
 """
         a_file = write_yaml(str(tmp_path), 'a.yaml', a_yaml)
         doc = TiaCADParser.parse_file(a_file)
@@ -367,10 +343,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         with pytest.raises((TiaCADParserError, ComponentImportError)):
@@ -385,10 +358,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         with pytest.raises((TiaCADParserError, ComponentImportError)):
@@ -405,10 +375,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         with pytest.raises((TiaCADParserError, ComponentImportError)):
@@ -425,10 +392,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         with pytest.raises((TiaCADParserError, ComponentImportError)):
@@ -447,10 +411,7 @@ imports:
 parts:
   a_part:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         b_yaml = f"""
 imports:
@@ -460,10 +421,7 @@ imports:
 parts:
   b_part:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         with open(a_path, 'w') as f:
             f.write(a_yaml)
@@ -488,10 +446,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 1
-      height: 1
-      depth: 1
+    size: [1, 1, 1]
 """
         main_file = write_yaml(str(tmp_path), 'main.yaml', main_yaml)
         with pytest.raises((TiaCADParserError, ComponentImportError, ValueError)):
@@ -595,10 +550,7 @@ imports:
 parts:
   plate:
     primitive: box
-    parameters:
-      width: 50
-      height: 5
-      depth: 50
+    size: [50, 50, 5]
 """)
         doc = TiaCADParser.parse_file(str(main_yaml))
         part_names = doc.parts.list_parts()
@@ -767,10 +719,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 30
-      height: 5
-      depth: 30
+    size: [30, 30, 5]
 """)
         with patch("tiacad_core.parser.component_importer._GITHUB_CACHE_DIR", cache_root), \
              patch("urllib.request.urlretrieve", side_effect=fake_urlretrieve):
@@ -790,15 +739,15 @@ parameters:
 parts:
   block:
     primitive: box
-    parameters: {width: '${size}', depth: '${size}', height: '${size}'}
+    size: ['${size}', '${size}', '${size}']
     origin: corner
   cutter:
     primitive: box
-    parameters: {width: 2, depth: 2, height: 20}
+    size: [2, 2, 20]
     origin: corner
   spare:
     primitive: box
-    parameters: {width: 1, depth: 1, height: 1}
+    size: [1, 1, 1]
     origin: corner
 operations:
   holed:
@@ -815,7 +764,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters: {width: 30, depth: 30, height: 2}
+    size: [30, 30, 2]
     origin: corner
 """
 

@@ -5,7 +5,7 @@ Handles creation of CadQuery geometry from primitive definitions and
 wraps them in Part objects for the TiaCAD system.
 
 Supported Primitives:
-- box: Rectangular box with size [width, depth, height]
+- box: Rectangular box with size [x, y, z]
 - cylinder: Cylinder with radius and height
 - sphere: Sphere with radius
 - cone: Cone/frustum with two radii and height
@@ -211,7 +211,7 @@ class PartsBuilder:
         documented "0..height slice" (z starting at 0, not centered on 0)
         under corner-placement semantics. `reference_offset` is the same
         offset the primitive's own 'corner'/'base' branch already uses (e.g.
-        `(width/2, depth/2, height/2)` for box, `(0, 0, height/2)` for
+        `(x/2, y/2, z/2)` for box, `(0, 0, height/2)` for
         cylinder/cone) -- added to the literal origin point instead of to the
         world origin. Primitives with no alt-mode (sphere/torus/polygon/text)
         should pass `(0, 0, 0)`, i.e. a plain translate to that point.
@@ -231,9 +231,8 @@ class PartsBuilder:
 
         Args:
             name: Part name (for error messages)
-            spec: Specification with `size: [x, y, z]` (extents along X, Y, Z;
-                a single number is a cube). The legacy width/depth/height
-                `parameters:` form is still read until it is removed.
+            spec: Specification with `size: [x, y, z]` (extents along X, Y, Z in
+                mm; a single number is a cube)
 
         Returns:
             CadQuery Workplane with box geometry
@@ -242,21 +241,7 @@ class PartsBuilder:
             PartsBuilderError: If size is missing, malformed or not positive
         """
         origin = spec.get('origin', 'center')
-        if 'size' in spec:
-            x, y, z = self._box_size(name, spec)
-        else:
-            # Legacy spelling (check 'parameters' key first, fall back to spec for backward compat)
-            params = spec.get('parameters', spec)
-            required = ['width', 'height', 'depth']
-            missing = [p for p in required if p not in params]
-            if missing:
-                raise PartsBuilderError(
-                    f"Box '{name}' needs a size: write `size: [x, y, z]` "
-                    f"(extents along X, Y, Z in mm; a single number is a cube)",
-                    part_name=name
-                )
-            x, y, z = params['width'], params['depth'], params['height']
-            self._require_positive(name, 'Box', width=x, height=z, depth=y)
+        x, y, z = self._box_size(name, spec)
 
         box = self.backend.create_box(x, y, z)
         if origin == 'corner':
@@ -273,15 +258,20 @@ class PartsBuilder:
                   if k in spec or k in (spec.get('parameters') or {})]
         if legacy:
             raise PartsBuilderError(
-                f"Box '{name}' has both `size` and {', '.join(legacy)}; "
-                f"use `size: [x, y, z]` only",
+                f"Box '{name}' uses {', '.join(legacy)}, which boxes no longer take; "
+                f"write `size: [x, y, z]` (extents along X, Y, Z in mm; "
+                f"width -> x, depth -> y, height -> z)",
+                part_name=name
+            )
+        if 'size' not in spec:
+            raise PartsBuilderError(
+                f"Box '{name}' needs a size: write `size: [x, y, z]` "
+                f"(extents along X, Y, Z in mm; a single number is a cube)",
                 part_name=name
             )
 
         size = spec['size']
-        if isinstance(size, (int, float)) and not isinstance(size, bool):
-            size = [size, size, size]
-        elif isinstance(size, str):
+        if isinstance(size, (int, float, str)) and not isinstance(size, bool):
             size = [size, size, size]
         if not isinstance(size, (list, tuple)):
             raise PartsBuilderError(

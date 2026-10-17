@@ -245,13 +245,7 @@ class TestRealWorldExamples:
         yaml_str = """parts:
   plate:
     primitive: box
-    parameters:
-
-      width: 100
-
-      height: 100
-
-      depth: 10
+    size: [100, 10, 100]
 
 operations:
   subtract:

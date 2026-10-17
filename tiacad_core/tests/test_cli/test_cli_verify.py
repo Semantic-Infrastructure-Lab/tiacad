@@ -59,7 +59,7 @@ metadata:
 parts:
   block:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
 export:
   default_part: block
 expect:

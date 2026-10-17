@@ -521,11 +521,11 @@ class TestConstraintPipelineIntegration:
 parts:
   base:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   top:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
 
 constraints:
@@ -544,19 +544,19 @@ constraints:
 parts:
   base1:
     primitive: box
-    parameters: {width: 40, height: 10, depth: 40}
+    size: [40, 40, 10]
     origin: center
   shelf1:
     primitive: box
-    parameters: {width: 30, height: 4, depth: 30}
+    size: [30, 30, 4]
     origin: center
   base2:
     primitive: box
-    parameters: {width: 20, height: 5, depth: 20}
+    size: [20, 20, 5]
     origin: center
   shelf2:
     primitive: box
-    parameters: {width: 15, height: 3, depth: 15}
+    size: [15, 15, 3]
     origin: center
 
 constraints:
@@ -577,11 +577,11 @@ constraints:
 parts:
   base:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   raw_top:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
 
 operations:
@@ -627,7 +627,7 @@ constraints:
 parts:
   rail:
     primitive: box
-    parameters: {width: 40, depth: 40, height: 4}
+    size: [40, 40, 4]
     origin: center
   raw_roller:
     primitive: cylinder
@@ -654,7 +654,7 @@ constraints:
 parts:
   base:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
 """)
         _approx(doc.parts.get('base').get_center(), (0.0, 0.0, 0.0))

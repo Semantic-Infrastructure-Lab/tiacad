@@ -1,16 +1,13 @@
 """
 Box sizing: `size: [x, y, z]` (TCAD-DSL-6).
 
-The box is sized by its extent along X, Y and Z -- no width/depth/height words.
-Dimensions are deliberately all different (10 x 20 x 30) so any axis swap shows.
-
-Section 1 pins the geometry of the legacy width/depth/height spelling. It is
-the oracle the new spelling must match, and it is deleted with that spelling.
+The box is sized by its extent along X, Y and Z -- there are no width/depth/height
+words. Dimensions are deliberately all different (10 x 20 x 30) so any axis swap shows.
 """
 
 import pytest
 
-from tiacad_core.parser.tiacad_parser import TiaCADParser, TiaCADParserError
+from tiacad_core.parser.tiacad_parser import TiaCADParser
 
 X, Y, Z = 10.0, 20.0, 30.0
 
@@ -26,16 +23,6 @@ def _bbox(yaml_text, part="b"):
     }
 
 
-def _legacy(origin):
-    return f"""
-parts:
-  b:
-    primitive: box
-    parameters: {{width: {X}, depth: {Y}, height: {Z}}}
-    origin: {origin}
-"""
-
-
 def _sized(origin, size=f"[{X}, {Y}, {Z}]"):
     return f"""
 parts:
@@ -49,29 +36,19 @@ parts:
 ORIGINS = ["center", "corner", "[5, 6, 7]"]
 
 
-# --- 1. legacy spelling: pinned geometry (delete with the spelling) ----------
+# --- 1. geometry: size maps to X, Y, Z and the origin modes place it -------------
 
 @pytest.mark.parametrize("origin", ORIGINS)
-def test_legacy_width_depth_height_map_to_x_y_z(origin):
-    got = _bbox(_legacy(origin))
+def test_size_extents_are_x_y_z(origin):
+    got = _bbox(_sized(origin))
     assert got["size"] == pytest.approx((X, Y, Z))
     assert got["volume"] == pytest.approx(X * Y * Z)
 
 
-def test_legacy_origin_placement_pinned():
-    assert _bbox(_legacy("center"))["min"] == pytest.approx((-X / 2, -Y / 2, -Z / 2))
-    assert _bbox(_legacy("corner"))["min"] == pytest.approx((0, 0, 0))
-    assert _bbox(_legacy("[5, 6, 7]"))["min"] == pytest.approx((5, 6, 7))
-
-
-# --- 2. new spelling matches the legacy geometry exactly ---------------------
-
-@pytest.mark.parametrize("origin", ORIGINS)
-def test_size_matches_legacy_geometry(origin):
-    old, new = _bbox(_legacy(origin)), _bbox(_sized(origin))
-    assert new["min"] == pytest.approx(old["min"])
-    assert new["max"] == pytest.approx(old["max"])
-    assert new["volume"] == pytest.approx(old["volume"])
+def test_size_origin_placement():
+    assert _bbox(_sized("center"))["min"] == pytest.approx((-X / 2, -Y / 2, -Z / 2))
+    assert _bbox(_sized("corner"))["min"] == pytest.approx((0, 0, 0))
+    assert _bbox(_sized("[5, 6, 7]"))["min"] == pytest.approx((5, 6, 7))
 
 
 def test_size_axes_are_x_y_z_in_order():
@@ -83,12 +60,12 @@ def test_size_scalar_is_a_cube():
     assert got["size"] == pytest.approx((20, 20, 20))
 
 
-def test_size_default_origin_is_centered_like_before():
+def test_size_default_origin_is_centered():
     yaml_text = f"parts:\n  b:\n    primitive: box\n    size: [{X}, {Y}, {Z}]\n"
     assert _bbox(yaml_text)["min"] == pytest.approx((-X / 2, -Y / 2, -Z / 2))
 
 
-# --- 3. templates, parameters, units -----------------------------------------
+# --- 2. templates, parameters, units -----------------------------------------
 
 def test_size_accepts_templates_and_parameters():
     yaml_text = """
@@ -115,7 +92,7 @@ def test_size_unit_suffix_inside_template_converts():
     assert got["size"][0] == pytest.approx(26.4)
 
 
-# --- 4. errors ---------------------------------------------------------------
+# --- 3. errors ---------------------------------------------------------------
 
 def _fails(yaml_text, *fragments):
     with pytest.raises(Exception) as exc:
@@ -148,12 +125,10 @@ def test_box_without_size_names_the_expected_form():
 
 
 @pytest.mark.parametrize("old_key", ["width", "depth", "height"])
-def test_size_cannot_be_mixed_with_width_depth_height(old_key):
-    yaml_text = f"""
-parts:
-  b:
-    primitive: box
-    size: [1, 2, 3]
-    parameters: {{{old_key}: 5}}
-"""
-    _fails(yaml_text, "size")
+def test_removed_width_depth_height_are_rejected_with_a_migration_hint(old_key):
+    for yaml_text in (
+        f"parts:\n  b:\n    primitive: box\n    parameters: {{{old_key}: 5}}\n",
+        f"parts:\n  b:\n    primitive: box\n    {old_key}: 5\n",
+        f"parts:\n  b:\n    primitive: box\n    size: [1, 2, 3]\n    parameters: {{{old_key}: 5}}\n",
+    ):
+        _fails(yaml_text, old_key, "size: [x, y, z]", "width -> x, depth -> y, height -> z")

@@ -29,13 +29,7 @@ class TestBasicParsing:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
@@ -53,13 +47,7 @@ parameters:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: '${width}'
-
-      height: '${height}'
-
-      depth: 20
+    size: ['${width}', 20, '${height}']
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
@@ -78,13 +66,7 @@ metadata:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
@@ -101,7 +83,7 @@ parts:
                 'parts': {
                     'box': {
                         'primitive': 'box',
-                        'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                        'size': [10, 10, 10]
                     }
                 }
             },
@@ -119,7 +101,7 @@ parts:
             'parts': {
                 'box': {
                     'primitive': 'box',
-                    'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                    'size': [10, 10, 10]
                 }
             }
         })
@@ -146,7 +128,7 @@ class TestExportBoundaries:
             'parts': {
                 'box': {
                     'primitive': 'box',
-                    'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                    'size': [10, 10, 10]
                 }
             }
         })
@@ -171,7 +153,7 @@ class TestExportBoundaries:
             'parts': {
                 'base': {
                     'primitive': 'box',
-                    'parameters': {'width': 10, 'height': 10, 'depth': 10}
+                    'size': [10, 10, 10]
                 }
             },
             'operations': {
@@ -198,13 +180,7 @@ class TestWithOperations:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 
 operations:
   box_moved:
@@ -224,13 +200,7 @@ operations:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 
 operations:
   box1:
@@ -284,33 +254,15 @@ parameters:
 parts:
   plate:
     primitive: box
-    parameters:
-
-      width: '${plate_w}'
-
-      height: '${plate_t}'
-
-      depth: 80
+    size: ['${plate_w}', 80, '${plate_t}']
 
   beam:
     primitive: box
-    parameters:
-
-      width: 32
-
-      height: 75
-
-      depth: 24
+    size: [32, 24, 75]
 
   arm:
     primitive: box
-    parameters:
-
-      width: 22
-
-      height: '${arm_len}'
-
-      depth: 16
+    size: [22, 16, '${arm_len}']
 
 operations:
   left_arm:
@@ -369,13 +321,7 @@ class TestFileOperations:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 """
         # Create temporary file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
@@ -405,13 +351,7 @@ class TestExport:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
@@ -433,13 +373,7 @@ parts:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 
 operations:
   box_moved:
@@ -467,13 +401,7 @@ operations:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 """
         doc = TiaCADParser.parse_string(yaml_content)
 
@@ -506,15 +434,15 @@ class TestConstraintsIntegration:
 parts:
   base:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   top:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
   mount:
     primitive: box
-    parameters: {width: 3, height: 3, depth: 3}
+    size: [3, 3, 3]
     origin: center
 
 constraints:
@@ -541,11 +469,11 @@ constraints:
 parts:
   base:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   top:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
 
 constraints:
@@ -576,13 +504,7 @@ class TestValidation:
 parts:
   box:
     primitive: box
-    parameters:
-
-      width: 10
-
-      height: 10
-
-      depth: 10
+    size: [10, 10, 10]
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
             f.write(yaml_content)
@@ -658,7 +580,7 @@ class TestConvenienceFunction:
 parts:
   box:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
             f.write(yaml_content)
@@ -680,7 +602,7 @@ class TestYAMLAliasSupport:
 parts:
   base:
     primitive: box
-    parameters: {width: 100, height: 10, depth: 100}
+    size: [100, 100, 10]
 
   pillar:
     primitive: cylinder
@@ -709,7 +631,7 @@ anchors:
 parts:
   box:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
 
 anchors:
   point1:
@@ -734,7 +656,7 @@ references:
 parts:
   base:
     primitive: box
-    parameters: {width: 100, height: 10, depth: 100}
+    size: [100, 100, 10]
 
 references:
   mounting_point:

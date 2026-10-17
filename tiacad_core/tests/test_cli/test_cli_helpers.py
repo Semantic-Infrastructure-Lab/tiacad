@@ -37,7 +37,7 @@ def test_get_default_part_name_prefers_last_operation():
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             }
         },
         'operations': {
@@ -57,11 +57,11 @@ def test_visible_parts_excludes_internal_names():
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             },
             '_internal': {
                 'primitive': 'box',
-                'parameters': {'width': 1, 'height': 1, 'depth': 1},
+                'size': [1, 1, 1],
             },
         },
     })
@@ -74,7 +74,7 @@ def test_build_check_rows_marks_final_part():
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             }
         },
         'operations': {
@@ -98,7 +98,7 @@ def test_measure_audit_final_part_warns_on_non_positive_volume():
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             }
         }
     })
@@ -223,7 +223,7 @@ def test_get_part_display_type_prefers_operation_type():
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             }
         },
         'operations': {
@@ -250,11 +250,11 @@ def test_print_part_section_uses_visible_parts_and_display_type(capsys):
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             },
             '_internal': {
                 'primitive': 'box',
-                'parameters': {'width': 1, 'height': 1, 'depth': 1},
+                'size': [1, 1, 1],
             },
         },
         'operations': {
@@ -280,7 +280,7 @@ def test_print_operation_section_skips_empty_doc(capsys):
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             }
         }
     })
@@ -296,11 +296,11 @@ def test_print_info_statistics_uses_visible_part_count(capsys):
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             },
             '_internal': {
                 'primitive': 'box',
-                'parameters': {'width': 1, 'height': 1, 'depth': 1},
+                'size': [1, 1, 1],
             },
         }
     })
@@ -322,7 +322,7 @@ def test_print_info_report_includes_sections(capsys, tmp_path):
         'parts': {
             'box': {
                 'primitive': 'box',
-                'parameters': {'width': 10, 'height': 10, 'depth': 10},
+                'size': [10, 10, 10],
             }
         },
         'operations': {
@@ -572,10 +572,7 @@ parameters:
 parts:
   slab:
     primitive: box
-    parameters:
-      width: ${area_w}
-      depth: 5
-      height: ${h}
+    size: ['${area_w}', 5, '${h}']
     origin: corner
 """
 

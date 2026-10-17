@@ -247,11 +247,11 @@ metadata:
 parts:
   used_box:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   orphan_box:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
 operations:
   positioned:
@@ -667,11 +667,11 @@ metadata:
 parts:
   used_box:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   orphan_box:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
 operations:
   positioned:
@@ -708,15 +708,15 @@ metadata:
 parts:
   used_box:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
   orphan_box:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
   feeder_box:
     primitive: box
-    parameters: {width: 3, height: 3, depth: 3}
+    size: [3, 3, 3]
     origin: center
 operations:
   positioned:
@@ -761,10 +761,10 @@ metadata:
 parts:
   _placeholder:
     primitive: box
-    parameters: {width: 1, height: 1, depth: 1}
+    size: [1, 1, 1]
   real_orphan:
     primitive: box
-    parameters: {width: 5, height: 5, depth: 5}
+    size: [5, 5, 5]
     origin: center
 """)
 
@@ -802,7 +802,7 @@ parameters:
 parts:
   box:
     primitive: box
-    parameters: {width: 5, height: 5, depth: "${derived_from_live}"}
+    size: [5, "${derived_from_live}", 5]
     origin: center
 export:
   default_part: box

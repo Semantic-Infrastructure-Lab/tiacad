@@ -30,10 +30,7 @@ metadata:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 5
+    size: [10, 5, 10]
 """
 
 _TWO_PART_YAML = """\
@@ -42,10 +39,7 @@ metadata:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 20
-      height: 20
-      depth: 5
+    size: [20, 5, 20]
   peg:
     primitive: cylinder
     parameters:
@@ -130,10 +124,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 5
+    size: [10, 5, 10]
 """
         )
 
@@ -155,10 +146,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 5
+    size: [10, 5, 10]
 """
         )
 
@@ -345,10 +333,7 @@ imports:
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 5
+    size: [10, 5, 10]
 """
         )
 
@@ -460,11 +445,11 @@ schema_version: "3.0"
 parts:
   base:
     primitive: box
-    parameters: { width: 10, depth: 10, height: 10 }
+    size: [10, 10, 10]
     origin: center
   top:
     primitive: box
-    parameters: { width: 5, depth: 5, height: 5 }
+    size: [5, 5, 5]
     origin: center
 export:
   default_part: top
@@ -503,15 +488,15 @@ schema_version: "3.0"
 parts:
   base:
     primitive: box
-    parameters: {{ width: 10, depth: 10, height: 10 }}
+    size: [10, 10, 10]
     origin: center
   top:
     primitive: box
-    parameters: {{ width: 5, depth: 5, height: 5 }}
+    size: [5, 5, 5]
     origin: center
   unrelated:
     primitive: box
-    parameters: {{ width: {unrelated_w}, depth: 1, height: 1 }}
+    size: [{unrelated_w}, 1, 1]
     origin: center
 export:
   default_part: top

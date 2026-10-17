@@ -28,7 +28,7 @@
 parts:
   base:           # This is a "part" (a box primitive)
     primitive: box
-    parameters: {width: 100, height: 20, depth: 50}
+    size: [100, 50, 20]
 ```
 
 **Think of it as**: A LEGO brick - a building block that may be combined with others to create something larger.
@@ -136,10 +136,7 @@ parameters:
 parts:
   box:
     primitive: box
-    parameters:
-      width: '${width}'       # References parameter
-      height: '${height}'
-      depth: '${depth}'
+    size: ['${width}', '${depth}', '${height}']
 ```
 
 **Think of it as**: Variables in a spreadsheet - change the input cell and dependent cells update automatically.
@@ -275,11 +272,11 @@ translate([0, 0, 30])  // Manual calculation: 20/2 + 40/2
 parts:
   base:
     primitive: box
-    parameters: {width: 100, depth: 50, height: 20}
+    size: [100, 50, 20]
 
   tower:
     primitive: box
-    parameters: {width: 20, depth: 20, height: 40}
+    size: [20, 20, 40]
     translate:
       to: base.face_top  # No manual calculation!
 ```
@@ -302,7 +299,7 @@ translate([10, 0, 0])
 parts:
   box:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     transforms:
       - translate: [10, 0, 0]
       - rotate: {axis: Z, angle: 45}
@@ -410,7 +407,7 @@ TiaCAD operations fall into four categories, each with different purposes:
 ```yaml
 tower:
   primitive: box
-  parameters: {width: 20, height: 40, depth: 20}
+  size: [20, 20, 40]
   translate:
     to: base.face_top  # Positioning operation
 ```
@@ -578,7 +575,7 @@ ValidationError: Unknown part reference 'tower' in operation 'place_tower'
 ```yaml
 box:
   primitive: box
-  parameters: {width: 10, height: 10, depth: 10}
+  size: [10, 10, 10]
   origin: center  # Origin at center of box
 ```
 

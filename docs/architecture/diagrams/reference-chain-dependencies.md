@@ -85,7 +85,7 @@ parts:
   # 1. base - no dependencies, created first
   base:
     primitive: box
-    parameters: {width: 100, height: 5, depth: 100}
+    size: [100, 100, 5]
 
   # 2. pillar - depends on base, created second
   pillar:
@@ -97,7 +97,7 @@ parts:
   # 3. cap - depends on pillar, created third
   cap:
     primitive: box
-    parameters: {width: 15, height: 5, depth: 15}
+    size: [15, 15, 5]
     translate:
       to: pillar.face_top  # ✅ pillar exists, reference resolved
 ```
@@ -200,7 +200,7 @@ You can define custom anchors that reference other parts:
 parts:
   base:
     primitive: box
-    parameters: {width: 100, height: 5, depth: 100}
+    size: [100, 100, 5]
 
   pillar:
     primitive: cylinder

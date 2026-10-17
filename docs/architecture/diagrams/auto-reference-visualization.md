@@ -60,10 +60,7 @@ graph TB
 parts:
   base:
     primitive: box
-    parameters:
-      width: 10
-      height: 20
-      depth: 10
+    size: [10, 10, 20]
     # Automatically provides: base.center, base.face_top, etc.
 
   pillar:

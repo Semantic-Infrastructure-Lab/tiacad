@@ -10,7 +10,7 @@ _VALID_MODEL = """
 parts:
   box:
     primitive: box
-    parameters: { width: 10, height: 10, depth: 10 }
+    size: [10, 10, 10]
 """
 
 _INVALID_MODEL = """

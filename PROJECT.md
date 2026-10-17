@@ -58,7 +58,7 @@ Enable anyone to create parametric 3D models using simple YAML syntax instead of
   "What Was Built (Q2-Q3 2026)"
 
 **Components Complete:**
-- ✅ Named parameter syntax (width/height/depth for all primitives)
+- ✅ Named parameters for primitives (radius, height, ...); boxes take `size: [x, y, z]`
 - ✅ Spatial reference system (SpatialRef, Frame, SpatialResolver)
 - ✅ GeometryBackend abstraction (implemented, but only partially enforced across the build/export surface)
 - ✅ Complete YAML parser

@@ -52,11 +52,11 @@ Face references point to the center of each face with a normal vector pointing o
 parts:
   base:
     primitive: box
-    parameters: {width: 100, height: 20, depth: 50}
+    size: [100, 50, 20]
 
   mount:
     primitive: box
-    parameters: {width: 30, height: 10, depth: 30}
+    size: [30, 30, 10]
     translate:
       to: base.face_top  # Place on top of base
 ```
@@ -113,11 +113,11 @@ Move a part to align with another part's reference:
 parts:
   base:
     primitive: box
-    parameters: {width: 100, height: 20, depth: 50}
+    size: [100, 50, 20]
 
   tower:
     primitive: box
-    parameters: {width: 20, height: 80, depth: 20}
+    size: [20, 20, 80]
     translate:
       to: base.face_top  # Tower base sits on base's top face
 ```
@@ -130,7 +130,7 @@ Add an offset to an auto-generated anchor:
 parts:
   platform:
     primitive: box
-    parameters: {width: 100, height: 5, depth: 100}
+    size: [100, 100, 5]
 
   post:
     primitive: cylinder
@@ -149,11 +149,11 @@ Rotate a part around an auto-generated axis:
 parts:
   base:
     primitive: box
-    parameters: {width: 50, height: 10, depth: 50}
+    size: [50, 50, 10]
 
   arm:
     primitive: box
-    parameters: {width: 60, height: 5, depth: 10}
+    size: [60, 10, 5]
     rotate:
       axis: base.axis_x  # Rotate around base's X-axis
       angle: 45

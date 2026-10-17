@@ -84,7 +84,7 @@ class TestExpectThicknessSchema:
 
     def _data(self, min_value):
         return {
-            "parts": {"b": {"primitive": "box", "parameters": {"width": 1, "depth": 1, "height": 1}}},
+            "parts": {"b": {"primitive": "box", 'size': [1, 1, 1]}},
             "expect": {"thickness": {"min": min_value}},
         }
 
@@ -290,7 +290,7 @@ class TestParserIntegration:
             "parts": {
                 "box1": {
                     "primitive": "box",
-                    "parameters": {"width": 10, "height": 10, "depth": 10}
+                    'size': [10, 10, 10]
                 }
             }
         }
@@ -304,7 +304,7 @@ class TestParserIntegration:
             "parts": {
                 "box1": {
                     "primitive": "box",
-                    "parameters": {"width": 10, "height": 10, "depth": 10}
+                    'size': [10, 10, 10]
                 }
             }
         }

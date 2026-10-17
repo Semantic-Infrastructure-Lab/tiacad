@@ -30,10 +30,7 @@ DIFFERENCE_TEMPLATE = """\
 parts:
   base_box:
     primitive: box
-    parameters:
-      width: 20
-      height: 20
-      depth: 20
+    size: [20, 20, 20]
     origin: center
   cutter:
     primitive: cylinder
@@ -64,17 +61,11 @@ INTERSECTION_TEMPLATE = """\
 parts:
   box_a:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
     origin: center
   box_b:
     primitive: box
-    parameters:
-      width: 10
-      height: 10
-      depth: 10
+    size: [10, 10, 10]
     origin: center
 
 operations:
@@ -148,10 +139,7 @@ MOUNTING_HOLE_TEMPLATE = """\
 parts:
   mounting_plate:
     primitive: box
-    parameters:
-      width: 120
-      height: 15
-      depth: 90
+    size: [120, 90, 15]
     origin: center
   screw_hole_shaft:
     primitive: cylinder

@@ -77,7 +77,7 @@ class TestPartLocalAxisReferencesReflectRotation:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
     rotate: {angle: 90, axis: Z, origin: [0, 0, 0]}
 """)
@@ -93,7 +93,7 @@ parts:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
 """)
         resolver = SpatialResolver(doc.parts, doc.references)
@@ -105,7 +105,7 @@ parts:
 parts:
   block:
     primitive: box
-    parameters: {width: 10, height: 10, depth: 10}
+    size: [10, 10, 10]
     origin: center
 
 operations:

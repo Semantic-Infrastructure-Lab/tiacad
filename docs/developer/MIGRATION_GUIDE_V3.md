@@ -144,10 +144,7 @@ named_points:
 parts:
   platform:
     primitive: box
-    parameters:
-      width: 50
-      height: 10
-      depth: 50
+    size: [50, 50, 10]
     translate:
       to: base_top
 ```
@@ -159,10 +156,7 @@ parts:
 parts:
   platform:
     primitive: box
-    parameters:
-      width: 50
-      height: 10
-      depth: 50
+    size: [50, 50, 10]
     translate:
       to: base.face_top  # Auto-generated reference
 ```
@@ -219,7 +213,7 @@ Available for all primitives (box, cylinder, sphere, cone):
 parts:
   base:
     primitive: box
-    parameters: {width: 100, height: 20, depth: 100}
+    size: [100, 100, 20]
 
   pillar:
     primitive: cylinder
@@ -229,7 +223,7 @@ parts:
 
   cap:
     primitive: box
-    parameters: {width: 15, height: 5, depth: 15}
+    size: [15, 15, 5]
     translate:
       to:
         from: pillar.face_top
@@ -261,10 +255,7 @@ named_points:
 parts:
   platform:
     primitive: box
-    parameters:
-      width: ${platform_size}
-      height: 5
-      depth: ${platform_size}
+    size: ['${platform_size}', '${platform_size}', 5]
 
   post_1:
     primitive: cylinder
@@ -277,10 +268,7 @@ parts:
 
   top_platform:
     primitive: box
-    parameters:
-      width: 80
-      height: 5
-      depth: 80
+    size: [80, 80, 5]
     translate:
       to: post_top
       offset: [0, 0, 5]
@@ -302,10 +290,7 @@ parameters:
 parts:
   platform:
     primitive: box
-    parameters:
-      width: ${platform_size}
-      height: 5
-      depth: ${platform_size}
+    size: ['${platform_size}', '${platform_size}', 5]
 
   post_1:
     primitive: cylinder
@@ -320,10 +305,7 @@ parts:
 
   top_platform:
     primitive: box
-    parameters:
-      width: 80
-      height: 5
-      depth: 80
+    size: [80, 80, 5]
     translate:
       to:
         type: point
@@ -567,7 +549,7 @@ The `offset:` wrapper is no longer needed for simple translate operations.
 parts:
   bracket:
     primitive: box
-    parameters: {width: 20, height: 10, depth: 5}
+    size: [20, 5, 10]
     translate:
       offset: [60, 40, 0]  # Wrapped in offset:
 ```
@@ -577,7 +559,7 @@ parts:
 parts:
   bracket:
     primitive: box
-    parameters: {width: 20, height: 10, depth: 5}
+    size: [20, 5, 10]
     translate: [60, 40, 0]  # Direct coordinate list
 ```
 
