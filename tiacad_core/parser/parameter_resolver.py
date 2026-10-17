@@ -44,8 +44,29 @@ _UNIT_LITERAL = re.compile(r"(?<![\w.])(\d+(?:\.\d*)?|\.\d+)(mm|cm|in|ft)(?!\w)"
 _UNIT_VALUE = re.compile(r"\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*(mm|cm|in|ft)\s*")
 
 
+# Angles are degrees everywhere; an `rad` suffix converts (`0.35rad` -> 20.05), like `in` -> mm.
+_RAD_LITERAL = re.compile(r"(?<![\w.])(\d+(?:\.\d*)?|\.\d+)rad(?!\w)")
+_RAD_VALUE = re.compile(r"\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*rad\s*")
+
+
 def _to_mm(number: str, unit: str) -> float:
     return round(float(number) * UNIT_TO_MM[unit], 9)
+
+
+def _rad_to_deg(number: str) -> float:
+    return round(math.degrees(float(number)), 9)
+
+
+# Trig works in degrees, like every angle field and like OpenSCAD/FreeCAD.
+TRIG_FUNCTIONS = {
+    'sin': lambda deg: math.sin(math.radians(deg)),
+    'cos': lambda deg: math.cos(math.radians(deg)),
+    'tan': lambda deg: math.tan(math.radians(deg)),
+    'asin': lambda x: math.degrees(math.asin(x)),
+    'acos': lambda x: math.degrees(math.acos(x)),
+    'atan': lambda x: math.degrees(math.atan(x)),
+    'atan2': lambda y, x: math.degrees(math.atan2(y, x)),
+}
 
 
 def parse_length(value: Any) -> Any:
@@ -93,10 +114,8 @@ class ParameterResolver:
             'round': round,
             'floor': math.floor,
             'ceil': math.ceil,
-            'sin': math.sin,
-            'cos': math.cos,
-            'tan': math.tan,
             'pi': math.pi,
+            **TRIG_FUNCTIONS,
         }
 
     def resolve(self, value: Any) -> Any:
@@ -189,10 +208,11 @@ class ParameterResolver:
             ParameterResolutionError: If evaluation fails
         """
         try:
-            # Convert unit literals (9.5in -> 241.3) before evaluation
+            # Convert unit literals (9.5in -> 241.3, 0.35rad -> 20.05) before evaluation
             converted = _UNIT_LITERAL.sub(
                 lambda m: repr(_to_mm(m.group(1), m.group(2))), expression
             )
+            converted = _RAD_LITERAL.sub(lambda m: repr(_rad_to_deg(m.group(1))), converted)
 
             # Build names dict with resolved parameters
             names = self._build_names_dict()
@@ -300,8 +320,11 @@ class ParameterResolver:
             self.resolution_stack.append(name)
             raw_value = self.raw_parameters[name]
             unit_match = _UNIT_VALUE.fullmatch(raw_value) if isinstance(raw_value, str) else None
+            rad_match = _RAD_VALUE.fullmatch(raw_value) if isinstance(raw_value, str) else None
             if unit_match:
                 resolved_value = _to_mm(*unit_match.groups())
+            elif rad_match:
+                resolved_value = _rad_to_deg(rad_match.group(1))
             else:
                 resolved_value = self.resolve(raw_value)
 

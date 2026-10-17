@@ -273,6 +273,44 @@ part's `parameters:` or in text content stays a string); put the value in a top-
 and reference it. A bare number
 is always mm. Inside `${...}` the number and unit must touch (`9.5in`, not `9.5 in`).
 
+### Functions
+
+Available inside `${...}`:
+
+| Function | Result |
+|---|---|
+| `min(a, b, ...)`, `max(a, b, ...)`, `abs(x)` | as in Python |
+| `sqrt(x)`, `pow(x, y)` | square root, power |
+| `round(x)`, `floor(x)`, `ceil(x)` | rounding |
+| `sin(deg)`, `cos(deg)`, `tan(deg)` | trig of an angle in **degrees** |
+| `asin(x)`, `acos(x)`, `atan(x)`, `atan2(y, x)` | inverse trig, result in **degrees** |
+
+`pi` is also available as a constant (`${2 * pi * r}`).
+
+### Angles
+
+Every angle in TiaCAD is in **degrees**: `rotate: {angle: 45}`, `start_angle`, and the arguments
+and results of the trig functions above. So `tan(20)` is 0.364 (the slope of a 20 degree ramp),
+and `atan(0.364)` is about 20.
+
+A `rad` suffix converts a radian value to degrees, the same way `in` converts to mm. It works on a
+whole parameter value, inside `${...}` (number and `rad` must touch: `0.35rad`), with `--set`, and
+as a `rotate` angle:
+
+```yaml
+parameters:
+  ramp_deg: 20
+  ramp_slope: '${tan(ramp_deg)}'        # rise / run
+  rise: '${slot_l * ramp_slope}'
+  tilt: 0.35rad                         # 20.05 (degrees)
+  half_turn: '${pi * 1rad}'             # 180.0 (degrees)
+```
+
+Pass an angle override the same way: `--set ramp_deg=15`.
+
+**Changed 2026-10-17:** `sin`, `cos` and `tan` used to take radians (undocumented). They now take
+degrees. A model that relied on the old behavior should write `sin(0.5rad)` or `sin(x * 1rad)`.
+
 ### Quoting `${...}` in inline YAML
 
 Inside an inline mapping or list (`{...}` / `[...]`), a bare `${w}` is invalid YAML because
@@ -713,7 +751,7 @@ operations:
       - translate: [x, y, z]      # Move part
       - rotate:                    # Rotate part
           axis: Z                  # X, Y, Z, or [x,y,z]
-          angle: 45                # Degrees
+          angle: 45                # Degrees (or radians with a suffix: 0.785rad)
           origin: [0, 0, 0]        # Rotation center (REQUIRED)
       - scale: 2.0                 # Uniform scale
       - scale: [2, 1, 1]          # Non-uniform scale

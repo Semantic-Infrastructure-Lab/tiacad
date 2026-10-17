@@ -6,7 +6,9 @@ metadata:
     Single-sticker container for the 15 in x 19.5 in drawer. Five columns run front to
     back (left-right pitch 94 mm + 2 mm gaps = 488 of 495 mm). Layout A (default,
     slot_l 71.6) fits 5 trays per column; layout B (--set slot_l=90.6) fits 4 per
-    column and holds any sticker within a 3.5 in (88.9 mm) diagonal. Units mm.
+    column and holds any sticker within a 3.5 in (88.9 mm) diagonal. The floor is a 20 degree
+    ramp rising front to back so stickers tilt toward the viewer; finger cutouts in both
+    walls (back one starts flush with the ramp top). Units mm.
 
 parameters:
   tray_w: 94.0         # X, left-right. 5 trays + 6 x 3 mm gaps = 488 of 495 mm
@@ -15,8 +17,24 @@ parameters:
   wall: 1.2
   floor: 1.2
   tab_w: 40.0          # finger cutout width, front wall
-  tab_floor: 14.0      # cutout starts this far above the outside bottom
+  tab_floor: 14.0      # front cutout starts this far above the outside bottom
+  ramp_deg: 20         # floor ramp angle, rises front to back
+  ramp_rise: '${slot_l * tan(ramp_deg)}'
+  back_sill: '${floor + ramp_rise}'   # back cutout starts flush with the ramp top
   tray_l: '${slot_l + 2 * wall}'
+
+sketches:
+  ramp_profile:
+    plane: YZ                     # side view: sketch x = Y (front to back), sketch y = Z
+    origin: [0, 0, 0]
+    shapes:
+      - type: polygon
+        points:
+          - ['${wall}', '${floor / 2}']
+          - ['${wall}', '${floor}']
+          - ['${wall + slot_l}', '${back_sill}']
+          - ['${wall + slot_l}', '${floor / 2}']
+        closed: true
 
 parts:
   shell:
@@ -40,24 +58,54 @@ parts:
       - '${-wall}'
       - '${tab_floor}'
 
+  back_cut:
+    primitive: box
+    size: ['${tab_w}', '${wall * 3}', '${tray_h}']
+    origin:
+      - '${(tray_w - tab_w) / 2}'
+      - '${tray_l - 2 * wall}'
+      - '${back_sill}'
+
 operations:
-  sticker_tray:
+  ramp:
+    type: extrude
+    sketch: ramp_profile
+    distance: '${tray_w}'
+    direction: X
+
+  hollow:
     type: boolean
     operation: difference
     base: shell
     subtract:
       - cavity
+
+  with_ramp:
+    type: boolean
+    operation: union
+    inputs:
+      - hollow
+      - ramp
+
+  sticker_tray:
+    type: boolean
+    operation: difference
+    base: with_ramp
+    subtract:
       - finger_cut
+      - back_cut
 
 export:
   default_part: sticker_tray
 
 # Closed-form contract (from the parameters, not frozen output); holds for any slot_l:
 #   volume = tray_w*tray_l*tray_h - (tray_w-2*wall)*slot_l*(tray_h-floor)   # shell - cavity
-#            - tab_w*wall*(tray_h-tab_floor)                               # finger cut, front wall
+#            + (tray_w-2*wall)*slot_l*ramp_rise/2                           # floor ramp wedge
+#            - tab_w*wall*(tray_h-tab_floor)                                # front finger cut
+#            - tab_w*wall*(tray_h-back_sill)                                # back finger cut
 expect:
   final: sticker_tray
-  volume: '${tray_w * tray_l * tray_h - (tray_w - 2 * wall) * slot_l * (tray_h - floor) - tab_w * wall * (tray_h - tab_floor)}'
+  volume: '${tray_w * tray_l * tray_h - (tray_w - 2 * wall) * slot_l * (tray_h - floor) + (tray_w - 2 * wall) * slot_l * ramp_rise / 2 - tab_w * wall * (tray_h - tab_floor) - tab_w * wall * (tray_h - back_sill)}'
   bbox: ['${tray_w}', '${tray_l}', '${tray_h}']
   watertight: true
   components: 1

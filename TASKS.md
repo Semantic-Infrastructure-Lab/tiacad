@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 8
+next_id: 9
 archival: inline
 areas:
   VAL: 19
@@ -1726,3 +1726,22 @@ notes_next: 2
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-17T17:44:36Z session:translucent-ember-1017] 2026-10-17 translucent-ember-1017: Rebuilt TRAYS_15MM from sticker_tray.yaml (--set tray_h=15, A + B on one plate, PrusaSlicer 2.9.6 0.20 NORMAL) = 552400 B, 3h38m8s, 37.33 g, identical to the card copy's size. G-code is valid: 75 layers to Z 15.0, 3 perimeter loops per tray on layers 7-75, normal end sequence. Floor (layers 1-6) is ~127 of ~211 min, so walls start ~2 h in. FAST = 0.28 mm SUPERDRAFT, same part. Scott saw only the floor and did not watch; cause unknown (under-extrusion w/ thin 1.2 mm walls, bad card, or just looked early). Card TRAYS_15MM differed from rebuild at byte 51 line 1 (header timestamp?) - full diff NOT done. MINI_TRAYS.gcode (tray_w=31.3 tray_h=17 tab_w=13.3 tab_floor=4.7, slot_l 23.9 and 30.2, 7.7 g, 50m43s) copied to the card; print it, re-home first, watch layer 7 (Z 1.4).
+
+
+## TASK-TCAD-8 · Expressions: make sin/cos/tan take degrees, add asin/acos/atan/atan2 + 'rad' literal, document functions
+
+```yaml
+status: backlog
+priority: low
+effort: 3h
+tags: [dsl, parameters, expressions]
+created: '2026-10-17T22:29:32Z'
+updated: '2026-10-17T22:42:48Z'
+session: cunning-oracle-1017
+notes_next: 3
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-17T22:29:35Z session:cunning-oracle-1017] Found 2026-10-17 (cunning-oracle-1017) building the sticker_tray 20 deg floor ramp: Parameters support only + - * / ** % (YAML_REFERENCE.md 'Supported Operators'), so sticker_tray.yaml carries ramp_slope: 0.364 (= tan 20 deg) as a hand-computed constant instead of ramp_deg: 20. Want tan/sin/cos/atan/radians (whitelisted, deg-in) in the ${...} evaluator so the angle is the parameter and --set ramp_deg=15 works. Then replace ramp_slope in examples/sticker_drawer/sticker_tray.yaml and document in YAML_REFERENCE.md.
+- [#2 2026-10-17T22:42:48Z session:cunning-oracle-1017] CORRECTION to note #1: sin/cos/tan/pi already exist in the ${...} evaluator (parameter_resolver.py ParameterResolver.__init__ functions dict) but take RADIANS and are undocumented -- ${tan(20)} silently returns 2.237 not 0.364 (silent footgun; all other TiaCAD angles are degrees). No YAML model or test uses them (grep 2026-10-17); m3/m4/m5_nut.yaml hand-compute cos(30deg) in comments. Precedent for angle units: operations_builder._parse_angle accepts an 'Xrad' suffix on angle fields (degrees default), undocumented. Prior art: OpenSCAD trig is degrees; FreeCAD expressions default to degrees, 'rad' suffix for radians (cos(45)==cos(pi rad/4)); SolidWorks is radians + 'D' suffix (the confusing one). RECOMMENDED DESIGN: (1) sin/cos/tan take degrees; (2) add asin/acos/atan/atan2 returning degrees; (3) 'rad' literal in expressions (${tan(0.35rad)}) mirroring the '9.5in' length literal -- internal unit stays degrees, suffix converts; same rule as lengths; (4) keep pi; no radians()/degrees() functions (one way to do it); (5) add a Functions list to YAML_REFERENCE.md Parameters (min max abs sqrt pow round floor ceil + trig) with a degrees note; (6) then ramp_deg: 20 + ramp_slope: '${tan(ramp_deg)}' in sticker_tray.yaml. Test: tan(45)==1, sin(30)==0.5, atan(1)==45, atan2(1,1)==45, 'rad' literal round-trip, and that rad inside parameter value vs --set both work.
