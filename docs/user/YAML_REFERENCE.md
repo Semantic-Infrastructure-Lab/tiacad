@@ -270,8 +270,9 @@ parameters:
 ```
 
 Unit suffixes work in `parameters:` values, inside `${...}` expressions, and with
-`--set NAME=9.5in`. They are not converted in other fields (a bare `9.5in` in `size:` or in
-text content stays a string); put the value in a parameter and reference it. A bare number
+`--set NAME=9.5in`. They are not converted in other fields (a bare `9.5in` written directly in a
+part's `parameters:` or in text content stays a string); put the value in a top-level parameter
+and reference it. A bare number
 is always mm. Inside `${...}` the number and unit must touch (`9.5in`, not `9.5 in`).
 
 ### Quoting `${...}` in inline YAML

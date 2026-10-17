@@ -578,8 +578,13 @@ tiacad build examples/sticker_drawer/sticker_clip.yaml --set gap=0.2 --set leg_t
 - With no `-o`, `build` and `render` add the overrides to the default filename
   (`sticker_clip_gap-0.4.3mf`, `sticker_clip_trust_gap-0.4.png`) so a variant cannot overwrite
   the committed default output.
-- `verify` / `check --contract` still evaluate the file's `expect:` block, which is written for the
-  default values, so a variant can legitimately fail it (`verify` prints a reminder).
+- Unit suffixes work as values (`--set gap=0.016in`, `--set len=9in`); they convert to mm like
+  any `parameters:` value (see YAML_REFERENCE "Units").
+- `verify` / `check --contract` evaluate the file's `expect:` block. If it uses literal numbers
+  (written for the default values) a variant can legitimately fail it, and `verify` prints a
+  reminder. If its values are `${...}` expressions over the parameters (see
+  `examples/sticker_drawer/sticker_tray.yaml`), the contract follows the variant, so
+  `--set slot_l=90.6` is checked against the geometry that variant should have.
 
 ---
 
