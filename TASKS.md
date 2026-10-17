@@ -1526,45 +1526,51 @@ Thin features in the sticker bin (1.6 wall, 2.0 floor, 0.8 slot skin) are verifi
 ## TASK-TCAD-DOC-1 · YAML_REFERENCE examples use 'size: [x,y,z]' for box, which fails to build; expect: block undocumented
 
 ```yaml
-status: backlog
+status: done
 priority: medium
 effort: 2h
 tags: [docs, dx]
 created: '2026-10-17T00:40:40Z'
-updated: '2026-10-17T00:40:40Z'
+updated: '2026-10-17T01:37:43Z'
 session: babewugo-1016
 links:
   references:
   - docs/user/YAML_REFERENCE.md
+  commits:
+  - a5c0a68ff9433c677800cea534c10b7692d90c6e
+notes_next: 2
 ```
 
 Found 2026-10-16 (babewugo-1016). A box written as 'primitive: box, size: [10,20,5]' fails: "Box 'b' missing required parameters: width, height, depth". YAML_REFERENCE.md still shows size: in 'Using Parameters', Examples 1/2/4 and the Primitives table (box row), and my new Units paragraph mentions size: as if valid. Fix: use 'parameters: {width, depth, height}' everywhere (verify each example actually builds, ideally with a doc-example build test), and add an 'expect:' (contracts) section or a pointer to MODEL_VALIDATION.md / VALIDATION_STRENGTHENING.md 4.1 (incl. ${...} in expect values).
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-17T01:37:43Z session:chartreuse-corona-1016] 5 size: uses fixed, cone table/example fixed (radius1/radius2), L-bracket example was 2 disconnected parts and exported pre-chamfer, expect: section added; test_yaml_reference_examples builds 11 blocks
 
 
 ## TASK-TCAD-UX-15 · validate-geometry has no --set, so parameter variants cannot be print-checked directly
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 1h
 tags: [cli, dx]
 created: '2026-10-17T00:40:42Z'
-updated: '2026-10-17T00:40:42Z'
+updated: '2026-10-17T01:38:20Z'
 session: babewugo-1016
 links:
   references:
   - tiacad_core/cli/validate_geometry.py
+  commits:
+  - 751ed4ea48a51e94c0b90ebfbacb28844afc24f8
+notes_next: 2
 ```
 
 build/check/render/verify accept --set NAME=VALUE (TCAD-UX-14); validate-geometry (--bed/--min-wall/--overhang-angle) does not. Working around it meant building a variant STL then inspecting it by hand. Wire --set through, tag output like the other commands, add a test.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-17T01:38:20Z session:chartreuse-corona-1016] wired through _parse_set_args/param_overrides; echoes overrides; 3 tests (override, default, bad item); CLI.md updated; verified on sticker_tray slot_l=90.6 -> 94 x 93 x 50.8
 
 
 ## TASK-TCAD-DSL-5 · No first-class way to lay several parts out on one build plate
@@ -1612,23 +1618,26 @@ YAML_REFERENCE already carries a warning that depth maps to Y and height to Z, a
 ## TASK-TCAD-VAL-18 · Schema: thickness.min lost 'exclusiveMinimum: 0' when widened to numberOrTemplate
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 30m
 tags: [validation, contracts]
 created: '2026-10-17T00:40:47Z'
-updated: '2026-10-17T00:40:47Z'
+updated: '2026-10-17T01:35:16Z'
 session: babewugo-1016
 links:
   references:
   - tiacad-schema.json
+  commits:
+  - db3bb57476f589bf139539d55f284894bba52d7b
+notes_next: 2
 ```
 
 4eaf444 let expect: numeric fields be a number or a ${...} template ($defs/numberOrTemplate). thickness.min previously enforced > 0 in the schema; the shared definition cannot carry that, so a literal 0 or negative min now passes the schema (the contract itself would still need a positive value to be meaningful). Restore with a dedicated definition (anyOf [number > 0, template]) for thickness.min, plus a schema test for 0/-1.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-17T01:35:16Z session:chartreuse-corona-1016] positiveNumberOrTemplate def; 0/-1/-0.5/non-template rejected, 1.2/0.001/${wall} accepted; schema suite 145 pass
 
 
 ## TASK-TCAD-EX-1 · sticker_drawer examples (bin/divider/clip/fit_check) still describe the old swapped drawer axes; reconcile with sticker_tray
