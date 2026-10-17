@@ -1594,18 +1594,19 @@ priority: low
 effort: 4h
 tags: [dsl, dx]
 created: '2026-10-17T00:40:45Z'
-updated: '2026-10-17T00:40:45Z'
+updated: '2026-10-17T00:41:09Z'
 session: babewugo-1016
 links:
   references:
   - docs/user/YAML_REFERENCE.md
+notes_next: 2
 ```
 
-YAML_REFERENCE already carries a warning that depth maps to Y and height to Z. Hit it again on 2026-10-16: a 74 x 236 slab written depth=236 was right but a first draft had height/depth confused, and TCAD-VAL-13 was the same class of bug in the CLI table. Option: accept x/y/z (or size_x/size_y/size_z) as aliases for the three box parameters, keep width/depth/height working, mention in docs. Needs a decision first (alias vs leave as documented).
+YAML_REFERENCE already carries a warning that depth maps to Y and height to Z, and TCAD-VAL-13 was the same class of bug in the CLI table. Weak evidence otherwise: during the 2026-10-16 sticker-drawer work the box axes were written correctly from existing examples (no axis mistake of mine), so this is a judgement about the naming, not a repeated failure. Option: accept x/y/z (or size_x/size_y/size_z) as aliases for the three box parameters, keep width/depth/height working, mention in docs. Needs a decision first (alias vs leave as documented).
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-17T00:41:09Z session:babewugo-1016] Correction (babewugo-1016): I first reported axis naming 'cost a failed build'. It did not; that failure was 'size:' on a box (see TCAD-DOC-1). Priority stays low; decide alias vs documented-only.
 
 
 ## TASK-TCAD-VAL-18 · Schema: thickness.min lost 'exclusiveMinimum: 0' when widened to numberOrTemplate
