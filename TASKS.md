@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 7
+next_id: 8
 archival: inline
 areas:
   VAL: 19
@@ -1708,3 +1708,21 @@ Raised during TCAD-DSL-6 discussion. 'origin: center' is the default for box etc
 ### Notes
 - [#1 2026-10-17T03:25:00Z session:suzeco-1016] Investigated 2026-10-16: slicers drop single parts onto the bed, ~130 parts rely on the centered default, so the default flip was parked. Fixed the real defects instead: unknown/unsupported origin silently built centered (cone corner was documented but a no-op), polygon ignored origin.
 - [#2 2026-10-17T03:25:00Z session:suzeco-1016] center/base/corner/[xyz] on all primitives, unknown values raise with hint, polygon honors origin, validate-geometry Placement line. Full suite 2286 + 122 dag pass; 147-file geometry snapshot unchanged.
+
+
+## TASK-TCAD-7 · sticker_tray print test: TRAYS_15MM.gcode printed floor only; validate with 1/3-scale MINI_TRAYS.gcode
+
+```yaml
+status: backlog
+priority: medium
+effort: 1h
+tags: [printing, sticker-drawer]
+created: '2026-10-17T17:44:31Z'
+updated: '2026-10-17T17:44:36Z'
+session: translucent-ember-1017
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-17T17:44:36Z session:translucent-ember-1017] 2026-10-17 translucent-ember-1017: Rebuilt TRAYS_15MM from sticker_tray.yaml (--set tray_h=15, A + B on one plate, PrusaSlicer 2.9.6 0.20 NORMAL) = 552400 B, 3h38m8s, 37.33 g, identical to the card copy's size. G-code is valid: 75 layers to Z 15.0, 3 perimeter loops per tray on layers 7-75, normal end sequence. Floor (layers 1-6) is ~127 of ~211 min, so walls start ~2 h in. FAST = 0.28 mm SUPERDRAFT, same part. Scott saw only the floor and did not watch; cause unknown (under-extrusion w/ thin 1.2 mm walls, bad card, or just looked early). Card TRAYS_15MM differed from rebuild at byte 51 line 1 (header timestamp?) - full diff NOT done. MINI_TRAYS.gcode (tray_w=31.3 tray_h=17 tab_w=13.3 tab_floor=4.7, slot_l 23.9 and 30.2, 7.7 g, 50m43s) copied to the card; print it, re-home first, watch layer 7 (Z 1.4).
