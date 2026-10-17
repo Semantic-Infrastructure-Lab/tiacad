@@ -5,7 +5,7 @@ import time
 import traceback
 from pathlib import Path
 
-from ._common import _pick_part_to_validate
+from ._common import _echo_overrides, _parse_set_args, _pick_part_to_validate
 from .output import Colors, print_error, print_header, print_info, print_success, print_warning
 
 
@@ -129,8 +129,10 @@ def cmd_validate_geometry(args):
     print()
 
     try:
+        overrides = _parse_set_args(getattr(args, 'set', None))
+        _echo_overrides(overrides)
         start_time = time.time()
-        doc = TiaCADParser.parse_file(str(input_file))
+        doc = TiaCADParser.parse_file(str(input_file), param_overrides=overrides)
         parse_time = time.time() - start_time
 
         part_name = _pick_part_to_validate(args, doc)

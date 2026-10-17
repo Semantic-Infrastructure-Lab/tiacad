@@ -79,6 +79,7 @@ For more information: https://github.com/Semantic-Infrastructure-Lab/tiacad
     validate_geom_parser.add_argument('--bed', metavar='XxYxZ', help='Printer build volume in mm, e.g. 250x210x200: report whether the part fits (as modeled, or rotated)')
     validate_geom_parser.add_argument('--min-wall', type=float, metavar='MM', help='Warn when the thinnest sampled wall is below this (default 0.8)')
     validate_geom_parser.add_argument('--overhang-angle', type=float, metavar='DEG', help='Faces overhanging more than this from vertical count as needing support (default 45)')
+    validate_geom_parser.add_argument('--set', action='append', metavar='NAME=VALUE', help="Override a top-level parameter, e.g. --set slot_l=90.6 (repeatable; derived ${...} parameters recompute; unknown names are rejected)")
     validate_geom_parser.set_defaults(func=cmd_validate_geometry)
 
     # Check command

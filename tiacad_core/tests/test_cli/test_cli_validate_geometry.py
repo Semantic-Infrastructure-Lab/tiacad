@@ -118,3 +118,44 @@ def test_validate_geometry_rejects_malformed_bed(tmp_path, capsys):
 
     assert cmd_validate_geometry(_print_args(model, bed="junk")) == 1
     assert "--bed expects XxYxZ" in capsys.readouterr().err
+
+
+# --- --set parameter overrides (TCAD-UX-15) ---
+
+_PARAM_MODEL = """
+parameters:
+  t: 10
+parts:
+  box:
+    primitive: box
+    parameters: { width: 40, height: '${t}', depth: 40 }
+"""
+
+
+def test_validate_geometry_set_overrides_parameter(tmp_path, capsys):
+    model = tmp_path / "param.tiacad"
+    model.write_text(_PARAM_MODEL)
+
+    assert cmd_validate_geometry(_print_args(model, set=["t=3"])) == 0
+    out = capsys.readouterr().out
+    assert "Overrides: t=3" in out
+    assert "thinnest sampled 3.00 mm" in out
+
+
+def test_validate_geometry_without_set_uses_default_parameter(tmp_path, capsys):
+    model = tmp_path / "param.tiacad"
+    model.write_text(_PARAM_MODEL)
+
+    assert cmd_validate_geometry(_print_args(model)) == 0
+    out = capsys.readouterr().out
+    assert "Overrides" not in out
+    assert "thinnest sampled 10.00 mm" in out
+
+
+@pytest.mark.parametrize("item", ["nope=1", "t"])
+def test_validate_geometry_set_rejects_bad_item(tmp_path, capsys, item):
+    model = tmp_path / "param.tiacad"
+    model.write_text(_PARAM_MODEL)
+
+    assert cmd_validate_geometry(_print_args(model, set=[item])) == 1
+    assert "Validation failed" in capsys.readouterr().err

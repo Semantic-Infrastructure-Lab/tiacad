@@ -480,9 +480,11 @@ advisory **Printability** section. The advisory checks never change the exit cod
 
 **Usage:**
 ```bash
-tiacad validate-geometry INPUT [-p PART] [-v] [--bed XxYxZ] [--min-wall MM] [--overhang-angle DEG]
+tiacad validate-geometry INPUT [-p PART] [-v] [--bed XxYxZ] [--min-wall MM] [--overhang-angle DEG] [--set NAME=VALUE ...]
 ```
 
+- `--set NAME=VALUE` - override a top-level parameter (repeatable), so a variant can be
+  print-checked directly; same rules as `build --set`.
 - `--bed XxYxZ` - printer build volume in mm. Reports whether the part fits as modeled, or
   only when rotated (which model axis goes to which bed axis), or not at all.
 - `--min-wall MM` - warn when the thinnest sampled wall is below this (default 0.8).
@@ -501,6 +503,9 @@ tiacad validate-geometry examples/assembly.yaml --part final_assembly
 
 # Will it print on a 250x210x200 bed, and is anything too thin?
 tiacad validate-geometry examples/sticker_drawer/sticker_bin.yaml --bed 250x210x200
+
+# Print-check a parameter variant (tray layout B) against a 235 mm bed
+tiacad validate-geometry examples/sticker_drawer/sticker_tray.yaml --set slot_l=90.6 --bed 235x235x250
 ```
 
 ---
