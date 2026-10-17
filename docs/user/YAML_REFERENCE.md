@@ -24,7 +24,8 @@
    - [Finishing Operations](#finishing-operations)
    - [Sketch + Revolve](#sketch--revolve-lathed--rotationally-symmetric-shapes)
 7. [Export](#export)
-8. [Complete Examples](#complete-examples)
+8. [Contracts (expect:)](#contracts-expect)
+9. [Complete Examples](#complete-examples)
 
 ---
 
@@ -297,7 +298,10 @@ Reference parameters in any numeric field:
 parts:
   plate:
     primitive: box
-    size: ['${width}', '${height}', '${thickness}']
+    parameters:
+      width: '${width}'
+      depth: '${depth}'
+      height: '${thickness}'
 ```
 
 ---
@@ -607,7 +611,8 @@ parts:
   my_cone:
     primitive: cone
     parameters:
-      radius: 20                  # Base radius
+      radius1: 20                 # Base radius
+      radius2: 5                  # Top radius (0 = pointed cone)
       height: 40                  # Cone height
     origin: center                # center, corner, or [x,y,z]
 ```
@@ -1158,6 +1163,45 @@ tiacad build examples/multi_material_demo.yaml  # → preserves colors/materials
 
 ---
 
+## Contracts (expect:)
+
+An optional top-level `expect:` block embeds the model's own ground truth. `tiacad check --contract`
+and `tiacad verify` compare the built part against it, so a wrong dimension fails instead of just
+looking plausible.
+
+```yaml
+parameters:
+  w: 40
+  d: 20
+  h: 10
+  wall: 2
+
+parts:
+  tray:
+    primitive: box
+    parameters:
+      width: '${w}'
+      depth: '${d}'
+      height: '${h}'
+
+expect:
+  final: tray                      # part the contract applies to (default: the exported part)
+  volume: '${w * d * h}'           # mm^3; number or ${...} over parameters (after --set)
+  bbox: ['${w}', '${d}', '${h}']   # [X, Y, Z] extents in mm
+  watertight: true
+  components: 1                    # connected solids
+  thickness: { min: '${wall}' }    # thinnest wall/floor, must be > 0
+  tol: { volume: 0.01, length: 0.01 }
+```
+
+Other keys: `relations` (`flush`, `coaxial`, `clearance` with `min`/`max`, `gap`) and `no_overlap`
+for assemblies. Because numeric values accept `${...}`, one contract stays correct for every
+`tiacad verify --set NAME=VALUE` variant. See [MODEL_VALIDATION.md](../developer/MODEL_VALIDATION.md)
+(how to write good contracts), [VALIDATION_STRENGTHENING.md](../developer/VALIDATION_STRENGTHENING.md)
+section 4.1 (design) and `examples/sticker_drawer/sticker_tray.yaml` (a worked parametric contract).
+
+---
+
 ## Complete Examples
 
 ### Example 1: Simple Box
@@ -1170,7 +1214,10 @@ metadata:
 parts:
   box:
     primitive: box
-    size: [100, 100, 10]
+    parameters:
+      width: 100
+      depth: 100
+      height: 10
     origin: center
 
 export:
@@ -1194,7 +1241,10 @@ parameters:
 parts:
   plate:
     primitive: box
-    size: ['${plate_width}', '${plate_height}', '${plate_thickness}']
+    parameters:
+      width: '${plate_width}'
+      depth: '${plate_height}'
+      height: '${plate_thickness}'
     origin: center
 
   hole:
@@ -1311,12 +1361,18 @@ parameters:
 parts:
   base_plate:
     primitive: box
-    size: ['${base_width}', '${base_depth}', '${base_thickness}']
+    parameters:
+      width: '${base_width}'
+      depth: '${base_depth}'
+      height: '${base_thickness}'
     origin: corner
 
   vertical_plate:
     primitive: box
-    size: ['${base_width}', '${vertical_thickness}', '${vertical_height}']
+    parameters:
+      width: '${base_width}'
+      depth: '${vertical_thickness}'
+      height: '${vertical_height}'
     origin: corner
 
 operations:
@@ -1325,7 +1381,7 @@ operations:
     type: transform
     input: vertical_plate
     transforms:
-      - translate: [0, '${base_depth}', '${base_thickness}']
+      - translate: [0, 0, '${base_thickness}']
 
   # Combine into L-shape
   bracket_body:
@@ -1345,7 +1401,7 @@ operations:
       direction: Z
 
 export:
-  default_part: bracket_body
+  default_part: finished_bracket
 ```
 
 ---
@@ -1518,10 +1574,10 @@ operations:
 
 | Primitive | Required Fields | Optional Fields |
 |-----------|----------------|-----------------|
-| box | size: [x,y,z] | origin |
+| box | parameters: width (X), depth (Y), height (Z) | origin |
 | cylinder | radius, height | origin |
 | sphere | radius | origin |
-| cone | radius, height | origin |
+| cone | radius1 (base), radius2 (top), height | origin |
 | polygon | sides, diameter, height | circumscribed (default true) |
 
 ### Origin Modes
