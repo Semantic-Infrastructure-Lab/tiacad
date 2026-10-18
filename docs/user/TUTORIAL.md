@@ -144,6 +144,9 @@ parameters:
 
 **Note:** Put expressions in quotes: `'${...}'`
 
+Expressions also have functions (`min`, `max`, `sqrt`, `round`, ...) and trig in **degrees**:
+`'${tan(20)}'` is 0.364. See [Functions and Angles](YAML_REFERENCE.md#functions) in the YAML reference.
+
 ---
 
 ## Creating Holes
