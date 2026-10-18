@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 14
+next_id: 15
 archival: inline
 areas:
   VAL: 19
@@ -1673,19 +1673,23 @@ Real drawer (measured 2026-10-16): 19.5 in left-right x 15 in front-back; column
 ## TASK-TCAD-5 · Cylinder/cone 'height' -> length along an axis: finish removing direction words from primitives
 
 ```yaml
-status: backlog
+status: done
 priority: low
 tags: [dsl, dx]
 created: '2026-10-17T02:55:52Z'
-updated: '2026-10-17T02:55:52Z'
+updated: '2026-10-18T01:11:35Z'
 session: chartreuse-corona-1016
+links:
+  commits:
+  - eed577e4f170690753501e2d6dea18688c152aa1
+notes_next: 2
 ```
 
 Follow-up to TCAD-DSL-6 (boxes now size:[x,y,z]). Cylinder/cone/polygon 'height' means 'extent along Z' only by default; with a rotated axis the word misleads. Idea: 'length' + 'axis: X|Y|Z' (default Z). Also decide whether 2D rectangle width/height stays (only two axes, so probably yes). Breaking-change rewrite is acceptable (Scott 2026-10-16); reuse scripts/migrations/box_size.py approach.
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-18T01:11:35Z session:habitable-universe-1017] Shipped as length + axis: X|Y|Z (default Z) on cylinder/cone/polygon; origin follows axis; height kept as DeprecationWarning alias (precedent: radius_bottom). Corpus rewritten by scripts/migrations/primitive_length.py (211 parts, commit 4ecdac8); all 80 determinism goldens byte-identical. Independent differential oracle updated; T0_cylinder_axis.tiacad pins X/Y/Z against pi r^2 L. Not decided: 2D rectangle width/height stays (two axes only); removing the height alias.
 
 
 ## TASK-TCAD-6 · Primitive origin: one vocabulary for all primitives, reject bad values (default stays center)
@@ -1855,3 +1859,21 @@ notes_next: 3
 ### Notes
 - [#1 2026-10-18T00:38:14Z session:habitable-universe-1017] Evidence 2026-10-17 (habitable-universe-1017): probe on plane XY with direction: X gave identical bounds to no direction (z 0..5). Only _extrude_sketch logs a warning. Behaviour is pinned by test_sketch_plane_mapping.py::test_direction_field_does_not_change_geometry; whichever fix is chosen must update that test and the 'Sketch Planes and Extrude' section.
 - [#2 2026-10-18T00:44:47Z session:habitable-universe-1017] Mismatched direction: is now an error (no corpus model used one); reverse: true added, verified with subtract shapes and text. Docs and 14+ tests updated.
+
+
+## TASK-TCAD-14 · Remove the deprecated 'height' alias on cylinder/cone/polygon (length is canonical since TCAD-5); error with a migration hint like box width/depth/height
+
+```yaml
+status: future
+priority: low
+effort: 1h
+tags: [dsl, dx]
+created: '2026-10-18T01:11:39Z'
+updated: '2026-10-18T01:11:41Z'
+session: habitable-universe-1017
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-18T01:11:41Z session:habitable-universe-1017] Scott's call: the alias is a courtesy for private models; remove when he says
