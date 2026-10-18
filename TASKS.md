@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 9
+next_id: 13
 archival: inline
 areas:
   VAL: 19
@@ -1330,12 +1330,12 @@ priority: low
 effort: 2-3d
 tags: [dsl, ergonomics]
 created: '2026-10-16T18:29:18Z'
-updated: '2026-10-16T18:35:30Z'
+updated: '2026-10-18T00:04:31Z'
 session: turbo-nexus-1016
 links:
   references:
   - examples/sticker_drawer/sticker_bin.yaml
-notes_next: 2
+notes_next: 3
 ```
 
 sticker_bin.yaml needs 4 cutter box parts (cavity, 2 slots, finger cut) each with an explicit corner origin, plus a difference op. A 'cut:' list on a part (primitive + origin) would cut ~half the file. Future/idea; only worth it if more models show the same shape.
@@ -1343,6 +1343,7 @@ sticker_bin.yaml needs 4 cutter box parts (cavity, 2 slots, finger cut) each wit
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-16T18:35:30Z session:turbo-nexus-1016] Docs have type: pattern (linear/circular/grid) -- my two divider slots could have been one linear pattern; only the cavity/finger cut are true one-offs, so the boilerplate cost is smaller than first filed. Re-evaluate before building.
+- [#2 2026-10-18T00:04:31Z session:cunning-oracle-1017] 2026-10-17 second data point (cunning-oracle-1017): sticker_tray.yaml now chains 3 boolean ops (hollow = shell - cavity; with_ramp = hollow + ramp; sticker_tray = with_ramp - finger_cut - back_cut) for what reads as one expression, plus 3 cutter parts. Only the cavity and 2 finger cuts are one-offs; the ramp is an extruded sketch. Argues for an inline form that mixes add and subtract in order. Re-evaluate priority with the sticker_bin note #1.
 
 
 ## TASK-TCAD-DSL-4 · Declare units in metadata (units: mm|in) and warn on mismatch
@@ -1749,3 +1750,77 @@ notes_next: 4
 - [#1 2026-10-17T22:29:35Z session:cunning-oracle-1017] Found 2026-10-17 (cunning-oracle-1017) building the sticker_tray 20 deg floor ramp: Parameters support only + - * / ** % (YAML_REFERENCE.md 'Supported Operators'), so sticker_tray.yaml carries ramp_slope: 0.364 (= tan 20 deg) as a hand-computed constant instead of ramp_deg: 20. Want tan/sin/cos/atan/radians (whitelisted, deg-in) in the ${...} evaluator so the angle is the parameter and --set ramp_deg=15 works. Then replace ramp_slope in examples/sticker_drawer/sticker_tray.yaml and document in YAML_REFERENCE.md.
 - [#2 2026-10-17T22:42:48Z session:cunning-oracle-1017] CORRECTION to note #1: sin/cos/tan/pi already exist in the ${...} evaluator (parameter_resolver.py ParameterResolver.__init__ functions dict) but take RADIANS and are undocumented -- ${tan(20)} silently returns 2.237 not 0.364 (silent footgun; all other TiaCAD angles are degrees). No YAML model or test uses them (grep 2026-10-17); m3/m4/m5_nut.yaml hand-compute cos(30deg) in comments. Precedent for angle units: operations_builder._parse_angle accepts an 'Xrad' suffix on angle fields (degrees default), undocumented. Prior art: OpenSCAD trig is degrees; FreeCAD expressions default to degrees, 'rad' suffix for radians (cos(45)==cos(pi rad/4)); SolidWorks is radians + 'D' suffix (the confusing one). RECOMMENDED DESIGN: (1) sin/cos/tan take degrees; (2) add asin/acos/atan/atan2 returning degrees; (3) 'rad' literal in expressions (${tan(0.35rad)}) mirroring the '9.5in' length literal -- internal unit stays degrees, suffix converts; same rule as lengths; (4) keep pi; no radians()/degrees() functions (one way to do it); (5) add a Functions list to YAML_REFERENCE.md Parameters (min max abs sqrt pow round floor ceil + trig) with a degrees note; (6) then ramp_deg: 20 + ramp_slope: '${tan(ramp_deg)}' in sticker_tray.yaml. Test: tan(45)==1, sin(30)==0.5, atan(1)==45, atan2(1,1)==45, 'rad' literal round-trip, and that rad inside parameter value vs --set both work.
 - [#3 2026-10-17T23:56:26Z session:cunning-oracle-1017] sin/cos/tan now degrees; asin/acos/atan/atan2 added (degrees); 'rad' literal in expressions, whole parameter values and --set; functions + angles documented in YAML_REFERENCE.md; 18 new tests, 910 parser tests pass; sticker_tray uses ramp_deg.
+
+
+## TASK-TCAD-9 · Docs: state how sketch plane coordinates map to world axes (XY/XZ/YZ) and which way extrude goes
+
+```yaml
+status: backlog
+priority: low
+effort: 30m
+tags: [docs, sketch]
+created: '2026-10-18T00:04:14Z'
+updated: '2026-10-18T00:04:31Z'
+session: cunning-oracle-1017
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-18T00:04:31Z session:cunning-oracle-1017] Hit 2026-10-17 (cunning-oracle-1017): sticker_tray.yaml ramp_profile on plane YZ. I assumed sketch x = world Y, sketch y = world Z, extrude direction X; nothing in YAML_REFERENCE.md says so (Sketch + Revolve section shows XZ only). It was right, found by checking built geometry. Add a table: plane -> (sketch x, sketch y, normal) and the extrude direction/sign.
+
+
+## TASK-TCAD-10 · Test gap: rotate angle 'Xrad' suffix (operations_builder._parse_angle) has no test
+
+```yaml
+status: backlog
+priority: low
+effort: 15m
+tags: [testing, dx]
+created: '2026-10-18T00:04:16Z'
+updated: '2026-10-18T00:04:31Z'
+session: cunning-oracle-1017
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-18T00:04:31Z session:cunning-oracle-1017] 2026-10-17: verified by hand that rotate angle 1.5707963267948966rad == 90 (bounds identical, 4 forms incl. inside ${}); only test hit is the new test_parameter_trig.py param case. Add a test through _apply_rotate.
+
+
+## TASK-TCAD-11 · Placing a cutter on a wall/face without coordinate arithmetic: decide whether anchors/references can express it or small models just use origin math
+
+```yaml
+status: future
+priority: low
+effort: 4h
+tags: [dsl, ergonomics]
+created: '2026-10-18T00:04:17Z'
+updated: '2026-10-18T00:04:31Z'
+session: cunning-oracle-1017
+notes_next: 3
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-18T00:04:30Z session:cunning-oracle-1017] Evaluate before building; may be docs-only (show the anchor idiom) rather than new syntax.
+- [#2 2026-10-18T00:04:31Z session:cunning-oracle-1017] sticker_tray.yaml positions finger_cut/back_cut/cavity with origin: ['${(tray_w - tab_w) / 2}', '${tray_l - 2 * wall}', '${back_sill}'] -- fine for one box, but the references system (anchors, face_top etc.) was never worth reaching for. Question is whether to document a 'center on face / sit on face' idiom or leave origin arithmetic as the small-model path. Related: TCAD-DSL-3.
+
+
+## TASK-TCAD-12 · Contracts can only state volume/bbox/thickness; add a way to assert a surface fact (e.g. height at a point, so a 20 deg ramp is checked independently of the volume formula)
+
+```yaml
+status: future
+priority: low
+effort: 1d
+tags: [contracts, validation]
+created: '2026-10-18T00:04:21Z'
+updated: '2026-10-18T00:04:31Z'
+session: cunning-oracle-1017
+notes_next: 3
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-18T00:04:30Z session:cunning-oracle-1017] Idea, no forcing case yet beyond sticker_tray.
+- [#2 2026-10-18T00:04:31Z session:cunning-oracle-1017] sticker_tray's contract is a closed-form volume I wrote to match the geometry I built (wedge term included), so a wrong ramp angle in both would still pass. The real check was reading the section profile (z at y=2.0, 25.1, 48.1 vs 1.2+(y-1.2)*tan(20)). Candidate: expect: heights: [{at: [x,y], z: ...}] using the same section machinery as 'tiacad section'. Related: VALIDATION_STRENGTHENING.md 4.1.
