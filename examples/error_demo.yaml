@@ -13,7 +13,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 5
-    height: 35  # Taller than plate for clean cut
+    length: 35  # Taller than plate for clean cut
 
 operations:
   bad_operation:

@@ -153,7 +153,7 @@ class TestSchemaValidator:
                 "hole": {
                     "primitive": "cylinder",
                     "radius": 5,
-                    "height": 12,
+                    "length": 12,
                     "origin": "base"
                 }
             },

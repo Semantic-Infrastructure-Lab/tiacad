@@ -20,7 +20,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${unit_r}
-      height: ${unit_h}
+      length: ${unit_h}
 
 operations:
   copies:

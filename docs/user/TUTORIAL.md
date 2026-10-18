@@ -175,7 +175,7 @@ parts:
   hole:
     primitive: cylinder
     radius: '${hole_diameter / 2}'
-    height: '${box_thickness + 2}'  # Slightly taller for clean cut
+    length: '${box_thickness + 2}'  # Slightly taller for clean cut
     origin: center
 
 export:
@@ -206,7 +206,7 @@ parts:
   hole:
     primitive: cylinder
     radius: '${hole_diameter / 2}'
-    height: '${box_thickness + 2}'
+    length: '${box_thickness + 2}'
     origin: center
 
 operations:
@@ -296,7 +296,7 @@ cap:
   primitive: cylinder
   parameters:
     radius: 5
-    height: 3
+    length: 3
   translate:
     from: tower.face_top
     offset: [0, 0, 5]  # 5 units above tower's top
@@ -342,13 +342,13 @@ parts:
   plate:
     primitive: cylinder
     radius: '${plate_diameter / 2}'
-    height: '${plate_thickness}'
+    length: '${plate_thickness}'
     origin: center
 
   bolt_hole:
     primitive: cylinder
     radius: '${bolt_diameter / 2}'
-    height: '${plate_thickness + 2}'
+    length: '${plate_thickness + 2}'
     origin: center
 
 operations:
@@ -454,13 +454,13 @@ parts:
   plate:
     primitive: cylinder
     radius: '${plate_diameter / 2}'
-    height: '${plate_thickness}'
+    length: '${plate_thickness}'
     origin: center
 
   bolt_hole:
     primitive: cylinder
     radius: '${bolt_diameter / 2}'
-    height: '${plate_thickness + 2}'
+    length: '${plate_thickness + 2}'
     origin: center
 
 operations:
@@ -638,9 +638,9 @@ export:
 
 ```yaml
 box:         size: [x, y, z]
-cylinder:    radius: r, height: h
+cylinder:    radius: r, length: l   (optional axis: X|Y|Z, default Z)
 sphere:      radius: r
-cone:        radius: r, height: h
+cone:        radius1: r1, radius2: r2, length: l
 ```
 
 ### Operations

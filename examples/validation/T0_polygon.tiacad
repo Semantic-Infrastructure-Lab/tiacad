@@ -22,7 +22,7 @@ parts:
     parameters:
       sides: ${poly_sides}
       diameter: ${poly_diameter}
-      height: ${poly_h}
+      length: ${poly_h}
       circumscribed: true
 
 export:

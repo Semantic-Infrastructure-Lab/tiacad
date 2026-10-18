@@ -20,14 +20,14 @@ parts:
   post_bl:
     primitive: cylinder
     radius: ${post_radius}
-    height: ${post_height}
+    length: ${post_height}
     origin: [0, 0, 0]
 
   # Bottom-right corner post
   post_br:
     primitive: cylinder
     radius: ${post_radius}
-    height: ${post_height}
+    length: ${post_height}
     origin:
       - ${post_spacing}
       - 0
@@ -37,7 +37,7 @@ parts:
   post_tl:
     primitive: cylinder
     radius: ${post_radius}
-    height: ${post_height}
+    length: ${post_height}
     origin:
       - 0
       - ${post_spacing}
@@ -47,7 +47,7 @@ parts:
   post_tr:
     primitive: cylinder
     radius: ${post_radius}
-    height: ${corner_height}
+    length: ${corner_height}
     origin:
       - ${post_spacing}
       - ${post_spacing}
@@ -57,7 +57,7 @@ parts:
   post_center:
     primitive: cylinder
     radius: ${post_radius}
-    height: ${corner_height}
+    length: ${corner_height}
     origin:
       - ${post_spacing / 2}
       - ${post_spacing / 2}

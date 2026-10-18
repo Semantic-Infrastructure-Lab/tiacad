@@ -27,7 +27,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 10
-      height: 25
+      length: 25
 
 operations:
   post:

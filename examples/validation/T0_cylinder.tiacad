@@ -16,7 +16,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${cyl_r}
-      height: ${cyl_h}
+      length: ${cyl_h}
 
 export:
   default_part: post

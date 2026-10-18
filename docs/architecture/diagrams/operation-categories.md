@@ -245,7 +245,7 @@ parts:
   # Create one screw hole
   screw_hole:
     primitive: cylinder
-    parameters: {radius: 2, height: 10}
+    parameters: {radius: 2, length: 10}
 
 operations:
   # 1. POSITIONING: Move plate to origin

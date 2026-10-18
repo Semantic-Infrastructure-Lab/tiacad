@@ -20,14 +20,14 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${outer_radius}
-      height: ${ring_height}
+      length: ${ring_height}
     origin: center
 
   inner:
     primitive: cylinder
     parameters:
       radius: ${inner_radius}
-      height: ${ring_height + 2 * margin}
+      length: ${ring_height + 2 * margin}
     origin: center
 
 operations:

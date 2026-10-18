@@ -138,10 +138,10 @@ def test_removed_width_depth_height_are_rejected_with_a_migration_hint(old_key):
 
 _PRIMS = {
     "box": "size: [10, 10, 10]",
-    "cylinder": "parameters: {radius: 5, height: 10}",
-    "cone": "parameters: {radius1: 5, radius2: 2, height: 10}",
+    "cylinder": "parameters: {radius: 5, length: 10}",
+    "cone": "parameters: {radius1: 5, radius2: 2, length: 10}",
     "sphere": "parameters: {radius: 5}",
-    "polygon": "parameters: {sides: 4, diameter: 10, height: 10}",
+    "polygon": "parameters: {sides: 4, diameter: 10, length: 10}",
 }
 
 

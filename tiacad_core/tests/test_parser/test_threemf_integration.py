@@ -94,7 +94,7 @@ parts:
   blue_cylinder:
     primitive: cylinder
     radius: 5
-    height: 20
+    length: 20
     color: brand-blue
 
   green_sphere:
@@ -170,7 +170,7 @@ parts:
   rubber_handle:
     primitive: cylinder
     radius: 8
-    height: 60
+    length: 60
     material: tpu-flexible
 """
         yaml_path.write_text(yaml_content)
@@ -277,7 +277,7 @@ parts:
   handle:
     primitive: cylinder
     radius: 8
-    height: 60
+    length: 60
     material: tpu-flexible
 
   window:
@@ -298,7 +298,7 @@ parts:
   port:
     primitive: cylinder
     radius: 2
-    height: 10
+    length: 10
     material: pla-black
 """
         yaml_path.write_text(yaml_content)
@@ -483,7 +483,7 @@ parts:
   cylinder1:
     primitive: cylinder
     radius: 5
-    height: 20
+    length: 20
 """
         yaml_path.write_text(yaml_content)
         output_path = tmp_path / "plain.3mf"

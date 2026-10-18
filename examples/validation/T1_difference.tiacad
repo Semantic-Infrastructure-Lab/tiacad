@@ -25,7 +25,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${hole_r}
-      height: ${hole_h}
+      length: ${hole_h}
 
 operations:
   drilled:

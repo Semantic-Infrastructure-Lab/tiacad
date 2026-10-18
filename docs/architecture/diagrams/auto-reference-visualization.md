@@ -67,7 +67,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 2
-      height: 15
+      length: 15
     translate:
       to: base.face_top  # Use auto-generated anchor!
 ```

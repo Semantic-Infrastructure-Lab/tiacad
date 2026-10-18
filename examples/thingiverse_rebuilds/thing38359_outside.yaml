@@ -83,7 +83,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${bore_radius}
-      height: ${overall_height + 2 * margin}
+      length: ${overall_height + 2 * margin}
     origin: [0, 0, "${-margin}"]
 
 operations:

@@ -80,7 +80,7 @@ parts:
 
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 50}
+    parameters: {radius: 5, length: 50}
 
 operations:
   # Composition via SPATIAL REFERENCES (not parent-child)
@@ -325,7 +325,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 5
-      height: 50
+      length: 50
     translate:
       to: platform.face_top  # Auto-generated reference!
 

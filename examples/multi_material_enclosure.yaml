@@ -104,7 +104,7 @@ parts:
   cable_hole:
     primitive: cylinder
     radius: '${cable_hole_diameter / 2}'
-    height: '${wall_thickness + 2}'
+    length: '${wall_thickness + 2}'
     origin: center
     material: abs-black  # Changed from structure-material
 
@@ -112,14 +112,14 @@ parts:
   mount_post:
     primitive: cylinder
     radius: '${mount_post_radius}'
-    height: '${mount_post_height}'
+    length: '${mount_post_height}'
     origin: center
     material: abs-black  # Changed from structure-material
 
   mount_screw_hole:
     primitive: cylinder
     radius: '${mount_hole_diameter / 2}'
-    height: '${mount_post_height + 2}'
+    length: '${mount_post_height + 2}'
     origin: center
     material: abs-black  # Changed from structure-material
 

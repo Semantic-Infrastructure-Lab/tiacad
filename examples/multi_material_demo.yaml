@@ -35,7 +35,7 @@ parts:
   handle:
     primitive: cylinder
     radius: 8
-    height: 60
+    length: 60
     material: tpu-flexible
 
   # Window - Transparent with RGBA
@@ -48,7 +48,7 @@ parts:
   logo:
     primitive: cylinder
     radius: 5
-    height: 2
+    length: 2
     color: red
 
   # Custom part with full PBR appearance

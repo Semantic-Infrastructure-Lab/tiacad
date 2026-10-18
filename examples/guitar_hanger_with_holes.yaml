@@ -52,7 +52,7 @@ parts:
   screw_hole:
     primitive: cylinder
     radius: '${screw_hole_diameter / 2}'
-    height: '${screw_hole_depth}'
+    length: '${screw_hole_depth}'
     origin: center
 
 operations:

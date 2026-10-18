@@ -119,13 +119,13 @@ class TestCylinderProperties:
     @given(r=radius, h=dim)
     @PRIMITIVE_SETTINGS
     def test_cylinder_volume(self, r, h):
-        part = _build("cyl", "cylinder", radius=r, height=h)
+        part = _build("cyl", "cylinder", radius=r, length=h)
         _assert_close(get_volume(part), math.pi * r**2 * h, what="cyl volume")
 
     @given(r=radius, h=dim)
     @PRIMITIVE_SETTINGS
     def test_cylinder_bbox(self, r, h):
-        x, y, z = _extents(_build("cyl", "cylinder", radius=r, height=h))
+        x, y, z = _extents(_build("cyl", "cylinder", radius=r, length=h))
         _assert_close(x, 2 * r, what="cyl x-extent")
         _assert_close(y, 2 * r, what="cyl y-extent")
         _assert_close(z, h, what="cyl z-extent")
@@ -133,7 +133,7 @@ class TestCylinderProperties:
     @given(r=radius, h=dim)
     @PRIMITIVE_SETTINGS
     def test_cylinder_surface_area(self, r, h):
-        part = _build("cyl", "cylinder", radius=r, height=h)
+        part = _build("cyl", "cylinder", radius=r, length=h)
         expected = 2 * math.pi * r * h + 2 * math.pi * r**2
         _assert_close(get_surface_area(part), expected, what="cyl area")
 
@@ -164,7 +164,7 @@ class TestConeProperties:
     @PRIMITIVE_SETTINGS
     def test_true_cone_volume(self, r1, h):
         # radius2 == 0 takes the builder's dedicated pointed-apex branch.
-        part = _build("cone", "cone", radius1=r1, radius2=0, height=h)
+        part = _build("cone", "cone", radius1=r1, radius2=0, length=h)
         expected = (1 / 3) * math.pi * r1**2 * h
         _assert_close(get_volume(part), expected, what="true-cone volume")
 
@@ -175,7 +175,7 @@ class TestConeProperties:
     @PRIMITIVE_SETTINGS
     def test_frustum_volume(self, r1, h, frac):
         r2 = r1 * frac
-        part = _build("cone", "cone", radius1=r1, radius2=r2, height=h)
+        part = _build("cone", "cone", radius1=r1, radius2=r2, length=h)
         expected = (1 / 3) * math.pi * h * (r1**2 + r1 * r2 + r2**2)
         _assert_close(get_volume(part), expected, what="frustum volume")
 
@@ -184,7 +184,7 @@ class TestConeProperties:
     def test_cone_bbox(self, r1, h, frac):
         # Base radius r1 is the widest; top is smaller (frac <= 1), so the
         # widest xy extent is 2*r1 and the height extent is h.
-        x, y, z = _extents(_build("cone", "cone", radius1=r1, radius2=r1 * frac, height=h))
+        x, y, z = _extents(_build("cone", "cone", radius1=r1, radius2=r1 * frac, length=h))
         _assert_close(x, 2 * r1, what="cone x-extent")
         _assert_close(y, 2 * r1, what="cone y-extent")
         _assert_close(z, h, what="cone z-extent")

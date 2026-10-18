@@ -49,7 +49,7 @@ graph TB
 parts:
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 30}
+    parameters: {radius: 5, length: 30}
     translate:
       to:
         from: base.face_top
@@ -64,7 +64,7 @@ parts:
 parts:
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 30}
+    parameters: {radius: 5, length: 30}
     translate:
       to:
         from: base.face_top

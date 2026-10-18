@@ -24,13 +24,13 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${outer_radius}'
-      height: '${thickness}'
+      length: '${thickness}'
 
   hole:
     primitive: cylinder
     parameters:
       radius: '${inner_radius}'
-      height: '${thickness + 1}'
+      length: '${thickness + 1}'
 
 operations:
   washer:

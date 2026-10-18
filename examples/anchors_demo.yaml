@@ -27,7 +27,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${pillar_radius}
-      height: ${pillar_height}
+      length: ${pillar_height}
     translate:
       to:
         from: platform.face_top  # Auto-generated anchor!
@@ -38,7 +38,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${pillar_radius}
-      height: ${pillar_height}
+      length: ${pillar_height}
     translate:
       to:
         from: platform.face_top  # Auto-generated anchor!

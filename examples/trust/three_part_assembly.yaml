@@ -28,7 +28,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 8
-      height: 35
+      length: 35
 
 operations:
   post_left:

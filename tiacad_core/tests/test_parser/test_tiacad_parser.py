@@ -606,7 +606,7 @@ parts:
 
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 50}
+    parameters: {radius: 5, length: 50}
     translate:
       to: base.face_top
 

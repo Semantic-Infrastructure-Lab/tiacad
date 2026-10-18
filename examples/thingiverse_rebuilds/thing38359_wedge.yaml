@@ -23,7 +23,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: ${arc_radius}
-      height: ${wedge_depth}
+      length: ${wedge_depth}
     origin: center
 
   clip_box:

@@ -135,7 +135,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 5
-    height: 15
+    length: 15
 
 operations:
   body_with_hole:

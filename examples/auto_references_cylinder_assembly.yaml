@@ -14,14 +14,14 @@ parts:
     primitive: cylinder
     parameters:
       radius: 5
-      height: 50
+      length: 50
 
   # Top cap - larger diameter, sits on top of shaft
   top_cap:
     primitive: cylinder
     parameters:
       radius: 8
-      height: 3
+      length: 3
     translate:
       to: shaft.face_top  # auto-generated anchor to shaft's top face
 
@@ -30,7 +30,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 8
-      height: 3
+      length: 3
     translate:
       to: shaft.face_bottom  # auto-generated anchor to shaft's bottom face
 

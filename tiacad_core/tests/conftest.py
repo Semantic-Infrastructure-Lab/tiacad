@@ -282,7 +282,7 @@ parts:
   post:
     primitive: cylinder
     radius: 5
-    height: 50
+    length: 50
 
 operations:
   - type: translate
@@ -310,7 +310,7 @@ parts:
   post:
     primitive: cylinder
     radius: 5
-    height: 50
+    length: 50
 
   top:
     primitive: sphere

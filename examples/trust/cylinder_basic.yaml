@@ -17,7 +17,7 @@ parts:
     color: "#2196F3"
     parameters:
       radius: 15
-      height: 40
+      length: 40
     origin: center
 
 export:

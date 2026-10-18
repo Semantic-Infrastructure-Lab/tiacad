@@ -30,14 +30,14 @@ parts:
   bolt_hole:
     primitive: cylinder
     radius: '${bolt_hole_diameter / 2}'
-    height: '${plate_thickness + 2}'  # Slightly taller for clean cut
+    length: '${plate_thickness + 2}'  # Slightly taller for clean cut
     origin: center
 
   # Center hole
   center_hole:
     primitive: cylinder
     radius: '${center_hole_diameter / 2}'
-    height: '${plate_thickness + 2}'
+    length: '${plate_thickness + 2}'
     origin: center
 
 operations:

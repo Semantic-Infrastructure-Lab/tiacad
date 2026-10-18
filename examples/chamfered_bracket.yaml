@@ -40,26 +40,26 @@ parts:
   base_hole_1:
     primitive: cylinder
     radius: '${hole_diameter / 2}'
-    height: '${base_thickness + 2}'
+    length: '${base_thickness + 2}'
     origin: center
 
   base_hole_2:
     primitive: cylinder
     radius: '${hole_diameter / 2}'
-    height: '${base_thickness + 2}'
+    length: '${base_thickness + 2}'
     origin: center
 
   # Mounting holes in vertical plate
   vertical_hole_1:
     primitive: cylinder
     radius: '${hole_diameter / 2}'
-    height: '${vertical_thickness + 2}'
+    length: '${vertical_thickness + 2}'
     origin: center
 
   vertical_hole_2:
     primitive: cylinder
     radius: '${hole_diameter / 2}'
-    height: '${vertical_thickness + 2}'
+    length: '${vertical_thickness + 2}'
     origin: center
 
 operations:

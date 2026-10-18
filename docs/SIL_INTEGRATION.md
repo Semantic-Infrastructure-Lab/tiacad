@@ -213,7 +213,7 @@ parts:
   cylinder:
     primitive: cylinder
     radius: 5
-    height: 20
+    length: 20
 ```
 
 **Complexity lives in the right place:**

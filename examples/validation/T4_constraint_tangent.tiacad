@@ -48,7 +48,7 @@ parts:
   roller_raw:
     primitive: cylinder
     radius: ${roller_radius}
-    height: ${roller_height}
+    length: ${roller_height}
     origin: center
 
 operations:

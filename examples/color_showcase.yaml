@@ -64,7 +64,7 @@ parts:
   blue_cylinder:
     primitive: cylinder
     radius: 10
-    height: 30
+    length: 30
     origin: center
     color: "#0066CC"              # Hex color
 
@@ -103,21 +103,21 @@ parts:
   steel_post_1:
     primitive: cylinder
     radius: '${post_radius}'
-    height: '${post_height}'
+    length: '${post_height}'
     origin: center
     material: steel               # Built-in material
 
   steel_post_2:
     primitive: cylinder
     radius: '${post_radius}'
-    height: '${post_height}'
+    length: '${post_height}'
     origin: center
     material: steel
 
   brass_connector:
     primitive: cylinder
     radius: 6
-    height: 15
+    length: 15
     origin: center
     material: brass               # Built-in brass
 
@@ -144,7 +144,7 @@ parts:
   glossy_handle:
     primitive: cylinder
     radius: 12
-    height: 60
+    length: 60
     origin: center
     appearance:
       color: [0.8, 0.2, 0.2]      # Red

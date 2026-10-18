@@ -74,7 +74,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${hole_diameter / 2}'
-      height: '${base_thickness + 2}'  # Slightly longer than plate
+      length: '${base_thickness + 2}'  # Slightly longer than plate
     origin: center
     translate:
       to:
@@ -89,7 +89,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${hole_diameter / 2}'
-      height: '${base_thickness + 2}'
+      length: '${base_thickness + 2}'
     origin: center
     translate:
       to:

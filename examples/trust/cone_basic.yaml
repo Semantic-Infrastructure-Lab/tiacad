@@ -16,7 +16,7 @@ parts:
     parameters:
       radius1: 20   # base radius
       radius2: 0    # apex (true cone)
-      height: 40
+      length: 40
     origin: center
     metadata:
       color: "#F59E0B"  # amber

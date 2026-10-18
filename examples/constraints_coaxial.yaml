@@ -21,12 +21,12 @@ parts:
 
   hole_cyl:
     primitive: cylinder
-    parameters: { radius: 4, height: 10 }
+    parameters: { radius: 4, length: 10 }
     origin: center
 
   pin_raw:
     primitive: cylinder
-    parameters: { radius: 4, height: 15 }
+    parameters: { radius: 4, length: 15 }
     origin: center
 
 operations:

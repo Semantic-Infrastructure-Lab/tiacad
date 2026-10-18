@@ -220,7 +220,7 @@ echo "parts:
     parameters:
       radius_bottom: 10
       radius_top: 5
-      height: 20
+      length: 20
 export:
   default_part: cone" > test_old_cone.yaml
 

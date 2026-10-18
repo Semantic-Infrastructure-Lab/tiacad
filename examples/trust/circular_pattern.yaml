@@ -29,13 +29,13 @@ parts:
   bolt_hole:
     primitive: cylinder
     radius: ${bolt_radius}
-    height: ${plate_thickness + 2}
+    length: ${plate_thickness + 2}
     origin: center
 
   center_hole:
     primitive: cylinder
     radius: ${center_hole_radius}
-    height: ${plate_thickness + 2}
+    length: ${plate_thickness + 2}
     origin: center
 
 operations:

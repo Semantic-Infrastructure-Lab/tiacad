@@ -20,7 +20,7 @@ parts:
     parameters:
       radius1: ${cone_r}
       radius2: 0
-      height: ${cone_h}
+      length: ${cone_h}
 
 export:
   default_part: spike

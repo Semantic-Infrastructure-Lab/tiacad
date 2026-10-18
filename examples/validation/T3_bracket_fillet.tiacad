@@ -57,7 +57,7 @@ parts:
   hole:
     primitive: cylinder
     radius: ${hole_r}
-    height: ${box_d + 4}
+    length: ${box_d + 4}
     origin: center
 
 operations:

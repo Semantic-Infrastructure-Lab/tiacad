@@ -217,7 +217,7 @@ parts:
 
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 50}
+    parameters: {radius: 5, length: 50}
     translate:
       to: base.face_top  # auto-generated anchor - no definition needed!
 
@@ -261,7 +261,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 3
-      height: ${post_height}
+      length: ${post_height}
     translate:
       to: base_top
       offset: [-30, -30, 0]
@@ -296,7 +296,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 3
-      height: ${post_height}
+      length: ${post_height}
     translate:
       to:
         type: point
@@ -494,7 +494,7 @@ parts:
     parameters:
       radius_bottom: 10
       radius_top: 5
-      height: 20
+      length: 20
 ```
 
 **New Names:**
@@ -505,7 +505,7 @@ parts:
     parameters:
       radius1: 10  # Bottom radius
       radius2: 5   # Top radius
-      height: 20
+      length: 20
 ```
 
 **Rationale:** Matches CadQuery's cone API and removes ambiguity about which is top/bottom.

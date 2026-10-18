@@ -54,7 +54,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${screw_hole_diameter / 2}'
-      height: '${screw_hole_depth}'
+      length: '${screw_hole_depth}'
     origin: center
 
 # Spatial references - v3.0 unified format! ✨

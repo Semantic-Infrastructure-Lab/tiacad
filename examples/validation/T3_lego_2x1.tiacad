@@ -106,26 +106,26 @@ parts:
   stud:
     primitive: cylinder
     radius: '${stud_radius}'
-    height: '${stud_height}'
+    length: '${stud_height}'
     origin: center
 
   stud_chamfer:
     primitive: cone
     radius1: '${stud_radius}'
     radius2: '${stud_chamfer_radius}'
-    height: '${stud_chamfer_height}'
+    length: '${stud_chamfer_height}'
     origin: center
 
   support_post_outer:
     primitive: cylinder
     radius: '${connection_tube_outer_radius}'
-    height: '${connection_tube_height}'
+    length: '${connection_tube_height}'
     origin: center
 
   support_post_inner:
     primitive: cylinder
     radius: '${connection_tube_inner_radius}'
-    height: '${connection_tube_height + 0.2}'
+    length: '${connection_tube_height + 0.2}'
     origin: center
 
 operations:

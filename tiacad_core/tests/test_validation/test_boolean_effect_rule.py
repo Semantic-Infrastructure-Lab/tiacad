@@ -36,7 +36,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 3
-      height: 30
+      length: 30
     origin: center
 
 operations:
@@ -145,7 +145,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 2.5
-      height: 17
+      length: 17
     origin: center
 
 operations:

@@ -27,13 +27,13 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${shaft_radius}'
-      height: '${length}'
+      length: '${length}'
 
   head:
     primitive: cylinder
     parameters:
       radius: '${head_radius}'
-      height: '${head_height}'
+      length: '${head_height}'
 
 operations:
   position_head:

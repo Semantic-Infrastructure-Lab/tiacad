@@ -27,13 +27,13 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${outer_radius}'
-      height: '${height}'
+      length: '${height}'
 
   bore:
     primitive: cylinder
     parameters:
       radius: '${bore_radius}'
-      height: '${height + 1}'
+      length: '${height + 1}'
 
 operations:
   standoff:

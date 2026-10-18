@@ -58,12 +58,12 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${radius}'
-      height: '${height}'
+      length: '${height}'
   cap:
     primitive: cylinder
     parameters:
       radius: '${radius}'
-      height: 5
+      length: 5
 """
 
 
@@ -301,7 +301,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 5
-      height: 20
+      length: 20
 """
         write_yaml(str(tmp_path), 'b.yaml', b_yaml)
 
@@ -571,7 +571,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${radius}'
-      height: '${height}'
+      length: '${height}'
 """
 
 

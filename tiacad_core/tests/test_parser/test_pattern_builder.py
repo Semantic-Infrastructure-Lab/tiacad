@@ -727,7 +727,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 2
-    height: 5
+    length: 5
     origin: center
 
 operations:
@@ -811,7 +811,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 2
-    height: 5
+    length: 5
     origin: center
 
 operations:
@@ -914,7 +914,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 2
-    height: 5
+    length: 5
     origin: center
 
   marker:

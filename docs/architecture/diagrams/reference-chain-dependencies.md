@@ -90,7 +90,7 @@ parts:
   # 2. pillar - depends on base, created second
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 50}
+    parameters: {radius: 5, length: 50}
     translate:
       to: base.face_top  # ✅ base exists, reference resolved
 
@@ -204,7 +204,7 @@ parts:
 
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 50}
+    parameters: {radius: 5, length: 50}
     translate:
       to: base.face_top
 

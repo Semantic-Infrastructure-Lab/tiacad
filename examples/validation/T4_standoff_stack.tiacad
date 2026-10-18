@@ -64,7 +64,7 @@ parts:
   spacer:
     primitive: cylinder
     radius: ${spacer_radius}
-    height: ${spacer_height}
+    length: ${spacer_height}
     origin: center
 
 operations:

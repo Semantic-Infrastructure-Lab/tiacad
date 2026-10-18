@@ -39,13 +39,13 @@ parts:
   hole_cyl:
     primitive: cylinder
     radius: ${hole_radius}
-    height: ${plate_thickness + 4}
+    length: ${plate_thickness + 4}
     origin: center
 
   pin_raw:
     primitive: cylinder
     radius: ${hole_radius}
-    height: ${pin_height}
+    length: ${pin_height}
     origin: center
 
 operations:

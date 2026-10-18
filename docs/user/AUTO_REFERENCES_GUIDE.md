@@ -73,11 +73,11 @@ parts:
 parts:
   shaft:
     primitive: cylinder
-    parameters: {radius: 5, height: 50}
+    parameters: {radius: 5, length: 50}
 
   cap:
     primitive: cylinder
-    parameters: {radius: 7, height: 3}
+    parameters: {radius: 7, length: 3}
     translate:
       to: shaft.face_top  # Place cap on top of shaft
 ```
@@ -98,7 +98,7 @@ parts:
 
   stand:
     primitive: cylinder
-    parameters: {radius: 5, height: 10}
+    parameters: {radius: 5, length: 10}
     translate:
       to: ball.face_bottom  # Place stand under ball
 ```
@@ -134,7 +134,7 @@ parts:
 
   post:
     primitive: cylinder
-    parameters: {radius: 3, height: 40}
+    parameters: {radius: 3, length: 40}
     translate:
       to:
         from: platform.face_top

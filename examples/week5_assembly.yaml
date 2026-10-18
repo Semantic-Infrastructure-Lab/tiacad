@@ -26,7 +26,7 @@ parts:
   drive_gear:
     primitive: cylinder
     radius: 12
-    height: 8
+    length: 8
     center: true
     color: [0.9, 0.5, 0.2]  # Orange
 
@@ -34,7 +34,7 @@ parts:
   shaft:
     primitive: cylinder
     radius: 3
-    height: ${bracket_height}
+    length: ${bracket_height}
     center: true
     color: [0.5, 0.5, 0.5]  # Dark gray
 

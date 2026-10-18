@@ -28,7 +28,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 2.5
-      height: 17
+      length: 17
     origin: center
 
 operations:

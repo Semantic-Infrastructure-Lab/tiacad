@@ -88,8 +88,8 @@ parts:
 
 
 def test_summarize_part_node_uses_nested_parameters():
-    spec = {'primitive': 'cylinder', 'parameters': {'radius': 5, 'height': 12}}
-    assert _summarize_part_node(spec) == 'cylinder (height=12, radius=5)'
+    spec = {'primitive': 'cylinder', 'parameters': {'radius': 5, 'length': 12}}
+    assert _summarize_part_node(spec) == 'cylinder (length=12, radius=5)'
 
 
 def test_summarize_part_node_falls_back_to_flat_spec():

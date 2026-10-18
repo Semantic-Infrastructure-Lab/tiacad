@@ -22,7 +22,7 @@ parts:
 
   roller_raw:
     primitive: cylinder
-    parameters: { radius: 3, height: 12 }
+    parameters: { radius: 3, length: 12 }
     origin: center
 
 operations:

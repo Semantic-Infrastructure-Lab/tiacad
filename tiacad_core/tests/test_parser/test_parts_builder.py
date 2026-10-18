@@ -203,7 +203,7 @@ class TestCylinder:
             'cyl': {
                 'primitive': 'cylinder',
                 'radius': 10,
-                'height': 50
+                'length': 50
             }
         }
 
@@ -222,13 +222,13 @@ class TestCylinder:
             'cyl_center': {
                 'primitive': 'cylinder',
                 'radius': 10,
-                'height': 50,
+                'length': 50,
                 'origin': 'center'
             },
             'cyl_base': {
                 'primitive': 'cylinder',
                 'radius': 10,
-                'height': 50,
+                'length': 50,
                 'origin': 'base'
             }
         }
@@ -257,7 +257,7 @@ class TestCylinder:
             'cyl': {
                 'primitive': 'cylinder',
                 'radius': 5,
-                'height': 20,
+                'length': 20,
                 'origin': [3, -2, -10],
             }
         }
@@ -277,7 +277,7 @@ class TestCylinder:
         spec = {
             'cyl': {
                 'primitive': 'cylinder',
-                'height': 50
+                'length': 50
             }
         }
 
@@ -289,8 +289,8 @@ class TestCylinder:
 
         assert 'radius' in str(exc_info.value).lower()
 
-    def test_cylinder_missing_height(self):
-        """Test cylinder without height"""
+    def test_cylinder_missing_length(self):
+        """Test cylinder without length"""
         params = {}
         spec = {
             'cyl': {
@@ -305,7 +305,7 @@ class TestCylinder:
         with pytest.raises(PartsBuilderError) as exc_info:
             builder.build_parts(spec)
 
-        assert 'height' in str(exc_info.value).lower()
+        assert 'length' in str(exc_info.value).lower()
 
 
 class TestSphere:
@@ -394,7 +394,7 @@ class TestCone:
                 'primitive': 'cone',
                 'radius1': 20,  # Base
                 'radius2': 10,  # Top
-                'height': 50
+                'length': 50
             }
         }
 
@@ -413,7 +413,7 @@ class TestCone:
                 'primitive': 'cone',
                 'radius1': 20,
                 'radius2': 0,  # Pointed top
-                'height': 50
+                'length': 50
             }
         }
 
@@ -494,7 +494,7 @@ class TestMultipleParts:
             'screw_hole': {
                 'primitive': 'cylinder',
                 'radius': 2.5,
-                'height': '${plate_t + 2}'
+                'length': '${plate_t + 2}'
             }
         }
 
@@ -615,7 +615,7 @@ class TestGuitarHangerExample:
             'screw_hole': {
                 'primitive': 'cylinder',
                 'radius': '${screw_d / 2}',
-                'height': '${plate_t + 2}',
+                'length': '${plate_t + 2}',
                 'origin': 'center'
             },
             'beam': {
@@ -662,46 +662,46 @@ class TestPolygon:
         return builder.build_parts(spec).get(name)
 
     def test_hexagon_builds(self):
-        part = self._build('hex', sides=6, diameter=10.0, height=5.0)
+        part = self._build('hex', sides=6, diameter=10.0, length=5.0)
         assert part is not None
         assert isinstance(part.geometry, cq.Workplane)
 
     def test_square_prism_builds(self):
-        part = self._build('sq', sides=4, diameter=20.0, height=10.0)
+        part = self._build('sq', sides=4, diameter=20.0, length=10.0)
         assert part is not None
 
     def test_triangle_prism_builds(self):
-        part = self._build('tri', sides=3, diameter=15.0, height=8.0)
+        part = self._build('tri', sides=3, diameter=15.0, length=8.0)
         assert part is not None
 
     def test_polygon_metadata_primitive_type(self):
         resolver = ParameterResolver({})
         builder = PartsBuilder(resolver)
-        spec = {'hex': {'primitive': 'polygon', 'sides': 6, 'diameter': 10.0, 'height': 5.0}}
+        spec = {'hex': {'primitive': 'polygon', 'sides': 6, 'diameter': 10.0, 'length': 5.0}}
         registry = builder.build_parts(spec)
         part = registry.get('hex')
         assert part.metadata['primitive_type'] == 'polygon'
 
     def test_hexagon_positive_volume(self):
-        part = self._build('hex', sides=6, diameter=10.0, height=5.0)
+        part = self._build('hex', sides=6, diameter=10.0, length=5.0)
         bb = part.geometry.val().BoundingBox()
         # Should have non-trivial extent in all axes
         assert (bb.xmax - bb.xmin) > 0
         assert (bb.ymax - bb.ymin) > 0
         assert (bb.zmax - bb.zmin) > 0
 
-    def test_height_controls_z_extent(self):
-        p5 = self._build('h5', sides=6, diameter=10.0, height=5.0)
-        p10 = self._build('h10', sides=6, diameter=10.0, height=10.0)
+    def test_length_controls_z_extent(self):
+        p5 = self._build('h5', sides=6, diameter=10.0, length=5.0)
+        p10 = self._build('h10', sides=6, diameter=10.0, length=10.0)
         bb5 = p5.geometry.val().BoundingBox()
         bb10 = p10.geometry.val().BoundingBox()
         z5 = bb5.zmax - bb5.zmin
         z10 = bb10.zmax - bb10.zmin
-        assert abs(z10 - 2 * z5) < 0.1, f"height=10 should be 2× height=5: {z5:.2f} vs {z10:.2f}"
+        assert abs(z10 - 2 * z5) < 0.1, f"length=10 should be 2× length=5: {z5:.2f} vs {z10:.2f}"
 
     def test_diameter_controls_xy_extent(self):
-        p10 = self._build('d10', sides=6, diameter=10.0, height=5.0)
-        p20 = self._build('d20', sides=6, diameter=20.0, height=5.0)
+        p10 = self._build('d10', sides=6, diameter=10.0, length=5.0)
+        p20 = self._build('d20', sides=6, diameter=20.0, length=5.0)
         bb10 = p10.geometry.val().BoundingBox()
         bb20 = p20.geometry.val().BoundingBox()
         xy10 = bb10.xmax - bb10.xmin
@@ -711,42 +711,42 @@ class TestPolygon:
     def test_missing_sides_raises(self):
         resolver = ParameterResolver({})
         builder = PartsBuilder(resolver)
-        spec = {'hex': {'primitive': 'polygon', 'diameter': 10.0, 'height': 5.0}}
+        spec = {'hex': {'primitive': 'polygon', 'diameter': 10.0, 'length': 5.0}}
         with pytest.raises(PartsBuilderError, match="sides"):
             builder.build_parts(spec)
 
     def test_missing_diameter_raises(self):
         resolver = ParameterResolver({})
         builder = PartsBuilder(resolver)
-        spec = {'hex': {'primitive': 'polygon', 'sides': 6, 'height': 5.0}}
+        spec = {'hex': {'primitive': 'polygon', 'sides': 6, 'length': 5.0}}
         with pytest.raises(PartsBuilderError, match="diameter"):
             builder.build_parts(spec)
 
-    def test_missing_height_raises(self):
+    def test_missing_length_raises(self):
         resolver = ParameterResolver({})
         builder = PartsBuilder(resolver)
         spec = {'hex': {'primitive': 'polygon', 'sides': 6, 'diameter': 10.0}}
-        with pytest.raises(PartsBuilderError, match="height"):
+        with pytest.raises(PartsBuilderError, match="length"):
             builder.build_parts(spec)
 
     def test_sides_less_than_3_raises(self):
         resolver = ParameterResolver({})
         builder = PartsBuilder(resolver)
-        spec = {'bad': {'primitive': 'polygon', 'sides': 2, 'diameter': 10.0, 'height': 5.0}}
+        spec = {'bad': {'primitive': 'polygon', 'sides': 2, 'diameter': 10.0, 'length': 5.0}}
         with pytest.raises(PartsBuilderError, match="3 sides"):
             builder.build_parts(spec)
 
     def test_negative_diameter_raises(self):
         resolver = ParameterResolver({})
         builder = PartsBuilder(resolver)
-        spec = {'bad': {'primitive': 'polygon', 'sides': 6, 'diameter': -5.0, 'height': 5.0}}
+        spec = {'bad': {'primitive': 'polygon', 'sides': 6, 'diameter': -5.0, 'length': 5.0}}
         with pytest.raises(PartsBuilderError, match="positive"):
             builder.build_parts(spec)
 
     def test_circumscribed_false_smaller_footprint(self):
         """circumscribed=false (inscribed diameter) should produce same or smaller XY than circumscribed=true."""
-        p_circ = self._build('pc', sides=6, diameter=10.0, height=5.0, circumscribed=True)
-        p_insc = self._build('pi', sides=6, diameter=10.0, height=5.0, circumscribed=False)
+        p_circ = self._build('pc', sides=6, diameter=10.0, length=5.0, circumscribed=True)
+        p_insc = self._build('pi', sides=6, diameter=10.0, length=5.0, circumscribed=False)
         bb_c = p_circ.geometry.val().BoundingBox()
         bb_i = p_insc.geometry.val().BoundingBox()
         xy_c = bb_c.xmax - bb_c.xmin

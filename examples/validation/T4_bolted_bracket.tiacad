@@ -64,19 +64,19 @@ parts:
   hole:
     primitive: cylinder
     radius: ${hole_r}
-    height: ${bracket_t + 4}
+    length: ${bracket_t + 4}
     origin: center
 
   bolt_head:
     primitive: cylinder
     radius: ${head_r}
-    height: ${head_h}
+    length: ${head_h}
     origin: center
 
   bolt_shaft:
     primitive: cylinder
     radius: ${shaft_r}
-    height: ${shaft_len}
+    length: ${shaft_len}
     origin: center
 
 operations:

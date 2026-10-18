@@ -89,14 +89,14 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${screw_diameter / 2}'
-      height: '${plate_thickness + 2}'  # Through-hole
+      length: '${plate_thickness + 2}'  # Through-hole
     origin: center
 
   screw_countersink:
     primitive: cylinder
     parameters:
       radius: '${screw_head_diameter / 2}'
-      height: '${countersink_depth + 1}'
+      length: '${countersink_depth + 1}'
     origin: center
 
   # ═══════════════════════════════════════════════════════
@@ -107,7 +107,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: '${grip_radius}'
-      height: '${arm_thickness + 2}'
+      length: '${arm_thickness + 2}'
     origin: center
 
 # ═══════════════════════════════════════════════════════

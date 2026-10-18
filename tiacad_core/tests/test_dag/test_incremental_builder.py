@@ -110,7 +110,7 @@ class TestIncrementalBuilderFullBuild:
             'parameters': {},
             'parts': {
                 'a': {'primitive': 'box', 'width': 1, 'height': 1, 'depth': 1},
-                'b': {'primitive': 'cylinder', 'radius': 1, 'height': 1},
+                'b': {'primitive': 'cylinder', 'radius': 1, 'length': 1},
             },
         }
         result = _build(yaml_data)
@@ -142,7 +142,7 @@ class TestIncrementalBuilderCacheHits:
             'parameters': {'w': 10},
             'parts': {
                 'box': {'primitive': 'box', 'width': '${w}', 'height': 5, 'depth': 5},
-                'cyl': {'primitive': 'cylinder', 'radius': 3, 'height': 10},
+                'cyl': {'primitive': 'cylinder', 'radius': 3, 'length': 10},
             },
         }
         # First build
@@ -160,14 +160,14 @@ class TestIncrementalBuilderCacheHits:
             'parameters': {'w': 10},
             'parts': {
                 'wide': {'primitive': 'box', 'width': '${w}', 'height': 5, 'depth': 5},
-                'fixed': {'primitive': 'cylinder', 'radius': 3, 'height': 10},
+                'fixed': {'primitive': 'cylinder', 'radius': 3, 'length': 10},
             },
         }
         yaml_changed = {
             'parameters': {'w': 99},  # changed
             'parts': {
                 'wide': {'primitive': 'box', 'width': '${w}', 'height': 5, 'depth': 5},
-                'fixed': {'primitive': 'cylinder', 'radius': 3, 'height': 10},
+                'fixed': {'primitive': 'cylinder', 'radius': 3, 'length': 10},
             },
         }
         first = _build(yaml_base)
@@ -182,12 +182,12 @@ class TestIncrementalBuilderCacheHits:
     def test_unchanged_operations_not_re_executed(self):
         yaml_data = {
             'parameters': {'r': 5},
-            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'height': 20}},
+            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'length': 20}},
             'operations': {'chamfered': {'type': 'chamfer', 'input': 'cyl', 'distance': 1}},
         }
         yaml_unchanged = {
             'parameters': {'r': 5},
-            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'height': 20}},
+            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'length': 20}},
             'operations': {'chamfered': {'type': 'chamfer', 'input': 'cyl', 'distance': 1}},
         }
         first = _build(yaml_data)
@@ -205,7 +205,7 @@ class TestIncrementalBuilderDirtyPropagation:
         yaml_base = {
             'parameters': {'r': 5},
             'parts': {
-                'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'height': 20},
+                'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'length': 20},
                 'base': {'primitive': 'box', 'width': 10, 'height': 10, 'depth': 2},
             },
             'operations': {
@@ -216,7 +216,7 @@ class TestIncrementalBuilderDirtyPropagation:
         yaml_changed = {
             'parameters': {'r': 99},  # changed — dirties cyl → chamfered, not standalone
             'parts': {
-                'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'height': 20},
+                'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'length': 20},
                 'base': {'primitive': 'box', 'width': 10, 'height': 10, 'depth': 2},
             },
             'operations': {
@@ -236,7 +236,7 @@ class TestIncrementalBuilderDirtyPropagation:
         """Changing a param dirties its part and ALL downstream ops."""
         yaml_base = {
             'parameters': {'r': 5},
-            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'height': 20}},
+            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'length': 20}},
             'operations': {
                 'step1': {'type': 'chamfer', 'input': 'cyl', 'distance': 1},
                 'step2': {'type': 'chamfer', 'input': 'step1', 'distance': 0.5},
@@ -244,7 +244,7 @@ class TestIncrementalBuilderDirtyPropagation:
         }
         yaml_changed = {
             'parameters': {'r': 8},
-            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'height': 20}},
+            'parts': {'cyl': {'primitive': 'cylinder', 'radius': '${r}', 'length': 20}},
             'operations': {
                 'step1': {'type': 'chamfer', 'input': 'cyl', 'distance': 1},
                 'step2': {'type': 'chamfer', 'input': 'step1', 'distance': 0.5},
@@ -271,7 +271,7 @@ class TestIncrementalBuilderStructuralChanges:
             'parameters': {},
             'parts': {
                 'a': {'primitive': 'box', 'width': 1, 'height': 1, 'depth': 1},
-                'b': {'primitive': 'cylinder', 'radius': 1, 'height': 1},  # new
+                'b': {'primitive': 'cylinder', 'radius': 1, 'length': 1},  # new
             },
         }
         first = _build(yaml_base)

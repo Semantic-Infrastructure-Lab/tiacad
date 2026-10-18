@@ -52,13 +52,13 @@ parts:
   bolt_hole:
     primitive: cylinder
     radius: ${bolt_hole_r}
-    height: ${plate_t + 4}
+    length: ${plate_t + 4}
     origin: center
 
   center_hole:
     primitive: cylinder
     radius: ${center_hole_r}
-    height: ${plate_t + 4}
+    length: ${plate_t + 4}
     origin: center
 
 operations:

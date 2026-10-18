@@ -43,7 +43,7 @@ parts:
   hole:
     primitive: cylinder
     radius: ${hole_r}
-    height: ${plate_t + 4}
+    length: ${plate_t + 4}
     origin: center
 
 operations:

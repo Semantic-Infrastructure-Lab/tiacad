@@ -21,14 +21,14 @@ parts:
     parameters:
       sides: 6
       diameter: '${diameter}'
-      height: '${thickness}'
+      length: '${thickness}'
       circumscribed: true
 
   bore:
     primitive: cylinder
     parameters:
       radius: '${bore_radius}'
-      height: '${thickness + 0.01}'
+      length: '${thickness + 0.01}'
 
 operations:
   nut:

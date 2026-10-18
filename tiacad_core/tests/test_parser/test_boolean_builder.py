@@ -632,7 +632,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 3
-    height: 10
+    length: 10
     origin: base
 
 operations:

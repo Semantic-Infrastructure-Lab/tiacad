@@ -44,7 +44,7 @@ parts:
     parameters:
       radius_bottom: 10
       radius_top: 5
-      height: 20
+      length: 20
 """
     NEW = """
 metadata:
@@ -55,7 +55,7 @@ parts:
     parameters:
       radius1: 10
       radius2: 5
-      height: 20
+      length: 20
 """
 
     def test_old_cone_params_warn(self):
@@ -87,7 +87,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 2
-    height: 5
+    length: 5
     origin: center
 operations:
   hole_row:
@@ -105,7 +105,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 2
-    height: 5
+    length: 5
     origin: center
 operations:
   hole_row:

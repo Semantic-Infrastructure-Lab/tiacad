@@ -603,11 +603,11 @@ constraints:
 parts:
   bushing:
     primitive: cylinder
-    parameters: {radius: 6, height: 5}
+    parameters: {radius: 6, length: 5}
     origin: center
   pin:
     primitive: cylinder
-    parameters: {radius: 3, height: 10}
+    parameters: {radius: 3, length: 10}
     origin: [30, 30, 0]
 
 constraints:
@@ -631,7 +631,7 @@ parts:
     origin: center
   raw_roller:
     primitive: cylinder
-    parameters: {radius: 3, height: 10}
+    parameters: {radius: 3, length: 10}
     origin: center
 
 operations:

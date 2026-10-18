@@ -74,7 +74,7 @@ parts:
     origin: center
   pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 20}
+    parameters: {radius: 5, length: 20}
     origin: center
     translate:
       to:
@@ -97,7 +97,7 @@ parts:
     origin: center
   left_pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 20}
+    parameters: {radius: 5, length: 20}
     origin: center
     translate:
       to:
@@ -105,7 +105,7 @@ parts:
         offset: [-30, 0, 0]
   right_pillar:
     primitive: cylinder
-    parameters: {radius: 5, height: 20}
+    parameters: {radius: 5, length: 20}
     origin: center
     translate:
       to:

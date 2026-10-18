@@ -27,7 +27,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 12
-      height: 30    # taller than plate so it cuts clean through
+      length: 30    # taller than plate so it cuts clean through
     origin: center
 
 operations:

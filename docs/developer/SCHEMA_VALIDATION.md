@@ -110,10 +110,10 @@ The schema validates:
 - `expect` - Correctness contracts (spatial relations, manifold checks — see MODEL_VALIDATION.md)
 
 **Primitives:**
-- `box` - Requires `size: [width, height, depth]`
-- `cylinder` - Requires `radius`, `height`
+- `box` - Requires `size: [x, y, z]`
+- `cylinder` - Requires `radius`, `length` (optional `axis: X|Y|Z`, default Z)
 - `sphere` - Requires `radius`
-- `cone` - Requires `radius1`, `radius2`, `height`
+- `cone` - Requires `radius1`, `radius2`, `length` (optional `axis`)
 - `torus` - Requires `major_radius`, `minor_radius`
 
 **Operations:**
@@ -239,7 +239,7 @@ parts:
   hole:
     primitive: cylinder
     radius: 5
-    height: 12
+    length: 12
 
 operations:
   subtract_hole:

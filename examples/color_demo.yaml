@@ -28,7 +28,7 @@ parts:
   detail1:
     primitive: cylinder
     radius: 10
-    height: 15
+    length: 15
     color: brand-orange
 
   # Material from library
@@ -41,7 +41,7 @@ parts:
   handle:
     primitive: cylinder
     radius: 5
-    height: 50
+    length: 50
     color: [0.7, 0.3, 0.1]
 
   # HSL color

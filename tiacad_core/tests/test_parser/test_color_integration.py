@@ -214,7 +214,7 @@ parts:
   part2:
     primitive: cylinder
     radius: 5
-    height: 20
+    length: 20
     color: "#0066CC"
 
   part3:
@@ -230,7 +230,7 @@ parts:
   part5:
     primitive: cylinder
     radius: 3
-    height: 10
+    length: 10
     color: [0.5, 0.5, 0.5]
 """
         doc = TiaCADParser.parse_string(yaml_content)
@@ -338,7 +338,7 @@ parts:
   detail:
     primitive: cylinder
     radius: 5
-    height: 15
+    length: 15
     color: [0.9, 0.7, 0.1]
 """
         doc = TiaCADParser.parse_string(yaml_content)
@@ -362,7 +362,7 @@ parts:
   shaft:
     primitive: cylinder
     radius: 8
-    height: 100
+    length: 100
     material: steel
 
   knob:
