@@ -302,10 +302,10 @@
       74.0,
       50.8
     ],
-    "canonical_mesh_hash": "9a4964eb7850550f4b3267ec3adbf29804e7b6cb49aebaf54e0dd36a4854aa51",
-    "mesh_hash": "914e3ab25137c544946e409e12316d8aa2184ee48dc273b541da0942fe62dcc1",
+    "canonical_mesh_hash": "1475e1b2e770d90c178e248c57e04f8b92d443d05237a81a94327e5573b748cf",
+    "mesh_hash": "5aaee30db83949c908ac611c358507f17374747a7572082a776194c6cf2c6ab8",
     "part": "sticker_tray",
-    "volume": 26293.824000000015
+    "volume": 110622.83508455829
   },
   "examples/text_engraved.yaml": {
     "bbox": [

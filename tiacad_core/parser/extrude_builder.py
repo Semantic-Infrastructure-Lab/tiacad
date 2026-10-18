@@ -49,11 +49,13 @@ class ExtrudeBuilder:
         })
     """
 
-    # Default extrude directions for each plane
+    # Axis each plane's normal lies along. Only used to warn about a mismatched
+    # `direction:`; the geometry always follows CadQuery's plane normal, which is
+    # +Z for XY, -Y for XZ and +X for YZ.
     DEFAULT_DIRECTIONS = {
-        'XY': 'Z',  # XY plane extrudes along Z
-        'XZ': 'Y',  # XZ plane extrudes along Y
-        'YZ': 'X',  # YZ plane extrudes along X
+        'XY': 'Z',
+        'XZ': 'Y',
+        'YZ': 'X',
     }
 
     def __init__(self,

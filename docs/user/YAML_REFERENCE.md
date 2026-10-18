@@ -1081,6 +1081,43 @@ build from the same `sketches:` block. See `examples/pipe_sweep.yaml`,
 `examples/bracket_with_hole.yaml`, and the sketch-based `*_builder.py` modules
 under `tiacad_core/parser/` for their specs.
 
+#### Sketch Planes and Extrude
+
+A sketch's `plane` decides which world axes its 2D coordinates map to, and which
+way `type: extrude` pushes the solid. Measured against the builder (a rectangle
+`width: 2, height: 4, center: [10, 20]`, `distance: 5`):
+
+| `plane` | sketch x | sketch y | extrudes toward | solid occupies |
+|---|---|---|---|---|
+| `XY` | world X | world Y | +Z | z from 0 to `distance` |
+| `XZ` | world X | world Z | **-Y** | y from `-distance` to 0 |
+| `YZ` | world Y | world Z | +X | x from 0 to `distance` |
+
+```yaml
+sketches:
+  ramp_profile:
+    plane: YZ                  # sketch x = world Y, sketch y = world Z
+    shapes:
+      - {type: polygon, points: [[0, 0], [30, 0], [30, 10]], closed: true}
+operations:
+  ramp:
+    type: extrude
+    sketch: ramp_profile
+    distance: 20               # positive only; solid spans x = 0..20
+```
+
+- **`origin:` shifts only the in-plane axes.** For `XY` the X and Y components
+  apply, for `XZ` X and Z, for `YZ` Y and Z. The component along the plane's
+  normal is ignored, so the solid always starts at 0 on that axis. Move it
+  afterwards with a `translate` transform.
+- **`distance` must be positive.** To go the other way, use the plane whose
+  normal points that way, or translate/mirror the result.
+- **`direction:` is accepted but does not change the geometry.** The plane alone
+  decides. A `direction` that differs from the plane's axis only logs a warning
+  (`XZ` counts as `Y`, even though it really extrudes toward -Y).
+- Check the result by building and reading the bounding box (`tiacad build`,
+  then the contract's `bbox:`), not by assuming; `XZ` is the surprising one.
+
 #### Fillet (Round Edges)
 
 ```yaml

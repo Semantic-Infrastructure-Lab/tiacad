@@ -544,3 +544,42 @@ class TestGuitarHangerPattern:
         assert left_arm is not None
         # Left arm should be at negative X (left side)
         assert left_arm.current_position[0] < 0
+
+
+class TestRotateAngleUnits:
+    """Rotate angle accepts degrees, or radians via an 'Xrad' suffix (TCAD-8)"""
+
+    @staticmethod
+    def _rotated_bounds(angle, params=None):
+        resolver = ParameterResolver(params or {})
+        registry = PartsBuilder(resolver).build_parts(
+            {'box': {'primitive': 'box', 'size': [10, 20, 30]}})
+        ops_spec = {
+            'rotated': {
+                'type': 'transform',
+                'input': 'box',
+                'transforms': [{'rotate': {'angle': angle, 'axis': 'Z', 'origin': [0, 0, 0]}}],
+            }
+        }
+        result = OperationsBuilder(registry, resolver).execute_operations(ops_spec)
+        bb = result.get('rotated').geometry.val().BoundingBox()
+        return (bb.xmin, bb.xmax, bb.ymin, bb.ymax, bb.zmin, bb.zmax)
+
+    def test_rad_suffix_matches_degrees(self):
+        # 90 deg about Z swaps the X and Y extents, so a wrong unit is obvious
+        expected = self._rotated_bounds(90)
+        assert expected[1] - expected[0] == pytest.approx(20)
+        assert self._rotated_bounds('1.5707963267948966rad') == pytest.approx(expected, abs=1e-6)
+
+    def test_rad_suffix_inside_expression(self):
+        expected = self._rotated_bounds(90)
+        assert self._rotated_bounds('${1.5707963267948966rad}') == pytest.approx(expected, abs=1e-6)
+
+    def test_rad_suffix_from_parameter(self):
+        expected = self._rotated_bounds(90)
+        got = self._rotated_bounds('${turn}', {'turn': '1.5707963267948966rad'})
+        assert got == pytest.approx(expected, abs=1e-6)
+
+    def test_bad_rad_value_is_an_error(self):
+        with pytest.raises(OperationsBuilderError, match="could not convert"):
+            self._rotated_bounds('fastrad')
