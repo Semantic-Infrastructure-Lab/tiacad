@@ -593,6 +593,17 @@
     "part": "post",
     "volume": 13571.680263507906
   },
+  "examples/validation/T0_cylinder_axis.tiacad": {
+    "bbox": [
+      43.0,
+      13.0,
+      13.0
+    ],
+    "canonical_mesh_hash": "2e9aa980271a7c76fc3f097dd8bd3593041555fb66b1f89a05981a5a23eb30a2",
+    "mesh_hash": "5c99285ec945c4ca0f8a9baa882917ba9e9cf33a641b1ee616988f4987a70897",
+    "part": "all_three",
+    "volume": 848.230016469244
+  },
   "examples/validation/T0_polygon.tiacad": {
     "bbox": [
       20.0,

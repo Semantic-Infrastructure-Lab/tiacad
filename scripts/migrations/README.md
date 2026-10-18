@@ -8,6 +8,7 @@ are deliberately re-migrating from the exact old format it targets — several d
 | Script | Migrated | Effect | Status |
 |--------|----------|--------|--------|
 | `fix_pattern_api.py` | v3.0 `pattern` API: `spacing: '${v}'` + `direction: X` → `spacing: ['${v}', 0, 0]` | In-place regex rewrite of every `examples/*.yaml` (no backup, no dry-run) | ✅ Completed; kept for reference only |
+| `primitive_length.py` | TCAD-5: `height` -> `length` on cylinder/cone/polygon parts (YAML, fenced yaml in .md, test dict literals and triple-quoted specs) | In-place rewrite of the files passed in; `--check` reports only. `height` still works as a deprecated alias | ✅ Completed 2026-10-17 |
 
 **Before running any script here:** commit/stash your working tree first, since
 these overwrite files with no backup. Prefer reading the script to understand the

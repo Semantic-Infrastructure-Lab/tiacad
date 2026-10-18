@@ -1,0 +1,54 @@
+# Tier 0 — Cylinder `axis:`, closed-form ground truth.
+# Three separate cylinders (r=3, length=10), one per axis, each with its base at a
+# literal origin point 20mm apart on X so they never touch. The union is three
+# disjoint solids: volume = 3*pi*r^2*L, and the bbox shows which way each one points.
+schema_version: "3.0"
+
+metadata:
+  name: T0 Cylinder Axis
+  description: "Tier 0 primitive ladder: cylinder length along X, Y and Z against pi*r^2*L"
+  version: "1.0"
+
+parameters:
+  r: 3
+  len: 10
+
+parts:
+  along_x:
+    primitive: cylinder
+    radius: ${r}
+    length: ${len}
+    axis: X
+    origin: [0, 0, 0]       # base centre here, grows to x = 10
+
+  along_y:
+    primitive: cylinder
+    radius: ${r}
+    length: ${len}
+    axis: Y
+    origin: [20, 0, 0]      # grows to y = 10
+
+  along_z:
+    primitive: cylinder
+    radius: ${r}
+    length: ${len}
+    origin: [40, 0, 0]      # axis defaults to Z, grows to z = 10
+
+operations:
+  all_three:
+    type: boolean
+    operation: union
+    inputs: [along_x, along_y, along_z]
+
+export:
+  default_part: all_three
+
+# X cyl: x 0..10, y,z -3..3.  Y cyl: x 17..23, y 0..10, z -3..3.  Z cyl: x 37..43, y -3..3, z 0..10.
+# bbox: x 0..43 = 43, y -3..10 = 13, z -3..10 = 13.
+expect:
+  final: all_three
+  volume: 848.2300164692441
+  bbox: [43, 13, 13]
+  watertight: true
+  components: 3
+  tol: { volume: 0.01 }

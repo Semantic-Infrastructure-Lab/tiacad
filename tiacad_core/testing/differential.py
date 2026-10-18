@@ -270,6 +270,25 @@ def _is_eligible_pattern_instance(
     return _is_eligible(input_name, parts_spec, operations_spec, _seen)
 
 
+def _length(params: Dict[str, Any]) -> float:
+    """Extent along the primitive's axis (`length`, or the deprecated `height`)."""
+    return params["length"] if "length" in params else params["height"]
+
+
+def _axis_vector(params: Dict[str, Any], distance: float):
+    return {"X": (distance, 0, 0), "Y": (0, distance, 0)}.get(str(params.get("axis", "Z")).upper(), (0, 0, distance))
+
+
+def _along_axis(shape, params: Dict[str, Any]):
+    """Turn a Z-aligned manifold onto `axis:` (Z->X is +90 about Y, Z->Y is -90 about X)."""
+    axis = str(params.get("axis", "Z")).upper()
+    if axis == "X":
+        return shape.rotate((0, 90, 0))
+    if axis == "Y":
+        return shape.rotate((-90, 0, 0))
+    return shape
+
+
 def _build_manifold(
     name: str,
     parts_spec: Dict[str, Any],
@@ -294,17 +313,17 @@ def _build_manifold(
             if origin == "corner":
                 shape = shape.translate((sx / 2, sy / 2, sz / 2))
         elif primitive == "cylinder":
-            radius, height = params["radius"], params["height"]
-            shape = m.Manifold.cylinder(height, radius, radius, center=True)
+            radius, length = params["radius"], _length(params)
+            shape = _along_axis(m.Manifold.cylinder(length, radius, radius, center=True), params)
             if origin == "base":
-                shape = shape.translate((0, 0, height / 2))
+                shape = shape.translate(_axis_vector(params, length / 2))
         elif primitive == "sphere":
             shape = m.Manifold.sphere(params["radius"])
         elif primitive == "cone":
-            radius1, radius2, height = params["radius1"], params["radius2"], params["height"]
-            shape = m.Manifold.cylinder(height, radius1, radius2, center=True)
+            radius1, radius2, length = params["radius1"], params["radius2"], _length(params)
+            shape = _along_axis(m.Manifold.cylinder(length, radius1, radius2, center=True), params)
             if origin == "base":
-                shape = shape.translate((0, 0, height / 2))
+                shape = shape.translate(_axis_vector(params, length / 2))
         else:
             raise DifferentialError(f"unsupported primitive '{primitive}' for '{name}'")
 

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2026-10-17 (cylinder/cone/polygon `length` + `axis`, extrude `direction`, TCAD-5/TCAD-13)
+
+Cylinder, cone and polygon take `length` (extent along `axis: X|Y|Z`, default Z) instead of
+`height`; `origin:` follows the axis. `height` still works with a `DeprecationWarning`, and giving
+both is an error. Migrate with `python3 scripts/migrations/primitive_length.py FILE...` (the 80
+determinism goldens are byte-identical after rewriting the whole corpus). Extrude: a `direction:`
+that contradicts the sketch plane's axis is now an error (it used to be silently ignored), and
+`reverse: true` extrudes the other side; the plane table is in YAML_REFERENCE "Sketch Planes and Extrude".
+
 ### Changed (BREAKING) - 2026-10-16 (one `origin:` vocabulary, TCAD-6)
 - Every primitive accepts `center` / `base` / `corner` / `[x, y, z]`; an unknown or misspelled value (`bottom`, `centre`, `corner` on a cylinder before, ...) now raises with a "did you mean" hint instead of silently building centered. Polygon honors `origin` (default stays `base`). `validate-geometry` prints a `Placement:` line when a part does not start at z=0. The default origin stays `center`.
 

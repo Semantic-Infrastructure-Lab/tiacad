@@ -199,7 +199,7 @@ class PartsBuilder:
 
     def _place_by_origin(self, name: str, label: str, shape: Any, origin: Any,
                          half_extents: tuple, point_reference: tuple,
-                         default: str = 'center') -> Any:
+                         default: str = 'center', base_offset: Optional[tuple] = None) -> Any:
         """
         Place a primitive according to its `origin:` value.
 
@@ -223,12 +223,14 @@ class PartsBuilder:
             half_extents: (hx, hy, hz) of the centered shape's bounding box
             point_reference: offset added to a literal `[x, y, z]` origin
             default: mode used when `origin` is absent (polygon is `base`)
+            base_offset: shift that puts the base face at the origin; (0, 0, hz) unless
+                the primitive's `axis:` points elsewhere
         """
         if origin is None:
             origin = default
         hx, hy, hz = half_extents
         if isinstance(origin, str):
-            offsets = {'center': (0, 0, 0), 'base': (0, 0, hz), 'corner': (hx, hy, hz)}
+            offsets = {'center': (0, 0, 0), 'base': base_offset or (0, 0, hz), 'corner': (hx, hy, hz)}
             if origin not in offsets:
                 suggestion = difflib.get_close_matches(origin, offsets, n=1)
                 hint = f" Did you mean '{suggestion[0]}'?" if suggestion else ""
@@ -318,13 +320,65 @@ class PartsBuilder:
                 )
         return values
 
+    # Cylinder, cone and polygon are built along Z and then turned onto `axis:`.
+    # (rotation axis direction, angle in degrees) that carries +Z onto each axis.
+    _AXIS_TURNS = {'X': ((0, 1, 0), 90), 'Y': ((1, 0, 0), -90)}
+
+    def _axis_param(self, name: str, label: str, params: Dict[str, Any]) -> str:
+        """Read and validate `axis:` (X, Y or Z, default Z)."""
+        axis = params.get('axis', 'Z')
+        if not isinstance(axis, str) or axis.upper() not in ('X', 'Y', 'Z'):
+            raise PartsBuilderError(
+                f"{label} '{name}' has invalid axis {axis!r}. Use X, Y or Z.",
+                part_name=name
+            )
+        return axis.upper()
+
+    def _length_param(self, name: str, label: str, params: Dict[str, Any]) -> Any:
+        """
+        Read the extent along the primitive's axis: `length`, or the deprecated
+        `height`. Returns None when neither is given.
+        """
+        if 'length' in params and 'height' in params:
+            raise PartsBuilderError(
+                f"{label} '{name}' has both 'length' and 'height'; they mean the same "
+                f"thing. Keep 'length'.",
+                part_name=name
+            )
+        if 'height' in params:
+            warnings.warn(
+                f"{label} '{name}': 'height' is deprecated; use 'length' (the extent "
+                f"along 'axis', default Z).",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            return params['height']
+        return params.get('length')
+
+    def _turn_to_axis(self, shape: Any, axis: str) -> Any:
+        """Rotate a shape built along Z about the world origin so it lies along `axis`."""
+        if axis == 'Z':
+            return shape
+        direction, angle = self._AXIS_TURNS[axis]
+        return self.backend.rotate(shape, (0, 0, 0), direction, angle)
+
+    @staticmethod
+    def _axis_frame(axis: str, radius: float, half_length: float) -> tuple:
+        """(half extents, base offset) of a centered round primitive lying along `axis`."""
+        return {
+            'X': ((half_length, radius, radius), (half_length, 0, 0)),
+            'Y': ((radius, half_length, radius), (0, half_length, 0)),
+            'Z': ((radius, radius, half_length), (0, 0, half_length)),
+        }[axis]
+
     def _build_cylinder(self, name: str, spec: Dict[str, Any]) -> Any:
         """
         Build a cylinder primitive.
 
         Args:
             name: Part name
-            spec: Specification with 'parameters' containing radius, height
+            spec: Specification with 'parameters' containing radius, length
+                (extent along `axis`, default Z; `height` is a deprecated alias)
 
         Returns:
             CadQuery Workplane with cylinder geometry
@@ -336,8 +390,8 @@ class PartsBuilder:
         params = spec.get('parameters', spec)
 
         # Validate required parameters
-        required = ['radius', 'height']
-        missing = [p for p in required if p not in params]
+        length = self._length_param(name, 'Cylinder', params)
+        missing = [p for p in ('radius',) if p not in params] + (['length'] if length is None else [])
         if missing:
             raise PartsBuilderError(
                 f"Cylinder '{name}' missing required parameters: {', '.join(missing)}",
@@ -345,14 +399,15 @@ class PartsBuilder:
             )
 
         radius = params['radius']
-        height = params['height']
+        axis = self._axis_param(name, 'Cylinder', params)
         origin = spec.get('origin', 'center')
 
-        self._require_positive(name, 'Cylinder', radius=radius, height=height)
+        self._require_positive(name, 'Cylinder', radius=radius, length=length)
 
-        cylinder = self.backend.create_cylinder(radius, height)
+        cylinder = self._turn_to_axis(self.backend.create_cylinder(radius, length), axis)
+        half_extents, base_offset = self._axis_frame(axis, radius, length / 2)
         return self._place_by_origin(name, 'Cylinder', cylinder, origin,
-                                     (radius, radius, height / 2), (0, 0, height / 2))
+                                     half_extents, base_offset, base_offset=base_offset)
 
     def _build_sphere(self, name: str, spec: Dict[str, Any]) -> Any:
         """
@@ -392,7 +447,9 @@ class PartsBuilder:
 
         Args:
             name: Part name
-            spec: Specification with 'parameters' containing radius1, radius2, height
+            spec: Specification with 'parameters' containing radius1, radius2, length
+                (extent along `axis`, default Z; `height` is a deprecated alias).
+                radius1 is the base end, radius2 the far end.
 
         Returns:
             CadQuery Workplane with cone geometry
@@ -419,8 +476,8 @@ class PartsBuilder:
                 params.setdefault('radius2', params['radius_top'])
 
         # Validate required parameters
-        required = ['radius1', 'radius2', 'height']
-        missing = [p for p in required if p not in params]
+        length = self._length_param(name, 'Cone', params)
+        missing = [p for p in ('radius1', 'radius2') if p not in params] + (['length'] if length is None else [])
         if missing:
             raise PartsBuilderError(
                 f"Cone '{name}' missing required parameters: {', '.join(missing)}",
@@ -429,7 +486,7 @@ class PartsBuilder:
 
         radius1 = params['radius1']  # Base radius
         radius2 = params['radius2']  # Top radius
-        height = params['height']
+        axis = self._axis_param(name, 'Cone', params)
         origin = spec.get('origin', 'center')
 
         # radius1/radius2 may each be 0 (a true cone apex) but not negative,
@@ -448,12 +505,12 @@ class PartsBuilder:
                 f"(degenerate — not a solid)",
                 part_name=name
             )
-        self._require_positive(name, 'Cone', height=height)
+        self._require_positive(name, 'Cone', length=length)
 
-        cone = self.backend.create_cone(radius1, radius2, height)
-        r_max = max(radius1, radius2)
+        cone = self._turn_to_axis(self.backend.create_cone(radius1, radius2, length), axis)
+        half_extents, base_offset = self._axis_frame(axis, max(radius1, radius2), length / 2)
         return self._place_by_origin(name, 'Cone', cone, origin,
-                                     (r_max, r_max, height / 2), (0, 0, height / 2))
+                                     half_extents, base_offset, base_offset=base_offset)
 
     def _build_torus(self, name: str, spec: Dict[str, Any]) -> cq.Workplane:
         """
@@ -516,23 +573,24 @@ class PartsBuilder:
         YAML parameters:
           sides:      number of sides (integer ≥ 3, required)
           diameter:   circumscribed circle diameter in mm (required)
-          height:     extrusion height in mm (required)
+          length:     extent along `axis` in mm (required; `height` is a deprecated alias)
+          axis:       X, Y or Z (default Z); the prism's base sits on the plane through the origin
           circumscribed: true (default) = diameter is outer circle;
                          false = diameter is inner (inscribed) circle
 
         Examples:
           Hexagonal nut blank:
             primitive: polygon
-            parameters: {sides: 6, diameter: 8, height: 4}
+            parameters: {sides: 6, diameter: 8, length: 4}
 
           Square post:
             primitive: polygon
-            parameters: {sides: 4, diameter: 20, height: 50}
+            parameters: {sides: 4, diameter: 20, length: 50}
         """
         params = spec.get('parameters', spec)
 
-        required = ['sides', 'diameter', 'height']
-        missing = [p for p in required if p not in params]
+        height = self._length_param(name, 'Polygon', params)
+        missing = [p for p in ('sides', 'diameter') if p not in params] + (['length'] if height is None else [])
         if missing:
             raise PartsBuilderError(
                 f"Polygon '{name}' missing required parameters: {', '.join(missing)}",
@@ -543,7 +601,8 @@ class PartsBuilder:
 
         sides = int(params['sides'])
         diameter = float(params['diameter'])
-        height = float(params['height'])
+        height = float(height)
+        axis = self._axis_param(name, 'Polygon', params)
         circumscribed = params.get('circumscribed', True)
 
         if sides < 3:
@@ -558,7 +617,7 @@ class PartsBuilder:
             )
         if height <= 0:
             raise PartsBuilderError(
-                f"Polygon '{name}' height must be positive, got {height}",
+                f"Polygon '{name}' length must be positive, got {height}",
                 part_name=name
             )
 
@@ -574,11 +633,14 @@ class PartsBuilder:
             .polygon(sides, diameter, circumscribed=not circumscribed)
             .extrude(height)
         )
-        # Built sitting on z=0, so the reference for a literal [x, y, z] is (0, 0, 0)
-        # and the centered shape's offsets are measured from the base, not the middle.
+        # Built with its base face on the origin plane, so the reference for a literal
+        # [x, y, z] is (0, 0, 0) and the centered shape's offsets are measured from the
+        # base, not the middle.
+        polygon = self._turn_to_axis(polygon, axis)
         bb = polygon.val().BoundingBox()
-        offsets = {'base': (0, 0, 0), 'center': (0, 0, -height / 2),
-                   'corner': (-bb.xmin, -bb.ymin, 0)}
+        along = {'X': (1, 0, 0), 'Y': (0, 1, 0), 'Z': (0, 0, 1)}[axis]
+        offsets = {'base': (0, 0, 0), 'center': tuple(-height / 2 * a for a in along),
+                   'corner': (-bb.xmin, -bb.ymin, -bb.zmin)}
         origin = spec.get('origin', 'base')
         if isinstance(origin, str) and origin in offsets:
             offset = offsets[origin]

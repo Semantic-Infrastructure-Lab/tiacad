@@ -391,7 +391,7 @@ parts:
     primitive: cylinder
     parameters:
       radius: 5
-      height: 50
+      length: 50
     translate:
       to: platform.face_top  # auto-generated anchor - no definition needed!
 
@@ -616,10 +616,19 @@ parts:
     primitive: cylinder
     parameters:
       radius: 10                  # Cylinder radius
-      height: 50                  # Cylinder height
-    origin: center                # center (default), base (bottom-center at 0,0,0),
-                                   # or [x,y,z] (bottom-center at this point instead)
+      length: 50                  # Extent along `axis`
+      axis: Z                     # Optional: X, Y or Z (default Z)
+    origin: center                # center (default), base (start-face centre at 0,0,0),
+                                   # or [x,y,z] (start-face centre at this point instead)
 ```
+
+`length` and `axis` apply to cylinders, cones and polygons alike. The solid is
+built along `axis`, so `axis: X, length: 30` is a rod lying along X with no
+`rotate` needed. `origin:` follows the axis: `base` and a literal `[x,y,z]` put
+the centre of the **start face** (the low end along `axis`) at that point, and
+the solid grows toward +`axis`; `corner` puts the bounding-box min corner at the
+origin; `center` centres it. `height:` is the old name for `length` and still
+works, with a `DeprecationWarning`; giving both is an error.
 
 ### Sphere Primitive
 
@@ -641,8 +650,8 @@ parts:
     parameters:
       radius1: 20                 # Base radius
       radius2: 5                  # Top radius (0 = pointed cone)
-      height: 40                  # Cone height
-    origin: center                # center, corner, or [x,y,z]
+      length: 40                  # Extent along `axis` (optional `axis: X|Y|Z`, default Z)
+    origin: center                # center, base, corner, or [x,y,z]
 ```
 
 ### Polygon Primitive
@@ -656,7 +665,7 @@ parts:
     parameters:
       sides: 6              # Number of sides (≥ 3)
       diameter: 8.0         # Diameter of circumscribed circle (vertex to vertex)
-      height: 4.0           # Extrusion height
+      length: 4.0           # Extrusion length along `axis` (optional `axis: X|Y|Z`, default Z)
       circumscribed: true   # Optional, default true
 ```
 
@@ -704,7 +713,7 @@ parts:
 
   aligned_gear:
     primitive: cylinder
-    parameters: {radius: 15, height: 10}
+    parameters: {radius: 15, length: 10}
     transforms:
       - translate:
           to:
@@ -1320,7 +1329,7 @@ parts:
   hole:
     primitive: cylinder
     radius: '${hole_diameter / 2}'
-    height: '${plate_thickness + 2}'
+    length: '${plate_thickness + 2}'
     origin: center
 
 operations:
@@ -1364,13 +1373,13 @@ parts:
   plate:
     primitive: cylinder
     radius: '${plate_diameter / 2}'
-    height: 8
+    length: 8
     origin: center
 
   bolt_hole:
     primitive: cylinder
     radius: '${bolt_diameter / 2}'
-    height: 10
+    length: 10
     origin: center
 
 operations:

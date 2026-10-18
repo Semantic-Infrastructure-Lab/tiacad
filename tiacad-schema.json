@@ -276,7 +276,7 @@
           },
           "parameters": {
             "type": "object",
-            "description": "Primitive-specific parameters (radius, height, etc.)",
+            "description": "Primitive-specific parameters (radius, length, etc.)",
             "additionalProperties": true
           },
           "translate": {
@@ -346,7 +346,7 @@
             ]
           },
           "size": {
-            "description": "Box dimensions [width, height, depth], or scalar font size for text primitives",
+            "description": "Box dimensions [x, y, z], or scalar font size for text primitives",
             "oneOf": [
               { "type": "array", "items": { "type": ["number", "string"] }, "minItems": 3, "maxItems": 3 },
               { "type": "number" },
@@ -360,8 +360,20 @@
               { "type": "string" }
             ]
           },
+          "length": {
+            "description": "Cylinder/cone/polygon extent along `axis` (default Z)",
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string" }
+            ]
+          },
+          "axis": {
+            "description": "Cylinder/cone/polygon axis: X, Y or Z (default Z)",
+            "type": "string",
+            "enum": ["X", "Y", "Z", "x", "y", "z"]
+          },
           "height": {
-            "description": "Cylinder/cone height",
+            "description": "Text extrusion height. Deprecated alias of `length` on cylinder/cone/polygon",
             "oneOf": [
               { "type": "number", "minimum": 0 },
               { "type": "string" }
