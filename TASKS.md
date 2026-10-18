@@ -2,7 +2,7 @@
 project: tiacad
 schema_version: '1.0'
 id_prefix: TCAD
-next_id: 13
+next_id: 14
 archival: inline
 areas:
   VAL: 19
@@ -1756,37 +1756,45 @@ notes_next: 4
 ## TASK-TCAD-9 · Docs: state how sketch plane coordinates map to world axes (XY/XZ/YZ) and which way extrude goes
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 30m
 tags: [docs, sketch]
 created: '2026-10-18T00:04:14Z'
-updated: '2026-10-18T00:04:31Z'
+updated: '2026-10-18T00:38:10Z'
 session: cunning-oracle-1017
-notes_next: 2
+links:
+  commits:
+  - 560ce17e3c0c991058ca6c6f96caf51a1fc10d1e
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-18T00:04:31Z session:cunning-oracle-1017] Hit 2026-10-17 (cunning-oracle-1017): sticker_tray.yaml ramp_profile on plane YZ. I assumed sketch x = world Y, sketch y = world Z, extrude direction X; nothing in YAML_REFERENCE.md says so (Sketch + Revolve section shows XZ only). It was right, found by checking built geometry. Add a table: plane -> (sketch x, sketch y, normal) and the extrude direction/sign.
+- [#2 2026-10-18T00:38:10Z session:habitable-universe-1017] Found by measuring, not assuming: XZ extrudes toward -Y (not +Y); origin normal component ignored; direction: ignored. Documented in YAML_REFERENCE 'Sketch Planes and Extrude'; pinned by test_sketch_plane_mapping.py.
 
 
 ## TASK-TCAD-10 · Test gap: rotate angle 'Xrad' suffix (operations_builder._parse_angle) has no test
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 15m
 tags: [testing, dx]
 created: '2026-10-18T00:04:16Z'
-updated: '2026-10-18T00:04:31Z'
+updated: '2026-10-18T00:38:10Z'
 session: cunning-oracle-1017
-notes_next: 2
+links:
+  commits:
+  - 560ce17e3c0c991058ca6c6f96caf51a1fc10d1e
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-18T00:04:31Z session:cunning-oracle-1017] 2026-10-17: verified by hand that rotate angle 1.5707963267948966rad == 90 (bounds identical, 4 forms incl. inside ${}); only test hit is the new test_parameter_trig.py param case. Add a test through _apply_rotate.
+- [#2 2026-10-18T00:38:10Z session:habitable-universe-1017] Added TestRotateAngleUnits (4 tests through _apply_rotate: degrees vs rad suffix, inside ${}, from a parameter, bad value).
 
 
 ## TASK-TCAD-11 · Placing a cutter on a wall/face without coordinate arithmetic: decide whether anchors/references can express it or small models just use origin math
@@ -1825,3 +1833,21 @@ notes_next: 3
 ### Notes
 - [#1 2026-10-18T00:04:30Z session:cunning-oracle-1017] Idea, no forcing case yet beyond sticker_tray.
 - [#2 2026-10-18T00:04:31Z session:cunning-oracle-1017] sticker_tray's contract is a closed-form volume I wrote to match the geometry I built (wedge term included), so a wrong ramp angle in both would still pass. The real check was reading the section profile (z at y=2.0, 25.1, 48.1 vs 1.2+(y-1.2)*tan(20)). Candidate: expect: heights: [{at: [x,y], z: ...}] using the same section machinery as 'tiacad section'. Related: VALIDATION_STRENGTHENING.md 4.1.
+
+
+## TASK-TCAD-13 · extrude 'direction:' is accepted but ignored (warns only); XZ plane extrudes -Y while DEFAULT_DIRECTIONS says Y: reject or honor it, and allow a way to flip
+
+```yaml
+status: backlog
+priority: low
+effort: 2h
+tags: [dx, sketch]
+created: '2026-10-18T00:38:11Z'
+updated: '2026-10-18T00:38:14Z'
+session: habitable-universe-1017
+notes_next: 2
+```
+
+<!-- notes: append-only log; each has a stable #id (see CLI §5) -->
+### Notes
+- [#1 2026-10-18T00:38:14Z session:habitable-universe-1017] Evidence 2026-10-17 (habitable-universe-1017): probe on plane XY with direction: X gave identical bounds to no direction (z 0..5). Only _extrude_sketch logs a warning. Behaviour is pinned by test_sketch_plane_mapping.py::test_direction_field_does_not_change_geometry; whichever fix is chosen must update that test and the 'Sketch Planes and Extrude' section.
