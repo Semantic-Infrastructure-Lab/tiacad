@@ -1103,18 +1103,21 @@ operations:
   ramp:
     type: extrude
     sketch: ramp_profile
-    distance: 20               # positive only; solid spans x = 0..20
+    distance: 20               # solid spans x = 0..20 (add reverse: true for -20..0)
 ```
 
 - **`origin:` shifts only the in-plane axes.** For `XY` the X and Y components
   apply, for `XZ` X and Z, for `YZ` Y and Z. The component along the plane's
   normal is ignored, so the solid always starts at 0 on that axis. Move it
   afterwards with a `translate` transform.
-- **`distance` must be positive.** To go the other way, use the plane whose
-  normal points that way, or translate/mirror the result.
-- **`direction:` is accepted but does not change the geometry.** The plane alone
-  decides. A `direction` that differs from the plane's axis only logs a warning
-  (`XZ` counts as `Y`, even though it really extrudes toward -Y).
+- **`distance` must be positive.** To extrude the other way, add `reverse: true`
+  (`XY` then goes toward -Z, `XZ` toward +Y, `YZ` toward -X). The solid stays
+  anchored on the sketch plane, so `reverse` flips which side it grows on, and
+  it works with subtract shapes and text.
+- **`direction:` is optional and may only restate the plane's axis** (`Z` for
+  `XY`, `Y` for `XZ`, `X` for `YZ`; note `XZ`'s axis is Y even though its default
+  side is -Y). Any other value is an error, because the plane alone decides the
+  axis. Use `reverse: true` for the opposite side.
 - Check the result by building and reading the bounding box (`tiacad build`,
   then the contract's `bbox:`), not by assuming; `XZ` is the surprising one.
 

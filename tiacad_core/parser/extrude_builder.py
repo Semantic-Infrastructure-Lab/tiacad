@@ -49,9 +49,9 @@ class ExtrudeBuilder:
         })
     """
 
-    # Axis each plane's normal lies along. Only used to warn about a mismatched
-    # `direction:`; the geometry always follows CadQuery's plane normal, which is
-    # +Z for XY, -Y for XZ and +X for YZ.
+    # Axis each plane's normal lies along. `direction:` may only restate it; the
+    # geometry follows CadQuery's plane normal: +Z for XY, -Y for XZ, +X for YZ.
+    # `reverse: true` extrudes the other way.
     DEFAULT_DIRECTIONS = {
         'XY': 'Z',
         'XZ': 'Y',
@@ -87,7 +87,7 @@ class ExtrudeBuilder:
         return (None, None)
 
     def _validate_extrude_spec(self, name: str, spec: Dict[str, Any]):
-        """Validate extrude spec fields. Returns (sketch, sketch_name, distance, direction, taper)."""
+        """Validate extrude spec fields. Returns (sketch, sketch_name, distance, direction, taper, reverse)."""
         def _err(field, msg):
             line, col = self._get_line_info(['operations', name, field])
             raise ExtrudeBuilderError(msg, operation_name=name, line=line, column=col)
@@ -107,19 +107,27 @@ class ExtrudeBuilder:
             _err('distance', f"Extrude distance must be positive number, got {distance}")
 
         direction = spec.get('direction')
+        expected = self._default_direction(sketch.plane)
         if direction is None:
-            direction = self._default_direction(sketch.plane)
+            direction = expected
             logger.debug(f"Extrude '{name}': Auto-detected direction {direction} for {sketch.plane} plane")
         else:
             direction = str(direction).upper()
             if direction not in ['X', 'Y', 'Z']:
                 _err('direction', f"Invalid extrude direction '{direction}'. Must be X, Y, or Z")
+            if direction != expected:
+                _err('direction', f"Extrude direction {direction} does not match sketch plane "
+                                  f"{sketch.plane}, which extrudes along {expected}. The plane alone decides "
+                                  f"the axis: drop 'direction:' or pick a sketch plane whose axis is {direction}")
+
+        if not isinstance(spec.get('reverse', False), bool):
+            _err('reverse', f"Extrude 'reverse' must be true or false, got {spec['reverse']!r}")
 
         taper = spec.get('taper', 0)
         if not isinstance(taper, (int, float)):
             _err('taper', f"Taper angle must be a number, got {taper}")
 
-        return sketch, sketch_name, distance, direction, taper
+        return sketch, sketch_name, distance, direction, taper, spec.get('reverse', False)
 
     def execute_extrude_operation(self, name: str, spec: Dict[str, Any]):
         """
@@ -127,22 +135,24 @@ class ExtrudeBuilder:
 
         Args:
             name: Result part name
-            spec: Extrude spec (sketch, distance required; direction, taper optional)
+            spec: Extrude spec (sketch, distance required; direction, taper, reverse optional)
 
         Raises:
             ExtrudeBuilderError: If operation fails
         """
         try:
             resolved_spec = self.resolver.resolve(spec)
-            sketch, sketch_name, distance, direction, taper = self._validate_extrude_spec(name, resolved_spec)
+            sketch, sketch_name, distance, direction, taper, reverse = self._validate_extrude_spec(name, resolved_spec)
 
             logger.info(f"Extruding sketch '{sketch_name}' by {distance} in {direction} direction"
+                        + (" (reversed)" if reverse else "")
                         + (f" with {taper}° taper" if taper != 0 else ""))
 
-            geometry = self._extrude_sketch(sketch, distance, direction, taper, name)
+            geometry = self._extrude_sketch(sketch, distance, direction, taper, name, reverse)
             self.registry.add(Part(name=name, geometry=geometry, metadata={
                 'source': 'extrude', 'sketch': sketch_name, 'operation_type': 'extrude',
-                'distance': distance, 'direction': direction, 'taper': taper
+                'distance': distance, 'direction': direction, 'taper': taper,
+                'reverse': reverse
             }, backend=self.backend or get_cadquery_backend()))
             logger.debug(f"Created extruded part '{name}' from sketch '{sketch_name}'")
 
@@ -179,16 +189,16 @@ class ExtrudeBuilder:
         return built_wp.extrude(dist) if taper == 0 else built_wp.extrude(dist, taper=taper)
 
     def _extrude_sketch(self, sketch: Sketch2D, distance: float,
-                        direction: str, taper: float, context: str) -> cq.Workplane:
+                        direction: str, taper: float, context: str,
+                        reverse: bool = False) -> cq.Workplane:
         """
         Extrude a sketch profile to create 3D geometry.
         Handles add/subtract shapes separately via boolean union/cut.
         """
         try:
-            expected = self._default_direction(sketch.plane)
-            if direction != expected:
-                logger.warning(f"Extrude direction {direction} differs from sketch plane "
-                               f"{sketch.plane} normal ({expected}). This may produce unexpected results.")
+            # A negative distance extrudes against the plane normal
+            if reverse:
+                distance = -distance
 
             add_shapes = [s for s in sketch.shapes if s.operation == 'add']
             subtract_shapes = [s for s in sketch.shapes if s.operation == 'subtract']
