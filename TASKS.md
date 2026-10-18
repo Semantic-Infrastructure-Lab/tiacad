@@ -1838,16 +1838,20 @@ notes_next: 3
 ## TASK-TCAD-13 · extrude 'direction:' is accepted but ignored (warns only); XZ plane extrudes -Y while DEFAULT_DIRECTIONS says Y: reject or honor it, and allow a way to flip
 
 ```yaml
-status: backlog
+status: done
 priority: low
 effort: 2h
 tags: [dx, sketch]
 created: '2026-10-18T00:38:11Z'
-updated: '2026-10-18T00:38:14Z'
+updated: '2026-10-18T00:44:47Z'
 session: habitable-universe-1017
-notes_next: 2
+links:
+  commits:
+  - ce0cc9bcc991613ac4f8171005b78085d0a1c746
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-18T00:38:14Z session:habitable-universe-1017] Evidence 2026-10-17 (habitable-universe-1017): probe on plane XY with direction: X gave identical bounds to no direction (z 0..5). Only _extrude_sketch logs a warning. Behaviour is pinned by test_sketch_plane_mapping.py::test_direction_field_does_not_change_geometry; whichever fix is chosen must update that test and the 'Sketch Planes and Extrude' section.
+- [#2 2026-10-18T00:44:47Z session:habitable-universe-1017] Mismatched direction: is now an error (no corpus model used one); reverse: true added, verified with subtract shapes and text. Docs and 14+ tests updated.
