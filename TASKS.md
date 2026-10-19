@@ -1723,15 +1723,16 @@ priority: medium
 effort: 1h
 tags: [printing, sticker-drawer]
 created: '2026-10-17T17:44:31Z'
-updated: '2026-10-18T00:06:15Z'
+updated: '2026-10-19T07:54:02Z'
 session: translucent-ember-1017
-notes_next: 3
+notes_next: 4
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-17T17:44:36Z session:translucent-ember-1017] 2026-10-17 translucent-ember-1017: Rebuilt TRAYS_15MM from sticker_tray.yaml (--set tray_h=15, A + B on one plate, PrusaSlicer 2.9.6 0.20 NORMAL) = 552400 B, 3h38m8s, 37.33 g, identical to the card copy's size. G-code is valid: 75 layers to Z 15.0, 3 perimeter loops per tray on layers 7-75, normal end sequence. Floor (layers 1-6) is ~127 of ~211 min, so walls start ~2 h in. FAST = 0.28 mm SUPERDRAFT, same part. Scott saw only the floor and did not watch; cause unknown (under-extrusion w/ thin 1.2 mm walls, bad card, or just looked early). Card TRAYS_15MM differed from rebuild at byte 51 line 1 (header timestamp?) - full diff NOT done. MINI_TRAYS.gcode (tray_w=31.3 tray_h=17 tab_w=13.3 tab_floor=4.7, slot_l 23.9 and 30.2, 7.7 g, 50m43s) copied to the card; print it, re-home first, watch layer 7 (Z 1.4).
 - [#2 2026-10-18T00:06:15Z session:cunning-oracle-1017] 2026-10-17 cunning-oracle-1017: Scott reports the MINI_TRAYS samples came out fine (so the slice/file recipe is good; the full TRAYS_15MM floor-only cause remains undiagnosed). Next test plate is 2/3 scale with 20 deg ramp + back cutout: MID_TRAYS.gcode on the SD card root (0.28 mm SUPERDRAFT, 5% rectilinear, 3h07m, 41 g); slower variants in tray_tests/. Print result pending.
+- [#3 2026-10-19T07:54:02Z session:garnet-patina-1019] 2026-10-19 garnet-patina-1019: MID_TRAYS printed (card copy = 0.28 mm, 5% rectilinear, 3 perim, 4 top layers = 1.12 mm skin, 1.2 mm walls): looked good but walls thin, esp. ramp top, ramp felt wimpy. Fix: wall 1.6 (commit e836c7b). Full-size plate sliced for A+B, 0.28 mm, 10% gyroid, 4 perimeters, top skin 1.6 mm (6 layers), speeds infill 70/solid 60/perimeter 60: 8h59m, 135 g, centered on bed; on card as FULL_AB.gcode, print pending. A 4-tray plate at 0.2 mm/15% was 28h19m/296 g (rejected). Time split (4-tray): perimeters 54%, solid infill 27% (20 deg ramp skin), infill 18%; accel is 500 mm/s2 so speed gains are capped. Watch layer 7 (Z 1.96) for the earlier floor-only failure.
 
 
 ## TASK-TCAD-8 · Expressions: make sin/cos/tan take degrees, add asin/acos/atan/atan2 + 'rad' literal, document functions
