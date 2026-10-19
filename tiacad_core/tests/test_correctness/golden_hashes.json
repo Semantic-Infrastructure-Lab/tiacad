@@ -299,13 +299,13 @@
   "examples/sticker_drawer/sticker_tray.yaml": {
     "bbox": [
       94.0,
-      74.0,
+      74.8,
       50.8
     ],
-    "canonical_mesh_hash": "1475e1b2e770d90c178e248c57e04f8b92d443d05237a81a94327e5573b748cf",
-    "mesh_hash": "5aaee30db83949c908ac611c358507f17374747a7572082a776194c6cf2c6ab8",
+    "canonical_mesh_hash": "827ee4d38c5589a8bbcaaceebe83dbd79cbb04021a29e895f81f0ee2a09fa59f",
+    "mesh_hash": "2bdb8640a8de8ed773773094534a0622376d42140f1d2b42a1e90f61b2b8e1ac",
     "part": "sticker_tray",
-    "volume": 110622.83508455829
+    "volume": 115572.28128726175
   },
   "examples/text_engraved.yaml": {
     "bbox": [

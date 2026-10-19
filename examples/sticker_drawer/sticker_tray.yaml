@@ -14,7 +14,7 @@ parameters:
   tray_w: 94.0         # X, left-right. 5 trays + 6 x 3 mm gaps = 488 of 495 mm
   slot_l: 71.6         # interior Y, front-back. A: 5 per 381 mm | B: 90.6, 4 per 381 mm
   tray_h: 50.8         # Z. 2.00 in
-  wall: 1.2
+  wall: 1.6            # 4 perimeter loops at 0.4 mm; 1.2 printed floppy on the 2/3 samples
   floor: 1.2
   tab_w: 40.0          # finger cutout width, front wall
   tab_floor: 14.0      # front cutout starts this far above the outside bottom
