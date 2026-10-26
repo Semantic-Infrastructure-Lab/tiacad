@@ -1889,12 +1889,13 @@ priority: medium
 effort: 2h
 tags: [printing, sticker-drawer]
 created: '2026-10-19T19:13:27Z'
-updated: '2026-10-26T00:55:58Z'
+updated: '2026-10-26T19:11:12Z'
 session: opal-starlight-1019
-notes_next: 3
+notes_next: 4
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
 - [#1 2026-10-26T00:46:18Z session:rehajula-1025] 2026-10-25 rehajula-1025: scope changed to a 6x6 grid (36 trays, 78.5 x 63.2 x 50.8, interior 74.5 x 59.2), wall 2.0, floor 2.0, now the DEFAULT in sticker_tray.yaml; layouts A/B via --set (README table). verify OK for default, B and A; tray golden regenerated (test_determinism -k sticker_tray passes); validate-geometry fits 235x234 bed, thinnest 2.00 mm. NOT YET COMMITTED. CR-6 SE enabled in ~/.config/PrusaSlicer/PrusaSlicer.ini (model:CR6SE = 0.4; backup in session scratchpad). First slice (6 trays, 0.20 mm, 5 perim, 8 top/10 bottom, 10% gyroid, 215 C, fan 75%): 1d 9h 2m, 331 g per plate, so 36 trays = 6 plates, about 200 h and 2 kg: cost decision pending.
 - [#2 2026-10-26T00:55:58Z session:rehajula-1025] 2026-10-25 rehajula-1025: committed 6ce5698 (6x6 default, golden regenerated, README/CLI.md). Full test_correctness: 589 passed. TRAYS_6X6_P1.gcode (6 trays, 1d 9h) is on the SD card root; print result pending. Open: print cost (about 200 h / 2 kg for 36 trays), 0.6 mm nozzle deferred.
+- [#3 2026-10-26T19:11:12Z session:vengeful-norn-1026] 2026-10-26 vengeful-norn-1026: Time breakdown of TRAYS_6x6_plate1.gcode (33h02m51s, 254 layers; hours = path/feedrate scaled to the slicer estimate): perimeters (inner+outer) 19.8 h = 60%, solid infill 9.6 h = 29%, gyroid 2.1 h = 6%, travel 1.3 h = 4%. By layer: floor layers 1-10 = 6.9 h (layer 1 alone ~77 min), ramp zone layers 11-100 = 14.7 h (~10 min/layer vs ~4 for plain wall layers), wall-only layers 101-254 = 11.5 h. Settings provenance: 4 perimeters was already tried (FULL_AB, wall 1.6, 0.28 mm: flimsy + adhesion issues), so 5 perimeters follows from wall 2.0 and is untested at 0.2 mm. 10 bottom layers is just floor 2.0 / 0.2 (floor was set to match the wall; FULL_AB had 3 bottom layers, no floor complaint). 8 top layers keeps FULL_AB's 1.6 mm skin (MID_TRAYS had 4 layers/1.12 mm and the ramp skin was fine). Candidate trim after this plate's result: 5 bottom / 5 top layers, est. 10-12 h saved per plate (NOT sliced). Scott is waiting for the running P1 print before any change; ask him the post-print questions (layer 11 / Z 2.2 survival, wall feel vs FULL_AB, adhesion, ramp skin, finger-cutout fit, actual time). Script: /tmp/claude-1000/-home-scottsen-src-tia-sessions-rehajula-1025/3d749105-873e-4355-b8b8-87557fba433f/scratchpad/breakdown.py
