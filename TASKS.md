@@ -1889,10 +1889,12 @@ priority: medium
 effort: 2h
 tags: [printing, sticker-drawer]
 created: '2026-10-19T19:13:27Z'
-updated: '2026-10-19T19:13:27Z'
+updated: '2026-10-26T00:55:58Z'
 session: opal-starlight-1019
+notes_next: 3
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
 ### Notes
-_(no notes yet)_
+- [#1 2026-10-26T00:46:18Z session:rehajula-1025] 2026-10-25 rehajula-1025: scope changed to a 6x6 grid (36 trays, 78.5 x 63.2 x 50.8, interior 74.5 x 59.2), wall 2.0, floor 2.0, now the DEFAULT in sticker_tray.yaml; layouts A/B via --set (README table). verify OK for default, B and A; tray golden regenerated (test_determinism -k sticker_tray passes); validate-geometry fits 235x234 bed, thinnest 2.00 mm. NOT YET COMMITTED. CR-6 SE enabled in ~/.config/PrusaSlicer/PrusaSlicer.ini (model:CR6SE = 0.4; backup in session scratchpad). First slice (6 trays, 0.20 mm, 5 perim, 8 top/10 bottom, 10% gyroid, 215 C, fan 75%): 1d 9h 2m, 331 g per plate, so 36 trays = 6 plates, about 200 h and 2 kg: cost decision pending.
+- [#2 2026-10-26T00:55:58Z session:rehajula-1025] 2026-10-25 rehajula-1025: committed 6ce5698 (6x6 default, golden regenerated, README/CLI.md). Full test_correctness: 589 passed. TRAYS_6X6_P1.gcode (6 trays, 1d 9h) is on the SD card root; print result pending. Open: print cost (about 200 h / 2 kg for 36 trays), 0.6 mm nozzle deferred.
