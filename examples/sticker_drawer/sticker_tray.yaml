@@ -3,19 +3,21 @@ schema_version: "3.0"
 metadata:
   name: Sticker Tray (one design per tray)
   description: >
-    Single-sticker container for the 15 in x 19.5 in drawer. Five columns run front to
-    back (left-right pitch 94 mm + 2 mm gaps = 488 of 495 mm). Layout A (default,
-    slot_l 71.6) fits 5 trays per column; layout B (--set slot_l=90.6) fits 4 per
-    column and holds any sticker within a 3.5 in (88.9 mm) diagonal. The floor is a 20 degree
-    ramp rising front to back so stickers tilt toward the viewer; finger cutouts in both
-    walls (back one starts flush with the ramp top). Units mm.
+    Single-sticker container for the 15 in x 19.5 in drawer. The default is the 6 x 6 grid:
+    six columns across (78.5 mm trays + 7 x 3 mm gaps = 492 of 495 mm), six trays per
+    column front to back (6 x 63.2 = 379.2 of 381 mm), 36 trays, interior 74.5 x 59.2 mm.
+    Larger layouts via --set: layout B (--set tray_w=94 --set slot_l=90.6) is 5 columns of
+    4 trays (20 trays) and holds any sticker within a 3.5 in (88.9 mm) diagonal; layout A
+    (--set tray_w=94 --set slot_l=71.6 --set wall=1.6) is 5 columns of 5, judged not useful.
+    The floor is a 20 degree ramp rising front to back so stickers tilt toward the viewer;
+    finger cutouts in both walls (back one starts flush with the ramp top). Units mm.
 
 parameters:
-  tray_w: 94.0         # X, left-right. 5 trays + 6 x 3 mm gaps = 488 of 495 mm
-  slot_l: 71.6         # interior Y, front-back. A: 5 per 381 mm | B: 90.6, 4 per 381 mm
+  tray_w: 78.5         # X, left-right. 6 trays + 7 x 3 mm gaps = 492 of 495 mm | B and A: 94.0 (5 columns)
+  slot_l: 59.2         # interior Y, front-back. 6 per 381 mm at wall 2.0 | B: 90.6 (4 per column) | A: 71.6 (5)
   tray_h: 50.8         # Z. 2.00 in
-  wall: 1.6            # 4 perimeter loops at 0.4 mm; 1.2 printed floppy on the 2/3 samples
-  floor: 1.2
+  wall: 2.0            # 5 perimeter loops (PrusaSlicer packs about 0.4 mm per loop); 1.2 printed floppy on the 2/3 samples, 1.6 flimsy at full size
+  floor: 2.0           # matches the wall; 10 layers at 0.2 mm
   tab_w: 40.0          # finger cutout width, front wall
   tab_floor: 14.0      # front cutout starts this far above the outside bottom
   ramp_deg: 20         # floor ramp angle, rises front to back

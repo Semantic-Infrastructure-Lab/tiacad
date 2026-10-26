@@ -298,14 +298,14 @@
   },
   "examples/sticker_drawer/sticker_tray.yaml": {
     "bbox": [
-      94.0,
-      74.8,
+      78.5,
+      63.2,
       50.8
     ],
-    "canonical_mesh_hash": "827ee4d38c5589a8bbcaaceebe83dbd79cbb04021a29e895f81f0ee2a09fa59f",
-    "mesh_hash": "2bdb8640a8de8ed773773094534a0622376d42140f1d2b42a1e90f61b2b8e1ac",
+    "canonical_mesh_hash": "402b86e471195b66f5a3d4f1291997eb60557da09ae834bc0894bd9d9e9440bb",
+    "mesh_hash": "b1f698006dc3675f680f05dd5ea2ab59b3daefde1b2e5db3894a56aef4c886b4",
     "part": "sticker_tray",
-    "volume": 115572.28128726175
+    "volume": 79192.73093723148
   },
   "examples/text_engraved.yaml": {
     "bbox": [

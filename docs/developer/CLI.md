@@ -518,7 +518,7 @@ tiacad validate-geometry examples/week5_assembly.yaml --part rotated_gear
 tiacad validate-geometry examples/sticker_drawer/sticker_bin.yaml --bed 250x210x200
 
 # Print-check a parameter variant (tray layout B) against a 235 mm bed
-tiacad validate-geometry examples/sticker_drawer/sticker_tray.yaml --set slot_l=90.6 --bed 235x235x250
+tiacad validate-geometry examples/sticker_drawer/sticker_tray.yaml --set tray_w=94 --set slot_l=90.6 --bed 235x235x250
 ```
 
 ---
@@ -602,7 +602,8 @@ tiacad build examples/sticker_drawer/sticker_clip.yaml --set gap=0.2 --set leg_t
   (written for the default values) a variant can legitimately fail it, and `verify` prints a
   reminder. If its values are `${...}` expressions over the parameters (see
   `examples/sticker_drawer/sticker_tray.yaml`), the contract follows the variant, so
-  `--set slot_l=90.6` is checked against the geometry that variant should have.
+  `--set tray_w=94 --set slot_l=90.6` (layout B) is checked against the geometry that variant
+  should have.
 
 ---
 

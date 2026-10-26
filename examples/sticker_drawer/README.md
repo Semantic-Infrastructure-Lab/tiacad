@@ -11,18 +11,21 @@ beth_topics:
 
 # Sticker drawer: status and next steps
 
-Status as of 2026-10-19. The worked example is `sticker_tray.yaml`: single-sticker trays for a 15 in x 19.5 in drawer. Open work is tracked as TCAD-7 (`tt show TCAD-7`).
+Status as of 2026-10-25. The worked example is `sticker_tray.yaml`: single-sticker trays for a 15 in x 19.5 in drawer. Open work is tracked as TCAD-7 and TCAD-15 (`tt show TCAD-15`).
+
+**The default in `sticker_tray.yaml` is now the 6 x 6 grid** (6 columns across, 6 trays per column, 36 trays). Layouts A and B are still available through `--set` overrides (table below); a plain `./tiacad build` builds the 6 x 6 tray.
 
 ## Drawer and layouts
 
-Drawer: 15 in front-to-back (381 mm) by 19.5 in wide (495 mm). Drawer height is not recorded. Trays are 94 mm wide and 50.8 mm (2 in) tall, five columns across (488 of 495 mm with 3 mm gaps).
+Drawer: 15 in front-to-back (381 mm) by 19.5 in wide (495 mm). Drawer height is not recorded. Trays are 50.8 mm (2 in) tall. Gaps of 3 mm go between columns; trays in a column sit end to end.
 
-| Layout | `slot_l` | Per column | Tray length at wall 1.6 | Total | Notes |
-|---|---|---|---|---|---|
-| A | 71.6 | 5 | 74.8 mm | 25 trays | Judged not useful |
-| B | 90.6 (`--set slot_l=90.6`) | 4 | 93.8 mm | 20 trays | Holds stickers up to a 3.5 in (88.9 mm) diagonal; the one to build |
+| Layout | Overrides | Outside W x L (mm) | Interior W x L (mm) | Columns x per column | Total | Notes |
+|---|---|---|---|---|---|---|
+| 6 x 6 (default) | none (`tray_w` 78.5, `slot_l` 59.2, `wall` 2.0, `floor` 2.0) | 78.5 x 63.2 | 74.5 x 59.2 | 6 x 6 | 36 trays | 492 of 495 mm across, 379.2 of 381 mm deep. Interior is 2.93 x 2.33 in: only for stickers narrower than about 2.9 in |
+| B | `--set tray_w=94 --set slot_l=90.6` | 94 x 94.6 at wall 2.0 | 90 x 90.6 | 5 x 4 | 20 trays | Holds stickers up to a 3.5 in (88.9 mm) diagonal. Wall 1.6 (the file's old default) printed flimsy |
+| A | `--set tray_w=94 --set slot_l=71.6 --set wall=1.6 --set floor=1.2` | 94 x 74.8 | 90.8 x 71.6 | 5 x 5 | 25 trays | Judged not useful |
 
-Tray length is `slot_l + 2 x wall`, so wall thickness spends drawer depth. Layout B ceiling is wall 2.3 mm (4 x 95.2 = 380.8 mm, no gap); wall 2.0 mm leaves 2.6 mm of slack.
+Tray length is `slot_l + 2 x wall`, so wall thickness spends drawer depth. The 6-per-column ceiling is 63.5 mm (381 / 6) with no gaps; layout B's ceiling is wall 2.3 mm (4 x 95.2 = 380.8 mm).
 
 ## Print history
 
@@ -33,24 +36,44 @@ Tray length is `slot_l + 2 x wall`, so wall thickness spends drawer depth. Layou
 | MID_TRAYS (2/3 scale, 1.2 mm walls, 0.28 mm, 5% rectilinear) | Looked good, walls thin, ramp felt wimpy |
 | FULL_AB (wall 1.6, 0.28 mm, 10% gyroid, 4 perimeters) | Printed. Walls flimsy on every tray, some layer adhesion issues (Scott, 2026-10-19) |
 
-Layout A is not useful; use the larger layout B next time.
+Layout A is not useful. The G-code headers on lenny confirm the printed MID_TRAYS was the 0.28 mm, 5% rectilinear slice (3h06m46s, 40.97 g); the 0.20 mm and 15% grid variants in `~/Downloads` were not the printed ones.
 
 ## Next steps
 
-1. Thicken walls. Recommended `wall: 2.0` for layout B (about 5 perimeter loops at a 0.4 mm nozzle). Then run `./tiacad verify`, regenerate the tray golden, and check the fit. Inspect the ramp and finger cutouts with `tiacad section`, since they are the likely weak spots; add material there instead of everywhere if possible.
-2. Fix layer adhesion in the slicer, not the model. Our plate used 0.28 mm layers (about 70% of nozzle width), 60% fan and 60 mm/s perimeters. Try in this order: fan 30-40% on walls, nozzle +5-10 C, slower perimeters, 0.2 mm layers, dry filament. PETG bonds between layers better than PLA (general knowledge, untested here). The slicer profile is still an Ender-3 stand-in; a CR-6 SE profile is not installed.
-3. Run the full `tiacad_core/tests/test_correctness` directory (about 10-12 min) before pushing. It has not been run since the wall 1.6 golden update, and the two local commits are not pushed.
+The 6 x 6 default (wall 2.0, floor 2.0) is built into the model and passes `./tiacad verify`; the tray golden is regenerated. Nothing has been printed at this size yet.
+
+1. **Print test plate.** 6 trays fit one plate (2 x 3 inside the CR-6 SE's 234 x 234 mm travel). Planned slicer settings, changed from the earlier plates (SUNLU black PLA, 1.75 mm, 1 kg):
+
+   | Setting | Earlier plates | 6 x 6 test plate |
+   |---|---|---|
+   | Printer profile | Ender-3 stand-in | `Creality CR-6 SE (0.4 mm nozzle)` |
+   | Layer height | 0.28 mm (MID, FULL_AB) | 0.20 mm |
+   | Perimeters | 3 (MID) / 4 (FULL_AB) | 5 |
+   | Top / bottom layers | 4-6 / 3-4 | 8 (1.6 mm) / 10 (2.0 mm) |
+   | Infill | 5% rectilinear / 10% gyroid | 10% gyroid |
+   | Nozzle | 205 C (first layer 210) | 215 C (first layer 215) |
+   | Fan | 100% (MID_TRAYS headers); 60% (FULL_AB header, checked on the card 2026-10-25) | 75%, off for the first 2 layers. This is more cooling than FULL_AB had, which is the opposite direction from the 30-40% suggested under "Fix layer adhesion" |
+   | Perimeter / outer speed | 40 / 25 mm/s (MID); 60 (FULL_AB) | 40 / 25 mm/s |
+   | Seam | nearest | aligned |
+   | Brim | none | none |
+
+   Slice on lenny with the AppImage (see the TIA memory `project_lenny_3d_printing_setup`); CR-6 SE is enabled by `model:CR6SE = 0.4` under `[vendor:Creality]` in `~/.config/PrusaSlicer/PrusaSlicer.ini`. Always grep the G-code header for `printer_settings_id`, `layer_height`, `perimeters`, and the top/bottom layer counts before copying to the card, and keep every coordinate inside 0-234 (no soft limits).
+2. **Cost check.** The first 6-tray slice at these settings estimates 1 d 9 h and 331 g for the plate, so all 36 trays would be 6 plates and about 200 h and 2 kg. Decide whether to trim (fewer perimeters or solid layers, 0.24 mm layers) or go online before printing everything.
+3. Run the full `tiacad_core/tests/test_correctness` directory (about 10-12 min) before pushing. It has not been run since the wall 1.6 golden update, and the local commits are not pushed.
 4. Decide home versus online printing (below).
 
 ## Cost to print
 
-### Geometry (wall 1.6)
+### Geometry
 
 | Part | Solid volume | Bounding box (mm) |
 |---|---|---|
-| Tray A | 115.6 cm3 | 94 x 74.8 x 50.8 |
-| Tray B | 172.1 cm3 | 94 x 93.8 x 50.8 |
-| A + B pair | 287.7 cm3 | |
+| 6 x 6 tray (default, wall 2.0, floor 2.0) | 79.2 cm3 | 78.5 x 63.2 x 50.8 |
+| Tray A (wall 1.6, floor 1.2) | 115.6 cm3 | 94 x 74.8 x 50.8 |
+| Tray B (wall 1.6, floor 1.2) | 172.1 cm3 | 94 x 93.8 x 50.8 |
+| A + B pair (wall 1.6) | 287.7 cm3 | |
+
+The A, B and pair rows and the online and home figures below are for the earlier wall 1.6 layouts; they have not been redone for the 6 x 6 tray.
 
 ### Online (JLC3DP)
 
