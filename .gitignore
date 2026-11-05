@@ -163,3 +163,6 @@ CLEANUP_PLAN.md
 # not tracked — it also inflates `tia project show` file counts if left in-tree)
 /.hypothesis/
 TASKS.md.lock
+
+# Slicer output (G-code, built STLs); profiles/base/slice_log.tsv under printing/ stay tracked
+examples/*/printing/out/

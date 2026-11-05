@@ -37,7 +37,8 @@ Tray length is `slot_l + 2 x wall`, so wall thickness spends drawer depth. The 6
 | FULL_AB (wall 1.6, 0.28 mm, 10% gyroid, 4 perimeters) | Printed. Walls flimsy on every tray, some layer adhesion issues (Scott, 2026-10-19) |
 | TRAYS_6X6_P1 (6 trays, wall 2.0, 0.20 mm, 5 perimeters, 10 bottom / 8 top, 215 C) | Printed 2026-10-26. All 6 trays good and sturdy, floor far stronger than needed, fine-hair stringing across the inside of each tray. Actual time matched the slicer estimate exactly (33 h 02 m 51 s, 331.4 g) (Scott, 2026-10-27) |
 | TRAYS_6X6_P2 (6 trays, 6 bottom / 6 top, 5 perimeters, faster speeds, 210 C) | **Failed** (Scott, 2026-10-30): rat's nest partway up, and the walls were clearly flimsier than P1's even though the perimeter count (5) and geometry were identical. The 6/6 bottom/top cut itself was fine. Likely under-extrusion: P2's 60 mm/s inner perimeters and 70 mm/s infill run at about 5.3 and 6.2 mm3/s, at or above the one CR-6 SE flow test found (5 mm3/s at 100% extrusion, about 11 at under 90%; MakerShop review). A hypothesis, not proven; temperature (215 to 210 C) and speed changed together |
-| TRAY_06_1X (ONE tray, 0.6 mm nozzle, 0.3 mm layers, 3 perimeters, 4 bottom / 4 top, P1 speeds and 215 C, flow cap 8 mm3/s) | On the SD card, not yet printed. Estimate 2 h 19 m, 48.7 g. Test of the 0.6 mm nozzle (see "Nozzle size" below) |
+| TRAY_06_1X (ONE tray, 0.6 mm nozzle, 0.3 mm layers, 3 perimeters, 4 bottom / 4 top, P1 speeds, 215 C, flow cap 8 mm3/s, fan 75%) | Printed 2026-11-04 (profile `tray_06_1x_t1`): weak layer adhesion. Estimate 2 h 19 m, 48.7 g |
+| TRAY_06_1X_T2 (same tray; flow cap 6, 225 C, fan 40% and off for 3 layers; profile `tray_06_1x_t2`) | Printed 2026-11-04, **no better**. Scott: first layers go down fine, then no filament comes out unless the extruder pusher is unlocked and the filament is pushed by hand. That is a hotend clog or heat creep, not a slicer problem. Estimate 2 h 31 m, 48.7 g. Retraction is still the base config's 5 mm (untuned for 0.6). Next: cold-pull and hand-extrude 100 mm at 225 C, check the heat-break fan and nozzle seating, then T3 with cap about 5, 218 C, retraction about 2 mm |
 
 Layout A is not useful. The G-code headers on lenny confirm the printed MID_TRAYS was the 0.28 mm, 5% rectilinear slice (3h06m46s, 40.97 g); the 0.20 mm and 15% grid variants in `~/Downloads` were not the printed ones.
 
@@ -62,7 +63,7 @@ The 6 x 6 default (wall 2.0, floor 2.0) is built into the model and passes `./ti
 
    Slice times (slicer estimate, 6 trays; P1's estimate matched the real print): P1 33 h 02 m / 331.4 g, 6/6 solid layers 29 h 07 m / 298.5 g, plus faster speeds 23 h 04 m, P2 23 h 05 m / 298.5 g. Raising acceleration from 500 to 1000 mm/s2 would save about 1 h 40 m more, but the CR-6 SE firmware limit is unchecked and higher acceleration may ring, so it is untried. Travel speed alone changes nothing because acceleration is the limit.
 
-   To regenerate a slice, copy the config embedded in a G-code file (every line after `; prusaslicer_config = begin`, with the leading `; ` removed) to an `.ini`, then run the AppImage with `-g --load <ini> --duplicate 6` plus overrides such as `--bottom-solid-layers 6 --top-solid-layers 6 --temperature 210`. Use absolute paths; the AppImage ignores relative ones. The full P2 command is in `tt show TCAD-15` note #4.
+   **Slicing is scripted.** Slicer settings live in `printing/` (see "Printing files" below): `scripts/slice_print.sh slice <abs path to printing/> <profile>` builds the STL, slices it from the base config plus the profile's overrides, prints a header check and appends a row to `printing/slice_log.tsv`. Profiles: `p1`, `p2_failed`, `tray_06_1x_t1`, `tray_06_1x_t2`. The base `printing/base/cr6se_p1.ini` was extracted from the P1 G-code with `scripts/slice_print.sh extract <gcode> <ini>`. Re-slicing is deterministic (same output run to run), but the t1 card file differs from a re-slice in the last ~3% of the file (top layers, from Z 48.6; same time, grams and layer count), so the older flag list was not exactly what was run.
 
    Slice on lenny with the AppImage (see the TIA memory `project_lenny_3d_printing_setup`); CR-6 SE is enabled by `model:CR6SE = 0.4` under `[vendor:Creality]` in `~/.config/PrusaSlicer/PrusaSlicer.ini`. Always grep the G-code header for `printer_settings_id`, `layer_height`, `perimeters`, and the top/bottom layer counts before copying to the card, and keep every coordinate inside 0-234 (no soft limits).
    **P2 failed (2026-10-30), so do not slice plates 2-6 from the P2 settings.** Keep P1's perimeter and wall speeds (inner 40, outer 25 mm/s) and 215 C. Only the 6 bottom / 6 top layer cut is known good. Keep volumetric flow (width x layer height x speed) at or below about 5 to 8 mm3/s on this printer.
@@ -78,10 +79,24 @@ The 6 x 6 default (wall 2.0, floor 2.0) is built into the model and passes `./ti
    | 0.8 | 0.40 | 2 (1.76 mm, 0.24 gap) | 7 h 50 m at a 15 cap, not reachable | 9 to 18 | exceeds the stock hotend |
    | 1.0 | 0.50 | 2 (2.2 mm) | 6 h 09 m at a 15 cap, not reachable | 14 to 28 | exceeds the stock hotend |
 
-   All 36 trays at 0.6 mm: about 85 to 90 h. The 0.6 mm slice reuses the 0.4 mm CR-6 SE profile with only nozzle, width and layer overrides, so retraction and the start/end gcode are untuned. That the CR-6 SE takes the Creality M6 0.6 mm nozzle is unverified; swap, re-home and watch the first layers and about layer 7. To build it, use the regenerate recipe above with `--nozzle-diameter 0.6 --layer-height 0.3 --first-layer-height 0.3 --extrusion-width 0.66 --perimeter-extrusion-width 0.66 --external-perimeter-extrusion-width 0.63 --infill-extrusion-width 0.66 --solid-infill-extrusion-width 0.66 --top-infill-extrusion-width 0.6 --first-layer-extrusion-width 0.63 --perimeters 3 --bottom-solid-layers 4 --top-solid-layers 4 --filament-max-volumetric-speed 8 --duplicate 1`. Full notes: `tt show TCAD-15` notes 5 and 6.
+   All 36 trays at 0.6 mm: about 85 to 90 h. The 0.6 mm slice reuses the 0.4 mm CR-6 SE profile with only nozzle, width and layer overrides, so retraction and the start/end gcode are untuned. That the CR-6 SE takes the Creality M6 0.6 mm nozzle is unverified; swap, re-home and watch the first layers and about layer 7. To build it, use the profiles `tray_06_1x_t1` / `tray_06_1x_t2` (flags are in the profile files). Full notes: `tt show TCAD-15` notes 5 and 6.
 2. **Cost check.** P1 estimated 1 d 9 h and 331 g per plate. P2 was estimated at 23 h 05 m and 299 g but failed, so its 139 h figure no longer stands (P1 settings: about 200 h and 2 kg; the 0.6 mm test points to about 85 to 90 h). Decide between home and online printing after the 0.6 mm single-tray test. After that test prints, check wall feel against P1, layer bonding, ramp stair-stepping, and any extruder skipping or gaps (which would mean the 8 mm3/s cap is too high).
 3. The full `tiacad_core/tests/test_correctness` directory passed (589 tests) on 2026-10-25 after the 6 x 6 golden update. Local commits are not pushed.
 4. Decide home versus online printing (below).
+
+### Printing files
+
+Everything needed to reproduce a slice is tracked next to the model; only the output is ignored.
+
+| Path | What |
+|---|---|
+| `printing/base/cr6se_p1.ini` | Base PrusaSlicer config (CR-6 SE, extracted from the P1 G-code) |
+| `printing/profiles/<name>.conf` | One file per experiment: model, `--set` overrides, slicer flags, a one-line NOTE of what changed |
+| `printing/slice_log.tsv` | One row per slice: date, profile, G-code name, estimated time, grams, layers, model commit, note |
+| `printing/out/` | Built STLs and G-code (gitignored). Copy to the card from here and `cmp` the copy |
+| `/home/scottsen/src/projects/tiacad/scripts/slice_print.sh` | Generic `extract` / `slice` tool; reusable for any TiaCAD model with its own `printing/` directory |
+
+New experiment: copy the nearest profile, change flags, state what changed in NOTE, slice, record the print result in Print history above.
 
 ## Cost to print
 
