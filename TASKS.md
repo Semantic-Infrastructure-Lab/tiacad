@@ -1723,9 +1723,9 @@ priority: medium
 effort: 1h
 tags: [printing, sticker-drawer]
 created: '2026-10-17T17:44:31Z'
-updated: '2026-10-19T19:12:29Z'
+updated: '2026-11-06T01:25:24Z'
 session: translucent-ember-1017
-notes_next: 5
+notes_next: 6
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
@@ -1734,6 +1734,7 @@ notes_next: 5
 - [#2 2026-10-18T00:06:15Z session:cunning-oracle-1017] 2026-10-17 cunning-oracle-1017: Scott reports the MINI_TRAYS samples came out fine (so the slice/file recipe is good; the full TRAYS_15MM floor-only cause remains undiagnosed). Next test plate is 2/3 scale with 20 deg ramp + back cutout: MID_TRAYS.gcode on the SD card root (0.28 mm SUPERDRAFT, 5% rectilinear, 3h07m, 41 g); slower variants in tray_tests/. Print result pending.
 - [#3 2026-10-19T07:54:02Z session:garnet-patina-1019] 2026-10-19 garnet-patina-1019: MID_TRAYS printed (card copy = 0.28 mm, 5% rectilinear, 3 perim, 4 top layers = 1.12 mm skin, 1.2 mm walls): looked good but walls thin, esp. ramp top, ramp felt wimpy. Fix: wall 1.6 (commit e836c7b). Full-size plate sliced for A+B, 0.28 mm, 10% gyroid, 4 perimeters, top skin 1.6 mm (6 layers), speeds infill 70/solid 60/perimeter 60: 8h59m, 135 g, centered on bed; on card as FULL_AB.gcode, print pending. A 4-tray plate at 0.2 mm/15% was 28h19m/296 g (rejected). Time split (4-tray): perimeters 54%, solid infill 27% (20 deg ramp skin), infill 18%; accel is 500 mm/s2 so speed gains are capped. Watch layer 7 (Z 1.96) for the earlier floor-only failure.
 - [#4 2026-10-19T19:12:29Z session:opal-starlight-1019] 2026-10-19 opal-starlight-1019: FULL_AB printed: walls flimsy on all trays, some layer adhesion issues. Layout A (slot_l 71.6) not useful; use layout B (90.6, 4/column, 20 trays) next. Plan: wall 2.0 (ceiling 2.3 for B), slicer fan/temp/layer-height changes. Online: JLC3DP PLA-C ~$20 per A+B pair was cheapest quote. Status and costs: examples/sticker_drawer/README.md
+- [#5 2026-11-06T01:25:24Z session:crimson-paint-1105] 2026-11-05 crimson-paint-1105: unchanged; the 0.6 mm hotend problem (TCAD-15 note 8) gates any further tray print test.
 
 
 ## TASK-TCAD-8 · Expressions: make sin/cos/tan take degrees, add asin/acos/atan/atan2 + 'rad' literal, document functions
@@ -1889,9 +1890,9 @@ priority: medium
 effort: 2h
 tags: [printing, sticker-drawer]
 created: '2026-10-19T19:13:27Z'
-updated: '2026-11-05T04:28:41Z'
+updated: '2026-11-06T01:25:24Z'
 session: opal-starlight-1019
-notes_next: 8
+notes_next: 9
 ```
 
 <!-- notes: append-only log; each has a stable #id (see CLI §5) -->
@@ -1903,3 +1904,4 @@ notes_next: 8
 - [#5 2026-10-31T00:35:47Z session:sunny-steam-1030] 2026-10-30 sunny-steam-1030: P2 FAILED (Scott): rat's nest partway up and walls clearly flimsier than P1 (P1 was beefy). Config diff P1 vs P2 (embedded slicer config) shows wall geometry/perimeters (5) identical; only speeds, temp and solid layers differ: inner perimeter 40->60, outer/small 25->35, infill 50->70, solid 40->60, top solid 30->40, travel 150->200, temp 215->210, bottom 10->6, top 8->6. Scott: the bottom/top layer cut was fine. Likely cause: under-extrusion. Volumetric flow at 0.4 mm/0.2 layer: P1 about 2-4.4 mm3/s; P2 inner perimeter 5.3, infill 6.2, solid 5.3 mm3/s. Only CR-6 SE flow test found (MakerShop review): 5 mm3/s at 100% extrusion, up to 11 at <90%, extruder gears may slip first. Hypothesis, not proven. NOZZLE STUDY (slicer estimates, 6 trays, P1 speeds, flow cap noted): 0.4 6/6 = 29h07m; 0.6 (0.3 layer, 3 loops of 0.66 = 1.98 mm wall) = 13h53m at 8 mm3/s, 15h04m at 6, 13h40m at 15; 0.8 = 7h50m at 15 cap (unreachable, needs 14-18 mm3/s); 1.0 = 6h09m (14-28 mm3/s). 0.6 is the pick; 0.8/1.0 exceed the stock hotend. NEXT: single-tray 0.6 mm test, flow cap 6, P1 temp 215/speeds, 3 perimeters, 4 bottom/4 top: 2h31m18s, 48.72 g, 169 layers to Z 50.7 (model 50.8), extrusion bbox 85x70 mm incl. skirt. G-code: /tmp/claude-1000/-home-scottsen-src-tia-sessions-sunny-steam-1030/TRAY_06_1X.gcode (not yet on the card; uses the 0.4 mm CR-6 SE profile with only nozzle/width/layer overrides). UNVERIFIED: that the CR-6 SE takes the Creality M6 0.6 mm nozzle; swap and re-home before printing.
 - [#6 2026-10-31T00:39:46Z session:sunny-steam-1030] 2026-10-30 sunny-steam-1030 correction to note #5: single-tray 0.6 mm test slice re-cut with flow cap 8 mm3/s (Scott's intent), not 6. Same settings otherwise. Cap-6 version kept as TRAY_06_1X_cap6.gcode in the same dir. Times in the output of this note's session.
 - [#7 2026-11-05T04:28:41Z session:benevolent-warrior-1104] 2026-11-04 benevolent-warrior-1104: 0.6 mm single tray printed twice, both bad. t1 (cap 8, 215C, fan 75%) weak layer adhesion; t2 (cap 6, 225C, fan 40%, off first 3 layers) no better. Scott's symptom on t2: first layers fine, then NO filament comes out unless the extruder pusher is unlocked and filament hand-pushed, then relocked, works a while. Diagnosis: hotend clog or heat creep, NOT slicer settings (P2 and t1 failing at 210/215C too). Base config retract_length = 5 mm is untuned for 0.6 (suspect). NEXT: cold pull + hand-extrude 100 mm at 225C, check heat-break fan, nozzle seated hot, filament chewed by gear; then slice tray_06_1x_t3 (cap ~5, 218C, retract ~2 mm). Slicing is now scripted: scripts/slice_print.sh + examples/sticker_drawer/printing/ (base ini, profiles, slice_log.tsv); README 'Printing files'. t1 re-slice matches the printed card file except the last ~3% (top layers).
+- [#8 2026-11-06T01:25:24Z session:crimson-paint-1105] 2026-11-05 crimson-paint-1105: hotend diagnosis. Retraction tower (examples/sticker_drawer/retraction_tower.yaml, profile tower_06_t3: retract 2, cap 5, 218C, fan 40%) printed clean: both pillars fused to the top over 100 layers / 419 retracts, only cosmetic stringing. Strong (not conclusive) evidence the base 5 mm retract caused t2's heat-creep starvation. Full tray t3 (tray_06_1x_t3, same settings, 2h41m) is printing on the card; result pending. If t3 starves: nozzle/heat break/extruder gear. If stringing persists: separate T4 (dry filament, -5..8C, wipe).

@@ -1,3 +1,5 @@
 date	profile	gcode	est_time	grams	layers	model_commit	note
 2026-11-04	tray_06_1x_t1	TRAY_06_1X.gcode	2h 19m 25s	48.72	169	69ddf82	0.6mm test 1: cap 8, 215C, base fan; weak layer adhesion
 2026-11-04	tray_06_1x_t2	TRAY_06_1X_T2.gcode	2h 31m 18s	48.72	169	69ddf82	0.6mm test 2: cap 6, 225C, fan 40% (off first 3 layers)
+2026-11-05	tower_06_t3	TOWER_06_T3.gcode	39m 29s	8.04	100	6bb7b49	0.6mm retraction tower: retract 2, cap 5, 218C, fan 40%; tests heat creep via per-layer retraction
+2026-11-05	tray_06_1x_t3	TRAY_06_1X_T3.gcode	2h 41m 15s	48.72	169	6bb7b49	0.6mm tray test 3: retract 2, cap 5, 218C, fan 40%; hotend settings proven on tower

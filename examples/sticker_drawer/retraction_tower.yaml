@@ -1,0 +1,45 @@
+schema_version: "3.0"
+
+metadata:
+  name: Retraction tower (two pillars)
+  description: >
+    Two separate pillars; the head travels between them every layer, so every layer
+    retracts. Diagnostic for heat creep / retraction trouble on the 0.6 mm nozzle
+    (see printing/profiles/tower_06_t3.conf). Units mm.
+
+parameters:
+  pillar: 15.0    # square footprint
+  height: 30.0
+  gap: 45.0       # clear space between the pillars (travel distance per layer)
+
+parts:
+  pillar_a:
+    primitive: box
+    size: ['${pillar}', '${pillar}', '${height}']
+    origin: corner
+  pillar_b:
+    primitive: box
+    size: ['${pillar}', '${pillar}', '${height}']
+    origin:
+      - ${pillar + gap}
+      - 0
+      - 0
+
+operations:
+  tower:
+    type: boolean
+    operation: union
+    inputs:
+      - pillar_a
+      - pillar_b
+
+export:
+  default_part: tower
+
+# Closed-form: 2 x 15 x 15 x 30; two disjoint solids (not touching).
+expect:
+  final: tower
+  volume: 13500.0
+  bbox: [75.0, 15.0, 30.0]
+  components: 2
+  tol: { volume: 0.01 }
